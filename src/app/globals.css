@@ -1,21 +1,27 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #fafafa;
   --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --gray: #333;
+  --low-gray: #bbb;
+  --dark-gray-90: #22222290;
+  --medium-gray: #aaa;
+  --translucid: #00000010;
+  --red: #d42020;
+  --shadow: #00000070;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #1b1c1e;
+    --foreground: #fafafa;
+    --gray: #ccc;
+    --low-gray: #222;
+    --medium-gray: #111;
+    --translucid: #ffffff10;
+    --red: #d41010;
+    --shadow: #000000;
   }
 }
 
@@ -23,4 +29,81 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+h1 {
+  font-size: 32px;
+  font-weight: bold;
+  color: var(--red);
+}
+
+h2 {
+  font-size: 24px;
+}
+
+h3 {
+  font-size: 20px;
+}
+
+@media (width < 620px) {
+  h1 {
+    font-size: 28px;
+  }
+  h2 {
+    font-size: 20px;
+  }
+  h3 {
+    font-size: 18px;
+  }
+}
+
+.color-gray {
+  color: var(--gray);
+}
+
+.border-low-gray {
+  border-color: var(--low-gray);
+}
+
+.bg-translucid {
+  background-color: var(--translucid);
+}
+
+.hover-bg-translucid:hover {
+  background-color: var(--translucid);
+}
+
+.bg-low-gray {
+  background-color: var(--low-gray);
+}
+
+.bg-dark-gray-90 {
+  background-color: var(--dark-gray-90);
+}
+
+.gray-button {
+  border: 1px solid var(--low-gray);
+  background-color: var(--translucid);
+  &:hover {
+    background-color: var(--low-gray);
+  }
+}
+
+.react-tel-input .selected-flag,
+.react-tel-input .flag-dropdown.open .selected-flag {
+  background-color: transparent !important;
+  color: var(--foreground);
+  &:hover {
+    background-color: var(--low-gray) !important;
+  }
+}
+
+.react-tel-input .flag-dropdown .country {
+  background-color: var(--medium-gray) !important;
+}
+
+.react-tel-input .flag-dropdown .country:hover,
+.react-tel-input .flag-dropdown .country.active,
+.react-tel-input .flag-dropdown .country[aria-selected="true"] {
+  background-color: var(--low-gray) !important;
 }

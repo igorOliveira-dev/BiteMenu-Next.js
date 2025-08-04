@@ -1,5 +1,5 @@
 {
-  "name": "menulink",
+  "name": "bitemenu",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,12 +9,20 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@supabase/auth-helpers-nextjs": "^0.10.0",
+    "@supabase/auth-helpers-shared": "^0.7.0",
+    "@supabase/supabase-js": "^2.52.0",
+    "buffer": "^6.0.3",
+    "libphonenumber-js": "^1.12.10",
+    "next": "15.3.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "next": "15.3.5"
+    "react-icons": "^5.5.0",
+    "react-phone-input-2": "^2.15.1",
+    "slugify": "^1.6.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4"
+    "tailwindcss": "^4.1.11"
   }
 }
