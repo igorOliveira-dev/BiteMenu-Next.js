@@ -8,6 +8,7 @@ import "react-phone-input-2/lib/style.css";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { supabase } from "@/lib/supabaseClient";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function SignUp() {
   const router = useRouter();
@@ -138,9 +139,9 @@ export default function SignUp() {
           <div>
             <p className="text-center">
               Já tem uma conta?{" "}
-              <a href="/login" className="underline text-blue-500 hover:text-blue-700">
+              <Link href="/login" className="underline text-blue-500 hover:text-blue-700">
                 Faça login
-              </a>
+              </Link>
             </p>
           </div>
 

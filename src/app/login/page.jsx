@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function SignIn() {
   const router = useRouter();
@@ -83,9 +84,9 @@ export default function SignIn() {
           <div>
             <p className="text-center">
               Ainda não tem uma conta?{" "}
-              <a href="/register" className="underline text-blue-500 hover:text-blue-700">
+              <Link href="/register" className="underline text-blue-500 hover:text-blue-700">
                 Registre-se
-              </a>
+              </Link>
             </p>
           </div>
 
