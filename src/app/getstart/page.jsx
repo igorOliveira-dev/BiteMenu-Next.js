@@ -4,51 +4,157 @@ import Loading from "@/components/Loading";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import React, { useState } from "react";
 import { FaShoppingCart } from "react-icons/fa";
+import useUser from "@/hooks/useUser";
+import { supabase } from "@/lib/supabaseClient";
+
+// ---- CONFIG ----
+const BUCKET = "menus"; // confirme no painel do Supabase
+const USE_TIMEOUTS = true; // ativado por segurança/debug; desative se quiser
+// -----------------
+
+// ---- helpers ----
+const slugify = (text = "") =>
+  text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^\w\-]+/g, "")
+    .replace(/\-\-+/g, "-");
+
+const getExt = (file) => {
+  if (!file || !file.name) return "";
+  const parts = file.name.split(".");
+  return parts.length > 1 ? `.${parts.pop()}` : "";
+};
+
+// util: timeout wrapper
+const withTimeout = (promise, ms, name = "operation") =>
+  Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(`${name} timed out after ${ms}ms`)), ms)),
+  ]);
+
+/**
+ * Faz upload do file para o storage do Supabase.
+ * Tenta obter publicUrl; se não existir (bucket privado), tenta createSignedUrl (1h).
+ * Lança erro com mensagem legível em caso de falha.
+ */
+const uploadFileToStorage = async (file, userId, slug, filename) => {
+  if (!file) return null;
+
+  const ext = getExt(file);
+  const path = `${userId}/${slug}/${filename}${ext}`;
+
+  try {
+    console.log("[upload] iniciando upload", {
+      path,
+      bucket: BUCKET,
+      fileName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
+      ts: new Date().toISOString(),
+    });
+
+    const uploadRes = await supabase.storage.from(BUCKET).upload(path, file, { upsert: true });
+
+    // alguns SDKs retornam { data, error }, outros retornam Response-like — normalize:
+    const uploadError = uploadRes?.error ?? (uploadRes && uploadRes.status >= 400 ? uploadRes : null);
+    if (uploadError) {
+      console.error("[upload] upload error object:", uploadError);
+      throw new Error(uploadError?.message ?? JSON.stringify(uploadError));
+    }
+
+    console.log("[upload] upload concluído (raw response):", uploadRes);
+
+    // tenta public url (apenas funciona se bucket for público)
+    try {
+      const publicRes = await supabase.storage.from(BUCKET).getPublicUrl(path);
+      if (publicRes?.error) {
+        console.warn("[upload] getPublicUrl retornou erro:", publicRes.error);
+      }
+      const publicUrl = publicRes?.data?.publicUrl ?? null;
+      if (publicUrl) {
+        console.log("[upload] publicUrl obtida:", publicUrl);
+        return publicUrl;
+      }
+    } catch (publicErr) {
+      console.warn("[upload] exceção em getPublicUrl:", publicErr);
+    }
+
+    // se não há publicUrl, tenta criar signed url (válida por 1 hora)
+    try {
+      console.log("[upload] publicUrl não disponível. Tentando createSignedUrl (1 hora)...");
+      const signedRes = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 60);
+      if (signedRes?.error) {
+        console.warn("[upload] createSignedUrl retornou erro:", signedRes.error);
+        throw new Error(signedRes.error?.message ?? JSON.stringify(signedRes.error));
+      }
+      const signedUrl = signedRes?.data?.signedUrl ?? null;
+      if (signedUrl) {
+        console.log("[upload] signedUrl obtida:", signedUrl);
+        return signedUrl;
+      }
+    } catch (signedErr) {
+      console.warn("[upload] exceção em createSignedUrl:", signedErr);
+      // propagate so caller knows
+      throw signedErr;
+    }
+
+    console.warn("[upload] upload ok, mas não obtivemos nem publicUrl nem signedUrl:", {
+      uploadRes,
+    });
+    return null;
+  } catch (err) {
+    console.error("[upload] exceção em uploadFileToStorage:", err);
+    throw err;
+  }
+};
+// ---- fim helpers ----
 
 const COLOR_PALETTES = [
-  { bg: "#F8F9FA", title: "#007BFF", details: "#28A745" }, // Moderno Clean
-  { bg: "#FFF8E1", title: "#FF6F00", details: "#D84315" }, // Sunrise
-  { bg: "#E8F5E9", title: "#2E7D32", details: "#1B5E20" }, // Floresta
-  { bg: "#F3E5F5", title: "#6A1B9A", details: "#4A148C" }, // Pôr do Sol
-  { bg: "#E3F2FD", title: "#0D47A1", details: "#1976D2" }, // Oceano
-  { bg: "#FEF3C7", title: "#F59E0B", details: "#D97706" }, // Dourado Suave
-  { bg: "#ECFDF5", title: "#059669", details: "#047857" }, // Menta
-  { bg: "#FDF2F8", title: "#DB2777", details: "#9D174D" }, // Floral
-  { bg: "#EFF6FF", title: "#1E3A8A", details: "#3B82F6" }, // Azul Profundo
-  { bg: "#FFF1F2", title: "#B91C1C", details: "#991B1B" }, // Rosé
-  { bg: "#FCFCFD", title: "#111827", details: "#6B7280" }, // Neutro Elegante
-  { bg: "#F0FDF4", title: "#166534", details: "#15803D" }, // Verde Vivo
-  { bg: "#FEFCE8", title: "#92400E", details: "#78350F" }, // Terracota
-  { bg: "#F3F4F6", title: "#374151", details: "#4B5563" }, // Cinza Profundo
-  { bg: "#FFFBEB", title: "#B45309", details: "#92400E" }, // Mel
-  { bg: "#ECFEFF", title: "#0E7490", details: "#155E75" }, // Água Marinha
-  { bg: "#FFF7ED", title: "#C2410C", details: "#9A3412" }, // Tijolo
-  { bg: "#F9FAFB", title: "#7F1D1D", details: "#991B1B" }, // Vinho
-  { bg: "#EFFAFD", title: "#0369A1", details: "#075985" }, // Céu Claro
-  { bg: "#FDF4FF", title: "#6B21A8", details: "#581C87" }, // Ameixa
-  { bg: "#121212", title: "#BB86FC", details: "#03DAC6" }, // Noite Estrelada
-  { bg: "#1E1E1E", title: "#FF6E40", details: "#FFAB40" }, // Chama Quente
-  { bg: "#2D2D2D", title: "#82B1FF", details: "#448AFF" }, // Gelo Azul
-  { bg: "#242424", title: "#FF4081", details: "#F50057" }, // Rosa Neon
-  { bg: "#1B1B2F", title: "#E94560", details: "#0F3460" }, // Pôr‑do‑Sol Noturno
-  { bg: "#0D0D0D", title: "#C62828", details: "#FF5252" }, // Rubi Escuro
-  { bg: "#181818", title: "#00E676", details: "#64DD17" }, // Lima Neon
-  { bg: "#20232A", title: "#61DAFB", details: "#21A1F1" }, // React Dark
-  { bg: "#282C34", title: "#61DAFB", details: "#98C379" }, // Código VS
-  { bg: "#1C1C1E", title: "#FF9500", details: "#FFCC00" }, // Cinza Espacial
-  { bg: "#0F0E13", title: "#FFD600", details: "#FFEA00" }, // Ouro Noturno
-  { bg: "#263238", title: "#80DEEA", details: "#26C6DA" }, // Oceano Profundo
-  { bg: "#1A237E", title: "#C5CAE9", details: "#7986CB" }, // Noite Azul
-  { bg: "#311B92", title: "#E1BEE7", details: "#BA68C8" }, // Lavanda Escuro
-  { bg: "#1B262C", title: "#BBDEFB", details: "#90CAF9" }, // Lago Montenegro
-  { bg: "#232323", title: "#FFD740", details: "#FFC400" }, // Mostarda
-  { bg: "#272727", title: "#FF4081", details: "#F50057" }, // Pink Urbano
-  { bg: "#1C1C1C", title: "#00BFA5", details: "#1DE9B6" }, // Água‑Marinha
-  { bg: "#0E0E10", title: "#7C4DFF", details: "#651FFF" }, // Ultravioleta
-  { bg: "#161616", title: "#FFEB3B", details: "#FDD835" }, // Amarelo Neon
+  { bg: "#F8F9FA", title: "#007BFF", details: "#28A745" },
+  { bg: "#FFF8E1", title: "#FF6F00", details: "#D84315" },
+  { bg: "#E8F5E9", title: "#2E7D32", details: "#1B5E20" },
+  { bg: "#F3E5F5", title: "#6A1B9A", details: "#4A148C" },
+  { bg: "#E3F2FD", title: "#0D47A1", details: "#1976D2" },
+  { bg: "#FEF3C7", title: "#F59E0B", details: "#D97706" },
+  { bg: "#ECFDF5", title: "#059669", details: "#047857" },
+  { bg: "#FDF2F8", title: "#DB2777", details: "#9D174D" },
+  { bg: "#EFF6FF", title: "#1E3A8A", details: "#3B82F6" },
+  { bg: "#FFF1F2", title: "#B91C1C", details: "#991B1B" },
+  { bg: "#FCFCFD", title: "#111827", details: "#6B7280" },
+  { bg: "#F0FDF4", title: "#166534", details: "#15803D" },
+  { bg: "#FEFCE8", title: "#92400E", details: "#78350F" },
+  { bg: "#F3F4F6", title: "#374151", details: "#4B5563" },
+  { bg: "#FFFBEB", title: "#B45309", details: "#92400E" },
+  { bg: "#ECFEFF", title: "#0E7490", details: "#155E75" },
+  { bg: "#FFF7ED", title: "#C2410C", details: "#9A3412" },
+  { bg: "#F9FAFB", title: "#7F1D1D", details: "#991B1B" },
+  { bg: "#EFFAFD", title: "#0369A1", details: "#075985" },
+  { bg: "#FDF4FF", title: "#6B21A8", details: "#581C87" },
+  { bg: "#121212", title: "#BB86FC", details: "#03DAC6" },
+  { bg: "#1E1E1E", title: "#FF6E40", details: "#FFAB40" },
+  { bg: "#2D2D2D", title: "#82B1FF", details: "#448AFF" },
+  { bg: "#242424", title: "#FF4081", details: "#F50057" },
+  { bg: "#1B1B2F", title: "#E94560", details: "#0F3460" },
+  { bg: "#0D0D0D", title: "#C62828", details: "#FF5252" },
+  { bg: "#181818", title: "#00E676", details: "#64DD17" },
+  { bg: "#20232A", title: "#61DAFB", details: "#21A1F1" },
+  { bg: "#282C34", title: "#61DAFB", details: "#98C379" },
+  { bg: "#1C1C1E", title: "#FF9500", details: "#FFCC00" },
+  { bg: "#0F0E13", title: "#FFD600", details: "#FFEA00" },
+  { bg: "#263238", title: "#80DEEA", details: "#26C6DA" },
+  { bg: "#1A237E", title: "#C5CAE9", details: "#7986CB" },
+  { bg: "#311B92", title: "#E1BEE7", details: "#BA68C8" },
+  { bg: "#1B262C", title: "#BBDEFB", details: "#90CAF9" },
+  { bg: "#232323", title: "#FFD740", details: "#FFC400" },
+  { bg: "#272727", title: "#FF4081", details: "#F50057" },
+  { bg: "#1C1C1C", title: "#00BFA5", details: "#1DE9B6" },
+  { bg: "#0E0E10", title: "#7C4DFF", details: "#651FFF" },
+  { bg: "#161616", title: "#FFEB3B", details: "#FDD835" },
 ];
 
-// valores iniciais (primeira paleta)
 const DEFAULT_BACKGROUND = COLOR_PALETTES[0].bg;
 const DEFAULT_TITLE = COLOR_PALETTES[0].title;
 const DEFAULT_DETAILS = COLOR_PALETTES[0].details;
@@ -70,6 +176,7 @@ export default function GetStart() {
   const [menuFile, setMenuFile] = useState(null);
   const [creatingMenu, setCreatingMenu] = useState(false);
   const confirm = useConfirm();
+  const { user, loading } = useUser();
 
   // índice da paleta atual
   const [paletteIndex, setPaletteIndex] = useState(0);
@@ -80,8 +187,14 @@ export default function GetStart() {
   const [detailsColor, setDetailsColor] = useState(DEFAULT_DETAILS);
 
   // alterna checkbox de serviços
-  const toggleService = (id) =>
-    setSelectedServices((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]));
+  const toggleService = (id) => {
+    setSelectedServices((prev) => {
+      if (prev.length === 1 && prev.includes(id)) {
+        return prev;
+      }
+      return prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id];
+    });
+  };
 
   // handlers de upload
   const handleLogoChange = (e) => setLogoFile(e.target.files[0]);
@@ -104,7 +217,6 @@ export default function GetStart() {
     setDetailsColor(details);
   };
 
-  // configuração dos campos de cor
   const colorFields = [
     {
       label: "Cor do fundo:",
@@ -126,7 +238,6 @@ export default function GetStart() {
     },
   ];
 
-  // ícone de limpar/reset
   const noneIcon = (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -141,7 +252,6 @@ export default function GetStart() {
     </svg>
   );
 
-  // calcula cor de texto (black/white) com base no YIQ
   function getContrastTextColor(hex) {
     const cleanHex = (hex || DEFAULT_BACKGROUND).replace("#", "");
     const r = parseInt(cleanHex.substring(0, 2), 16);
@@ -151,26 +261,130 @@ export default function GetStart() {
     return yiq >= 128 ? "black" : "white";
   }
 
-  // envio do formulário
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loading />
+      </div>
+    );
+  }
+
+  // handleSubmit melhorado
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("[submit] iniciado");
 
     const ok = await confirm("Quer mesmo criar o cardápio com essas informações?");
-    if (!ok) return;
+    if (!ok) {
+      console.log("[submit] usuário cancelou");
+      return;
+    }
+
+    if (!user) {
+      alert("Você precisa estar logado para criar o cardápio.");
+      return;
+    }
 
     setCreatingMenu(true);
 
-    console.log({
-      establishmentName,
-      selectedServices,
-      logoFile,
-      bannerFile,
-      menuFile,
-      backgroundColor,
-      titleColor,
-      detailsColor,
-    });
-    // chamada de API ou próxima etapa...
+    try {
+      const base = establishmentName?.trim() || "meu-estabelecimento";
+      const slug = `${slugify(base)}-${Date.now().toString(36).slice(-6)}`;
+      console.log("[submit] slug:", slug);
+
+      const MAX_BYTES = 10 * 1024 * 1024; // 10MB exemplo
+      if (logoFile && logoFile.size > MAX_BYTES) {
+        throw new Error("Logo muito grande (máx 10MB). Reduza o arquivo e tente de novo.");
+      }
+      if (bannerFile && bannerFile.size > 8 * MAX_BYTES) {
+        throw new Error("Banner muito grande (máx 80MB). Reduza o arquivo e tente de novo.");
+      }
+
+      // checagens antes do upload
+      console.log("[submit] checagens antes de upload:", {
+        userId: user.id,
+        hasLogo: !!logoFile,
+        hasBanner: !!bannerFile,
+        ts: new Date().toISOString(),
+      });
+      if (!user.id) {
+        throw new Error("user.id indefinido — usuário pode não estar autenticado corretamente.");
+      }
+
+      // Faz uploads SEQUENCIAIS (isolamos problemas)
+      console.log("[submit] iniciando uploads sequenciais (isolando)", new Date().toISOString());
+      let logo_url = null;
+      let banner_url = null;
+
+      if (logoFile) {
+        try {
+          console.time("logoUpload");
+          const p = uploadFileToStorage(logoFile, user.id, slug, "logo");
+          const result = USE_TIMEOUTS ? await withTimeout(p, 30000, "logo upload") : await p;
+          console.timeEnd("logoUpload");
+          logo_url = result ?? null;
+          console.log("[submit] logo upload result:", logo_url);
+        } catch (errLogo) {
+          console.error("[submit] logo upload failed:", errLogo);
+          throw new Error("Falha no upload do logo: " + (errLogo?.message ?? JSON.stringify(errLogo)));
+        }
+      }
+
+      if (bannerFile) {
+        try {
+          console.time("bannerUpload");
+          const p2 = uploadFileToStorage(bannerFile, user.id, slug, "banner");
+          const result2 = USE_TIMEOUTS ? await withTimeout(p2, 45000, "banner upload") : await p2;
+          console.timeEnd("bannerUpload");
+          banner_url = result2 ?? null;
+          console.log("[submit] banner upload result:", banner_url);
+        } catch (errBanner) {
+          console.error("[submit] banner upload failed:", errBanner);
+          throw new Error("Falha no upload do banner: " + (errBanner?.message ?? JSON.stringify(errBanner)));
+        }
+      }
+
+      console.log("[submit] uploads finalizados:", { logo_url, banner_url });
+
+      // prepara insert (garante title não-nulo)
+      const safeTitle = establishmentName?.trim() ? establishmentName.trim() : `${slug}`;
+      const insertObj = {
+        owner_id: user.id,
+        slug,
+        title: safeTitle,
+        description: null,
+        logo_url: logo_url ?? null,
+        banner_url: banner_url ?? null,
+        services: selectedServices && selectedServices.length ? selectedServices : null,
+        background_color: backgroundColor || null,
+        title_color: titleColor || null,
+        details_color: detailsColor || null,
+      };
+
+      console.log("[submit] pronto para inserir:", insertObj);
+
+      // faz o insert com timeout configurável
+      const insertPromise = supabase.from("menus").insert([insertObj]).select().single();
+      const { data, error } = USE_TIMEOUTS ? await withTimeout(insertPromise, 15000, "db insert") : await insertPromise;
+
+      if (error) {
+        console.error("[submit] supabase error (insert):", error);
+        const errMsg = error?.message ?? JSON.stringify(error);
+        throw new Error("Supabase insert error: " + errMsg);
+      }
+
+      console.log("[submit] insert ok:", data);
+      alert("Cardápio criado com sucesso!");
+      // TODO: redirecionar: router.push(`/dashboard/menus/${data.id}`)
+    } catch (err) {
+      console.error("Erro ao criar cardápio:", err);
+      const supaMsg = err?.message ?? err?.error ?? JSON.stringify(err);
+      const details = err?.details ?? err?.hint ?? "";
+      alert("Erro ao criar cardápio: " + supaMsg + (details ? " — " + details : ""));
+    } finally {
+      setCreatingMenu(false);
+      console.log("[submit] finalizado (creatingMenu=false)", new Date().toISOString());
+    }
   };
 
   if (creatingMenu) {
@@ -332,7 +546,7 @@ export default function GetStart() {
         {/* Preview ao vivo */}
         <div className="mt-6">
           <p className="font-semibold mb-2">
-            Este é uma prévia rápida — ainda não é o cardápio final. Aqui você confere se cores, logos e imagens estão
+            Este é uma prévia rápida — ainda não è o cardápio final. Aqui você confere se cores, logos e imagens estão
             harmonizados antes de seguir adiante:
           </p>
 
