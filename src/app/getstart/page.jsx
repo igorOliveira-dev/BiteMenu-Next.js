@@ -6,6 +6,7 @@ import React, { useState } from "react";
 import { FaShoppingCart } from "react-icons/fa";
 import useUser from "@/hooks/useUser";
 import { supabase } from "@/lib/supabaseClient";
+import { useRouter } from "next/navigation";
 
 // ---- CONFIG ----
 const BUCKET = "menus"; // confirme no painel do Supabase
@@ -175,8 +176,9 @@ export default function GetStart() {
   const [bannerFile, setBannerFile] = useState(null);
   const [menuFile, setMenuFile] = useState(null);
   const [creatingMenu, setCreatingMenu] = useState(false);
-  const confirm = useConfirm();
   const { user, loading } = useUser();
+  const router = useRouter();
+  const confirm = useConfirm();
 
   // índice da paleta atual
   const [paletteIndex, setPaletteIndex] = useState(0);
@@ -269,7 +271,7 @@ export default function GetStart() {
     );
   }
 
-  // handleSubmit melhorado
+  // handleSubmit
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("[submit] iniciado");
@@ -289,15 +291,16 @@ export default function GetStart() {
 
     try {
       const base = establishmentName?.trim() || "meu-estabelecimento";
-      const slug = `${slugify(base)}-${Date.now().toString(36).slice(-6)}`;
-      console.log("[submit] slug:", slug);
+      let slug = slugify(base);
 
-      const MAX_BYTES = 10 * 1024 * 1024; // 10MB exemplo
+      console.log("[submit] slug inicial:", slug);
+
+      const MAX_BYTES = 3 * 1024 * 1024; // 3MB
       if (logoFile && logoFile.size > MAX_BYTES) {
-        throw new Error("Logo muito grande (máx 10MB). Reduza o arquivo e tente de novo.");
+        throw new Error("Logo muito grande (máx 3MB). Reduza o arquivo e tente de novo.");
       }
-      if (bannerFile && bannerFile.size > 8 * MAX_BYTES) {
-        throw new Error("Banner muito grande (máx 80MB). Reduza o arquivo e tente de novo.");
+      if (bannerFile && bannerFile.size > 4 * MAX_BYTES) {
+        throw new Error("Banner muito grande (máx 12MB). Reduza o arquivo e tente de novo.");
       }
 
       // checagens antes do upload
@@ -348,7 +351,7 @@ export default function GetStart() {
 
       // prepara insert (garante title não-nulo)
       const safeTitle = establishmentName?.trim() ? establishmentName.trim() : `${slug}`;
-      const insertObj = {
+      let insertObj = {
         owner_id: user.id,
         slug,
         title: safeTitle,
@@ -361,21 +364,83 @@ export default function GetStart() {
         details_color: detailsColor || null,
       };
 
-      console.log("[submit] pronto para inserir:", insertObj);
+      console.log("[submit] pronto para inserir (iniciando loop de tentativas):", insertObj);
 
-      // faz o insert com timeout configurável
-      const insertPromise = supabase.from("menus").insert([insertObj]).select().single();
-      const { data, error } = USE_TIMEOUTS ? await withTimeout(insertPromise, 15000, "db insert") : await insertPromise;
+      // Loop de insert com retries para tratar unique constraint (23505)
+      const MAX_INSERT_ATTEMPTS = 5;
+      let insertAttempt = 0;
+      let finalData = null;
 
-      if (error) {
-        console.error("[submit] supabase error (insert):", error);
-        const errMsg = error?.message ?? JSON.stringify(error);
-        throw new Error("Supabase insert error: " + errMsg);
+      // baseSlug sem sufixo numérico (usado para incrementar)
+      const baseSlug = slug.replace(/-\d+$/, "");
+
+      while (insertAttempt < MAX_INSERT_ATTEMPTS) {
+        insertAttempt++;
+        try {
+          console.log(`[submit] insert attempt ${insertAttempt} slug=${slug}`);
+
+          // garante que o objeto tem o slug atual
+          insertObj.slug = slug;
+
+          const insertPromise = supabase.from("menus").insert([insertObj]).select().single();
+          const result = USE_TIMEOUTS ? await withTimeout(insertPromise, 15000, "db insert") : await insertPromise;
+          const { data: inserted, error: insertError } = result || {};
+
+          if (insertError) {
+            console.error("[submit] supabase insert error object:", insertError);
+
+            // trata duplicate key (unique violation)
+            const isDuplicate =
+              insertError.code === "23505" ||
+              (insertError?.message && insertError.message.toLowerCase().includes("duplicate"));
+
+            if (isDuplicate) {
+              console.warn("[submit] duplicate slug detected on insert attempt", insertAttempt, "slug:", slug);
+
+              // se já tem sufixo numérico, incrementa; senão começa com -1
+              const suffixMatch = slug.match(/-(\d+)$/);
+              if (suffixMatch) {
+                const nextNum = parseInt(suffixMatch[1], 10) + 1;
+                slug = `${baseSlug}-${nextNum}`;
+              } else {
+                slug = `${baseSlug}-1`;
+              }
+              insertObj.slug = slug;
+              console.log("[submit] retrying with new slug:", slug);
+              continue; // tenta novamente
+            }
+
+            // outro erro de insert -> lança para o catch externo
+            throw insertError;
+          }
+
+          // sucesso!
+          finalData = inserted ?? result?.data ?? null;
+          console.log("[submit] insert ok:", finalData);
+          break;
+        } catch (err) {
+          console.error(`[submit] insert attempt ${insertAttempt} failed:`, err);
+
+          // se última tentativa, rethrow
+          if (insertAttempt >= MAX_INSERT_ATTEMPTS) {
+            throw err;
+          }
+
+          // fallback: gera slug aleatório curto e tenta de novo
+          const randomSuffix = Math.random().toString(36).substring(2, 6);
+          slug = `${baseSlug}-${randomSuffix}`;
+          insertObj.slug = slug;
+          console.log(`[submit] fallback new slug for next attempt: ${slug}`);
+          // loop continua
+        }
       }
 
-      console.log("[submit] insert ok:", data);
-      alert("Cardápio criado com sucesso!");
-      // TODO: redirecionar: router.push(`/dashboard/menus/${data.id}`)
+      if (!finalData) {
+        throw new Error("Não foi possível criar o cardápio depois de várias tentativas.");
+      }
+
+      console.log("Cardápio criado com sucesso!", finalData);
+      router.push("/dashboard");
     } catch (err) {
       console.error("Erro ao criar cardápio:", err);
       const supaMsg = err?.message ?? err?.error ?? JSON.stringify(err);
