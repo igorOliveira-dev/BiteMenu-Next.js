@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import Loading from "@/components/Loading";
 import useUser from "@/hooks/useUser";
+import Image from "next/image";
+import LogoMark from "../../../public/LogoMarca-sem-fundo.png";
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
@@ -42,5 +44,12 @@ export default function DashboardLayout({ children }) {
     );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <header className="p-2 m-2 my-3 bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)]">
+        <Image src={LogoMark} height={50} width={180} alt="Bite Menu" />
+      </header>
+      <main>{children}</main>
+    </>
+  );
 }
