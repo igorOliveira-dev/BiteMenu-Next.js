@@ -7,6 +7,7 @@ import Loading from "@/components/Loading";
 import useUser from "@/hooks/useUser";
 import Image from "next/image";
 import LogoMark from "../../../public/LogoMarca-sem-fundo.png";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
@@ -46,8 +47,9 @@ export default function DashboardLayout({ children }) {
 
   return (
     <>
-      <header className="p-2 m-2 my-3 bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)]">
+      <header className="flex items-center justify-between p-2 m-2 my-3 bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)]">
         <Image src={LogoMark} height={50} width={180} alt="Bite Menu" />
+        <ThemeToggle />
       </header>
       <main>{children}</main>
     </>

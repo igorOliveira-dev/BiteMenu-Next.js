@@ -4,7 +4,7 @@ import Loading from "@/components/Loading";
 import { useRouter } from "next/navigation";
 import useUser from "@/hooks/useUser";
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient"; // 👈 IMPORTANTE
+import { supabase } from "@/lib/supabaseClient";
 
 export default function GetstartLayout({ children }) {
   const router = useRouter();

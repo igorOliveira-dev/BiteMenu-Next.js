@@ -9,8 +9,8 @@ import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 
 // ---- CONFIG ----
-const BUCKET = "menus"; // confirme no painel do Supabase
-const USE_TIMEOUTS = true; // ativado por segurança/debug; desative se quiser
+const BUCKET = "menus";
+const USE_TIMEOUTS = true; // ativado por segurança/debug;
 // -----------------
 
 // ---- helpers ----
