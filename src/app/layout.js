@@ -1,5 +1,6 @@
 import { ConfirmProvider } from "@/providers/ConfirmProvider";
 import "./globals.css";
+import { AlertProvider } from "@/providers/AlertProvider";
 
 export const metadata = {
   title: "Bite Menu - Crie seu cardápio digital",
@@ -11,7 +12,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="pt-br">
       <body className={`antialiased`}>
-        <ConfirmProvider>{children}</ConfirmProvider>
+        <ConfirmProvider>
+          <AlertProvider>{children}</AlertProvider>
+        </ConfirmProvider>
       </body>
     </html>
   );

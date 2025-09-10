@@ -37,7 +37,7 @@ export default function DashboardLayout({ children }) {
     }
   }, [user, loading, router]);
 
-  if (loading || checkingMenu) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loading />
