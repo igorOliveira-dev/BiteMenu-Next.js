@@ -58,15 +58,22 @@ const Dashboard = () => {
           >
             Vendas
           </button>
+          <hr className="hidden lg:block border w-full opacity-50" />
           <button
             className="w-full hidden lg:block p-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)]"
-            onClick={() => setSelectedTab("support")}
+            onClick={() => customAlert("conta")}
+          >
+            Conta
+          </button>
+          <button
+            className="w-full hidden lg:block p-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)]"
+            onClick={() => customAlert("suporte")}
           >
             Suporte
           </button>
           <button
             className="w-full hidden lg:block p-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)]"
-            onClick={() => setSelectedTab("privacityPolicies")}
+            onClick={() => customAlert("políticas de privacidade")}
           >
             Políticas de privacidade
           </button>
@@ -140,6 +147,14 @@ const Dashboard = () => {
             </div>
 
             <ul className="flex flex-col">
+              <li>
+                <button
+                  className="w-full text-left px-2 py-2 hover:bg-white/10 rounded"
+                  onClick={() => customAlert("conta")}
+                >
+                  Conta
+                </button>
+              </li>
               <li>
                 <button
                   className="w-full text-left px-2 py-2 hover:bg-white/10 rounded"
