@@ -34,7 +34,7 @@ export function AlertProvider({ children }) {
         {alerts.map((a) => (
           <div
             key={a.id}
-            className={`border border-[var(--background)] m-1 relative w-60 sm:w-80 px-4 py-3 rounded shadow transform transition-all duration-300 ease-in-out backdrop-blur-md
+            className={`border border-[var(--background)] m-1 relative w-60 sm:w-80 px-4 py-3 pr-5 rounded shadow transform transition-all duration-300 ease-in-out backdrop-blur-md
               ${a.type === "error" ? "bg-[#ff000050]" : a.type === "success" ? "bg-[#00ff0050]" : "var(--translucid)"}
               ${a.visible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-5"}
             `}

@@ -2,22 +2,32 @@
 
 import LogoMark from "../../../public/LogoMarca-sem-fundo.png";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { supabase } from "@/lib/supabaseClient";
 import Image from "next/image";
 import Link from "next/link";
+import { useAlert } from "@/providers/AlertProvider";
 
 export default function SignUp() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const customAlert = useAlert();
+
+  useEffect(() => {
+    if (error != null) {
+      customAlert(error, "error");
+      setError(null);
+    }
+  }, [error]);
 
   const handleSignUp = async (e) => {
     e.preventDefault();
@@ -28,6 +38,11 @@ export default function SignUp() {
       const phoneNumber = parsePhoneNumberFromString(rawValue);
       if (!phoneNumber || !phoneNumber.isValid()) {
         setError("Telefone inválido.");
+        return;
+      }
+
+      if (confirmPassword != password) {
+        setError("As senhas não coincidem.");
         return;
       }
 
@@ -135,6 +150,17 @@ export default function SignUp() {
               required
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Confirmar senha</label>
+            <input
+              className="w-[300px] px-3 py-2 bg-translucid border border-low-gray rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+              type="password"
+              placeholder="Repita a senha"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
+          </div>
 
           <div>
             <p className="text-center">
@@ -158,8 +184,6 @@ export default function SignUp() {
               "Registrar"
             )}
           </button>
-
-          {error && <p className="text-red-600 text-center mt-2">{error}</p>}
         </form>
       </div>
       <div className="ml-20 text-center max-w-[500px] hidden lg:block">

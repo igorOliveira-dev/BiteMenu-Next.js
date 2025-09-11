@@ -2,10 +2,11 @@
 
 import LogoMark from "../../../public/LogoMarca-sem-fundo.png";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import Image from "next/image";
 import Link from "next/link";
+import { useAlert } from "@/providers/AlertProvider";
 
 export default function SignIn() {
   const router = useRouter();
@@ -13,6 +14,14 @@ export default function SignIn() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const customAlert = useAlert();
+
+  useEffect(() => {
+    if (error != null) {
+      customAlert(error, "error");
+      setError(null);
+    }
+  }, [error]);
 
   const handleSignIn = async (e) => {
     e.preventDefault();
@@ -103,8 +112,6 @@ export default function SignIn() {
               "Entrar"
             )}
           </button>
-
-          {error && <p className="text-red-600 text-center mt-2">{error}</p>}
         </form>
       </div>
       <div className="ml-20 text-center max-w-[500px] hidden lg:block">
