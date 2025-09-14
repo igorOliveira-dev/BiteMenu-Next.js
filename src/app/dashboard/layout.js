@@ -45,7 +45,7 @@ export default function DashboardLayout({ children }) {
     useEffect(() => {
       const timeout = setTimeout(() => {
         window.location.reload();
-      }, 1000);
+      }, 3000);
 
       return () => clearTimeout(timeout);
     }, []);
