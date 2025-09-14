@@ -9,41 +9,45 @@ export default function useUser() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
+    let mounted = true;
 
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
       const currentUser = session?.user ?? null;
       setUser(currentUser);
-
-      if (currentUser) {
-        const { data: profileData } = await supabase.from("profiles").select("*").eq("id", currentUser.id).single();
-
-        setProfile(profileData);
-      }
-
       setLoading(false);
-    };
-
-    fetchUser();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
 
       if (currentUser) {
-        const { data: profileData } = await supabase.from("profiles").select("*").eq("id", currentUser.id).single();
-
-        setProfile(profileData);
+        supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", currentUser.id)
+          .single()
+          .then(({ data }) => mounted && setProfile(data ?? null));
       } else {
         setProfile(null);
       }
     });
 
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      setLoading(false);
+
+      if (currentUser) {
+        supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", currentUser.id)
+          .single()
+          .then(({ data }) => mounted && setProfile(data ?? null));
+      }
+    });
+
     return () => {
-      authListener.subscription.unsubscribe();
+      mounted = false;
+      listener.subscription.unsubscribe();
     };
   }, []);
 

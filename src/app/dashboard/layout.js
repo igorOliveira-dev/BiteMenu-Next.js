@@ -16,32 +16,24 @@ export default function DashboardLayout({ children }) {
 
   useEffect(() => {
     const checkUserMenu = async () => {
-      console.log("checkUserMenu disparado:", { loading, user });
+      if (!user) {
+        // se user é null e loading já acabou → redireciona login
+        if (!loading) router.replace("/login");
+        return;
+      }
 
-      if (!loading) {
-        if (!user) {
-          console.log("Nenhum usuário encontrado → redirecionando para login");
-          router.replace("/login");
-          return;
-        }
-
-        console.log("Usuário encontrado, buscando menus...");
-        const { data: menus, error } = await supabase.from("menus").select("id").eq("owner_id", user.id);
-
-        console.log("Resultado menus:", { menus, error });
-
-        if (error) {
-          console.error("Erro ao buscar menus:", error);
-        }
+      try {
+        const { data: menus } = await supabase.from("menus").select("id").eq("owner_id", user.id);
 
         if (!menus || menus.length === 0) {
-          console.log("Nenhum menu encontrado → redirecionando para getstart");
           router.replace("/getstart");
           return;
         }
 
-        console.log("Menu encontrado → liberando layout");
         setCheckingMenu(false);
+      } catch (err) {
+        console.error("Erro ao buscar menus:", err);
+        setCheckingMenu(false); // garante que não trava o loader
       }
     };
 
