@@ -6,6 +6,7 @@ import Menu from "./tabs/Menu";
 import Orders from "./tabs/Orders";
 import Sales from "./tabs/Sales";
 import { useAlert } from "@/providers/AlertProvider";
+import ConfigMenu from "./tabs/ConfigMenu";
 
 const Dashboard = () => {
   const { menu, loading } = useMenu();
@@ -103,13 +104,16 @@ const Dashboard = () => {
       {/* Main content */}
       <main className="w-[100dvw] lg:w-[calc(100dvw-256px)] h-[calc(100dvh-160px)] lg:h-[calc(100dvh-100px)] overflow-auto scrollbar-none">
         <div className={selectedTab === "menu" ? "block" : "hidden"}>
-          <Menu />
+          <Menu setSelectedTab={setSelectedTab} />
         </div>
         <div className={selectedTab === "orders" ? "block" : "hidden"}>
           <Orders />
         </div>
         <div className={selectedTab === "sales" ? "block" : "hidden"}>
           <Sales />
+        </div>
+        <div className={selectedTab === "configMenu" ? "block" : "hidden"}>
+          <ConfigMenu />
         </div>
       </main>
 

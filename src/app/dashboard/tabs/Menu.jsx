@@ -4,7 +4,7 @@ import { useAlert } from "@/providers/AlertProvider";
 import useMenu from "@/hooks/useMenu";
 import Image from "next/image";
 
-const Menu = () => {
+const Menu = ({ setSelectedTab }) => {
   const { menu, loading } = useMenu();
   const baseUrl = window.location.origin;
   const customAlert = useAlert();
@@ -24,6 +24,10 @@ const Menu = () => {
 
   const accessMenu = () => {
     window.open(`${baseUrl}/menu/${menu.slug}`, "_blank");
+  };
+
+  const configTab = () => {
+    setSelectedTab("configMenu");
   };
 
   return (
@@ -52,20 +56,28 @@ const Menu = () => {
           </h1>
         </div>
       </div>
-      <aside className="p-2 pt-4 m-2 fixed right-0 rounded-lg bg-translucid w-[calc(30dvw-36px)] shadow-[0_0_10px_var(--shadow)] flex items-center flex-col overflow-hidden h-[calc(100dvh-110px)]">
-        <div>
-          <h3>Compartilhe seu cardápio!</h3>
+      <aside className="hidden p-2 pt-4 m-2 fixed right-0 rounded-lg bg-translucid w-[calc(30dvw-36px)] shadow-[0_0_10px_var(--shadow)] lg:flex items-center flex-col overflow-hidden h-[calc(100dvh-110px)]">
+        <div className="h-full py-4 flex flex-col justify-between">
+          <div>
+            <h3>Compartilhe seu cardápio!</h3>
+            <button
+              onClick={copyLink}
+              className="cursor-pointer w-full max-w-[320px] mt-2 p-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
+            >
+              Copiar link
+            </button>
+            <button
+              onClick={accessMenu}
+              className="cursor-pointer w-full max-w-[320px] mt-2 p-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition"
+            >
+              Acessar cardápio
+            </button>
+          </div>
           <button
-            onClick={copyLink}
-            className="cursor-pointer w-full mt-2 p-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
+            onClick={configTab}
+            className="cursor-pointer w-full max-w-[320px] mt-2 p-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition"
           >
-            Copiar link
-          </button>
-          <button
-            onClick={accessMenu}
-            className="cursor-pointer w-full mt-2 p-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition"
-          >
-            Acessar cardápio
+            Configurar cardápio
           </button>
         </div>
       </aside>
