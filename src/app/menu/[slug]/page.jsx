@@ -1,6 +1,7 @@
 // app/menu/[slug]/page.jsx
 import { supabase } from "@/lib/supabaseClient";
 import Image from "next/image";
+import NotFoundMenu from "../NotFoundMenu";
 
 export default async function MenuPage({ params }) {
   const slug = (await params).slug;
@@ -32,7 +33,7 @@ export default async function MenuPage({ params }) {
     .single();
 
   if (!menu) {
-    return <div>Cardápio não encontrado</div>;
+    return <NotFoundMenu />;
   }
 
   return (

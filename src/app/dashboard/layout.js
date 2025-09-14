@@ -38,6 +38,18 @@ export default function DashboardLayout({ children }) {
   }, [user, loading, router]);
 
   if (loading) {
+    return <AutoReloadAfterDelay />;
+  }
+
+  function AutoReloadAfterDelay() {
+    useEffect(() => {
+      const timeout = setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+
+      return () => clearTimeout(timeout);
+    }, []);
+
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loading />
