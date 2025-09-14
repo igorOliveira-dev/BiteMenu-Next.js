@@ -13,43 +13,42 @@ export default function DashboardLayout({ children }) {
   const router = useRouter();
   const { user, loading } = useUser();
   const [checkingMenu, setCheckingMenu] = useState(true);
-  const [hasMenu, setHasMenu] = useState(false);
 
   useEffect(() => {
     const checkUserMenu = async () => {
-      if (!loading && user) {
-        const { data: menus } = await supabase.from("menus").select("id").eq("owner_id", user.id);
+      console.log("checkUserMenu disparado:", { loading, user });
+
+      if (!loading) {
+        if (!user) {
+          console.log("Nenhum usuário encontrado → redirecionando para login");
+          router.replace("/login");
+          return;
+        }
+
+        console.log("Usuário encontrado, buscando menus...");
+        const { data: menus, error } = await supabase.from("menus").select("id").eq("owner_id", user.id);
+
+        console.log("Resultado menus:", { menus, error });
+
+        if (error) {
+          console.error("Erro ao buscar menus:", error);
+        }
 
         if (!menus || menus.length === 0) {
+          console.log("Nenhum menu encontrado → redirecionando para getstart");
           router.replace("/getstart");
           return;
         }
 
-        setHasMenu(true);
+        console.log("Menu encontrado → liberando layout");
         setCheckingMenu(false);
       }
     };
 
-    if (!loading && user) {
-      checkUserMenu();
-    } else if (!loading && !user) {
-      router.replace("/login");
-    }
+    checkUserMenu();
   }, [user, loading, router]);
 
-  if (loading) {
-    return <AutoReloadAfterDelay />;
-  }
-
-  function AutoReloadAfterDelay() {
-    useEffect(() => {
-      const timeout = setTimeout(() => {
-        window.location.reload();
-      }, 3000);
-
-      return () => clearTimeout(timeout);
-    }, []);
-
+  if (loading || checkingMenu) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loading />
