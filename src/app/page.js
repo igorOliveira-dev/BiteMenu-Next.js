@@ -6,7 +6,7 @@ export default function Home() {
       <section>
         <h1>Bite Menu</h1>
         <h2>Seu criador de cardápios digitais</h2>
-        <p>Landing page</p>
+        <p>Este site não está pronto para ser usado. Por favor, volte aqui em outro momento!</p>
       </section>
     </>
   );
