@@ -3,6 +3,7 @@
 import { useAlert } from "@/providers/AlertProvider";
 import useMenu from "@/hooks/useMenu";
 import Image from "next/image";
+import { FiSettings } from "react-icons/fi";
 
 const Menu = ({ setSelectedTab }) => {
   const { menu, loading } = useMenu();
@@ -33,7 +34,7 @@ const Menu = ({ setSelectedTab }) => {
   return (
     <div className="px-2 lg:grid">
       <div
-        className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[768px] h-[800px] rounded-lg"
+        className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[768px] h-[800px]"
         style={{ backgroundColor: menu.background_color }}
       >
         {menu.banner_url ? (
@@ -56,6 +57,13 @@ const Menu = ({ setSelectedTab }) => {
           </h1>
         </div>
       </div>
+      <button
+        onClick={configTab}
+        className="cursor-pointer m-4 px-4 py-2 max-w-[320px] bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition fixed top-22 right-0 lg:hidden flex items-center"
+      >
+        <FiSettings className="text-2xl mr-2" />
+        Configurar cardápio
+      </button>
       <aside className="hidden p-2 pt-4 m-2 fixed right-0 rounded-lg bg-translucid w-[calc(30dvw-36px)] shadow-[0_0_10px_var(--shadow)] lg:flex items-center flex-col overflow-hidden h-[calc(100dvh-110px)]">
         <div className="h-full py-4 flex flex-col justify-between">
           <div>
@@ -75,8 +83,9 @@ const Menu = ({ setSelectedTab }) => {
           </div>
           <button
             onClick={configTab}
-            className="cursor-pointer w-full max-w-[320px] mt-2 p-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition"
+            className="cursor-pointer w-full max-w-[320px] mt-2 p-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition flex items-center justify-center"
           >
+            <FiSettings className="text-xl mr-2" />
             Configurar cardápio
           </button>
         </div>
