@@ -100,6 +100,10 @@ h3 {
   background-color: var(--translucid);
 }
 
+.bg-translucid-50 {
+  background-color: #444444;
+}
+
 .hover-bg-translucid:hover {
   background-color: var(--translucid);
 }
