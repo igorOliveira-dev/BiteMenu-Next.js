@@ -157,9 +157,18 @@ export default function GetStart() {
   };
 
   // handlers de upload
-  const handleLogoChange = (e) => setLogoFile(e.target.files[0]);
-  const handleBannerChange = (e) => setBannerFile(e.target.files[0]);
-  const handleMenuChange = (e) => setMenuFile(e.target.files[0]);
+  const handleLogoChange = (e) => {
+    if (e.target.files?.length) setLogoFile(e.target.files[0]);
+    e.target.value = ""; // reset do input para permitir selecionar o mesmo arquivo depois
+  };
+  const handleBannerChange = (e) => {
+    if (e.target.files?.length) setBannerFile(e.target.files[0]);
+    e.target.value = "";
+  };
+  const handleMenuChange = (e) => {
+    if (e.target.files?.length) setMenuFile(e.target.files[0]);
+    e.target.value = "";
+  };
 
   // reset pro default da paleta atual
   const clearColor = (setter, defaultValue) => setter(defaultValue);
@@ -482,10 +491,17 @@ export default function GetStart() {
             ) : (
               <span className="color-gray">Clique aqui para inserir sua logo (1:1)</span>
             )}
-            <input type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
+            <input id="logoInput" type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
           </label>
           {logoFile && (
-            <button type="button" onClick={() => setLogoFile(null)} className="mt-1 text-sm text-red-500 hover:underline">
+            <button
+              type="button"
+              onClick={() => {
+                setLogoFile(null);
+                document.querySelector("#logoInput").value = "";
+              }}
+              className="mt-1 text-sm text-red-500 hover:underline"
+            >
               Remover logo
             </button>
           )}
@@ -500,10 +516,17 @@ export default function GetStart() {
             ) : (
               <span className="color-gray">Clique aqui para inserir seu banner (1640×664)</span>
             )}
-            <input type="file" accept="image/*" onChange={handleBannerChange} className="hidden" />
+            <input id="bannerInput" type="file" accept="image/*" onChange={handleBannerChange} className="hidden" />
           </label>
           {bannerFile && (
-            <button type="button" onClick={() => setBannerFile(null)} className="mt-1 text-sm text-red-500 hover:underline">
+            <button
+              type="button"
+              onClick={() => {
+                setBannerFile(null);
+                document.querySelector("#bannerInput").value = "";
+              }}
+              className="mt-1 text-sm text-red-500 hover:underline"
+            >
               Remover banner
             </button>
           )}
@@ -522,10 +545,17 @@ export default function GetStart() {
             ) : (
               <span className="color-gray px-4">Clique aqui para inserir seu cardápio</span>
             )}
-            <input type="file" accept="image/*,.pdf" onChange={handleMenuChange} className="hidden" />
+            <input id="menuInput" type="file" accept="image/*,.pdf" onChange={handleMenuChange} className="hidden" />
           </label>
           {menuFile && (
-            <button type="button" onClick={() => setMenuFile(null)} className="mt-1 text-sm text-red-500 hover:underline">
+            <button
+              type="button"
+              onClick={() => {
+                setMenuFile(null);
+                document.querySelector("#menuInput").value = "";
+              }}
+              className="mt-1 text-sm text-red-500 hover:underline"
+            >
               Remover cardápio
             </button>
           )}

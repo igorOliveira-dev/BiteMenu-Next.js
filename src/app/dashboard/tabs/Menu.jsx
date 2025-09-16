@@ -13,6 +13,10 @@ const Menu = ({ setSelectedTab }) => {
   const baseUrl = window.location.origin;
   const customAlert = useAlert();
 
+  // estados de controle de arquivos (null é o valor correto!)
+  const [bannerFile, setBannerFile] = useState(null);
+  const [logoFile, setLogoFile] = useState(null);
+
   // estados para controlar os modais
   const [titleModalOpen, setTitleModalOpen] = useState(false);
   const [bannerModalOpen, setBannerModalOpen] = useState(false);
@@ -21,10 +25,19 @@ const Menu = ({ setSelectedTab }) => {
   if (loading) return <></>;
   if (!menu) return <p>Você ainda não criou seu menu.</p>;
 
-  const copyLink = () => {
-    const baseUrl = window.location.origin;
-    const fullUrl = `${baseUrl}/menu/${menu.slug}`;
+  // handlers de troca de imagem
+  const handleLogoChange = (e) => {
+    if (e.target.files?.length) setLogoFile(e.target.files[0]);
+    e.target.value = "";
+  };
 
+  const handleBannerChange = (e) => {
+    if (e.target.files?.length) setBannerFile(e.target.files[0]);
+    e.target.value = "";
+  };
+
+  const copyLink = () => {
+    const fullUrl = `${baseUrl}/menu/${menu.slug}`;
     navigator.clipboard
       .writeText(fullUrl)
       .then(() => customAlert("Link copiado!"))
@@ -47,8 +60,15 @@ const Menu = ({ setSelectedTab }) => {
           style={{ backgroundColor: menu.background_color }}
         >
           {/* Banner */}
-          {menu.banner_url ? (
-            <div className="relative w-full max-w-full h-[25dvh]">
+          <div className="relative w-full max-w-full h-[25dvh]">
+            {bannerFile ? (
+              <Image
+                alt="Preview do banner"
+                src={URL.createObjectURL(bannerFile)}
+                fill
+                className="object-cover cursor-pointer"
+              />
+            ) : menu.banner_url ? (
               <Image
                 alt="Banner do estabelecimento"
                 src={menu.banner_url}
@@ -56,22 +76,29 @@ const Menu = ({ setSelectedTab }) => {
                 className="object-cover cursor-pointer"
                 priority
               />
-              {/* Botão de trocar banner no centro */}
-              <button
-                onClick={() => setBannerModalOpen(true)}
-                className="cursor-pointer absolute inset-0 flex items-end justify-end opacity-75 hover:opacity-100 transition"
-              >
-                <div className="border border-2 border-gray-500 m-2 p-1.5 rounded-xl bg-translucid-50 transition">
-                  <FaCamera className="text-2xl text-white" />
-                </div>
-              </button>
-            </div>
-          ) : null}
+            ) : null}
+            {/* Botão de trocar banner */}
+            <button
+              onClick={() => setBannerModalOpen(true)}
+              className="cursor-pointer absolute inset-0 flex items-end justify-end opacity-75 hover:opacity-100 transition"
+            >
+              <div className="border border-2 border-gray-500 m-2 p-1.5 rounded-xl bg-translucid-50 transition">
+                <FaCamera className="text-2xl text-white" />
+              </div>
+            </button>
+          </div>
 
           <div className="flex items-center py-4 px-4">
             {/* Logo */}
-            {menu.logo_url ? (
-              <div className="relative w-full max-w-[80px] aspect-[1/1]">
+            <div className="relative w-full max-w-[80px] aspect-[1/1]">
+              {logoFile ? (
+                <Image
+                  alt="Preview da logo"
+                  src={URL.createObjectURL(logoFile)}
+                  fill
+                  className="object-cover rounded-lg cursor-pointer"
+                />
+              ) : menu.logo_url ? (
                 <Image
                   alt="Logo do estabelecimento"
                   src={menu.logo_url}
@@ -79,20 +106,20 @@ const Menu = ({ setSelectedTab }) => {
                   className="object-cover rounded-lg cursor-pointer"
                   priority
                 />
-                {/* Botão de trocar logo no centro */}
-                <button
-                  onClick={() => setBannerModalOpen(true)}
-                  className="cursor-pointer absolute inset-0 flex items-end justify-end opacity-75 hover:opacity-100 transition"
-                >
-                  <div className="border border-2 border-gray-500 m-1 p-1.5 rounded-xl bg-translucid-50 transition">
-                    <FaCamera className="text-xl text-white" />
-                  </div>
-                </button>
-              </div>
-            ) : null}
+              ) : null}
+              {/* Botão de trocar logo */}
+              <button
+                onClick={() => setLogoModalOpen(true)}
+                className="cursor-pointer absolute inset-0 flex items-end justify-end opacity-75 hover:opacity-100 transition"
+              >
+                <div className="border border-2 border-gray-500 m-1 p-1.5 rounded-xl bg-translucid-50 transition">
+                  <FaCamera className="text-xl text-white" />
+                </div>
+              </button>
+            </div>
 
             {/* Título */}
-            <h1 className={`text-md md:text-2xl font-bold ml-4`} style={{ color: menu.title_color }}>
+            <h1 className="text-md md:text-2xl font-bold ml-4" style={{ color: menu.title_color }}>
               {menu.title}
             </h1>
             <button
@@ -142,7 +169,7 @@ const Menu = ({ setSelectedTab }) => {
         </aside>
       </div>
 
-      {/* Modal de trocar título */}
+      {/* Modal de título */}
       {titleModalOpen && (
         <GenericModal onClose={() => setTitleModalOpen(false)}>
           <h3 className="font-bold mb-4">Alterar nome</h3>
@@ -167,12 +194,31 @@ const Menu = ({ setSelectedTab }) => {
         </GenericModal>
       )}
 
-      {/* Modal de trocar banner */}
+      {/* Modal de banner */}
       {bannerModalOpen && (
         <GenericModal onClose={() => setBannerModalOpen(false)}>
           <h3 className="font-bold mb-4">Alterar banner</h3>
-          <input type="file" accept="image/*" className="w-full mb-4" />
-          <div className="flex justify-end gap-2">
+          <label className="text-center flex flex-col items-center justify-center w-full h-30 border-2 border-dashed border-[var(--gray)] rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
+            {bannerFile ? (
+              <img src={URL.createObjectURL(bannerFile)} alt="Preview do banner" className="object-cover w-full h-full" />
+            ) : (
+              <span className="color-gray">Clique aqui para inserir seu banner (1640×664)</span>
+            )}
+            <input id="bannerInput" type="file" accept="image/*" className="hidden" onChange={handleBannerChange} />
+          </label>
+          {bannerFile && (
+            <button
+              type="button"
+              onClick={() => {
+                setBannerFile(null);
+                document.querySelector("#bannerInput").value = "";
+              }}
+              className="mt-1 text-sm text-red-500 hover:underline"
+            >
+              Remover banner
+            </button>
+          )}
+          <div className="flex justify-end gap-2 mt-4">
             <button
               onClick={() => setBannerModalOpen(false)}
               className="cursor-pointer px-4 py-2 bg-gray-600 rounded hover:bg-gray-500 transition text-white"
@@ -192,12 +238,31 @@ const Menu = ({ setSelectedTab }) => {
         </GenericModal>
       )}
 
-      {/* Modal de trocar logo */}
+      {/* Modal de logo */}
       {logoModalOpen && (
         <GenericModal onClose={() => setLogoModalOpen(false)}>
           <h3 className="font-bold mb-4">Alterar logo</h3>
-          <input type="file" accept="image/*" className="w-full mb-4" />
-          <div className="flex justify-end gap-2">
+          <label className="text-center flex flex-col items-center justify-center w-30 h-30 border-2 border-dashed border-[var(--gray)] rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
+            {logoFile ? (
+              <img src={URL.createObjectURL(logoFile)} alt="Preview da logo" className="w-full h-full" />
+            ) : (
+              <span className="color-gray m-4">Clique aqui para inserir sua logo (1:1)</span>
+            )}
+            <input id="logoInput" type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
+          </label>
+          {logoFile && (
+            <button
+              type="button"
+              onClick={() => {
+                setLogoFile(null);
+                document.querySelector("#logoInput").value = "";
+              }}
+              className="mt-1 text-sm text-red-500 hover:underline"
+            >
+              Remover logo
+            </button>
+          )}
+          <div className="flex justify-end gap-2 mt-4">
             <button
               onClick={() => setLogoModalOpen(false)}
               className="cursor-pointer px-4 py-2 bg-gray-600 rounded hover:bg-gray-500 transition text-white"
