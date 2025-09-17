@@ -6,23 +6,49 @@ import Image from "next/image";
 import { FaPen, FaCamera } from "react-icons/fa";
 import { FiSettings } from "react-icons/fi";
 import GenericModal from "@/components/GenericModal";
-import { useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import Loading from "@/components/Loading";
 
 const Menu = ({ setSelectedTab }) => {
   const { menu, loading } = useMenu();
   const baseUrl = window.location.origin;
   const customAlert = useAlert();
 
-  // estados de controle de arquivos (null é o valor correto!)
-  const [bannerFile, setBannerFile] = useState(null);
-  const [logoFile, setLogoFile] = useState(null);
+  // estados de controle de arquivos
+  const [bannerFile, setBannerFile] = useState(menu?.banner_url);
+  const [logoFile, setLogoFile] = useState(menu?.logo_url);
 
   // estados para controlar os modais
   const [titleModalOpen, setTitleModalOpen] = useState(false);
   const [bannerModalOpen, setBannerModalOpen] = useState(false);
   const [logoModalOpen, setLogoModalOpen] = useState(false);
 
-  if (loading) return <></>;
+  // sincroniza arquivos quando menu muda
+  useEffect(() => {
+    if (menu?.logo_url) setLogoFile(menu.logo_url);
+    if (menu?.banner_url) setBannerFile(menu.banner_url);
+  }, [menu]);
+
+  // gera URLs seguras para preview
+  const bannerPreview = useMemo(() => {
+    if (bannerFile instanceof File) return URL.createObjectURL(bannerFile);
+    return bannerFile; // pode ser string (url do supabase)
+  }, [bannerFile]);
+
+  const logoPreview = useMemo(() => {
+    if (logoFile instanceof File) return URL.createObjectURL(logoFile);
+    return logoFile;
+  }, [logoFile]);
+
+  // limpa URLs criadas para evitar memory leaks
+  useEffect(() => {
+    return () => {
+      if (bannerFile instanceof File) URL.revokeObjectURL(bannerPreview);
+      if (logoFile instanceof File) URL.revokeObjectURL(logoPreview);
+    };
+  }, [bannerPreview, logoPreview, bannerFile, logoFile]);
+
+  if (loading) return <Loading />;
   if (!menu) return <p>Você ainda não criou seu menu.</p>;
 
   // handlers de troca de imagem
@@ -61,21 +87,8 @@ const Menu = ({ setSelectedTab }) => {
         >
           {/* Banner */}
           <div className="relative w-full max-w-full h-[25dvh]">
-            {bannerFile ? (
-              <Image
-                alt="Preview do banner"
-                src={URL.createObjectURL(bannerFile)}
-                fill
-                className="object-cover cursor-pointer"
-              />
-            ) : menu.banner_url ? (
-              <Image
-                alt="Banner do estabelecimento"
-                src={menu.banner_url}
-                fill
-                className="object-cover cursor-pointer"
-                priority
-              />
+            {bannerPreview ? (
+              <Image alt="Preview do banner" src={bannerPreview} fill className="object-cover cursor-pointer" />
             ) : null}
             {/* Botão de trocar banner */}
             <button
@@ -91,21 +104,8 @@ const Menu = ({ setSelectedTab }) => {
           <div className="flex items-center py-4 px-4">
             {/* Logo */}
             <div className="relative w-full max-w-[80px] aspect-[1/1]">
-              {logoFile ? (
-                <Image
-                  alt="Preview da logo"
-                  src={URL.createObjectURL(logoFile)}
-                  fill
-                  className="object-cover rounded-lg cursor-pointer"
-                />
-              ) : menu.logo_url ? (
-                <Image
-                  alt="Logo do estabelecimento"
-                  src={menu.logo_url}
-                  fill
-                  className="object-cover rounded-lg cursor-pointer"
-                  priority
-                />
+              {logoPreview ? (
+                <Image alt="Preview da logo" src={logoPreview} fill className="object-cover rounded-lg cursor-pointer" />
               ) : null}
               {/* Botão de trocar logo */}
               <button
@@ -199,8 +199,8 @@ const Menu = ({ setSelectedTab }) => {
         <GenericModal onClose={() => setBannerModalOpen(false)}>
           <h3 className="font-bold mb-4">Alterar banner</h3>
           <label className="text-center flex flex-col items-center justify-center w-full h-30 border-2 border-dashed border-[var(--gray)] rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
-            {bannerFile ? (
-              <img src={URL.createObjectURL(bannerFile)} alt="Preview do banner" className="object-cover w-full h-full" />
+            {bannerPreview ? (
+              <img src={bannerPreview} alt="Preview do banner" className="object-cover w-full h-full" />
             ) : (
               <span className="color-gray">Clique aqui para inserir seu banner (1640×664)</span>
             )}
@@ -243,8 +243,8 @@ const Menu = ({ setSelectedTab }) => {
         <GenericModal onClose={() => setLogoModalOpen(false)}>
           <h3 className="font-bold mb-4">Alterar logo</h3>
           <label className="text-center flex flex-col items-center justify-center w-30 h-30 border-2 border-dashed border-[var(--gray)] rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
-            {logoFile ? (
-              <img src={URL.createObjectURL(logoFile)} alt="Preview da logo" className="w-full h-full" />
+            {logoPreview ? (
+              <img src={logoPreview} alt="Preview da logo" className="w-full h-full" />
             ) : (
               <span className="color-gray m-4">Clique aqui para inserir sua logo (1:1)</span>
             )}

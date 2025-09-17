@@ -113,7 +113,7 @@ const Dashboard = () => {
           <Sales />
         </div>
         <div className={selectedTab === "configMenu" ? "block" : "hidden"}>
-          <ConfigMenu />
+          <ConfigMenu setSelectedTab={setSelectedTab} />
         </div>
       </main>
 
