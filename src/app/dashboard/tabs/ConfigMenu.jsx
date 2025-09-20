@@ -4,6 +4,7 @@ import { FaPen, FaInfoCircle } from "react-icons/fa";
 import { COLOR_PALETTES } from "@/consts/colorPallets";
 import useMenu from "@/hooks/useMenu";
 import Loading from "@/components/Loading";
+import GenericModal from "@/components/GenericModal";
 
 const DEFAULT_BACKGROUND = COLOR_PALETTES[0].bg;
 const DEFAULT_TITLE = COLOR_PALETTES[0].title;
@@ -21,10 +22,20 @@ function getContrastTextColor(hex) {
 const ConfigMenu = ({ setSelectedTab }) => {
   const { menu, loading } = useMenu();
 
+  // controle de modais
+  const [titleModalOpen, setTitleModalOpen] = useState(false);
+  const [descModalOpen, setDescModalOpen] = useState(false);
+  const [slugModalOpen, setSlugModalOpen] = useState(false);
+
   // estados de titulo / descrição / slug
   const [title, setTitle] = useState(menu?.title);
   const [description, setDescription] = useState(menu?.description);
   const [slug, setSlug] = useState(menu?.slug);
+
+  // estados temporários de titulo / descrição / slug
+  const [tempTitle, setTempTitle] = useState(title);
+  const [tempDescription, setTempDescription] = useState(description);
+  const [tempSlug, setTempSlug] = useState(slug);
 
   // estados de cores
   const [paletteIndex, setPaletteIndex] = useState(0);
@@ -94,12 +105,15 @@ const ConfigMenu = ({ setSelectedTab }) => {
   useEffect(() => {
     if (menu?.title) {
       setTitle(menu.title);
+      setTempTitle(menu.title);
     }
     if (menu?.description) {
       setDescription(menu.description);
+      setTempDescription(menu.description);
     }
     if (menu?.slug) {
       setSlug(menu.slug);
+      setTempSlug(menu.slug);
     }
     if (menu?.services) {
       setSelectedServices(menu.services);
@@ -134,214 +148,322 @@ const ConfigMenu = ({ setSelectedTab }) => {
   if (loading) return <Loading />;
 
   return (
-    <div className="flex flex-col items-center lg:items-start">
-      <div className="m-2 max-w-[720px] sm:w-[calc(100dvw-86px)] w-[calc(100dvw-40px)]">
-        <div className="flex items-center mb-4">
-          <div onClick={() => setSelectedTab("menu")}>
-            <BackArrow />
-          </div>
-          <h2 className="ml-2">Configurações do cardápio</h2>
-        </div>
-
-        <div>
-          <div className="flex sm:items-center max-w-full min-h-[46px] flex-col sm:flex-row">
-            <div className="flex items-center">
-              <FaInfoCircle fontSize={18} className="cursor-pointer mr-2 shrink-0" />
-              <p className="font-semibold mr-2 whitespace-nowrap">Nome do estabelecimento:</p>
+    <>
+      <div className="flex flex-col items-center lg:items-start">
+        <div className="m-2 max-w-[720px] sm:w-[calc(100dvw-86px)] w-[calc(100dvw-40px)]">
+          <div className="flex items-center mb-4">
+            <div onClick={() => setSelectedTab("menu")}>
+              <BackArrow />
             </div>
-            <div className="flex w-full">
-              <span className="bg-translucid p-2 rounded-lg w-full">{title}</span>
-              <button className="border border-2 border-gray-500 p-2 bg-translucid-50 rounded-lg ml-2 opacity-75 hover:opacity-100 cursor-pointer">
-                <FaPen className="font-xl text-white opacity-75" />
-              </button>
-            </div>
-          </div>
-          <hr className="border-[var(--gray)] mt-2 mb-4 max-w-full" />
-        </div>
-
-        <div>
-          <div className="flex sm:items-center max-w-full min-h-[46px] flex-col sm:flex-row">
-            <div className="flex items-center">
-              <FaInfoCircle fontSize={18} className="cursor-pointer mr-2 shrink-0" />
-              <p className="font-semibold mr-2 whitespace-nowrap">Descrição:</p>
-            </div>
-            <div className="flex w-full">
-              <span className="bg-translucid p-2 rounded-lg w-full">{description}</span>
-              <button className="border border-2 border-gray-500 p-2 bg-translucid-50 rounded-lg ml-2 opacity-75 hover:opacity-100 cursor-pointer">
-                <FaPen className="font-xl text-white opacity-75" />
-              </button>
-            </div>
-          </div>
-          <hr className="border-[var(--gray)] mt-2 mb-4 max-w-full" />
-        </div>
-
-        <div>
-          <div className="flex sm:items-center max-w-full min-h-[46px] flex-col sm:flex-row">
-            <div className="flex items-center">
-              <FaInfoCircle fontSize={18} className="cursor-pointer mr-2 shrink-0" />
-              <p className="font-semibold mr-2 whitespace-nowrap">Slug:</p>
-            </div>
-            <div className="flex w-full items-center">
-              <span>bitemenu.com.br/menu/</span>
-              <span className="bg-translucid p-2 rounded-lg w-full overflow-hidden whitespace-nowrap text-ellipsis">
-                {slug}
-              </span>
-              <button className="border border-2 border-gray-500 p-2 bg-translucid-50 rounded-lg ml-2 opacity-75 hover:opacity-100 cursor-pointer">
-                <FaPen className="font-xl text-white opacity-75" />
-              </button>
-            </div>
-          </div>
-          <hr className="border-[var(--gray)] mt-2 mb-4 max-w-full" />
-        </div>
-
-        {/* Nova seção: seletores de cor (inspirado no GetStart) */}
-        <div className="mt-2 max-w-full">
-          <div className="flex items-center mb-2">
-            <FaInfoCircle fontSize={18} className="cursor-pointer mr-2 shrink-0" />
-            <p className="font-semibold">Cores do cardápio:</p>
+            <h2 className="ml-2">Configurações do cardápio</h2>
           </div>
 
-          <div className="flex flex-col space-y-3">
-            {colorFields.map((item, idx) => (
-              <div key={idx} className="flex items-center space-x-3">
-                <label className="w-36">{item.label}</label>
-                <input
-                  type="color"
-                  value={item.value}
-                  onChange={(e) => item.setter(e.target.value)}
-                  className="h-8 w-8 rounded"
-                  aria-label={item.label}
-                />
+          <div>
+            <div className="flex sm:items-center max-w-full min-h-[46px] flex-col sm:flex-row">
+              <div className="flex items-center">
+                <FaInfoCircle fontSize={18} className="cursor-pointer mr-2 shrink-0" />
+                <p className="font-semibold mr-2 whitespace-nowrap">Nome do estabelecimento:</p>
               </div>
-            ))}
+              <div onClick={() => setTitleModalOpen(true)} className="flex w-full">
+                <span className="bg-translucid p-2 rounded-lg w-full">{title}</span>
+                <button className="border border-2 border-gray-500 p-2 bg-translucid-50 rounded-lg ml-2 opacity-75 hover:opacity-100 cursor-pointer">
+                  <FaPen className="font-xl text-white opacity-75" />
+                </button>
+              </div>
+            </div>
+            <hr className="border-[var(--gray)] mt-2 mb-4 max-w-full" />
           </div>
 
-          <div className="mt-4 flex items-center space-x-3">
-            <button
-              type="button"
-              onClick={suggestRandomPalette}
-              className="cursor-pointer px-4 py-2 rounded-lg gray-button text-sm font-medium transition"
-            >
-              💡 Sugerir cores
-            </button>
+          <div>
+            <div className="flex sm:items-center max-w-full min-h-[46px] flex-col sm:flex-row">
+              <div className="flex items-center">
+                <FaInfoCircle fontSize={18} className="cursor-pointer mr-2 shrink-0" />
+                <p className="font-semibold mr-2 whitespace-nowrap">Descrição:</p>
+              </div>
+              <div onClick={() => setDescModalOpen(true)} className="flex w-full">
+                <span className="bg-translucid p-2 rounded-lg w-full">{description}</span>
+                <button className="border border-2 border-gray-500 p-2 bg-translucid-50 rounded-lg ml-2 opacity-75 hover:opacity-100 cursor-pointer">
+                  <FaPen className="font-xl text-white opacity-75" />
+                </button>
+              </div>
+            </div>
+            <hr className="border-[var(--gray)] mt-2 mb-4 max-w-full" />
           </div>
-          <hr className="border-[var(--gray)] mt-2 mb-4 max-w-full" />
-        </div>
 
-        <div className="mb-4">
-          <div className="flex items-center mb-2">
-            <FaInfoCircle fontSize={18} className="cursor-pointer mr-2 shrink-0" />
-            <p className="font-semibold">Serviços disponíveis:</p>
-          </div>
-          <div className="grid grid-cols-2 gap-4 max-w-160">
-            {serviceOptions.map((opt) => (
-              <label key={opt.id} className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  value={opt.id}
-                  checked={selectedServices.includes(opt.id)}
-                  onChange={() => toggleService(opt.id)}
-                  className="peer appearance-none w-6 h-6 border-2 rounded-md transition-all duration-150 flex items-center justify-center relative"
-                  style={{
-                    borderColor: "#155dfc",
-                    backgroundColor: selectedServices.includes(opt.id) ? "#155dfc" : "transparent",
-                  }}
-                />
-
-                <span
-                  className="relative after:content-['✓'] after:absolute after:text-white after:text-sm after:font-bold after:top-[3px] after:left-[-25px] peer-checked:after:opacity-100 after:opacity-0 transition-opacity duration-150"
-                  style={{
-                    color: "var(--gray)",
-                  }}
-                >
-                  {opt.label}
+          <div>
+            <div className="flex sm:items-center max-w-full min-h-[46px] flex-col sm:flex-row">
+              <div className="flex items-center">
+                <FaInfoCircle fontSize={18} className="cursor-pointer mr-2 shrink-0" />
+                <p className="font-semibold mr-2 whitespace-nowrap">Slug:</p>
+              </div>
+              <div onClick={() => setSlugModalOpen(true)} className="flex w-full items-center">
+                <span>bitemenu.com.br/menu/</span>
+                <span className="bg-translucid p-2 rounded-lg w-full overflow-hidden whitespace-nowrap text-ellipsis">
+                  {slug}
                 </span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className="mb-4">
-          <div className="flex items-center mb-2">
-            <FaInfoCircle fontSize={18} className="cursor-pointer mr-2 shrink-0" />
-            <p className="font-semibold">Horários de funcionamento:</p>
+                <button className="border border-2 border-gray-500 p-2 bg-translucid-50 rounded-lg ml-2 opacity-75 hover:opacity-100 cursor-pointer">
+                  <FaPen className="font-xl text-white opacity-75" />
+                </button>
+              </div>
+            </div>
+            <hr className="border-[var(--gray)] mt-2 mb-4 max-w-full" />
           </div>
 
-          <div className="flex flex-col space-y-2">
-            {dayOrder.map((day) => {
-              const value = hours[day];
-              const [openTime, closeTime] = value ? value.split("-") : ["", ""];
+          {/* Nova seção: seletores de cor (inspirado no GetStart) */}
+          <div className="mt-2 max-w-full">
+            <div className="flex items-center mb-2">
+              <FaInfoCircle fontSize={18} className="cursor-pointer mr-2 shrink-0" />
+              <p className="font-semibold">Cores do cardápio:</p>
+            </div>
 
-              return (
-                <div key={day} className="flex items-center space-x-2">
-                  <label className="w-10">{dayLabels[day]}</label>
-
+            <div className="flex flex-col space-y-3">
+              {colorFields.map((item, idx) => (
+                <div key={idx} className="flex items-center space-x-3">
+                  <label className="w-36">{item.label}</label>
                   <input
-                    type="time"
-                    value={openTime}
-                    disabled={!value}
-                    onChange={(e) => {
-                      const newOpen = e.target.value;
-                      setHours((prev) => ({
-                        ...prev,
-                        [day]: `${newOpen}-${closeTime || "23:59"}`,
-                      }));
+                    type="color"
+                    value={item.value}
+                    onChange={(e) => item.setter(e.target.value)}
+                    className="h-8 w-8 rounded"
+                    aria-label={item.label}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 flex items-center space-x-3">
+              <button
+                type="button"
+                onClick={suggestRandomPalette}
+                className="cursor-pointer px-4 py-2 rounded-lg gray-button text-sm font-medium transition"
+              >
+                💡 Sugerir cores
+              </button>
+            </div>
+            <hr className="border-[var(--gray)] mt-2 mb-4 max-w-full" />
+          </div>
+
+          <div className="mb-4">
+            <div className="flex items-center mb-2">
+              <FaInfoCircle fontSize={18} className="cursor-pointer mr-2 shrink-0" />
+              <p className="font-semibold">Serviços disponíveis:</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4 max-w-160">
+              {serviceOptions.map((opt) => (
+                <label key={opt.id} className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    value={opt.id}
+                    checked={selectedServices.includes(opt.id)}
+                    onChange={() => toggleService(opt.id)}
+                    className="peer appearance-none w-6 h-6 border-2 rounded-md transition-all duration-150 flex items-center justify-center relative"
+                    style={{
+                      borderColor: "#155dfc",
+                      backgroundColor: selectedServices.includes(opt.id) ? "#155dfc" : "transparent",
                     }}
-                    className="border rounded p-1 cursor-pointer"
                   />
 
-                  <span>-</span>
-
-                  <input
-                    type="time"
-                    value={closeTime}
-                    disabled={!value}
-                    onChange={(e) => {
-                      const newClose = e.target.value;
-                      setHours((prev) => ({
-                        ...prev,
-                        [day]: `${openTime || "00:00"}-${newClose}`,
-                      }));
+                  <span
+                    className="relative after:content-['✓'] after:absolute after:text-white after:text-sm after:font-bold after:top-[3px] after:left-[-25px] peer-checked:after:opacity-100 after:opacity-0 transition-opacity duration-150"
+                    style={{
+                      color: "var(--gray)",
                     }}
-                    className="border rounded p-1 text-foreground cursor-pointer"
-                  />
+                  >
+                    {opt.label}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
 
-                  <label className="ml-2 flex items-center space-x-1 cursor-pointer">
+          <div className="mb-4">
+            <div className="flex items-center mb-2">
+              <FaInfoCircle fontSize={18} className="cursor-pointer mr-2 shrink-0" />
+              <p className="font-semibold">Horários de funcionamento:</p>
+            </div>
+
+            <div className="flex flex-col space-y-2">
+              {dayOrder.map((day) => {
+                const value = hours[day];
+                const [openTime, closeTime] = value ? value.split("-") : ["", ""];
+
+                return (
+                  <div key={day} className="flex items-center space-x-2">
+                    <label className="w-10">{dayLabels[day]}</label>
+
                     <input
-                      type="checkbox"
-                      checked={value === null}
-                      onChange={(e) =>
+                      type="time"
+                      value={openTime}
+                      disabled={!value}
+                      onChange={(e) => {
+                        const newOpen = e.target.value;
                         setHours((prev) => ({
                           ...prev,
-                          [day]: e.target.checked ? null : "09:00-18:00",
-                        }))
-                      }
+                          [day]: `${newOpen}-${closeTime || "23:59"}`,
+                        }));
+                      }}
+                      className="border rounded p-1 cursor-pointer"
                     />
-                    <span>Fechado</span>
-                  </label>
-                </div>
-              );
-            })}
-          </div>
 
-          <button
-            type="button"
-            className="mt-3 gray-button px-4 py-2 rounded-lg"
-            onClick={() => {
-              setHours((prev) => {
-                const newObj = {};
-                Object.keys(prev).forEach((day) => {
-                  newObj[day] = "00:00-23:59";
+                    <span>-</span>
+
+                    <input
+                      type="time"
+                      value={closeTime}
+                      disabled={!value}
+                      onChange={(e) => {
+                        const newClose = e.target.value;
+                        setHours((prev) => ({
+                          ...prev,
+                          [day]: `${openTime || "00:00"}-${newClose}`,
+                        }));
+                      }}
+                      className="border rounded p-1 text-foreground cursor-pointer"
+                    />
+
+                    <label className="ml-2 flex items-center space-x-1 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={value === null}
+                        onChange={(e) =>
+                          setHours((prev) => ({
+                            ...prev,
+                            [day]: e.target.checked ? null : "09:00-18:00",
+                          }))
+                        }
+                      />
+                      <span>Fechado</span>
+                    </label>
+                  </div>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              className="mt-3 gray-button px-4 py-2 rounded-lg"
+              onClick={() => {
+                setHours((prev) => {
+                  const newObj = {};
+                  Object.keys(prev).forEach((day) => {
+                    newObj[day] = "00:00-23:59";
+                  });
+                  return newObj;
                 });
-                return newObj;
-              });
-            }}
-          >
-            Definir 24h para todos
-          </button>
+              }}
+            >
+              Definir 24h para todos
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* -------------------------------------------------------------- */}
+      {/* --------------------------- MODAIS --------------------------- */}
+      {/* -------------------------------------------------------------- */}
+
+      {/* Modal de título */}
+      {titleModalOpen && (
+        <GenericModal onClose={() => setTitleModalOpen(false)}>
+          <h3 className="font-bold mb-4">Alterar nome</h3>
+          <input
+            type="text"
+            placeholder="Novo título"
+            value={tempTitle || "Meu estabelecimento"}
+            onChange={(e) => setTempTitle(e.target.value)}
+            className="w-full p-2 rounded border bg-translucid mb-4"
+          />
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => {
+                setTempTitle(title);
+                setTitleModalOpen(false);
+              }}
+              className="cursor-pointer px-4 py-2 bg-gray-600 rounded hover:bg-gray-500 transition text-white"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => {
+                setTitle(tempTitle);
+                setTitleModalOpen(false);
+              }}
+              className="cursor-pointer px-4 py-2 bg-green-600 rounded hover:bg-green-500 transition text-white"
+            >
+              Salvar
+            </button>
+          </div>
+        </GenericModal>
+      )}
+
+      {/* Modal de descrição */}
+      {descModalOpen && (
+        <GenericModal onClose={() => setDescModalOpen(false)}>
+          <h3 className="font-bold mb-4">Alterar descrição</h3>
+          <input
+            type="text"
+            placeholder="Nova descrição"
+            value={tempDescription || null}
+            onChange={(e) => setTempDescription(e.target.value)}
+            className="w-full p-2 rounded border bg-translucid mb-4"
+          />
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => {
+                setTempDescription(description);
+                setDescModalOpen(false);
+              }}
+              className="cursor-pointer px-4 py-2 bg-gray-600 rounded hover:bg-gray-500 transition text-white"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => {
+                setDescription(tempDescription);
+                setDescModalOpen(false);
+              }}
+              className="cursor-pointer px-4 py-2 bg-green-600 rounded hover:bg-green-500 transition text-white"
+            >
+              Salvar
+            </button>
+          </div>
+        </GenericModal>
+      )}
+
+      {/* Modal de slug */}
+      {slugModalOpen && (
+        <GenericModal onClose={() => setSlugModalOpen(false)}>
+          <h3 className="font-bold mb-4">Alterar slug</h3>
+          <input
+            type="text"
+            placeholder="Novo slug"
+            value={tempSlug || "meu-estabelecimento"}
+            onChange={(e) => setTempSlug(e.target.value)}
+            className="w-full p-2 rounded border bg-translucid mb-4"
+          />
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => {
+                setTempSlug(slug);
+                setSlugModalOpen(false);
+              }}
+              className="cursor-pointer px-4 py-2 bg-gray-600 rounded hover:bg-gray-500 transition text-white"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => {
+                setSlug(tempSlug);
+                setSlugModalOpen(false);
+              }}
+              className="cursor-pointer px-4 py-2 bg-green-600 rounded hover:bg-green-500 transition text-white"
+            >
+              Salvar
+            </button>
+          </div>
+        </GenericModal>
+      )}
+    </>
   );
 };
 
