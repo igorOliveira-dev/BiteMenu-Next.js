@@ -48,6 +48,27 @@ const ConfigMenu = ({ setSelectedTab }) => {
     { id: "driveThru", label: "Drive-thru" },
   ];
 
+  const dayLabels = {
+    mon: "Seg",
+    tue: "Ter",
+    wed: "Qua",
+    thu: "Qui",
+    fri: "Sex",
+    sat: "Sáb",
+    sun: "Dom",
+  };
+
+  const dayOrder = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+
+  const [hours, setHours] = useState(() =>
+    normalizeHours(
+      menu?.hours || {
+        days: ["mon", "tue", "wed", "thu", "fri", "sat", "sun"],
+        hours: "00:00-23:59",
+      }
+    )
+  );
+
   const suggestRandomPalette = () => {
     let next = Math.floor(Math.random() * COLOR_PALETTES.length);
     while (next === paletteIndex) {
@@ -92,7 +113,23 @@ const ConfigMenu = ({ setSelectedTab }) => {
     if (menu?.background_color) {
       setBackgroundColor(menu.background_color);
     }
+    if (menu?.hours) {
+      setHours(normalizeHours(menu.hours));
+    }
   }, [menu]);
+
+  function normalizeHours(data) {
+    // se vier no formato antigo
+    if (data?.hours && typeof data.hours === "string") {
+      const obj = {};
+      data.days.forEach((day) => {
+        obj[day] = data.hours; // todos os dias iguais
+      });
+      return obj;
+    }
+    // se já estiver no novo formato
+    return data;
+  }
 
   if (loading) return <Loading />;
 
@@ -190,6 +227,7 @@ const ConfigMenu = ({ setSelectedTab }) => {
           </div>
           <hr className="border-[var(--gray)] mt-2 mb-4 max-w-full" />
         </div>
+
         <div className="mb-4">
           <div className="flex items-center mb-2">
             <FaInfoCircle fontSize={18} className="cursor-pointer mr-2 shrink-0" />
@@ -221,6 +259,86 @@ const ConfigMenu = ({ setSelectedTab }) => {
               </label>
             ))}
           </div>
+        </div>
+
+        <div className="mb-4">
+          <div className="flex items-center mb-2">
+            <FaInfoCircle fontSize={18} className="cursor-pointer mr-2 shrink-0" />
+            <p className="font-semibold">Horários de funcionamento:</p>
+          </div>
+
+          <div className="flex flex-col space-y-2">
+            {dayOrder.map((day) => {
+              const value = hours[day];
+              const [openTime, closeTime] = value ? value.split("-") : ["", ""];
+
+              return (
+                <div key={day} className="flex items-center space-x-2">
+                  <label className="w-10">{dayLabels[day]}</label>
+
+                  <input
+                    type="time"
+                    value={openTime}
+                    disabled={!value}
+                    onChange={(e) => {
+                      const newOpen = e.target.value;
+                      setHours((prev) => ({
+                        ...prev,
+                        [day]: `${newOpen}-${closeTime || "23:59"}`,
+                      }));
+                    }}
+                    className="border rounded p-1 cursor-pointer"
+                  />
+
+                  <span>-</span>
+
+                  <input
+                    type="time"
+                    value={closeTime}
+                    disabled={!value}
+                    onChange={(e) => {
+                      const newClose = e.target.value;
+                      setHours((prev) => ({
+                        ...prev,
+                        [day]: `${openTime || "00:00"}-${newClose}`,
+                      }));
+                    }}
+                    className="border rounded p-1 text-foreground cursor-pointer"
+                  />
+
+                  <label className="ml-2 flex items-center space-x-1 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={value === null}
+                      onChange={(e) =>
+                        setHours((prev) => ({
+                          ...prev,
+                          [day]: e.target.checked ? null : "09:00-18:00",
+                        }))
+                      }
+                    />
+                    <span>Fechado</span>
+                  </label>
+                </div>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            className="mt-3 gray-button px-4 py-2 rounded-lg"
+            onClick={() => {
+              setHours((prev) => {
+                const newObj = {};
+                Object.keys(prev).forEach((day) => {
+                  newObj[day] = "00:00-23:59";
+                });
+                return newObj;
+              });
+            }}
+          >
+            Definir 24h para todos
+          </button>
         </div>
       </div>
     </div>

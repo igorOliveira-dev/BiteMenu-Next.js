@@ -142,3 +142,19 @@ h3 {
 .react-tel-input .flag-dropdown .country[aria-selected="true"] {
   background-color: var(--low-gray) !important;
 }
+
+.text-foreground {
+  color: var(--foreground);
+}
+
+:root {
+  --time-icon-invert: 0;
+}
+
+[data-theme="dark"] {
+  --time-icon-invert: 1;
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(var(--time-icon-invert));
+}
