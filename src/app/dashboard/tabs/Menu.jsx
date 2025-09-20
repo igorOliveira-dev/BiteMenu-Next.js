@@ -10,7 +10,7 @@ import { useEffect, useState, useMemo } from "react";
 import Loading from "@/components/Loading";
 
 function getContrastTextColor(hex) {
-  const cleanHex = (hex || DEFAULT_BACKGROUND).replace("#", "");
+  const cleanHex = (hex || "").replace("#", "");
   const r = parseInt(cleanHex.substring(0, 2), 16);
   const g = parseInt(cleanHex.substring(2, 4), 16);
   const b = parseInt(cleanHex.substring(4, 6), 16);
@@ -18,19 +18,31 @@ function getContrastTextColor(hex) {
   return yiq >= 128 ? "black" : "white";
 }
 
-const Menu = ({ setSelectedTab }) => {
+const Menu = ({
+  setSelectedTab,
+  title,
+  setTitle,
+  description,
+  setDescription,
+  backgroundColor,
+  setBackgroundColor,
+  titleColor,
+  setTitleColor,
+  detailsColor,
+  setDetailsColor,
+}) => {
   const { menu, loading } = useMenu();
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
   const customAlert = useAlert();
 
   // ESTADOS PRINCIPAIS
-  const [title, setTitle] = useState(menu?.title);
   const [bannerFile, setBannerFile] = useState(menu?.banner_url);
   const [logoFile, setLogoFile] = useState(menu?.logo_url);
 
   // ESTADOS TEMPORÁRIOS
   const [tempTitle, setTempTitle] = useState(menu?.title);
+  const [tempDescription, setTempDescription] = useState(menu?.description);
   const [tempBannerFile, setTempBannerFile] = useState(menu?.banner_url);
   const [tempLogoFile, setTempLogoFile] = useState(menu?.logo_url);
 
@@ -50,6 +62,11 @@ const Menu = ({ setSelectedTab }) => {
       setTempBannerFile(menu.banner_url);
     }
   }, [menu]);
+
+  useEffect(() => {
+    setTempTitle(title);
+    setTempDescription(description);
+  }, [title, description]);
 
   // PREVIEWS (PRINCIPAL)
   const bannerPreview = useMemo(() => {
@@ -108,7 +125,7 @@ const Menu = ({ setSelectedTab }) => {
       <div className="px-2 lg:grid">
         <div
           className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[768px] h-[800px]"
-          style={{ backgroundColor: menu.background_color }}
+          style={{ backgroundColor: backgroundColor }}
         >
           {/* Banner */}
           <div className="relative w-full max-w-full h-[25dvh]">
@@ -118,8 +135,8 @@ const Menu = ({ setSelectedTab }) => {
               <div
                 className="bg-translucid relative w-full h-full rounded-lg flex items-center justify-center"
                 style={{
-                  backgroundColor: getContrastTextColor(menu.background_color) === "white" ? "#ffffff30" : "#00000030",
-                  color: getContrastTextColor(menu.background_color) === "white" ? "#ccc" : "#555",
+                  backgroundColor: getContrastTextColor(backgroundColor) === "white" ? "#ffffff30" : "#00000030",
+                  color: getContrastTextColor(backgroundColor) === "white" ? "#ccc" : "#555",
                 }}
               >
                 <p>Banner</p>
@@ -147,8 +164,8 @@ const Menu = ({ setSelectedTab }) => {
                 <div
                   className="bg-translucid relative w-full max-w-[80px] aspect-[1/1] rounded-lg flex items-center justify-center"
                   style={{
-                    backgroundColor: getContrastTextColor(menu.background_color) === "white" ? "#ffffff30" : "#00000030",
-                    color: getContrastTextColor(menu.background_color) === "white" ? "#ccc" : "#555",
+                    backgroundColor: getContrastTextColor(backgroundColor) === "white" ? "#ffffff30" : "#00000030",
+                    color: getContrastTextColor(backgroundColor) === "white" ? "#ccc" : "#555",
                   }}
                 >
                   <p>Logo</p>
@@ -168,7 +185,7 @@ const Menu = ({ setSelectedTab }) => {
             </div>
 
             {/* Título */}
-            <h1 className="text-md md:text-2xl font-bold ml-4" style={{ color: menu.title_color }}>
+            <h1 className="text-md md:text-2xl font-bold ml-4" style={{ color: titleColor }}>
               {title}
             </h1>
             <button
@@ -178,6 +195,9 @@ const Menu = ({ setSelectedTab }) => {
               <FaPen className="font-xl text-white opacity-75" />
             </button>
           </div>
+          <p className="ml-4" style={{ color: getContrastTextColor(backgroundColor) === "white" ? "#fafafa" : "#171717" }}>
+            {description}
+          </p>
         </div>
 
         {/* Botão mobile */}

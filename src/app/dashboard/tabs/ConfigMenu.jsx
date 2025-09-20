@@ -19,7 +19,19 @@ function getContrastTextColor(hex) {
   return yiq >= 128 ? "black" : "white";
 }
 
-const ConfigMenu = ({ setSelectedTab }) => {
+const ConfigMenu = ({
+  setSelectedTab,
+  title,
+  setTitle,
+  description,
+  setDescription,
+  backgroundColor,
+  setBackgroundColor,
+  titleColor,
+  setTitleColor,
+  detailsColor,
+  setDetailsColor,
+}) => {
   const { menu, loading } = useMenu();
 
   // controle de modais
@@ -28,8 +40,6 @@ const ConfigMenu = ({ setSelectedTab }) => {
   const [slugModalOpen, setSlugModalOpen] = useState(false);
 
   // estados de titulo / descrição / slug
-  const [title, setTitle] = useState(menu?.title);
-  const [description, setDescription] = useState(menu?.description);
   const [slug, setSlug] = useState(menu?.slug);
 
   // estados temporários de titulo / descrição / slug
@@ -39,9 +49,6 @@ const ConfigMenu = ({ setSelectedTab }) => {
 
   // estados de cores
   const [paletteIndex, setPaletteIndex] = useState(0);
-  const [backgroundColor, setBackgroundColor] = useState(DEFAULT_BACKGROUND || menu?.background_color);
-  const [titleColor, setTitleColor] = useState(DEFAULT_TITLE || menu?.title_color);
-  const [detailsColor, setDetailsColor] = useState(DEFAULT_DETAILS || menu?.details_color);
 
   const colorFields = [
     { label: "Cor do fundo:", value: backgroundColor, setter: setBackgroundColor },
@@ -131,6 +138,11 @@ const ConfigMenu = ({ setSelectedTab }) => {
       setHours(normalizeHours(menu.hours));
     }
   }, [menu]);
+
+  useEffect(() => {
+    setTempTitle(title);
+    setTempDescription(description);
+  }, [title, description]);
 
   function normalizeHours(data) {
     // se vier no formato antigo

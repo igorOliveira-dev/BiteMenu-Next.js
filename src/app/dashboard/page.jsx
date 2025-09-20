@@ -10,10 +10,16 @@ import ConfigMenu from "./tabs/ConfigMenu";
 
 const Dashboard = () => {
   const { menu, loading } = useMenu();
-  const baseUrl = window.location.origin;
   const [selectedTab, setSelectedTab] = useState("menu");
   const [isOpen, setIsOpen] = useState(false);
   const customAlert = useAlert();
+
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+
+  const [backgroundColor, setBackgroundColor] = useState("#F8F9FA");
+  const [titleColor, setTitleColor] = useState("#007BFF");
+  const [detailsColor, setDetailsColor] = useState("#28A745");
 
   const handleMenuSelect = (tab) => {
     setSelectedTab(tab);
@@ -104,7 +110,19 @@ const Dashboard = () => {
       {/* Main content */}
       <main className="w-[100dvw] lg:w-[calc(100dvw-256px)] h-[calc(100dvh-160px)] lg:h-[calc(100dvh-100px)] overflow-auto scrollbar-none">
         <div className={selectedTab === "menu" ? "block" : "hidden"}>
-          <Menu setSelectedTab={setSelectedTab} />
+          <Menu
+            setSelectedTab={setSelectedTab}
+            title={title}
+            setTitle={setTitle}
+            description={description}
+            setDescription={setDescription}
+            backgroundColor={backgroundColor}
+            setBackgroundColor={setBackgroundColor}
+            titleColor={titleColor}
+            setTitleColor={setTitleColor}
+            detailsColor={detailsColor}
+            setDetailsColor={setDetailsColor}
+          />
         </div>
         <div className={selectedTab === "orders" ? "block" : "hidden"}>
           <Orders />
@@ -113,7 +131,19 @@ const Dashboard = () => {
           <Sales />
         </div>
         <div className={selectedTab === "configMenu" ? "block" : "hidden"}>
-          <ConfigMenu setSelectedTab={setSelectedTab} />
+          <ConfigMenu
+            setSelectedTab={setSelectedTab}
+            title={title}
+            setTitle={setTitle}
+            description={description}
+            setDescription={setDescription}
+            backgroundColor={backgroundColor}
+            setBackgroundColor={setBackgroundColor}
+            titleColor={titleColor}
+            setTitleColor={setTitleColor}
+            detailsColor={detailsColor}
+            setDetailsColor={setDetailsColor}
+          />
         </div>
       </main>
 
