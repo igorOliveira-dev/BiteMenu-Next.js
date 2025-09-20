@@ -177,7 +177,9 @@ const ConfigMenu = ({
                 <p className="font-semibold mr-2 whitespace-nowrap">Nome do estabelecimento:</p>
               </div>
               <div onClick={() => setTitleModalOpen(true)} className="flex w-full">
-                <span className="bg-translucid p-2 rounded-lg w-full">{title}</span>
+                <span className="bg-translucid p-2 rounded-lg w-full">
+                  {title ? title : <span className="color-gray">Insira o nome</span>}
+                </span>
                 <button className="border border-2 border-gray-500 p-2 bg-translucid-50 rounded-lg ml-2 opacity-75 hover:opacity-100 cursor-pointer">
                   <FaPen className="font-xl text-white opacity-75" />
                 </button>
@@ -193,7 +195,9 @@ const ConfigMenu = ({
                 <p className="font-semibold mr-2 whitespace-nowrap">Descrição:</p>
               </div>
               <div onClick={() => setDescModalOpen(true)} className="flex w-full">
-                <span className="bg-translucid p-2 rounded-lg w-full">{description}</span>
+                <span className="bg-translucid p-2 rounded-lg w-full">
+                  {description ? description : <span className="color-gray">Insira a descrição</span>}
+                </span>
                 <button className="border border-2 border-gray-500 p-2 bg-translucid-50 rounded-lg ml-2 opacity-75 hover:opacity-100 cursor-pointer">
                   <FaPen className="font-xl text-white opacity-75" />
                 </button>
@@ -211,7 +215,7 @@ const ConfigMenu = ({
               <div onClick={() => setSlugModalOpen(true)} className="flex w-full items-center">
                 <span>bitemenu.com.br/menu/</span>
                 <span className="bg-translucid p-2 rounded-lg w-full overflow-hidden whitespace-nowrap text-ellipsis">
-                  {slug}
+                  {slug ? slug : <span className="color-gray">Insira o slug</span>}
                 </span>
                 <button className="border border-2 border-gray-500 p-2 bg-translucid-50 rounded-lg ml-2 opacity-75 hover:opacity-100 cursor-pointer">
                   <FaPen className="font-xl text-white opacity-75" />
@@ -381,7 +385,7 @@ const ConfigMenu = ({
           <input
             type="text"
             placeholder="Novo título"
-            value={tempTitle || "Meu estabelecimento"}
+            value={tempTitle || ""}
             onChange={(e) => setTempTitle(e.target.value)}
             className="w-full p-2 rounded border bg-translucid mb-4"
           />
@@ -415,7 +419,7 @@ const ConfigMenu = ({
           <input
             type="text"
             placeholder="Nova descrição"
-            value={tempDescription || null}
+            value={tempDescription || ""}
             onChange={(e) => setTempDescription(e.target.value)}
             className="w-full p-2 rounded border bg-translucid mb-4"
           />
@@ -449,7 +453,7 @@ const ConfigMenu = ({
           <input
             type="text"
             placeholder="Novo slug"
-            value={tempSlug || "meu-estabelecimento"}
+            value={tempSlug || ""}
             onChange={(e) => setTempSlug(e.target.value)}
             className="w-full p-2 rounded border bg-translucid mb-4"
           />
