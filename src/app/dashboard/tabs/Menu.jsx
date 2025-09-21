@@ -1,4 +1,3 @@
-// src/app/dashboard/tabs/Menu.jsx
 "use client";
 
 import { useAlert } from "@/providers/AlertProvider";

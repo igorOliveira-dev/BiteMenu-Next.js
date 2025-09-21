@@ -192,7 +192,7 @@ const ConfigMenu = (props) => {
 
   return (
     <>
-      <div className="flex flex-col items-center lg:items-start">
+      <div className="sm:pb-0 pb-32 flex flex-col items-center lg:items-start">
         <div className="m-2 max-w-[720px] sm:w-[calc(100dvw-86px)] w-[calc(100dvw-40px)]">
           <div className="flex items-center mb-4">
             <div onClick={() => setSelectedTab("menu")}>
