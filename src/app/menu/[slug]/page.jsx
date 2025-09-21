@@ -3,6 +3,15 @@ import { supabase } from "@/lib/supabaseClient";
 import Image from "next/image";
 import NotFoundMenu from "../NotFoundMenu";
 
+function getContrastTextColor(hex) {
+  const cleanHex = (hex || DEFAULT_BACKGROUND).replace("#", "");
+  const r = parseInt(cleanHex.substring(0, 2), 16);
+  const g = parseInt(cleanHex.substring(2, 4), 16);
+  const b = parseInt(cleanHex.substring(4, 6), 16);
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 128 ? "black" : "white";
+}
+
 export default async function MenuPage({ params }) {
   const slug = (await params).slug;
   const { data: menu } = await supabase
@@ -64,7 +73,7 @@ export default async function MenuPage({ params }) {
         </h1>
       </div>
 
-      <p className="mt-1" style={{ color: menu.details_color }}>
+      <p className="mt-1" style={{ color: getContrastTextColor(menu.background_color) }}>
         {menu.description}
       </p>
 

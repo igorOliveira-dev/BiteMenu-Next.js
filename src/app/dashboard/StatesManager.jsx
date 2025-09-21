@@ -8,6 +8,7 @@ import useMenu from "@/hooks/useMenu";
 import Dashboard from "./page"; // ajuste se necessário
 import Loading from "@/components/Loading";
 import { useAlert } from "@/providers/AlertProvider";
+import GenericModal from "@/components/GenericModal";
 
 /**
  * StatesManager (versão com checagem de auth e tratamento RLS/storage)
@@ -16,6 +17,22 @@ import { useAlert } from "@/providers/AlertProvider";
  */
 const BUCKET_NAME = process.env.NEXT_PUBLIC_SUPABASE_BUCKET || "menus";
 const TABLE_NAME = "menus";
+
+function rgbToHex(rgb) {
+  const match = rgb.match(/\d+/g);
+  if (!match) return "#ffffff"; // fallback para branco se der erro
+  const [r, g, b] = match.map(Number);
+  return "#" + [r, g, b].map((x) => x.toString(16).padStart(2, "0")).join("");
+}
+
+function getContrastTextColor(hex) {
+  const cleanHex = (hex || DEFAULT_BACKGROUND).replace("#", "");
+  const r = parseInt(cleanHex.substring(0, 2), 16);
+  const g = parseInt(cleanHex.substring(2, 4), 16);
+  const b = parseInt(cleanHex.substring(4, 6), 16);
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 128 ? "black" : "white";
+}
 
 function stableStringify(value) {
   if (value === null || value === undefined) return String(value);
@@ -160,11 +177,31 @@ export default function StatesManager({
 }) {
   const { menu: menuFromServer, loading } = useMenu();
   const customAlert = useAlert();
+  const [selectedTab, setSelectedTab] = useState("menu");
+
+  const [showChanges, setShowChanges] = useState(false);
 
   const [serverState, setServerState] = useState(null);
   const [localState, setLocalState] = useState(null);
   const [changedFields, setChangedFields] = useState([]);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (changedFields.length === 0) return;
+
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      // A maioria dos navegadores ignora mensagens customizadas,
+      // mas é necessário setar returnValue para o aviso aparecer.
+      e.returnValue = "Você tem alterações não salvas. Tem certeza que deseja sair?";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [changedFields]);
 
   useEffect(() => {
     if (!menuFromServer) return;
@@ -206,13 +243,14 @@ export default function StatesManager({
   const revertField = (key) => {
     if (!serverState) return;
     setLocalState((prev) => ({ ...prev, [key]: serverState[key] }));
-    customAlert?.(`${key} revertido para o valor do servidor.`);
+    customAlert?.(`${key} revertido.`);
   };
 
   const revertAll = () => {
     if (!serverState) return;
     setLocalState({ ...serverState });
     customAlert?.("Alterações descartadas");
+    setShowChanges(false);
   };
 
   const saveAll = async () => {
@@ -346,47 +384,58 @@ export default function StatesManager({
       if (!customAlert) window.alert("Erro ao salvar alterações. Veja o console para detalhes.");
     } finally {
       setSaving(false);
+      setShowChanges(false);
     }
   };
 
   const ChangesPopup = () => {
     if (!changedFields || changedFields.length === 0) return null;
+
+    // Decide qual cor de fundo usar:
+    let backgroundColorToUse = localState.backgroundColor;
+    if (selectedTab !== "menu") {
+      // usa cor de fundo do body
+      const bodyBg = getComputedStyle(document.body).backgroundColor;
+      backgroundColorToUse = rgbToHex(bodyBg); // converte para hex se necessário
+    }
+
+    const contrastColor = getContrastTextColor(backgroundColorToUse);
+
     return createPortal(
-      <div className="fixed bottom-6 right-6 z-50">
-        <div className="bg-white/95 p-4 rounded-lg shadow-lg w-[340px]">
-          <div className="flex justify-between items-center mb-2">
+      <div
+        className={`fixed bottom-22 right-2 lg:bottom-6 w-[340px] z-10
+        ${selectedTab === "menu" ? "lg:left-[50%] lg:transform lg:-translate-x-1/2" : ""}
+        ${selectedTab === "configMenu" ? "right-4" : ""}
+        ${selectedTab === "menu" || selectedTab === "configMenu" ? "" : "hidden"}
+        `}
+      >
+        <div
+          className="bg-translucid backdrop-blur-[15px] p-4 rounded-lg shadow-lg w-[340px]"
+          style={{
+            backgroundColor: contrastColor === "white" ? "#ffffff30" : "#00000030",
+            color: contrastColor === "white" ? "#fafafa" : "#171717",
+          }}
+        >
+          <div className="flex justify-between items-center">
             <strong>Alterações não salvas</strong>
-            <span className="text-sm text-gray-500">{changedFields.length}</span>
+            <span className="text-sm">{changedFields.length}</span>
           </div>
 
-          <div className="max-h-44 overflow-auto mb-3">
-            <ul className="space-y-2">
-              {changedFields.map((key) => (
-                <li key={key} className="flex justify-between items-start">
-                  <div className="flex-1 mr-3">
-                    <div className="font-medium">{key}</div>
-                    <div className="text-xs text-gray-500">Server: {String(serverState?.[key] ?? "")?.slice(0, 80)}</div>
-                    <div className="text-xs text-gray-800">Local: {String(localState?.[key] ?? "")?.slice(0, 80)}</div>
-                  </div>
-
-                  <div className="flex flex-col items-end gap-1">
-                    <button onClick={() => revertField(key)} className="text-xs px-2 py-1 rounded bg-gray-100">
-                      Reverter
-                    </button>
-                    <button onClick={() => revertField(key)} className="text-xs text-red-600">
-                      Cancelar
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <button
+            className="mb-2 underline cursor-pointer"
+            style={{
+              color: contrastColor === "white" ? "#ccc" : "#171717",
+            }}
+            onClick={() => setShowChanges(true)}
+          >
+            Ver alterações
+          </button>
 
           <div className="flex justify-end gap-2">
-            <button onClick={revertAll} className="px-3 py-1 rounded bg-gray-200">
+            <button onClick={revertAll} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded">
               Descartar tudo
             </button>
-            <button onClick={saveAll} className="px-3 py-1 rounded bg-green-600 text-white" disabled={saving}>
+            <button onClick={saveAll} className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded" disabled={saving}>
               {saving ? "Salvando..." : "Salvar tudo"}
             </button>
           </div>
@@ -405,8 +454,77 @@ export default function StatesManager({
         changedFields={changedFields}
         revertField={revertField}
         saveAll={saveAll}
+        selectedTab={selectedTab}
+        setSelectedTab={setSelectedTab}
       />
       {ChangesPopup()}
+      {showChanges && (
+        <GenericModal onClose={() => setShowChanges(false)}>
+          <div className="flex flex-col max-h-80 w-full">
+            <div className="mb-2">
+              <h3 className="font-semibold mb-1">Alterações não salvas</h3>
+              <p className="text-sm text-gray-600">
+                Estes campos foram modificados. Você pode revisar e decidir salvar ou reverter cada um.
+              </p>
+            </div>
+
+            {/* Container scrollável */}
+            <div className="flex-1 overflow-y-auto pr-2">
+              <ul className="space-y-3">
+                {changedFields.map((key) => {
+                  const displayNameMap = {
+                    title: "Título",
+                    description: "Descrição",
+                    backgroundColor: "Cor de fundo",
+                    titleColor: "Cor do título",
+                    detailsColor: "Cor dos detalhes",
+                    bannerFile: "Banner",
+                    logoFile: "Logo",
+                    slug: "Identificador",
+                    selectedServices: "Serviços selecionados",
+                    hours: "Horário",
+                  };
+
+                  const displayName = displayNameMap[key] || key;
+
+                  return (
+                    <li key={key} className="flex justify-between items-center border-b pb-2">
+                      <div className="flex-1 mr-3">
+                        <div className="font-medium">{displayName}</div>
+                        <div className="text-xs text-gray-500">
+                          Valor atual: {String(localState?.[key] ?? "")?.slice(0, 80)}
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <button
+                          onClick={() => revertField(key)}
+                          className="cursor-pointer text-xs color-gray underline pr-2"
+                        >
+                          Reverter
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+
+            {/* Botões fixos */}
+            <div className="mt-2 flex justify-center gap-2 pt-2">
+              <button onClick={revertAll} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded">
+                Descartar tudo
+              </button>
+              <button
+                onClick={saveAll}
+                className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded"
+                disabled={saving}
+              >
+                {saving ? "Salvando..." : "Salvar tudo"}
+              </button>
+            </div>
+          </div>
+        </GenericModal>
+      )}
     </>
   );
 }

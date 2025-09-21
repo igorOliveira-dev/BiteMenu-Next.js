@@ -65,6 +65,9 @@ const Menu = (props) => {
   const [tempBannerFile, setTempBannerFile] = useState(bannerFile ?? null);
   const [tempLogoFile, setTempLogoFile] = useState(logoFile ?? null);
 
+  // titulo temporário
+  const [tempTitle, setTempTitle] = useState(title);
+
   // modal booleans
   const [titleModalOpen, setTitleModalOpen] = useState(false);
   const [bannerModalOpen, setBannerModalOpen] = useState(false);
@@ -242,6 +245,13 @@ const Menu = (props) => {
   return (
     <>
       <div className="px-2 lg:grid">
+        <button
+          onClick={() => setSelectedTab("configMenu")}
+          className="flex lg:hidden cursor-pointer top-24 right-2 p-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition items-center justify-center fixed z-10"
+        >
+          <FiSettings className="text-xl mr-2" />
+          Configurar cardápio
+        </button>
         <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[768px] h-[800px]" style={{ backgroundColor }}>
           {/* Banner */}
           <div className="relative w-full max-w-full h-[25dvh]">
@@ -391,19 +401,25 @@ const Menu = (props) => {
           <input
             type="text"
             placeholder="Novo título"
-            value={title ?? ""}
-            onChange={(e) => setTitle(e.target.value)}
+            value={tempTitle ?? ""}
+            onChange={(e) => setTempTitle(e.target.value)}
             className="w-full p-2 rounded border bg-translucid mb-4"
           />
           <div className="flex justify-end gap-2">
             <button
-              onClick={() => setTitleModalOpen(false)}
+              onClick={() => {
+                setTempTitle(propTitle);
+                setTitleModalOpen(false);
+              }}
               className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded"
             >
               Cancelar
             </button>
             <button
-              onClick={() => setTitleModalOpen(false)}
+              onClick={() => {
+                setTitle(tempTitle);
+                setTitleModalOpen(false);
+              }}
               className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded"
             >
               Salvar

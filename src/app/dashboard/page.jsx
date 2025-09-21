@@ -9,9 +9,8 @@ import Sales from "./tabs/Sales";
 import { useAlert } from "@/providers/AlertProvider";
 import ConfigMenu from "./tabs/ConfigMenu";
 
-const Dashboard = ({ menuState: externalMenuState, changedFields, revertField, saveAll }) => {
+const Dashboard = ({ menuState: externalMenuState, changedFields, revertField, saveAll, selectedTab, setSelectedTab }) => {
   const { menu, loading } = useMenu();
-  const [selectedTab, setSelectedTab] = useState("menu");
   const [isOpen, setIsOpen] = useState(false);
   const customAlert = useAlert();
 
@@ -81,7 +80,7 @@ const Dashboard = ({ menuState: externalMenuState, changedFields, revertField, s
             className="w-full p-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)]"
             onClick={() => setSelectedTab("menu")}
           >
-            Cardápio
+            {changedFields.length > 0 ? "Cardápio *" : "Cardápio"}
           </button>
           <button
             className="w-full p-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)]"
@@ -200,7 +199,7 @@ const Dashboard = ({ menuState: externalMenuState, changedFields, revertField, s
             <div className="flex items-center justify-between">
               <h3 className="text-x">Compartilhe seu cardápio!</h3>
               <button className="text-4xl" onClick={() => setIsOpen(false)}>
-                ×
+                x
               </button>
             </div>
 
