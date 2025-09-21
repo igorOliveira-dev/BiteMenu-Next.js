@@ -2,7 +2,7 @@
 
 import { useAlert } from "@/providers/AlertProvider";
 import useMenu from "@/hooks/useMenu";
-import { FaPen, FaCamera } from "react-icons/fa";
+import { FaPen, FaCamera, FaChevronLeft } from "react-icons/fa";
 import { FiSettings } from "react-icons/fi";
 import GenericModal from "@/components/GenericModal";
 import { useEffect, useRef, useState } from "react";
@@ -396,7 +396,10 @@ const Menu = (props) => {
       {/* MODALS */}
       {titleModalOpen && (
         <GenericModal onClose={() => setTitleModalOpen(false)}>
-          <h3 className="font-bold mb-4">Alterar nome</h3>
+          <div className="flex items-center gap-4 mb-4">
+            <FaChevronLeft onClick={() => setTitleModalOpen(false)} />
+            <h3 className="font-bold">Alterar nome</h3>
+          </div>
           <input
             type="text"
             placeholder="Novo título"
@@ -429,7 +432,10 @@ const Menu = (props) => {
 
       {bannerModalOpen && (
         <GenericModal onClose={() => setBannerModalOpen(false)}>
-          <h3 className="font-bold mb-4">Alterar banner</h3>
+          <div className="flex items-center gap-4 mb-4">
+            <FaChevronLeft onClick={() => setBannerModalOpen(false)} />
+            <h3 className="font-bold">Alterar banner</h3>
+          </div>
           <label className="text-center flex flex-col items-center justify-center w-full h-30 border-2 border-dashed border-[var(--gray)] rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
             {tempBannerPreview ? (
               <img src={tempBannerPreview} alt="Preview temporário" className="object-cover w-full h-full" />
@@ -462,7 +468,10 @@ const Menu = (props) => {
 
       {logoModalOpen && (
         <GenericModal onClose={() => setLogoModalOpen(false)}>
-          <h3 className="font-bold mb-4">Alterar logo</h3>
+          <div className="flex items-center gap-4 mb-4">
+            <FaChevronLeft onClick={() => setLogoModalOpen(false)} />
+            <h3 className="font-bold">Alterar logo</h3>
+          </div>
           <label className="text-center flex flex-col items-center justify-center w-30 h-30 border-2 border-dashed border-[var(--gray)] rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
             {tempLogoPreview ? (
               <img src={tempLogoPreview} alt="Preview temporário" className="object-cover w-full h-full" />

@@ -9,6 +9,8 @@ import Dashboard from "./page"; // ajuste se necessário
 import Loading from "@/components/Loading";
 import { useAlert } from "@/providers/AlertProvider";
 import GenericModal from "@/components/GenericModal";
+import { FaChevronLeft } from "react-icons/fa";
+import { useConfirm } from "@/providers/ConfirmProvider";
 
 /**
  * StatesManager (versão com checagem de auth e tratamento RLS/storage)
@@ -177,7 +179,10 @@ export default function StatesManager({
 }) {
   const { menu: menuFromServer, loading } = useMenu();
   const customAlert = useAlert();
+  const confirm = useConfirm();
+
   const [selectedTab, setSelectedTab] = useState("menu");
+  const [tabHistory, setTabHistory] = useState(["menu"]);
 
   const [showChanges, setShowChanges] = useState(false);
 
@@ -223,6 +228,8 @@ export default function StatesManager({
   }, [menuFromServer?.id]);
 
   const timerRef = useRef(null);
+  const isPoppingRef = useRef(false);
+
   useEffect(() => {
     if (!localState || !serverState) {
       if (changedFields.length !== 0) setChangedFields([]);
@@ -240,14 +247,56 @@ export default function StatesManager({
     };
   }, [localState, serverState, keys, changedFields]);
 
+  useEffect(() => {
+    setTabHistory((prev) => {
+      if (prev[prev.length - 1] !== selectedTab) {
+        return [...prev, selectedTab];
+      }
+      return prev;
+    });
+
+    // se a mudança veio do popstate, não pushState (evita "re-colar" a entrada)
+    if (isPoppingRef.current) {
+      isPoppingRef.current = false;
+      return;
+    }
+
+    // opcional: registra a tab no history do navegador
+    window.history.pushState({ selectedTab }, "", window.location.pathname);
+  }, [selectedTab]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setTabHistory((prev) => {
+        if (prev.length < 2) return prev; // nada pra voltar
+        const newHistory = [...prev];
+        newHistory.pop(); // remove a tab atual
+        const previousTab = newHistory[newHistory.length - 1];
+
+        // sinaliza que a próxima alteração de selectedTab veio de popstate
+        isPoppingRef.current = true;
+        setSelectedTab(previousTab);
+        return newHistory;
+      });
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
   const revertField = (key) => {
     if (!serverState) return;
     setLocalState((prev) => ({ ...prev, [key]: serverState[key] }));
     customAlert?.(`${key} revertido.`);
   };
 
-  const revertAll = () => {
+  const revertAll = async () => {
     if (!serverState) return;
+    const ok = await confirm("Quer mesmo descartar todas as alterações?");
+    if (!ok) {
+      console.log("[submit] usuário cancelou");
+      return;
+    }
     setLocalState({ ...serverState });
     customAlert?.("Alterações descartadas");
     setShowChanges(false);
@@ -255,6 +304,12 @@ export default function StatesManager({
 
   const saveAll = async () => {
     if (!localState) return;
+
+    const ok = await confirm("Quer mesmo salvar todas as alterações?");
+    if (!ok) {
+      console.log("[submit] usuário cancelou");
+      return;
+    }
 
     try {
       setSaving(true);
@@ -462,7 +517,10 @@ export default function StatesManager({
         <GenericModal onClose={() => setShowChanges(false)}>
           <div className="flex flex-col max-h-80 w-full">
             <div className="mb-2">
-              <h3 className="font-semibold mb-1">Alterações não salvas</h3>
+              <div className="flex items-center gap-4 mb-1">
+                <FaChevronLeft onClick={() => setShowChanges(false)} />
+                <h3 className="font-semibold">Alterações não salvas</h3>
+              </div>
               <p className="text-sm text-gray-600">
                 Estes campos foram modificados. Você pode revisar e decidir salvar ou reverter cada um.
               </p>

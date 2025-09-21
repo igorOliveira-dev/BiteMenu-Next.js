@@ -3,7 +3,7 @@
 
 import BackArrow from "@/components/BackArrow";
 import React, { useEffect, useState } from "react";
-import { FaPen, FaInfoCircle } from "react-icons/fa";
+import { FaPen, FaInfoCircle, FaChevronLeft } from "react-icons/fa";
 import { COLOR_PALETTES } from "@/consts/colorPallets";
 import useMenu from "@/hooks/useMenu";
 import Loading from "@/components/Loading";
@@ -401,7 +401,10 @@ const ConfigMenu = (props) => {
       {/* MODALS */}
       {titleModalOpen && (
         <GenericModal onClose={() => setTitleModalOpen(false)}>
-          <h3 className="font-bold mb-4">Alterar nome</h3>
+          <div className="flex items-center gap-4 mb-4">
+            <FaChevronLeft onClick={() => setTitleModalOpen(false)} />
+            <h3 className="font-bold">Alterar nome</h3>
+          </div>
           <input
             type="text"
             placeholder="Novo título"
@@ -435,7 +438,10 @@ const ConfigMenu = (props) => {
 
       {descModalOpen && (
         <GenericModal onClose={() => setDescModalOpen(false)}>
-          <h3 className="font-bold mb-4">Alterar descrição</h3>
+          <div className="flex items-center gap-4 mb-4">
+            <FaChevronLeft onClick={() => setDescModalOpen(false)} />
+            <h3 className="font-bold">Alterar descrição</h3>
+          </div>
           <input
             type="text"
             placeholder="Nova descrição"
@@ -469,7 +475,10 @@ const ConfigMenu = (props) => {
 
       {slugModalOpen && (
         <GenericModal onClose={() => setSlugModalOpen(false)}>
-          <h3 className="font-bold mb-4">Alterar slug</h3>
+          <div className="flex items-center gap-4 mb-4">
+            <FaChevronLeft onClick={() => setSlugModalOpen(false)} />
+            <h3 className="font-bold">Alterar slug</h3>
+          </div>
           <input
             type="text"
             placeholder="Novo slug"

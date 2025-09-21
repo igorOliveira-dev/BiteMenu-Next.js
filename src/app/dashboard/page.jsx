@@ -8,6 +8,7 @@ import Orders from "./tabs/Orders";
 import Sales from "./tabs/Sales";
 import { useAlert } from "@/providers/AlertProvider";
 import ConfigMenu from "./tabs/ConfigMenu";
+import { FaChevronLeft } from "react-icons/fa";
 
 const Dashboard = ({ menuState: externalMenuState, changedFields, revertField, saveAll, selectedTab, setSelectedTab }) => {
   const { menu, loading } = useMenu();
@@ -197,10 +198,10 @@ const Dashboard = ({ menuState: externalMenuState, changedFields, revertField, s
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-x">Compartilhe seu cardápio!</h3>
-              <button className="text-4xl" onClick={() => setIsOpen(false)}>
-                x
-              </button>
+              <div className="flex items-center gap-4 mb-4">
+                <FaChevronLeft onClick={() => setIsOpen(false)} />
+                <h3 className="font-bold">Compartilhe seu cardápio!</h3>
+              </div>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-2 max-w-[calc(100%-40px)] mb-6">
