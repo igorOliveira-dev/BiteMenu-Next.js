@@ -1,3 +1,4 @@
+// src/app/dashboard/page.jsx (ou onde seu Dashboard está)
 "use client";
 
 import React, { useState } from "react";
@@ -8,18 +9,47 @@ import Sales from "./tabs/Sales";
 import { useAlert } from "@/providers/AlertProvider";
 import ConfigMenu from "./tabs/ConfigMenu";
 
-const Dashboard = () => {
+const Dashboard = ({ menuState: externalMenuState, changedFields, revertField, saveAll }) => {
   const { menu, loading } = useMenu();
   const [selectedTab, setSelectedTab] = useState("menu");
   const [isOpen, setIsOpen] = useState(false);
   const customAlert = useAlert();
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  // Se houver menuState externo, usaremos ele; senão, mantemos estados locais como antes.
+  const usingExternal = Array.isArray(externalMenuState) && externalMenuState.length === 2;
 
-  const [backgroundColor, setBackgroundColor] = useState("#F8F9FA");
-  const [titleColor, setTitleColor] = useState("#007BFF");
-  const [detailsColor, setDetailsColor] = useState("#28A745");
+  // Se externo: destructure o par [localState, setLocalState]
+  const [externalState, externalSetState] = usingExternal ? externalMenuState : [null, null];
+
+  // STATES LOCAIS (fallback)
+  const [titleLocal, setTitleLocal] = useState("");
+  const [descriptionLocal, setDescriptionLocal] = useState("");
+
+  const [backgroundColorLocal, setBackgroundColorLocal] = useState("#F8F9FA");
+  const [titleColorLocal, setTitleColorLocal] = useState("#007BFF");
+  const [detailsColorLocal, setDetailsColorLocal] = useState("#28A745");
+
+  // helpers para usar state unificado (se externo, usar externalState, senao usar locais)
+  const title = usingExternal ? externalState.title : titleLocal;
+  const setTitle = usingExternal ? (val) => externalSetState((p) => ({ ...p, title: val })) : setTitleLocal;
+
+  const description = usingExternal ? externalState.description : descriptionLocal;
+  const setDescription = usingExternal
+    ? (val) => externalSetState((p) => ({ ...p, description: val }))
+    : setDescriptionLocal;
+
+  const backgroundColor = usingExternal ? externalState.backgroundColor : backgroundColorLocal;
+  const setBackgroundColor = usingExternal
+    ? (val) => externalSetState((p) => ({ ...p, backgroundColor: val }))
+    : setBackgroundColorLocal;
+
+  const titleColor = usingExternal ? externalState.titleColor : titleColorLocal;
+  const setTitleColor = usingExternal ? (val) => externalSetState((p) => ({ ...p, titleColor: val })) : setTitleColorLocal;
+
+  const detailsColor = usingExternal ? externalState.detailsColor : detailsColorLocal;
+  const setDetailsColor = usingExternal
+    ? (val) => externalSetState((p) => ({ ...p, detailsColor: val }))
+    : setDetailsColorLocal;
 
   const handleMenuSelect = (tab) => {
     setSelectedTab(tab);
@@ -122,6 +152,11 @@ const Dashboard = () => {
             setTitleColor={setTitleColor}
             detailsColor={detailsColor}
             setDetailsColor={setDetailsColor}
+            // caso você deseje funcionalidades extras vindas do StatesManager:
+            changedFields={changedFields}
+            revertField={revertField}
+            saveAll={saveAll}
+            menuState={usingExternal ? externalMenuState : undefined}
           />
         </div>
         <div className={selectedTab === "orders" ? "block" : "hidden"}>
@@ -143,6 +178,10 @@ const Dashboard = () => {
             setTitleColor={setTitleColor}
             detailsColor={detailsColor}
             setDetailsColor={setDetailsColor}
+            changedFields={changedFields}
+            revertField={revertField}
+            saveAll={saveAll}
+            menuState={usingExternal ? externalMenuState : undefined}
           />
         </div>
       </main>

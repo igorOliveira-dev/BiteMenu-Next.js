@@ -8,6 +8,7 @@ import useUser from "@/hooks/useUser";
 import Image from "next/image";
 import LogoMark from "../../../public/LogoMarca-sem-fundo.png";
 import ThemeToggle from "@/components/ThemeToggle";
+import StatesManager from "./StatesManager";
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
@@ -54,7 +55,9 @@ export default function DashboardLayout({ children }) {
         <Image src={LogoMark} height={50} width={180} alt="Bite Menu" />
         <ThemeToggle />
       </header>
-      <main>{children}</main>
+      <main>
+        <StatesManager />
+      </main>
     </>
   );
 }
