@@ -1,3 +1,6 @@
+// src/app/dashboard/tabs/ConfigMenu.jsx
+"use client";
+
 import BackArrow from "@/components/BackArrow";
 import React, { useEffect, useState } from "react";
 import { FaPen, FaInfoCircle } from "react-icons/fa";
@@ -5,10 +8,9 @@ import { COLOR_PALETTES } from "@/consts/colorPallets";
 import useMenu from "@/hooks/useMenu";
 import Loading from "@/components/Loading";
 import GenericModal from "@/components/GenericModal";
+import { useAlert } from "@/providers/AlertProvider";
 
 const DEFAULT_BACKGROUND = COLOR_PALETTES[0].bg;
-const DEFAULT_TITLE = COLOR_PALETTES[0].title;
-const DEFAULT_DETAILS = COLOR_PALETTES[0].details;
 
 function getContrastTextColor(hex) {
   const cleanHex = (hex || DEFAULT_BACKGROUND).replace("#", "");
@@ -19,45 +21,112 @@ function getContrastTextColor(hex) {
   return yiq >= 128 ? "black" : "white";
 }
 
-const ConfigMenu = ({
-  setSelectedTab,
-  title,
-  setTitle,
-  description,
-  setDescription,
-  backgroundColor,
-  setBackgroundColor,
-  titleColor,
-  setTitleColor,
-  detailsColor,
-  setDetailsColor,
-}) => {
+const ConfigMenu = (props) => {
+  const {
+    setSelectedTab,
+    title: propTitle,
+    setTitle: propSetTitle,
+    description: propDescription,
+    setDescription: propSetDescription,
+    backgroundColor: propBg,
+    setBackgroundColor: propSetBg,
+    titleColor: propTitleColor,
+    setTitleColor: propSetTitleColor,
+    detailsColor: propDetailsColor,
+    setDetailsColor: propSetDetailsColor,
+    menuState, // optional [state, setState]
+  } = props;
+
+  const customAlert = useAlert();
+
+  const usingExternal = Array.isArray(menuState) && menuState.length === 2;
+  const [externalState, externalSetState] = usingExternal ? menuState : [null, null];
+
   const { menu, loading } = useMenu();
 
-  // controle de modais
+  // LOCAL FALLBACK STATES (if not using external)
+  const [slugLocal, setSlugLocal] = useState(menu?.slug ?? "");
+  const [selectedServicesLocal, setSelectedServicesLocal] = useState(menu?.services ?? []);
+  const [hoursLocal, setHoursLocal] = useState(() =>
+    normalizeHours(
+      menu?.hours || {
+        mon: "09:00-18:00",
+        tue: "09:00-18:00",
+        wed: "09:00-18:00",
+        thu: "09:00-18:00",
+        fri: "09:00-18:00",
+        sat: "09:00-18:00",
+        sun: "09:00-18:00",
+      }
+    )
+  );
+
+  // unified getters/setters
+  const slug = usingExternal ? externalState.slug : slugLocal;
+  const setSlug = usingExternal ? (v) => externalSetState((p) => ({ ...p, slug: v })) : setSlugLocal;
+
+  const selectedServices = usingExternal ? externalState.selectedServices : selectedServicesLocal;
+  const setSelectedServices = usingExternal
+    ? (arr) => externalSetState((p) => ({ ...p, selectedServices: arr }))
+    : setSelectedServicesLocal;
+
+  const hours = usingExternal ? externalState.hours : hoursLocal;
+  const setHours = usingExternal ? (h) => externalSetState((p) => ({ ...p, hours: h })) : setHoursLocal;
+
+  // modals
   const [titleModalOpen, setTitleModalOpen] = useState(false);
   const [descModalOpen, setDescModalOpen] = useState(false);
   const [slugModalOpen, setSlugModalOpen] = useState(false);
 
-  // estados de titulo / descrição / slug
-  const [slug, setSlug] = useState(menu?.slug);
+  // temps
+  const [tempTitle, setTempTitle] = useState(propTitle ?? "");
+  const [tempDescription, setTempDescription] = useState(propDescription ?? "");
+  const [tempSlug, setTempSlug] = useState(slug ?? "");
 
-  // estados temporários de titulo / descrição / slug
-  const [tempTitle, setTempTitle] = useState(title);
-  const [tempDescription, setTempDescription] = useState(description);
-  const [tempSlug, setTempSlug] = useState(slug);
+  useEffect(() => {
+    if (menu?.title) {
+      if (!usingExternal && typeof propSetTitle === "function") {
+        propSetTitle(menu.title);
+      }
+      setTempTitle(menu.title);
+    }
+    if (menu?.description) {
+      if (!usingExternal && typeof propSetDescription === "function") {
+        propSetDescription(menu.description);
+      }
+      setTempDescription(menu.description);
+    }
+    if (menu?.slug) {
+      if (!usingExternal) setSlugLocal(menu.slug);
+      setTempSlug(menu.slug);
+    }
+    if (menu?.services) {
+      if (!usingExternal) setSelectedServices(menu.services);
+    }
+    if (menu?.background_color) {
+      if (!usingExternal && typeof propSetBg === "function") propSetBg(menu.background_color);
+    }
+    if (menu?.title_color) {
+      if (!usingExternal && typeof propSetTitleColor === "function") propSetTitleColor(menu.title_color);
+    }
+    if (menu?.hours) {
+      if (!usingExternal) setHours(normalizeHours(menu.hours));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [menu?.id]);
 
-  // estados de cores
+  useEffect(() => {
+    setTempTitle(propTitle);
+    setTempDescription(propDescription);
+  }, [propTitle, propDescription]);
+
   const [paletteIndex, setPaletteIndex] = useState(0);
-
   const colorFields = [
-    { label: "Cor do fundo:", value: backgroundColor, setter: setBackgroundColor },
-    { label: "Cor do título:", value: titleColor, setter: setTitleColor },
-    { label: "Cor dos detalhes:", value: detailsColor, setter: setDetailsColor },
+    { label: "Cor do fundo:", value: propBg, setter: propSetBg },
+    { label: "Cor do título:", value: propTitleColor, setter: propSetTitleColor },
+    { label: "Cor dos detalhes:", value: propDetailsColor, setter: propSetDetailsColor },
   ];
 
-  // estados de serviços
-  const [selectedServices, setSelectedServices] = useState(menu?.services || []);
   const serviceOptions = [
     { id: "delivery", label: "Entrega" },
     { id: "pickup", label: "Retirada" },
@@ -78,15 +147,6 @@ const ConfigMenu = ({
 
   const dayOrder = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
-  const [hours, setHours] = useState(() =>
-    normalizeHours(
-      menu?.hours || {
-        days: ["mon", "tue", "wed", "thu", "fri", "sat", "sun"],
-        hours: "00:00-23:59",
-      }
-    )
-  );
-
   const suggestRandomPalette = () => {
     let next = Math.floor(Math.random() * COLOR_PALETTES.length);
     while (next === paletteIndex) {
@@ -94,66 +154,37 @@ const ConfigMenu = ({
     }
     setPaletteIndex(next);
     const { bg, title, details } = COLOR_PALETTES[next];
-    setBackgroundColor(bg);
-    setTitleColor(title);
-    setDetailsColor(details);
+    if (usingExternal) {
+      externalSetState((p) => ({ ...p, backgroundColor: bg, titleColor: title, detailsColor: details }));
+    } else {
+      if (typeof propSetBg === "function") propSetBg(bg);
+      if (typeof propSetTitleColor === "function") propSetTitleColor(title);
+      if (typeof propSetDetailsColor === "function") propSetDetailsColor(details);
+    }
   };
 
-  // alterna checkbox de serviços
   const toggleService = (id) => {
-    setSelectedServices((prev) => {
-      if (prev.length === 1 && prev.includes(id)) {
-        return prev;
-      }
-      return prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id];
-    });
+    const prev = selectedServices || [];
+    if (prev.length === 1 && prev.includes(id)) {
+      customAlert("Mantenha ao menos 1 serviço.");
+      return prev;
+    }
+    let next;
+    if (prev.includes(id)) next = prev.filter((s) => s !== id);
+    else next = [...prev, id];
+    setSelectedServices(next);
   };
-
-  useEffect(() => {
-    if (menu?.title) {
-      setTitle(menu.title);
-      setTempTitle(menu.title);
-    }
-    if (menu?.description) {
-      setDescription(menu.description);
-      setTempDescription(menu.description);
-    }
-    if (menu?.slug) {
-      setSlug(menu.slug);
-      setTempSlug(menu.slug);
-    }
-    if (menu?.services) {
-      setSelectedServices(menu.services);
-    }
-    if (menu?.background_color) {
-      setBackgroundColor(menu.background_color);
-    }
-    if (menu?.title_color) {
-      setTitleColor(menu.title_color);
-    }
-    if (menu?.background_color) {
-      setBackgroundColor(menu.background_color);
-    }
-    if (menu?.hours) {
-      setHours(normalizeHours(menu.hours));
-    }
-  }, [menu]);
-
-  useEffect(() => {
-    setTempTitle(title);
-    setTempDescription(description);
-  }, [title, description]);
 
   function normalizeHours(data) {
-    // se vier no formato antigo
-    if (data?.hours && typeof data.hours === "string") {
+    if (!data) return {};
+    // if old format
+    if (data?.hours && typeof data.hours === "string" && Array.isArray(data.days)) {
       const obj = {};
       data.days.forEach((day) => {
-        obj[day] = data.hours; // todos os dias iguais
+        obj[day] = data.hours;
       });
       return obj;
     }
-    // se já estiver no novo formato
     return data;
   }
 
@@ -170,6 +201,7 @@ const ConfigMenu = ({
             <h2 className="ml-2">Configurações do cardápio</h2>
           </div>
 
+          {/* Nome */}
           <div>
             <div className="flex sm:items-center max-w-full min-h-[46px] flex-col sm:flex-row">
               <div className="flex items-center">
@@ -178,7 +210,7 @@ const ConfigMenu = ({
               </div>
               <div onClick={() => setTitleModalOpen(true)} className="flex w-full">
                 <span className="bg-translucid p-2 rounded-lg w-full">
-                  {title ? title : <span className="color-gray">Insira o nome</span>}
+                  {propTitle ? propTitle : <span className="color-gray">Insira o nome</span>}
                 </span>
                 <button className="border border-2 border-gray-500 p-2 bg-translucid-50 rounded-lg ml-2 opacity-75 hover:opacity-100 cursor-pointer">
                   <FaPen className="font-xl text-white opacity-75" />
@@ -188,6 +220,7 @@ const ConfigMenu = ({
             <hr className="border-[var(--gray)] mt-2 mb-4 max-w-full" />
           </div>
 
+          {/* Description */}
           <div>
             <div className="flex sm:items-center max-w-full min-h-[46px] flex-col sm:flex-row">
               <div className="flex items-center">
@@ -196,7 +229,7 @@ const ConfigMenu = ({
               </div>
               <div onClick={() => setDescModalOpen(true)} className="flex w-full">
                 <span className="bg-translucid p-2 rounded-lg w-full">
-                  {description ? description : <span className="color-gray">Insira a descrição</span>}
+                  {propDescription ? propDescription : <span className="color-gray">Insira a descrição</span>}
                 </span>
                 <button className="border border-2 border-gray-500 p-2 bg-translucid-50 rounded-lg ml-2 opacity-75 hover:opacity-100 cursor-pointer">
                   <FaPen className="font-xl text-white opacity-75" />
@@ -206,6 +239,7 @@ const ConfigMenu = ({
             <hr className="border-[var(--gray)] mt-2 mb-4 max-w-full" />
           </div>
 
+          {/* Slug */}
           <div>
             <div className="flex sm:items-center max-w-full min-h-[46px] flex-col sm:flex-row">
               <div className="flex items-center">
@@ -225,7 +259,7 @@ const ConfigMenu = ({
             <hr className="border-[var(--gray)] mt-2 mb-4 max-w-full" />
           </div>
 
-          {/* Nova seção: seletores de cor (inspirado no GetStart) */}
+          {/* Colors */}
           <div className="mt-2 max-w-full">
             <div className="flex items-center mb-2">
               <FaInfoCircle fontSize={18} className="cursor-pointer mr-2 shrink-0" />
@@ -239,7 +273,7 @@ const ConfigMenu = ({
                   <input
                     type="color"
                     value={item.value}
-                    onChange={(e) => item.setter(e.target.value)}
+                    onChange={(e) => item.setter && item.setter(e.target.value)}
                     className="h-8 w-8 rounded"
                     aria-label={item.label}
                   />
@@ -259,6 +293,7 @@ const ConfigMenu = ({
             <hr className="border-[var(--gray)] mt-2 mb-4 max-w-full" />
           </div>
 
+          {/* Services */}
           <div className="mb-4">
             <div className="flex items-center mb-2">
               <FaInfoCircle fontSize={18} className="cursor-pointer mr-2 shrink-0" />
@@ -270,20 +305,17 @@ const ConfigMenu = ({
                   <input
                     type="checkbox"
                     value={opt.id}
-                    checked={selectedServices.includes(opt.id)}
+                    checked={selectedServices?.includes(opt.id)}
                     onChange={() => toggleService(opt.id)}
                     className="peer appearance-none w-6 h-6 border-2 rounded-md transition-all duration-150 flex items-center justify-center relative"
                     style={{
                       borderColor: "#155dfc",
-                      backgroundColor: selectedServices.includes(opt.id) ? "#155dfc" : "transparent",
+                      backgroundColor: selectedServices?.includes(opt.id) ? "#155dfc" : "transparent",
                     }}
                   />
-
                   <span
                     className="relative after:content-['✓'] after:absolute after:text-white after:text-sm after:font-bold after:top-[3px] after:left-[-25px] peer-checked:after:opacity-100 after:opacity-0 transition-opacity duration-150"
-                    style={{
-                      color: "var(--gray)",
-                    }}
+                    style={{ color: "var(--gray)" }}
                   >
                     {opt.label}
                   </span>
@@ -292,6 +324,7 @@ const ConfigMenu = ({
             </div>
           </div>
 
+          {/* Hours */}
           <div className="mb-4">
             <div className="flex items-center mb-2">
               <FaInfoCircle fontSize={18} className="cursor-pointer mr-2 shrink-0" />
@@ -300,7 +333,7 @@ const ConfigMenu = ({
 
             <div className="flex flex-col space-y-2">
               {dayOrder.map((day) => {
-                const value = hours[day];
+                const value = hours?.[day];
                 const [openTime, closeTime] = value ? value.split("-") : ["", ""];
 
                 return (
@@ -309,14 +342,11 @@ const ConfigMenu = ({
 
                     <input
                       type="time"
-                      value={openTime}
+                      value={openTime || ""}
                       disabled={!value}
                       onChange={(e) => {
                         const newOpen = e.target.value;
-                        setHours((prev) => ({
-                          ...prev,
-                          [day]: `${newOpen}-${closeTime || "23:59"}`,
-                        }));
+                        setHours((prev) => ({ ...(prev || {}), [day]: `${newOpen}-${closeTime || "23:59"}` }));
                       }}
                       className="border rounded p-1 cursor-pointer"
                     />
@@ -325,14 +355,11 @@ const ConfigMenu = ({
 
                     <input
                       type="time"
-                      value={closeTime}
+                      value={closeTime || ""}
                       disabled={!value}
                       onChange={(e) => {
                         const newClose = e.target.value;
-                        setHours((prev) => ({
-                          ...prev,
-                          [day]: `${openTime || "00:00"}-${newClose}`,
-                        }));
+                        setHours((prev) => ({ ...(prev || {}), [day]: `${openTime || "00:00"}-${newClose}` }));
                       }}
                       className="border rounded p-1 text-foreground cursor-pointer"
                     />
@@ -342,10 +369,7 @@ const ConfigMenu = ({
                         type="checkbox"
                         checked={value === null}
                         onChange={(e) =>
-                          setHours((prev) => ({
-                            ...prev,
-                            [day]: e.target.checked ? null : "09:00-18:00",
-                          }))
+                          setHours((prev) => ({ ...(prev || {}), [day]: e.target.checked ? null : "09:00-18:00" }))
                         }
                       />
                       <span>Fechado</span>
@@ -361,7 +385,7 @@ const ConfigMenu = ({
               onClick={() => {
                 setHours((prev) => {
                   const newObj = {};
-                  Object.keys(prev).forEach((day) => {
+                  Object.keys(prev || {}).forEach((day) => {
                     newObj[day] = "00:00-23:59";
                   });
                   return newObj;
@@ -374,11 +398,7 @@ const ConfigMenu = ({
         </div>
       </div>
 
-      {/* -------------------------------------------------------------- */}
-      {/* --------------------------- MODAIS --------------------------- */}
-      {/* -------------------------------------------------------------- */}
-
-      {/* Modal de título */}
+      {/* MODALS */}
       {titleModalOpen && (
         <GenericModal onClose={() => setTitleModalOpen(false)}>
           <h3 className="font-bold mb-4">Alterar nome</h3>
@@ -392,7 +412,7 @@ const ConfigMenu = ({
           <div className="flex justify-end gap-2">
             <button
               onClick={() => {
-                setTempTitle(title);
+                setTempTitle(propTitle);
                 setTitleModalOpen(false);
               }}
               className="cursor-pointer px-4 py-2 bg-gray-600 rounded hover:bg-gray-500 transition text-white"
@@ -401,7 +421,8 @@ const ConfigMenu = ({
             </button>
             <button
               onClick={() => {
-                setTitle(tempTitle);
+                if (usingExternal) externalSetState((p) => ({ ...p, title: tempTitle }));
+                else if (typeof propSetTitle === "function") propSetTitle(tempTitle);
                 setTitleModalOpen(false);
               }}
               className="cursor-pointer px-4 py-2 bg-green-600 rounded hover:bg-green-500 transition text-white"
@@ -412,7 +433,6 @@ const ConfigMenu = ({
         </GenericModal>
       )}
 
-      {/* Modal de descrição */}
       {descModalOpen && (
         <GenericModal onClose={() => setDescModalOpen(false)}>
           <h3 className="font-bold mb-4">Alterar descrição</h3>
@@ -426,7 +446,7 @@ const ConfigMenu = ({
           <div className="flex justify-end gap-2">
             <button
               onClick={() => {
-                setTempDescription(description);
+                setTempDescription(propDescription);
                 setDescModalOpen(false);
               }}
               className="cursor-pointer px-4 py-2 bg-gray-600 rounded hover:bg-gray-500 transition text-white"
@@ -435,7 +455,8 @@ const ConfigMenu = ({
             </button>
             <button
               onClick={() => {
-                setDescription(tempDescription);
+                if (usingExternal) externalSetState((p) => ({ ...p, description: tempDescription }));
+                else if (typeof propSetDescription === "function") propSetDescription(tempDescription);
                 setDescModalOpen(false);
               }}
               className="cursor-pointer px-4 py-2 bg-green-600 rounded hover:bg-green-500 transition text-white"
@@ -446,7 +467,6 @@ const ConfigMenu = ({
         </GenericModal>
       )}
 
-      {/* Modal de slug */}
       {slugModalOpen && (
         <GenericModal onClose={() => setSlugModalOpen(false)}>
           <h3 className="font-bold mb-4">Alterar slug</h3>
@@ -469,7 +489,8 @@ const ConfigMenu = ({
             </button>
             <button
               onClick={() => {
-                setSlug(tempSlug);
+                if (usingExternal) externalSetState((p) => ({ ...p, slug: tempSlug }));
+                else setSlugLocal(tempSlug);
                 setSlugModalOpen(false);
               }}
               className="cursor-pointer px-4 py-2 bg-green-600 rounded hover:bg-green-500 transition text-white"

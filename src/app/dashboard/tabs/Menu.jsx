@@ -1,12 +1,12 @@
+// src/app/dashboard/tabs/Menu.jsx
 "use client";
 
 import { useAlert } from "@/providers/AlertProvider";
 import useMenu from "@/hooks/useMenu";
-import Image from "next/image";
 import { FaPen, FaCamera } from "react-icons/fa";
 import { FiSettings } from "react-icons/fi";
 import GenericModal from "@/components/GenericModal";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useRef, useState } from "react";
 import Loading from "@/components/Loading";
 import { COLOR_PALETTES } from "@/consts/colorPallets";
 
@@ -19,40 +19,58 @@ function getContrastTextColor(hex) {
   return yiq >= 128 ? "black" : "white";
 }
 
-const Menu = ({
-  setSelectedTab,
-  title,
-  setTitle,
-  description,
-  setDescription,
-  backgroundColor,
-  setBackgroundColor,
-  titleColor,
-  setTitleColor,
-  detailsColor,
-  setDetailsColor,
-}) => {
-  const { menu, loading } = useMenu();
+const Menu = (props) => {
+  const {
+    setSelectedTab,
+    title: propTitle,
+    setTitle: propSetTitle,
+    description: propDescription,
+    setDescription: propSetDescription,
+    backgroundColor: propBg,
+    setBackgroundColor: propSetBg,
+    titleColor: propTitleColor,
+    setTitleColor: propSetTitleColor,
+    detailsColor: propDetailsColor,
+    setDetailsColor: propSetDetailsColor,
+    menuState, // optional [state, setState]
+  } = props;
 
+  const usingExternal = Array.isArray(menuState) && menuState.length === 2;
+  const [externalState, externalSetState] = usingExternal ? menuState : [null, null];
+
+  const title = usingExternal ? externalState.title : propTitle;
+  const setTitle = usingExternal ? (v) => externalSetState((p) => ({ ...p, title: v })) : propSetTitle;
+
+  const description = usingExternal ? externalState.description : propDescription;
+  const setDescription = usingExternal ? (v) => externalSetState((p) => ({ ...p, description: v })) : propSetDescription;
+
+  const backgroundColor = usingExternal ? externalState.backgroundColor : propBg;
+  const setBackgroundColor = usingExternal ? (v) => externalSetState((p) => ({ ...p, backgroundColor: v })) : propSetBg;
+
+  const titleColor = usingExternal ? externalState.titleColor : propTitleColor;
+  const setTitleColor = usingExternal ? (v) => externalSetState((p) => ({ ...p, titleColor: v })) : propSetTitleColor;
+
+  const detailsColor = usingExternal ? externalState.detailsColor : propDetailsColor;
+  const setDetailsColor = usingExternal ? (v) => externalSetState((p) => ({ ...p, detailsColor: v })) : propSetDetailsColor;
+
+  const { menu, loading } = useMenu();
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
   const customAlert = useAlert();
 
-  // ESTADOS PRINCIPAIS
-  const [bannerFile, setBannerFile] = useState(menu?.banner_url);
-  const [logoFile, setLogoFile] = useState(menu?.logo_url);
+  // banner/logo values live in externalState.bannerFile / logoFile when usingExternal
+  const bannerFile = usingExternal ? externalState.bannerFile : null;
+  const logoFile = usingExternal ? externalState.logoFile : null;
 
-  // ESTADOS TEMPORÁRIOS
-  const [tempTitle, setTempTitle] = useState(menu?.title);
-  const [tempDescription, setTempDescription] = useState(menu?.description);
-  const [tempBannerFile, setTempBannerFile] = useState(menu?.banner_url);
-  const [tempLogoFile, setTempLogoFile] = useState(menu?.logo_url);
+  // temp files for modals (local to the component)
+  const [tempBannerFile, setTempBannerFile] = useState(bannerFile ?? null);
+  const [tempLogoFile, setTempLogoFile] = useState(logoFile ?? null);
 
-  // ESTADOS DE MODAL
+  // modal booleans
   const [titleModalOpen, setTitleModalOpen] = useState(false);
   const [bannerModalOpen, setBannerModalOpen] = useState(false);
   const [logoModalOpen, setLogoModalOpen] = useState(false);
 
-  // estados de cores
+  // palette index
   const [paletteIndex, setPaletteIndex] = useState(0);
   const colorFields = [
     { label: "Cor do fundo:", value: backgroundColor, setter: setBackgroundColor },
@@ -60,66 +78,146 @@ const Menu = ({
     { label: "Cor dos detalhes:", value: detailsColor, setter: setDetailsColor },
   ];
 
-  // QUANDO MENU VEM DO SUPABASE
+  // synchronize temp files when external files change
   useEffect(() => {
-    if (menu) {
-      setTitle(menu.title);
-      setTempTitle(menu.title);
-      setLogoFile(menu.logo_url);
-      setTempLogoFile(menu.logo_url);
-      setBannerFile(menu.banner_url);
-      setTempBannerFile(menu.banner_url);
+    if (usingExternal) {
+      setTempBannerFile(bannerFile ?? null);
+      setTempLogoFile(logoFile ?? null);
     }
-  }, [menu]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bannerFile, logoFile]);
 
+  // previews with cleanup
+  const [bannerPreview, setBannerPreview] = useState(null);
+  const bannerPreviewRef = useRef(null);
   useEffect(() => {
-    setTempTitle(title);
-    setTempDescription(description);
-  }, [title, description]);
-
-  // PREVIEWS (PRINCIPAL)
-  const bannerPreview = useMemo(() => {
-    if (bannerFile instanceof File) return URL.createObjectURL(bannerFile);
-    return bannerFile;
+    if (bannerPreviewRef.current) {
+      URL.revokeObjectURL(bannerPreviewRef.current);
+      bannerPreviewRef.current = null;
+    }
+    if (bannerFile instanceof File) {
+      const url = URL.createObjectURL(bannerFile);
+      bannerPreviewRef.current = url;
+      setBannerPreview(url);
+    } else {
+      setBannerPreview(bannerFile ?? null);
+    }
+    return () => {
+      if (bannerPreviewRef.current) {
+        URL.revokeObjectURL(bannerPreviewRef.current);
+        bannerPreviewRef.current = null;
+      }
+    };
   }, [bannerFile]);
 
-  const logoPreview = useMemo(() => {
-    if (logoFile instanceof File) return URL.createObjectURL(logoFile);
-    return logoFile;
+  const [logoPreview, setLogoPreview] = useState(null);
+  const logoPreviewRef = useRef(null);
+  useEffect(() => {
+    if (logoPreviewRef.current) {
+      URL.revokeObjectURL(logoPreviewRef.current);
+      logoPreviewRef.current = null;
+    }
+    if (logoFile instanceof File) {
+      const url = URL.createObjectURL(logoFile);
+      logoPreviewRef.current = url;
+      setLogoPreview(url);
+    } else {
+      setLogoPreview(logoFile ?? null);
+    }
+    return () => {
+      if (logoPreviewRef.current) {
+        URL.revokeObjectURL(logoPreviewRef.current);
+        logoPreviewRef.current = null;
+      }
+    };
   }, [logoFile]);
 
-  // PREVIEWS (TEMPORÁRIO PARA MODAL)
-  const tempBannerPreview = useMemo(() => {
-    if (tempBannerFile instanceof File) return URL.createObjectURL(tempBannerFile);
-    return tempBannerFile;
+  // temp previews for modal (with cleanup)
+  const [tempBannerPreview, setTempBannerPreview] = useState(null);
+  const tempBannerRef = useRef(null);
+  useEffect(() => {
+    if (tempBannerRef.current) {
+      URL.revokeObjectURL(tempBannerRef.current);
+      tempBannerRef.current = null;
+    }
+    if (tempBannerFile instanceof File) {
+      const url = URL.createObjectURL(tempBannerFile);
+      tempBannerRef.current = url;
+      setTempBannerPreview(url);
+    } else {
+      setTempBannerPreview(tempBannerFile ?? null);
+    }
+    return () => {
+      if (tempBannerRef.current) {
+        URL.revokeObjectURL(tempBannerRef.current);
+        tempBannerRef.current = null;
+      }
+    };
   }, [tempBannerFile]);
 
-  const tempLogoPreview = useMemo(() => {
-    if (tempLogoFile instanceof File) return URL.createObjectURL(tempLogoFile);
-    return tempLogoFile;
+  const [tempLogoPreview, setTempLogoPreview] = useState(null);
+  const tempLogoRef = useRef(null);
+  useEffect(() => {
+    if (tempLogoRef.current) {
+      URL.revokeObjectURL(tempLogoRef.current);
+      tempLogoRef.current = null;
+    }
+    if (tempLogoFile instanceof File) {
+      const url = URL.createObjectURL(tempLogoFile);
+      tempLogoRef.current = url;
+      setTempLogoPreview(url);
+    } else {
+      setTempLogoPreview(tempLogoFile ?? null);
+    }
+    return () => {
+      if (tempLogoRef.current) {
+        URL.revokeObjectURL(tempLogoRef.current);
+        tempLogoRef.current = null;
+      }
+    };
   }, [tempLogoFile]);
 
-  // HANDLERS DE TROCA (USAM ESTADO TEMPORÁRIO)
+  // file input handlers for modal
+  const handleTempBannerChange = (e) => {
+    if (e.target.files?.length) setTempBannerFile(e.target.files[0]);
+    e.target.value = "";
+  };
   const handleTempLogoChange = (e) => {
     if (e.target.files?.length) setTempLogoFile(e.target.files[0]);
     e.target.value = "";
   };
 
-  const handleTempBannerChange = (e) => {
-    if (e.target.files?.length) setTempBannerFile(e.target.files[0]);
-    e.target.value = "";
+  // apply temp files to central state
+  const applyTempBanner = () => {
+    if (usingExternal) {
+      externalSetState((p) => ({ ...p, bannerFile: tempBannerFile ?? null }));
+    }
+    setBannerModalOpen(false);
+  };
+  const removeBanner = () => {
+    if (usingExternal) externalSetState((p) => ({ ...p, bannerFile: null }));
+  };
+
+  const applyTempLogo = () => {
+    if (usingExternal) {
+      externalSetState((p) => ({ ...p, logoFile: tempLogoFile ?? null }));
+    }
+    setLogoModalOpen(false);
+  };
+  const removeLogo = () => {
+    if (usingExternal) externalSetState((p) => ({ ...p, logoFile: null }));
   };
 
   const copyLink = () => {
+    if (!menu) return customAlert("Menu não carregado ainda", "error");
     const fullUrl = `${baseUrl}/menu/${menu.slug}`;
     navigator.clipboard
       .writeText(fullUrl)
       .then(() => customAlert("Link copiado!"))
       .catch(() => customAlert("Erro ao copiar link", "error"));
   };
-
   const accessMenu = () => {
-    window.open(`${baseUrl}/menu/${menu.slug}`, "_blank");
+    window.open(`${baseUrl}/menu/${menu?.slug}`, "_blank");
   };
 
   const suggestRandomPalette = () => {
@@ -129,13 +227,13 @@ const Menu = ({
     }
     setPaletteIndex(next);
     const { bg, title, details } = COLOR_PALETTES[next];
-    setBackgroundColor(bg);
-    setTitleColor(title);
-    setDetailsColor(details);
-  };
-
-  const configTab = () => {
-    setSelectedTab("configMenu");
+    if (usingExternal) {
+      externalSetState((p) => ({ ...p, backgroundColor: bg, titleColor: title, detailsColor: details }));
+    } else {
+      if (typeof setBackgroundColor === "function") setBackgroundColor(bg);
+      if (typeof setTitleColor === "function") setTitleColor(title);
+      if (typeof setDetailsColor === "function") setDetailsColor(details);
+    }
   };
 
   if (loading) return <Loading />;
@@ -144,14 +242,11 @@ const Menu = ({
   return (
     <>
       <div className="px-2 lg:grid">
-        <div
-          className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[768px] h-[800px]"
-          style={{ backgroundColor: backgroundColor }}
-        >
+        <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[768px] h-[800px]" style={{ backgroundColor }}>
           {/* Banner */}
           <div className="relative w-full max-w-full h-[25dvh]">
             {bannerPreview ? (
-              <Image alt="Preview do banner" src={bannerPreview} fill className="object-cover cursor-pointer" />
+              <img alt="Preview do banner" src={bannerPreview} className="object-cover w-full h-full cursor-pointer" />
             ) : (
               <div
                 className="bg-translucid relative w-full h-full rounded-lg flex items-center justify-center"
@@ -165,7 +260,7 @@ const Menu = ({
             )}
             <button
               onClick={() => {
-                setTempBannerFile(bannerFile);
+                setTempBannerFile(bannerFile ?? null);
                 setBannerModalOpen(true);
               }}
               className="cursor-pointer absolute inset-0 flex items-end justify-end opacity-75 hover:opacity-100 transition"
@@ -180,7 +275,11 @@ const Menu = ({
             {/* Logo */}
             <div className="relative w-full max-w-[80px] aspect-[1/1]">
               {logoPreview ? (
-                <Image alt="Preview da logo" src={logoPreview} fill className="object-cover rounded-lg cursor-pointer" />
+                <img
+                  alt="Preview da logo"
+                  src={logoPreview}
+                  className="object-cover rounded-lg cursor-pointer w-full h-full"
+                />
               ) : (
                 <div
                   className="bg-translucid relative w-full max-w-[80px] aspect-[1/1] rounded-lg flex items-center justify-center"
@@ -194,7 +293,7 @@ const Menu = ({
               )}
               <button
                 onClick={() => {
-                  setTempLogoFile(logoFile);
+                  setTempLogoFile(logoFile ?? null);
                   setLogoModalOpen(true);
                 }}
                 className="cursor-pointer absolute inset-0 flex items-end justify-end opacity-75 hover:opacity-100 transition"
@@ -216,19 +315,11 @@ const Menu = ({
               <FaPen className="font-xl text-white opacity-75" />
             </button>
           </div>
+
           <p className="mx-4" style={{ color: getContrastTextColor(backgroundColor) === "white" ? "#fafafa" : "#171717" }}>
             {description}
           </p>
         </div>
-
-        {/* Botão mobile */}
-        <button
-          onClick={configTab}
-          className="cursor-pointer m-2 px-4 py-2 max-w-[320px] bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition fixed top-22 right-0 lg:hidden flex items-center"
-        >
-          <FiSettings className="text-2xl mr-2" />
-          Configurar cardápio
-        </button>
 
         {/* Sidebar */}
         <aside className="hidden p-2 pt-4 m-2 fixed right-0 rounded-lg bg-translucid w-[calc(30dvw-36px)] shadow-[0_0_10px_var(--shadow)] lg:flex items-center flex-col overflow-hidden h-[calc(100dvh-110px)]">
@@ -248,6 +339,7 @@ const Menu = ({
                 Acessar cardápio
               </button>
             </div>
+
             <hr className="border-[var(--gray)] m-2 mb-4 max-w-full" />
             <div className="mt-2 max-w-full">
               <div className="flex items-center mb-2">
@@ -279,9 +371,10 @@ const Menu = ({
                 </button>
               </div>
             </div>
+
             <hr className="border-[var(--gray)] mt-2 mb-4 max-w-full" />
             <button
-              onClick={configTab}
+              onClick={() => setSelectedTab("configMenu")}
               className="cursor-pointer w-full max-w-[320px] mt-2 p-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition flex items-center justify-center"
             >
               <FiSettings className="text-xl mr-2" />
@@ -291,36 +384,26 @@ const Menu = ({
         </aside>
       </div>
 
-      {/* -------------------------------------------------------------- */}
-      {/* --------------------------- MODAIS --------------------------- */}
-      {/* -------------------------------------------------------------- */}
-
-      {/* Modal de título */}
+      {/* MODALS */}
       {titleModalOpen && (
         <GenericModal onClose={() => setTitleModalOpen(false)}>
           <h3 className="font-bold mb-4">Alterar nome</h3>
           <input
             type="text"
             placeholder="Novo título"
-            value={tempTitle || ""}
-            onChange={(e) => setTempTitle(e.target.value)}
+            value={title ?? ""}
+            onChange={(e) => setTitle(e.target.value)}
             className="w-full p-2 rounded border bg-translucid mb-4"
           />
           <div className="flex justify-end gap-2">
             <button
-              onClick={() => {
-                setTempTitle(title);
-                setTitleModalOpen(false);
-              }}
+              onClick={() => setTitleModalOpen(false)}
               className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded"
             >
               Cancelar
             </button>
             <button
-              onClick={() => {
-                setTitle(tempTitle);
-                setTitleModalOpen(false);
-              }}
+              onClick={() => setTitleModalOpen(false)}
               className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded"
             >
               Salvar
@@ -329,7 +412,6 @@ const Menu = ({
         </GenericModal>
       )}
 
-      {/* Modal de banner */}
       {bannerModalOpen && (
         <GenericModal onClose={() => setBannerModalOpen(false)}>
           <h3 className="font-bold mb-4">Alterar banner</h3>
@@ -356,20 +438,13 @@ const Menu = ({
             >
               Cancelar
             </button>
-            <button
-              onClick={() => {
-                setBannerFile(tempBannerFile);
-                setBannerModalOpen(false);
-              }}
-              className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded"
-            >
+            <button onClick={applyTempBanner} className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded">
               Salvar
             </button>
           </div>
         </GenericModal>
       )}
 
-      {/* Modal de logo */}
       {logoModalOpen && (
         <GenericModal onClose={() => setLogoModalOpen(false)}>
           <h3 className="font-bold mb-4">Alterar logo</h3>
@@ -393,13 +468,7 @@ const Menu = ({
             >
               Cancelar
             </button>
-            <button
-              onClick={() => {
-                setLogoFile(tempLogoFile);
-                setLogoModalOpen(false);
-              }}
-              className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded"
-            >
+            <button onClick={applyTempLogo} className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded">
               Salvar
             </button>
           </div>
