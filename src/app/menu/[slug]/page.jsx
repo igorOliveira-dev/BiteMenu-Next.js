@@ -55,15 +55,11 @@ export default async function MenuPage({ params }) {
 
       <div className="flex items-center mt-2">
         {menu.logo_url && (
-          <div className="relative w-24 h-24 mr-4">
-            <Image
+          <div className="relative w-full max-w-[80px] aspect-[1/1] rounded-lg mr-2 sm:mr-4">
+            <img
               alt="Logo do estabelecimento"
               src={menu.logo_url}
-              width={96}
-              height={96}
-              className="object-cover rounded-lg"
-              priority
-              unoptimized
+              className="object-cover rounded-lg cursor-pointer w-full h-full"
             />
           </div>
         )}
