@@ -10,6 +10,16 @@ import Loading from "@/components/Loading";
 import GenericModal from "@/components/GenericModal";
 import { useAlert } from "@/providers/AlertProvider";
 
+const DEFAULT_HOURS = {
+  mon: "09:00-18:00",
+  tue: "09:00-18:00",
+  wed: "09:00-18:00",
+  thu: "09:00-18:00",
+  fri: "09:00-18:00",
+  sat: "10:00-14:00",
+  sun: null,
+};
+
 const DEFAULT_BACKGROUND = COLOR_PALETTES[0].bg;
 
 function getContrastTextColor(hex) {
@@ -19,6 +29,19 @@ function getContrastTextColor(hex) {
   const b = parseInt(cleanHex.substring(4, 6), 16);
   const yiq = (r * 299 + g * 587 + b * 114) / 1000;
   return yiq >= 128 ? "black" : "white";
+}
+
+function normalizeHours(data) {
+  if (!data) return { ...DEFAULT_HOURS };
+  // compatibilidade com formato antigo
+  if (data?.hours && typeof data.hours === "string" && Array.isArray(data.days)) {
+    const obj = {};
+    data.days.forEach((day) => {
+      obj[day] = data.hours;
+    });
+    return { ...DEFAULT_HOURS, ...obj };
+  }
+  return { ...DEFAULT_HOURS, ...data };
 }
 
 const ConfigMenu = (props) => {
@@ -44,36 +67,52 @@ const ConfigMenu = (props) => {
 
   const { menu, loading } = useMenu();
 
-  // LOCAL FALLBACK STATES (if not using external)
+  // estados locais (fallback)
   const [slugLocal, setSlugLocal] = useState(menu?.slug ?? "");
   const [selectedServicesLocal, setSelectedServicesLocal] = useState(menu?.services ?? []);
-  const [hoursLocal, setHoursLocal] = useState(() =>
-    normalizeHours(
-      menu?.hours || {
-        mon: "09:00-18:00",
-        tue: "09:00-18:00",
-        wed: "09:00-18:00",
-        thu: "09:00-18:00",
-        fri: "09:00-18:00",
-        sat: "09:00-18:00",
-        sun: "09:00-18:00",
-      }
-    )
-  );
+  const [hoursLocal, setHoursLocal] = useState(() => normalizeHours(menu?.hours));
 
-  // unified getters/setters
-  const slug = usingExternal ? externalState.slug : slugLocal;
+  // getters/setters unificados (slug / services)
+  const slug = usingExternal ? externalState?.slug : slugLocal;
   const setSlug = usingExternal ? (v) => externalSetState((p) => ({ ...p, slug: v })) : setSlugLocal;
 
-  const selectedServices = usingExternal ? externalState.selectedServices : selectedServicesLocal;
+  const selectedServices = usingExternal ? externalState?.selectedServices : selectedServicesLocal;
   const setSelectedServices = usingExternal
     ? (arr) => externalSetState((p) => ({ ...p, selectedServices: arr }))
     : setSelectedServicesLocal;
 
-  const hours = usingExternal ? externalState.hours : hoursLocal;
-  const setHours = usingExternal ? (h) => externalSetState((p) => ({ ...p, hours: h })) : setHoursLocal;
+  // hours: para renderizar sempre usamos a versão normalizada
+  const hours = normalizeHours(usingExternal ? externalState?.hours : hoursLocal);
 
-  // modals
+  // wrapper seguro para atualizar "hours" que aceita updater function ou objeto
+  const safeSetHours = (updaterOrValue) => {
+    if (usingExternal) {
+      // externalSetState recebe função que recebe o estado externo completo
+      if (typeof updaterOrValue === "function") {
+        externalSetState((prev) => {
+          const prevHours = normalizeHours(prev?.hours);
+          const nextRaw = updaterOrValue(prevHours);
+          const next = normalizeHours(nextRaw);
+          return { ...prev, hours: next };
+        });
+      } else {
+        externalSetState((prev) => ({ ...prev, hours: normalizeHours(updaterOrValue) }));
+      }
+    } else {
+      // setHoursLocal aceita updater function
+      setHoursLocal((prevRaw) => {
+        const prevHours = normalizeHours(prevRaw);
+        if (typeof updaterOrValue === "function") {
+          const nextRaw = updaterOrValue(prevHours);
+          return normalizeHours(nextRaw);
+        } else {
+          return normalizeHours(updaterOrValue);
+        }
+      });
+    }
+  };
+
+  // modais
   const [titleModalOpen, setTitleModalOpen] = useState(false);
   const [descModalOpen, setDescModalOpen] = useState(false);
   const [slugModalOpen, setSlugModalOpen] = useState(false);
@@ -84,33 +123,27 @@ const ConfigMenu = (props) => {
   const [tempSlug, setTempSlug] = useState(slug ?? "");
 
   useEffect(() => {
-    if (menu?.title) {
-      if (!usingExternal && typeof propSetTitle === "function") {
-        propSetTitle(menu.title);
+    if (menu) {
+      if (menu.title) {
+        if (!usingExternal && typeof propSetTitle === "function") {
+          propSetTitle(menu.title);
+        }
+        setTempTitle(menu.title);
       }
-      setTempTitle(menu.title);
-    }
-    if (menu?.description) {
-      if (!usingExternal && typeof propSetDescription === "function") {
-        propSetDescription(menu.description);
+      if (menu.description) {
+        if (!usingExternal && typeof propSetDescription === "function") {
+          propSetDescription(menu.description);
+        }
+        setTempDescription(menu.description);
       }
-      setTempDescription(menu.description);
-    }
-    if (menu?.slug) {
-      if (!usingExternal) setSlugLocal(menu.slug);
-      setTempSlug(menu.slug);
-    }
-    if (menu?.services) {
-      if (!usingExternal) setSelectedServices(menu.services);
-    }
-    if (menu?.background_color) {
-      if (!usingExternal && typeof propSetBg === "function") propSetBg(menu.background_color);
-    }
-    if (menu?.title_color) {
-      if (!usingExternal && typeof propSetTitleColor === "function") propSetTitleColor(menu.title_color);
-    }
-    if (menu?.hours) {
-      if (!usingExternal) setHours(normalizeHours(menu.hours));
+      if (menu.slug) {
+        if (!usingExternal) setSlugLocal(menu.slug);
+        setTempSlug(menu.slug);
+      }
+      if (menu.services && !usingExternal) setSelectedServices(menu.services);
+      if (menu.background_color && !usingExternal && typeof propSetBg === "function") propSetBg(menu.background_color);
+      if (menu.title_color && !usingExternal && typeof propSetTitleColor === "function") propSetTitleColor(menu.title_color);
+      if (menu.hours && !usingExternal) safeSetHours(menu.hours);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [menu?.id]);
@@ -167,26 +200,13 @@ const ConfigMenu = (props) => {
     const prev = selectedServices || [];
     if (prev.length === 1 && prev.includes(id)) {
       customAlert("Mantenha ao menos 1 serviço.");
-      return prev;
+      return;
     }
     let next;
     if (prev.includes(id)) next = prev.filter((s) => s !== id);
     else next = [...prev, id];
     setSelectedServices(next);
   };
-
-  function normalizeHours(data) {
-    if (!data) return {};
-    // if old format
-    if (data?.hours && typeof data.hours === "string" && Array.isArray(data.days)) {
-      const obj = {};
-      data.days.forEach((day) => {
-        obj[day] = data.hours;
-      });
-      return obj;
-    }
-    return data;
-  }
 
   if (loading) return <Loading />;
 
@@ -334,7 +354,8 @@ const ConfigMenu = (props) => {
             <div className="flex flex-col space-y-2">
               {dayOrder.map((day) => {
                 const value = hours?.[day];
-                const [openTime, closeTime] = value ? value.split("-") : ["", ""];
+                const isClosed = value === null;
+                const [openTime, closeTime] = typeof value === "string" ? value.split("-") : ["", ""];
 
                 return (
                   <div key={day} className="flex items-center space-x-2">
@@ -343,10 +364,15 @@ const ConfigMenu = (props) => {
                     <input
                       type="time"
                       value={openTime || ""}
-                      disabled={!value}
+                      disabled={isClosed}
                       onChange={(e) => {
                         const newOpen = e.target.value;
-                        setHours((prev) => ({ ...(prev || {}), [day]: `${newOpen}-${closeTime || "23:59"}` }));
+                        safeSetHours((prev) => {
+                          const base = { ...prev };
+                          const currentClose = typeof base[day] === "string" ? base[day].split("-")[1] : "23:59";
+                          base[day] = `${newOpen}-${currentClose || "23:59"}`;
+                          return base;
+                        });
                       }}
                       className="border rounded p-1 cursor-pointer"
                     />
@@ -356,10 +382,15 @@ const ConfigMenu = (props) => {
                     <input
                       type="time"
                       value={closeTime || ""}
-                      disabled={!value}
+                      disabled={isClosed}
                       onChange={(e) => {
                         const newClose = e.target.value;
-                        setHours((prev) => ({ ...(prev || {}), [day]: `${openTime || "00:00"}-${newClose}` }));
+                        safeSetHours((prev) => {
+                          const base = { ...prev };
+                          const currentOpen = typeof base[day] === "string" ? base[day].split("-")[0] : "00:00";
+                          base[day] = `${currentOpen || "00:00"}-${newClose}`;
+                          return base;
+                        });
                       }}
                       className="border rounded p-1 text-foreground cursor-pointer"
                     />
@@ -367,10 +398,15 @@ const ConfigMenu = (props) => {
                     <label className="ml-2 flex items-center space-x-1 cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={value === null}
-                        onChange={(e) =>
-                          setHours((prev) => ({ ...(prev || {}), [day]: e.target.checked ? null : "09:00-18:00" }))
-                        }
+                        checked={isClosed}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          safeSetHours((prev) => {
+                            const base = { ...prev };
+                            base[day] = checked ? null : typeof base[day] === "string" ? base[day] : DEFAULT_HOURS[day];
+                            return base;
+                          });
+                        }}
                       />
                       <span>Fechado</span>
                     </label>
@@ -383,10 +419,10 @@ const ConfigMenu = (props) => {
               type="button"
               className="mt-3 gray-button px-4 py-2 rounded-lg"
               onClick={() => {
-                setHours((prev) => {
-                  const newObj = {};
-                  Object.keys(prev || {}).forEach((day) => {
-                    newObj[day] = "00:00-23:59";
+                safeSetHours((prev) => {
+                  const newObj = { ...prev };
+                  Object.keys(newObj).forEach((d) => {
+                    newObj[d] = "00:00-23:59";
                   });
                   return newObj;
                 });
