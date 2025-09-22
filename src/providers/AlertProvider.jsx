@@ -43,8 +43,11 @@ export function AlertProvider({ children }) {
             <span>{a.message}</span>
 
             {/* botão X */}
-            <button onClick={() => closeAlert(a.id)} className="absolute top-2 right-2 text-3xl hover:text-gray-200">
-              ×
+            <button
+              onClick={() => closeAlert(a.id)}
+              className="cursor-pointer absolute top-2 right-2 text-xl hover:text-gray-200"
+            >
+              x
             </button>
 
             {/* barra de progresso */}

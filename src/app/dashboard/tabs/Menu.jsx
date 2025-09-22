@@ -252,7 +252,7 @@ const Menu = (props) => {
           <FiSettings className="text-xl mr-2" />
           Configurar cardápio
         </button>
-        <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[768px] h-[800px]" style={{ backgroundColor }}>
+        <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[768px]" style={{ backgroundColor }}>
           {/* Banner */}
           <div className="relative w-full max-w-full h-[25dvh]">
             {bannerPreview ? (

@@ -4,8 +4,9 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import useMenu from "@/hooks/useMenu";
 import GenericModal from "@/components/GenericModal";
-import { FaPen } from "react-icons/fa";
+import { FaPen, FaTrash } from "react-icons/fa";
 import { useAlert } from "@/providers/AlertProvider";
+import { useConfirm } from "@/providers/ConfirmProvider";
 
 function getContrastTextColor(hex) {
   const cleanHex = (hex || "").replace("#", "");
@@ -21,6 +22,7 @@ const uid = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.r
 export default function MenuItems({ backgroundColor }) {
   const { menu, loading: menuLoading } = useMenu();
   const alert = useAlert();
+  confirm = useConfirm();
 
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState(null); // null = ainda não buscou
@@ -130,7 +132,11 @@ export default function MenuItems({ backgroundColor }) {
   };
 
   const deleteCategory = async (categoryId) => {
-    if (!confirm("Remover categoria? Essa ação removerá itens também (se não houver cascade).")) return false;
+    const ok = await confirm("Remover categoria? Essa ação removerá os itens também.");
+    if (!ok) {
+      console.log("[submit] usuário cancelou");
+      return;
+    }
     const before = categories;
     setCategories((prev = []) => prev.filter((c) => c.id !== categoryId));
     try {
@@ -211,7 +217,11 @@ export default function MenuItems({ backgroundColor }) {
   };
 
   const deleteItem = async (categoryId, itemId) => {
-    if (!confirm("Remover item?")) return false;
+    const ok = await confirm("Remover item?");
+    if (!ok) {
+      console.log("[submit] usuário cancelou");
+      return;
+    }
     const before = categories;
     setCategories((prev = []) =>
       prev.map((c) =>
@@ -262,6 +272,27 @@ export default function MenuItems({ backgroundColor }) {
 
   const handleModalSave = async () => {
     const { type, mode, categoryId, itemId, data } = modalPayload;
+
+    if (type === "category") {
+      if (!data.name.trim()) {
+        alert?.("O nome da categoria não pode estar vazio.", "error");
+        return;
+      }
+    } else if (type === "item") {
+      if (!data.name.trim()) {
+        alert?.("O nome do item não pode estar vazio.", "error");
+        return;
+      }
+
+      const priceNum = parseFloat(data.price);
+      if (isNaN(priceNum)) {
+        alert?.("O preço deve ser um número válido.", "error");
+        return;
+      }
+
+      data.price = priceNum; // Normaliza para número antes de salvar
+    }
+
     if (type === "category") {
       if (mode === "create") {
         await createCategory({ name: data.name });
@@ -269,14 +300,13 @@ export default function MenuItems({ backgroundColor }) {
         await updateCategory(categoryId, { name: data.name });
       }
     } else if (type === "item") {
-      if (!categoryId) {
-        alert("Categoria inválida");
-      } else if (mode === "create") {
+      if (mode === "create") {
         await createItem(categoryId, { name: data.name, price: data.price, description: data.description });
       } else if (mode === "edit" && itemId) {
         await updateItem(itemId, { name: data.name, price: data.price, description: data.description });
       }
     }
+
     setModalOpen(false);
   };
 
@@ -284,73 +314,103 @@ export default function MenuItems({ backgroundColor }) {
   if (menuLoading || loading || categories === null) return <div className="p-4">Carregando categorias...</div>;
   if (!menu) return <div className="p-4">Você ainda não criou um menu.</div>;
 
+  const translucidToUse = getContrastTextColor(backgroundColor) === "white" ? "#ffffff15" : "#00000015";
+  const grayToUse = getContrastTextColor(backgroundColor) === "white" ? "#cccccc" : "#333333";
+  const foregroundToUse = getContrastTextColor(backgroundColor) === "white" ? "#fafafa" : "#171717";
+
   return (
     <div className="p-4">
       <div className="mb-4">
         <div className="flex gap-2">
           <button
             onClick={() => openCategoryModal("create")}
-            className="cursor-pointer px-3 py-1 bg-blue-600 text-white rounded"
+            className="cursor-pointer px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded"
           >
             + Categoria
           </button>
         </div>
       </div>
 
-      {categories.length === 0 && <div className="mb-4 text-sm color-gray">Nenhuma categoria ainda.</div>}
+      {categories.length === 0 && (
+        <div className="mb-4 text-sm" style={{ color: grayToUse }}>
+          Nenhuma categoria ainda.
+        </div>
+      )}
 
       <div className="space-y-4">
         {categories.map((cat) => (
-          <div key={cat.id} className="border rounded p-3 bg-translucid">
+          <div key={cat.id} className="rounded p-3" style={{ backgroundColor: translucidToUse }}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-3">
-                <strong>{cat.name}</strong>
-                <span className="ml-2 text-sm color-gray">({cat.menu_items?.length ?? 0} itens)</span>
+                <button
+                  title="Editar categoria"
+                  onClick={() => openCategoryModal("edit", cat)}
+                  className="cursor-pointer p-2 rounded"
+                  style={{ color: foregroundToUse }}
+                >
+                  <FaPen />
+                </button>
+                <strong style={{ color: foregroundToUse }}>{cat.name}</strong>
+                <span className="text-sm" style={{ color: grayToUse }}>
+                  ({cat.menu_items?.length ?? 0} itens)
+                </span>
               </div>
 
               <div className="flex items-center gap-2">
                 <button
-                  title="Editar categoria"
-                  onClick={() => openCategoryModal("edit", cat)}
-                  className="p-2 rounded hover:bg-white/5"
+                  onClick={() => openItemModal("create", cat.id)}
+                  className="cursor-pointer px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded"
                 >
-                  <FaPen />
-                </button>
-                <button onClick={() => openItemModal("create", cat.id)} className="px-2 py-1 bg-blue-500 text-white rounded">
                   + Item
                 </button>
-                <button onClick={() => deleteCategory(cat.id)} className="px-2 py-1 text-red-500">
-                  Remover
+                <button
+                  onClick={() => deleteCategory(cat.id)}
+                  className="cursor-pointer p-2 bg-red-600 hover:bg-red-700 text-white rounded"
+                >
+                  <FaTrash />
                 </button>
               </div>
             </div>
 
             <div className="space-y-3">
               {(cat.menu_items || []).map((it) => (
-                <div key={it.id} className="p-2 rounded border bg-white/5 flex gap-3 items-start">
-                  <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
+                <div
+                  key={it.id}
+                  className="flex items-center justify-between gap-2 p-2"
+                  style={{ backgroundColor: translucidToUse }}
+                >
+                  <div className="flex flex-col items-start gap-2">
                     <div>
-                      <div className="text-sm font-medium">{it.name}</div>
+                      <div className="text-xl font-bold" style={{ color: foregroundToUse }}>
+                        {it.name}
+                      </div>
                     </div>
                     <div>
-                      <div className="text-sm">{it.price ? `R$ ${Number(it.price).toFixed(2)}` : "-"}</div>
+                      <div className="text-sm" style={{ color: grayToUse }}>
+                        {it.description}
+                      </div>
                     </div>
                     <div>
-                      <div className="text-sm text-gray-400">{it.description}</div>
+                      <div className="text-2xl font-medium" style={{ color: foregroundToUse }}>
+                        {it.price ? `R$ ${Number(it.price).toFixed(2)}` : "-"}
+                      </div>
                     </div>
-
-                    <div className="md:col-span-3 flex items-center gap-2 mt-2">
-                      <button
-                        title="Editar item"
-                        onClick={() => openItemModal("edit", cat.id, it)}
-                        className="p-2 rounded hover:bg-white/5"
-                      >
-                        <FaPen />
-                      </button>
-                      <button onClick={() => deleteItem(cat.id, it.id)} className="px-2 py-1 text-red-500">
-                        Remover item
-                      </button>
-                    </div>
+                  </div>
+                  <div className="flex flex-col items-center gap-2">
+                    <button
+                      title="Editar item"
+                      onClick={() => openItemModal("edit", cat.id, it)}
+                      className="cursor-pointer p-2 rounded hover:bg-white/5"
+                      style={{ color: foregroundToUse }}
+                    >
+                      <FaPen />
+                    </button>
+                    <button
+                      onClick={() => deleteItem(cat.id, it.id)}
+                      className="cursor-pointer p-2 bg-red-600 hover:bg-red-700 text-white rounded"
+                    >
+                      <FaTrash />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -399,7 +459,14 @@ export default function MenuItems({ backgroundColor }) {
                 <input
                   type="text"
                   value={modalPayload.data.price}
-                  onChange={(e) => setModalPayload((p) => ({ ...p, data: { ...p.data, price: e.target.value } }))}
+                  onChange={(e) => {
+                    let value = e.target.value;
+                    value = value.replace(/[^0-9.,]/g, "");
+                    value = value.replace(",", ".");
+                    const parts = value.split(".");
+                    if (parts.length > 2) value = parts[0] + "." + parts.slice(1).join("");
+                    setModalPayload((p) => ({ ...p, data: { ...p.data, price: value } }));
+                  }}
                   className="w-full p-2 rounded border bg-translucid mb-2"
                   placeholder="00.00"
                 />
