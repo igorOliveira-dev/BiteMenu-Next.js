@@ -330,7 +330,7 @@ const Menu = (props) => {
             {description}
           </p>
 
-          <MenuItems backgroundColor={backgroundColor} />
+          <MenuItems backgroundColor={backgroundColor} detailsColor={detailsColor} />
         </div>
 
         {/* Sidebar */}

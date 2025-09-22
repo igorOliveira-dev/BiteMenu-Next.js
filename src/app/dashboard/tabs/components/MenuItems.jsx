@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import useMenu from "@/hooks/useMenu";
 import GenericModal from "@/components/GenericModal";
-import { FaPen, FaTrash } from "react-icons/fa";
+import { FaPen, FaTrash, FaShoppingCart } from "react-icons/fa";
 import { useAlert } from "@/providers/AlertProvider";
 import { useConfirm } from "@/providers/ConfirmProvider";
 
@@ -19,7 +19,7 @@ function getContrastTextColor(hex) {
 
 const uid = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `tmp-${Date.now()}`);
 
-export default function MenuItems({ backgroundColor }) {
+export default function MenuItems({ backgroundColor, detailsColor }) {
   const { menu, loading: menuLoading } = useMenu();
   const alert = useAlert();
   confirm = useConfirm();
@@ -310,16 +310,16 @@ export default function MenuItems({ backgroundColor }) {
     setModalOpen(false);
   };
 
-  // ---------- render ----------
-  if (menuLoading || loading || categories === null) return <div className="p-4">Carregando categorias...</div>;
-  if (!menu) return <div className="p-4">Você ainda não criou um menu.</div>;
-
   const translucidToUse = getContrastTextColor(backgroundColor) === "white" ? "#ffffff15" : "#00000015";
   const grayToUse = getContrastTextColor(backgroundColor) === "white" ? "#cccccc" : "#333333";
   const foregroundToUse = getContrastTextColor(backgroundColor) === "white" ? "#fafafa" : "#171717";
 
+  // ---------- render ----------
+  if (menuLoading || loading || categories === null) return <div className="p-4">Carregando categorias...</div>;
+  if (!menu) return <div className="p-4">Você ainda não criou um menu.</div>;
+
   return (
-    <div className="p-4">
+    <div className="p-4 sm:pb-0 pb-38">
       <div className="mb-4">
         <div className="flex gap-2">
           <button
@@ -339,7 +339,7 @@ export default function MenuItems({ backgroundColor }) {
 
       <div className="space-y-4">
         {categories.map((cat) => (
-          <div key={cat.id} className="rounded p-3" style={{ backgroundColor: translucidToUse }}>
+          <div key={cat.id} className="rounded py-3">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-3">
                 <button
@@ -361,7 +361,7 @@ export default function MenuItems({ backgroundColor }) {
                   onClick={() => openItemModal("create", cat.id)}
                   className="cursor-pointer px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded"
                 >
-                  + Item
+                  + <span className="hidden sm:inline">Item</span>
                 </button>
                 <button
                   onClick={() => deleteCategory(cat.id)}
@@ -374,40 +374,50 @@ export default function MenuItems({ backgroundColor }) {
 
             <div className="space-y-3">
               {(cat.menu_items || []).map((it) => (
-                <div
-                  key={it.id}
-                  className="flex items-center justify-between gap-2 p-2"
-                  style={{ backgroundColor: translucidToUse }}
-                >
-                  <div className="flex flex-col items-start gap-2">
+                <div key={it.id} className="flex items-stretch justify-between">
+                  {/* LEFT: ocupa o espaço restante */}
+                  <div
+                    className="flex-1 flex flex-col items-start gap-2 p-2 rounded-l-lg"
+                    style={{ backgroundColor: translucidToUse }}
+                  >
                     <div>
                       <div className="text-xl font-bold" style={{ color: foregroundToUse }}>
                         {it.name}
                       </div>
                     </div>
+
                     <div>
-                      <div className="text-sm" style={{ color: grayToUse }}>
+                      <div className="text-sm line-clamp-2" style={{ color: grayToUse }}>
                         {it.description}
                       </div>
                     </div>
-                    <div>
+
+                    <div className="flex items-center justify-between w-full">
                       <div className="text-2xl font-medium" style={{ color: foregroundToUse }}>
                         {it.price ? `R$ ${Number(it.price).toFixed(2)}` : "-"}
                       </div>
+                      <div className="mr-2 px-6 py-2 rounded" style={{ backgroundColor: detailsColor }}>
+                        <FaShoppingCart style={{ color: getContrastTextColor(detailsColor) }} />
+                      </div>
                     </div>
                   </div>
-                  <div className="flex flex-col items-center gap-2">
+
+                  <div className="flex flex-col self-stretch w-14">
                     <button
                       title="Editar item"
                       onClick={() => openItemModal("edit", cat.id, it)}
-                      className="cursor-pointer p-2 rounded hover:bg-white/5"
-                      style={{ color: foregroundToUse }}
+                      className="flex-1 flex items-center justify-center cursor-pointer p-2 rounded-tr-lg"
+                      style={{
+                        color: foregroundToUse,
+                        backgroundColor: getContrastTextColor(backgroundColor) === "white" ? "#ffffff25" : "#00000025",
+                      }}
                     >
                       <FaPen />
                     </button>
+
                     <button
                       onClick={() => deleteItem(cat.id, it.id)}
-                      className="cursor-pointer p-2 bg-red-600 hover:bg-red-700 text-white rounded"
+                      className="flex-1 flex items-center justify-center cursor-pointer p-2 bg-red-600 hover:bg-red-700 text-white rounded-br-lg"
                     >
                       <FaTrash />
                     </button>

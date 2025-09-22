@@ -478,13 +478,25 @@ const ConfigMenu = (props) => {
             <FaChevronLeft onClick={() => setDescModalOpen(false)} />
             <h3 className="font-bold">Alterar descrição</h3>
           </div>
-          <input
-            type="text"
+
+          <textarea
             placeholder="Nova descrição"
             value={tempDescription || ""}
-            onChange={(e) => setTempDescription(e.target.value)}
-            className="w-full p-2 rounded border bg-translucid mb-4"
+            onChange={(e) => {
+              // limita imediatamente a 200 caracteres
+              const v = e.target.value.slice(0, 200);
+              setTempDescription(v);
+            }}
+            maxLength={200}
+            rows={4}
+            className="w-full p-2 rounded border bg-translucid mb-2"
           />
+
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-sm color-gray">{(tempDescription || "").length}/200</div>
+            <div className="text-sm color-gray">Dica: seja objetivo.</div>
+          </div>
+
           <div className="flex justify-end gap-2">
             <button
               onClick={() => {
@@ -495,10 +507,15 @@ const ConfigMenu = (props) => {
             >
               Cancelar
             </button>
+
             <button
               onClick={() => {
-                if (usingExternal) externalSetState((p) => ({ ...p, description: tempDescription }));
-                else if (typeof propSetDescription === "function") propSetDescription(tempDescription);
+                // garantir que nunca salve mais de 200 chars
+                const finalDesc = (tempDescription || "").slice(0, 200);
+
+                if (usingExternal) externalSetState((p) => ({ ...p, description: finalDesc }));
+                else if (typeof propSetDescription === "function") propSetDescription(finalDesc);
+
                 setDescModalOpen(false);
               }}
               className="cursor-pointer px-4 py-2 bg-green-600 rounded hover:bg-green-500 transition text-white"
