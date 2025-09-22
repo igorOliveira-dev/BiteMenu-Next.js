@@ -8,6 +8,7 @@ import GenericModal from "@/components/GenericModal";
 import { useEffect, useRef, useState } from "react";
 import Loading from "@/components/Loading";
 import { COLOR_PALETTES } from "@/consts/colorPallets";
+import MenuItems from "./components/MenuItems";
 
 function getContrastTextColor(hex) {
   const cleanHex = (hex || "").replace("#", "");
@@ -328,6 +329,8 @@ const Menu = (props) => {
           <p className="mx-4" style={{ color: getContrastTextColor(backgroundColor) === "white" ? "#fafafa" : "#171717" }}>
             {description}
           </p>
+
+          <MenuItems backgroundColor={backgroundColor} />
         </div>
 
         {/* Sidebar */}
