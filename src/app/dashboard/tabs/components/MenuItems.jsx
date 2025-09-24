@@ -42,7 +42,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
   // refs to DOM nodes (used for FLIP)
   const domRefs = useRef({});
 
-  // fetch categories/items (igual ao seu fluxo)
+  // fetch categories/items
   useEffect(() => {
     if (menuLoading) return;
     if (!menu?.id) {
@@ -92,7 +92,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
     };
   }, [menuLoading, menu?.id]);
 
-  // CRUD helpers (mantive os seus, sem alterações importantes)
+  // CRUD helpers
   const createCategory = async ({ name = "Nova categoria" } = {}) => {
     if (!menu?.id) return null;
     const tempId = uid();
@@ -152,7 +152,12 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
     const tempId = uid();
     setCategories((prev = []) =>
       prev.map((c) =>
-        c.id === categoryId ? { ...c, menu_items: [...(c.menu_items || []), { id: tempId, name, price, description }] } : c
+        c.id === categoryId
+          ? {
+              ...c,
+              menu_items: [...(c.menu_items || []), { id: tempId, name, price, description }],
+            }
+          : c
       )
     );
 
@@ -165,7 +170,12 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
       if (error) throw error;
       setCategories((prev = []) =>
         prev.map((c) =>
-          c.id === categoryId ? { ...c, menu_items: (c.menu_items || []).map((it) => (it.id === tempId ? data : it)) } : c
+          c.id === categoryId
+            ? {
+                ...c,
+                menu_items: (c.menu_items || []).map((it) => (it.id === tempId ? data : it)),
+              }
+            : c
         )
       );
       alert?.("Item criado", "success");
@@ -242,10 +252,8 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
   };
 
   const runFlip = (beforeRects = {}) => {
-    // após alteração do DOM (React já atualizou), medir novas posições
     requestAnimationFrame(() => {
       const afterRects = captureRects();
-      // para cada elemento que existia antes, calcula delta e anima
       Object.keys(beforeRects).forEach((key) => {
         const before = beforeRects[key];
         const after = afterRects[key];
@@ -253,14 +261,12 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
         if (!before || !after || !el) return;
         const dx = before.left - after.left;
         const dy = before.top - after.top;
-        if (dx === 0 && dy === 0) return; // sem movimento
-        // aplica transform para parecer estar na posição antiga
+        if (dx === 0 && dy === 0) return;
         el.style.transform = `translate(${dx}px, ${dy}px)`;
         el.style.transition = "transform 0s";
-        // forçar reflow
+        // force reflow
         // eslint-disable-next-line no-unused-expressions
         el.offsetHeight;
-        // anima para a posição nova
         requestAnimationFrame(() => {
           el.style.transition = "transform 240ms cubic-bezier(.2,.9,.2,1)";
           el.style.transform = "";
@@ -321,7 +327,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
     setTimeout(() => setModalPayload((p) => ({ ...p })), 10);
   };
 
-  // função utilitária para trocar itens de array
+  // swap util
   const swap = (arr, i, j) => {
     const next = [...arr];
     const tmp = next[i];
@@ -330,7 +336,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
     return next;
   };
 
-  // MOVES com FLIP: capturar rects antes, atualizar estado, rodar flip
+  // MOVES com FLIP
   const moveCategory = (index, direction) => {
     const before = captureRects();
     setModalPayload((p) => {
@@ -340,7 +346,6 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
       const nextOrdering = swap(ordering, index, to);
       return { ...p, data: { ...p.data, ordering: nextOrdering } };
     });
-    // roda flip na próxima frame (após DOM atualizar)
     requestAnimationFrame(() => runFlip(before));
   };
 
@@ -365,56 +370,65 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
     setSortCollapsed((prev) => ({ ...prev, [catId]: !prev[catId] }));
   };
 
-  // salva ordenação no supabase (igual ao anterior)
-  const saveSortChanges = async () => {
-    const ordering = modalPayload.data?.ordering ?? [];
-    setCategories(ordering);
-
-    const categoryPromises = ordering.map((cat, idx) => {
-      if (typeof cat.id === "string" && cat.id.startsWith("tmp-")) return Promise.resolve(null);
-      return supabase.from("categories").update({ position: idx }).eq("id", cat.id);
-    });
-
-    const itemPromises = [];
-    ordering.forEach((cat) => {
-      (cat.menu_items || []).forEach((it, itemIdx) => {
-        if (typeof it.id === "string" && it.id.startsWith("tmp-")) return;
-        itemPromises.push(supabase.from("menu_items").update({ position: itemIdx, category_id: cat.id }).eq("id", it.id));
-      });
-    });
-
-    try {
-      const results = await Promise.all([...categoryPromises, ...itemPromises]);
-      const errored = results.find((r) => r && r.error);
-      if (errored) {
-        console.error("Erro ao salvar ordenação:", errored);
-        alert?.("Algumas posições podem não ter sido salvas. Veja o console.", "error");
-      } else {
-        alert?.("Ordenação salva", "success");
-      }
-    } catch (err) {
-      console.error("saveSortChanges error:", err);
-      alert?.("Erro ao salvar ordenação (ver console)", "error");
-    } finally {
-      setModalOpen(false);
-      setModalPayload({ type: null, mode: null, categoryId: null, itemId: null, data: {} });
-    }
-  };
-
+  // ---------- handleModalSave (reaproveitado para sort) ----------
   const handleModalSave = async () => {
-    if (modalPayload.type === "sort") {
-      await saveSortChanges();
-      return;
-    }
-    // se for category/item, mantem seu fluxo
-    const { type, mode, categoryId, itemId, data } = modalPayload;
+    const type = modalPayload.type;
 
-    if (type === "category") {
+    // --- Caso: salvar ordenação (sort) ---
+    if (type === "sort") {
+      const ordering = modalPayload.data?.ordering ?? [];
+
+      // otimistic update local
+      setCategories(ordering);
+
+      // monta promessas de update
+      const categoryUpdates = ordering.map((cat, idx) => {
+        // pula temporários
+        if (typeof cat.id === "string" && cat.id.startsWith("tmp-")) return Promise.resolve(null);
+        // atualiza position
+        return supabase.from("categories").update({ position: idx }).eq("id", cat.id);
+      });
+
+      const itemUpdates = [];
+      ordering.forEach((cat, catIdx) => {
+        (cat.menu_items || []).forEach((it, itemIdx) => {
+          if (typeof it.id === "string" && it.id.startsWith("tmp-")) return;
+          // atualiza position e category_id (caso o item tenha sido movido entre categorias no futuro)
+          itemUpdates.push(supabase.from("menu_items").update({ position: itemIdx, category_id: cat.id }).eq("id", it.id));
+        });
+      });
+
+      try {
+        // executa em paralelo
+        const results = await Promise.all([...categoryUpdates, ...itemUpdates]);
+        const errored = results.find((r) => r && r.error);
+        if (errored) {
+          console.error("Erro ao salvar ordenação:", errored);
+          alert?.("Algumas posições podem não ter sido salvas. Veja o console.", "error");
+        } else {
+          alert?.("Ordenação salva", "success");
+        }
+      } catch (err) {
+        console.error("save order error:", err);
+        alert?.("Erro ao salvar ordenação (ver console)", "error");
+      } finally {
+        // fecha modal e limpa payload
+        setModalOpen(false);
+        setModalPayload({ type: null, mode: null, categoryId: null, itemId: null, data: {} });
+      }
+
+      return; // retorna cedo — restante do handler é para category/item
+    }
+
+    // --- Caso: criar/editar category/item (fluxo original) ---
+    const { type: t, mode, categoryId, itemId, data } = modalPayload;
+
+    if (t === "category") {
       if (!data.name.trim()) {
         alert?.("O nome da categoria não pode estar vazio.", "error");
         return;
       }
-    } else if (type === "item") {
+    } else if (t === "item") {
       if (!data.name.trim()) {
         alert?.("O nome do item não pode estar vazio.", "error");
         return;
@@ -425,17 +439,16 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
         alert?.("O preço deve ser um número válido.", "error");
         return;
       }
-
       data.price = priceNum;
     }
 
-    if (type === "category") {
+    if (t === "category") {
       if (mode === "create") {
         await createCategory({ name: data.name });
       } else if (mode === "edit" && categoryId) {
         await updateCategory(categoryId, { name: data.name });
       }
-    } else if (type === "item") {
+    } else if (t === "item") {
       if (mode === "create") {
         await createItem(categoryId, { name: data.name, price: data.price, description: data.description });
       } else if (mode === "edit" && itemId) {
@@ -657,7 +670,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
           {/* Ordenação (com FLIP + colapso) */}
           {modalPayload.type === "sort" && (
             <>
-              <div className="space-y-3 max-h-[60vh] overflow-auto">
+              <div className="space-y-3 max-h-[60vh] overflow-auto pr-2">
                 {(modalPayload.data?.ordering || []).map((cat, catIdx) => {
                   const collapsed = !!sortCollapsed[cat.id];
                   return (
@@ -666,7 +679,6 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
                       ref={(el) => {
                         if (el) domRefs.current[`cat-${cat.id ?? catIdx}`] = el;
                         else delete domRefs.current[`cat-${cat.id ?? catIdx}`];
-                        // também guarde com a chave simples caso precise (compatibilidade)
                         if (el && cat.id != null) domRefs.current[`cat-${cat.id}`] = el;
                       }}
                       className="p-2 rounded border"
