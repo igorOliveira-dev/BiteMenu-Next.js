@@ -1,10 +1,10 @@
-// app/menu/[slug]/page.jsx
 import { supabase } from "@/lib/supabaseClient";
 import Image from "next/image";
 import NotFoundMenu from "../NotFoundMenu";
-import { FaPen, FaShoppingCart, FaTrash } from "react-icons/fa";
+import { FaShoppingCart } from "react-icons/fa";
 
 function getContrastTextColor(hex) {
+  const DEFAULT_BACKGROUND = "#ffffff";
   const cleanHex = (hex || DEFAULT_BACKGROUND).replace("#", "");
   const r = parseInt(cleanHex.substring(0, 2), 16);
   const g = parseInt(cleanHex.substring(2, 4), 16);
@@ -13,8 +13,54 @@ function getContrastTextColor(hex) {
   return yiq >= 128 ? "black" : "white";
 }
 
-export default async function MenuPage({ params }) {
-  const slug = (await params).slug;
+// SEO dinâmico
+export async function generateMetadata(props) {
+  const { slug } = await props.params;
+
+  const { data: menu } = await supabase
+    .from("menus")
+    .select("title, description, banner_url, logo_url")
+    .eq("slug", slug)
+    .single();
+
+  if (!menu) {
+    return {
+      title: "Menu não encontrado - Bite Menu",
+      description: "Este cardápio não existe ou foi removido.",
+    };
+  }
+
+  const baseUrl = "https://bitemenu.com.br";
+  const canonicalUrl = `${baseUrl}/menu/${slug}`;
+  const imageUrl = menu.banner_url || menu.logo_url || `${baseUrl}/default-og.jpg`;
+
+  return {
+    title: `${menu.title} | Bite Menu`,
+    description: menu.description || "Confira este cardápio no Bite Menu.",
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      title: `${menu.title} | Bite Menu`,
+      description: menu.description,
+      url: canonicalUrl,
+      siteName: "Bite Menu",
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: menu.title,
+        },
+      ],
+      type: "website",
+    },
+  };
+}
+
+export default async function MenuPage(props) {
+  const { slug } = await props.params;
+
   const { data: menu } = await supabase
     .from("menus")
     .select(
@@ -42,13 +88,13 @@ export default async function MenuPage({ params }) {
     .eq("slug", slug)
     .single();
 
-  const translucidToUse = getContrastTextColor(menu.background_color) === "white" ? "#ffffff15" : "#00000015";
-  const grayToUse = getContrastTextColor(menu.background_color) === "white" ? "#cccccc" : "#333333";
-  const foregroundToUse = getContrastTextColor(menu.background_color) === "white" ? "#fafafa" : "#171717";
-
   if (!menu) {
     return <NotFoundMenu />;
   }
+
+  const translucidToUse = getContrastTextColor(menu.background_color) === "white" ? "#ffffff15" : "#00000015";
+  const grayToUse = getContrastTextColor(menu.background_color) === "white" ? "#cccccc" : "#333333";
+  const foregroundToUse = getContrastTextColor(menu.background_color) === "white" ? "#fafafa" : "#171717";
 
   return (
     <div className="min-h-screen w-full lg:px-20 xl:px-32" style={{ backgroundColor: menu.background_color }}>
@@ -114,7 +160,11 @@ export default async function MenuPage({ params }) {
                         {it.price ? `R$ ${Number(it.price).toFixed(2)}` : "-"}
                       </div>
                       <div className="mr-2 px-6 py-2 rounded" style={{ backgroundColor: menu.details_color }}>
-                        <FaShoppingCart style={{ color: getContrastTextColor(menu.details_color) }} />
+                        <FaShoppingCart
+                          style={{
+                            color: getContrastTextColor(menu.details_color),
+                          }}
+                        />
                       </div>
                     </div>
                   </div>
