@@ -16,8 +16,8 @@ const DEFAULT_HOURS = {
   wed: "09:00-18:00",
   thu: "09:00-18:00",
   fri: "09:00-18:00",
-  sat: "10:00-14:00",
-  sun: null,
+  sat: "09:00-18:00",
+  sun: "09:00-18:00",
 };
 
 const DEFAULT_BACKGROUND = COLOR_PALETTES[0].bg;
