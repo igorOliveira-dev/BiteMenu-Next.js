@@ -132,7 +132,6 @@ export default function GetStart() {
   const [selectedServices, setSelectedServices] = useState(["delivery", "pickup", "dinein"]);
   const [logoFile, setLogoFile] = useState(null);
   const [bannerFile, setBannerFile] = useState(null);
-  const [menuFile, setMenuFile] = useState(null);
   const [creatingMenu, setCreatingMenu] = useState(false);
   const { user, loading } = useUser();
   const router = useRouter();
@@ -163,10 +162,6 @@ export default function GetStart() {
   };
   const handleBannerChange = (e) => {
     if (e.target.files?.length) setBannerFile(e.target.files[0]);
-    e.target.value = "";
-  };
-  const handleMenuChange = (e) => {
-    if (e.target.files?.length) setMenuFile(e.target.files[0]);
     e.target.value = "";
   };
 
@@ -532,36 +527,7 @@ export default function GetStart() {
           )}
         </div>
 
-        {/* 5. Cardápio estático/físico */}
-        <div className="mb-4">
-          <p className="font-semibold mb-2">
-            5. Tem um cardápio pronto em foto ou PDF? (caso não tenha, você pode cadastrar seus produtos manualmente depois)
-          </p>
-          <label className="text-center flex flex-col items-center justify-center w-36 h-52 border-2 border-dashed border-[var(--gray)] rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
-            {menuFile && menuFile.type.startsWith("image/") ? (
-              <img src={URL.createObjectURL(menuFile)} alt="Preview do cardápio" className="object-contain w-full h-full" />
-            ) : menuFile && menuFile.type === "application/pdf" ? (
-              <embed src={URL.createObjectURL(menuFile)} type="application/pdf" className="w-full h-full" />
-            ) : (
-              <span className="color-gray px-4">Clique aqui para inserir seu cardápio</span>
-            )}
-            <input id="menuInput" type="file" accept="image/*,.pdf" onChange={handleMenuChange} className="hidden" />
-          </label>
-          {menuFile && (
-            <button
-              type="button"
-              onClick={() => {
-                setMenuFile(null);
-                document.querySelector("#menuInput").value = "";
-              }}
-              className="mt-1 text-sm text-red-500 hover:underline"
-            >
-              Remover cardápio
-            </button>
-          )}
-        </div>
-
-        {/* 6. Seletores de cor */}
+        {/* 5. Seletores de cor */}
         <div>
           <p className="font-semibold mb-2">
             6. Escolha as cores do seu cardápio! (Clique em <span className="inline-block align-middle">{noneIcon}</span>{" "}
@@ -627,7 +593,7 @@ export default function GetStart() {
                     color: getContrastTextColor(backgroundColor) === "white" ? "#ccc" : "#555",
                   }}
                 >
-                  Banner (1640×664)
+                  Banner (1640x664)
                 </span>
               )}
             </div>
