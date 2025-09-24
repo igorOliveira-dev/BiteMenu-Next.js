@@ -9,12 +9,15 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/auth-helpers-shared": "^0.7.0",
     "@supabase/supabase-js": "^2.52.0",
     "buffer": "^6.0.3",
     "libphonenumber-js": "^1.12.10",
-    "next": "15.3.5",
+    "next": "15.5.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-icons": "^5.5.0",
