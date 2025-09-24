@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import useMenu from "@/hooks/useMenu";
 import GenericModal from "@/components/GenericModal";
-import { FaPen, FaTrash, FaShoppingCart } from "react-icons/fa";
+import { FaPen, FaTrash, FaShoppingCart, FaChevronRight, FaChevronUp, FaChevronDown } from "react-icons/fa";
 import { useAlert } from "@/providers/AlertProvider";
 import { useConfirm } from "@/providers/ConfirmProvider";
 
@@ -22,34 +22,37 @@ const uid = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.r
 export default function MenuItems({ backgroundColor, detailsColor }) {
   const { menu, loading: menuLoading } = useMenu();
   const alert = useAlert();
-  confirm = useConfirm();
+  const confirm = useConfirm();
 
   const [loading, setLoading] = useState(false);
-  const [categories, setCategories] = useState(null); // null = ainda não buscou
-  // modal state (reused para create/edit category/item)
+  const [categories, setCategories] = useState(null);
+
+  // modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [modalPayload, setModalPayload] = useState({
-    type: null, // 'category' | 'item'
-    mode: null, // 'create' | 'edit'
+    type: null,
+    mode: null,
     categoryId: null,
     itemId: null,
     data: {},
   });
 
-  // Fetch categories with nested items using menu_items(*)
+  // collapse map for sort modal
+  const [sortCollapsed, setSortCollapsed] = useState({});
+  // refs to DOM nodes (used for FLIP)
+  const domRefs = useRef({});
+
+  // fetch categories/items (igual ao seu fluxo)
   useEffect(() => {
     if (menuLoading) return;
-
     if (!menu?.id) {
-      setCategories([]); // sem menu -> sem categorias
+      setCategories([]);
       return;
     }
-
     let mounted = true;
     const fetchCats = async () => {
       setLoading(true);
       try {
-        // use menu_items(*) para não depender de nome de coluna específico
         const selectStr = `
           id,
           name,
@@ -67,7 +70,6 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
 
         if (!mounted) return;
 
-        // garante ordenação interna dos items por 'position' se existir
         const mapped = (data || []).map((c) => {
           const items = Array.isArray(c.menu_items)
             ? [...c.menu_items].sort((a, b) => Number(a.position ?? 0) - Number(b.position ?? 0))
@@ -79,19 +81,18 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
       } catch (err) {
         console.error("Erro ao buscar categories/menu_items:", err);
         alert?.("Erro ao carregar categorias (ver console)", "error");
-        if (mounted) setCategories([]); // fallback
+        if (mounted) setCategories([]);
       } finally {
         if (mounted) setLoading(false);
       }
     };
-
     fetchCats();
     return () => {
       mounted = false;
     };
   }, [menuLoading, menu?.id]);
 
-  // ---------- CRUD helpers (optimistic UI) ----------
+  // CRUD helpers (mantive os seus, sem alterações importantes)
   const createCategory = async ({ name = "Nova categoria" } = {}) => {
     if (!menu?.id) return null;
     const tempId = uid();
@@ -101,7 +102,6 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
     try {
       const { data, error } = await supabase.from("categories").insert({ menu_id: menu.id, name }).select().single();
       if (error) throw error;
-      // replace temp with real
       setCategories((prev = []) => prev.map((c) => (c.id === tempId ? { ...data, menu_items: [] } : c)));
       alert?.("Categoria criada", "success");
       return data;
@@ -114,7 +114,6 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
   };
 
   const updateCategory = async (categoryId, patch) => {
-    // optimistic
     const before = categories;
     setCategories((prev = []) => prev.map((c) => (c.id === categoryId ? { ...c, ...patch } : c)));
     try {
@@ -125,7 +124,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
       return data;
     } catch (err) {
       console.error("updateCategory error:", err);
-      setCategories(before); // rollback
+      setCategories(before);
       alert?.("Erro ao atualizar categoria", "error");
       return null;
     }
@@ -133,14 +132,10 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
 
   const deleteCategory = async (categoryId) => {
     const ok = await confirm("Remover categoria? Essa ação removerá os itens também.");
-    if (!ok) {
-      console.log("[submit] usuário cancelou");
-      return;
-    }
+    if (!ok) return;
     const before = categories;
     setCategories((prev = []) => prev.filter((c) => c.id !== categoryId));
     try {
-      // se não tiver cascade, remova items primeiro (opcional). Aqui apenas tenta remover categoria.
       const { error } = await supabase.from("categories").delete().eq("id", categoryId);
       if (error) throw error;
       alert?.("Categoria removida", "success");
@@ -168,7 +163,6 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
         .select()
         .single();
       if (error) throw error;
-      // replace temp
       setCategories((prev = []) =>
         prev.map((c) =>
           c.id === categoryId ? { ...c, menu_items: (c.menu_items || []).map((it) => (it.id === tempId ? data : it)) } : c
@@ -178,7 +172,6 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
       return data;
     } catch (err) {
       console.error("createItem error:", err);
-      // rollback remove temp
       setCategories((prev = []) =>
         prev.map((c) =>
           c.id === categoryId ? { ...c, menu_items: (c.menu_items || []).filter((it) => it.id !== tempId) } : c
@@ -218,10 +211,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
 
   const deleteItem = async (categoryId, itemId) => {
     const ok = await confirm("Remover item?");
-    if (!ok) {
-      console.log("[submit] usuário cancelou");
-      return;
-    }
+    if (!ok) return;
     const before = categories;
     setCategories((prev = []) =>
       prev.map((c) =>
@@ -239,6 +229,50 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
       alert?.("Erro ao remover item", "error");
       return false;
     }
+  };
+
+  // ---------- helpers FLIP ----------
+  const captureRects = () => {
+    const map = {};
+    Object.keys(domRefs.current).forEach((key) => {
+      const el = domRefs.current[key];
+      if (el && el.getBoundingClientRect) map[key] = el.getBoundingClientRect();
+    });
+    return map;
+  };
+
+  const runFlip = (beforeRects = {}) => {
+    // após alteração do DOM (React já atualizou), medir novas posições
+    requestAnimationFrame(() => {
+      const afterRects = captureRects();
+      // para cada elemento que existia antes, calcula delta e anima
+      Object.keys(beforeRects).forEach((key) => {
+        const before = beforeRects[key];
+        const after = afterRects[key];
+        const el = domRefs.current[key];
+        if (!before || !after || !el) return;
+        const dx = before.left - after.left;
+        const dy = before.top - after.top;
+        if (dx === 0 && dy === 0) return; // sem movimento
+        // aplica transform para parecer estar na posição antiga
+        el.style.transform = `translate(${dx}px, ${dy}px)`;
+        el.style.transition = "transform 0s";
+        // forçar reflow
+        // eslint-disable-next-line no-unused-expressions
+        el.offsetHeight;
+        // anima para a posição nova
+        requestAnimationFrame(() => {
+          el.style.transition = "transform 240ms cubic-bezier(.2,.9,.2,1)";
+          el.style.transform = "";
+          const cleanup = () => {
+            el.style.transition = "";
+            el.style.transform = "";
+            el.removeEventListener("transitionend", cleanup);
+          };
+          el.addEventListener("transitionend", cleanup);
+        });
+      });
+    });
   };
 
   // ---------- modal helpers ----------
@@ -270,7 +304,109 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
     setModalOpen(true);
   };
 
+  const openSortModal = () => {
+    const ordering = JSON.parse(JSON.stringify(categories || []));
+    const collapsedMap = {};
+    ordering.forEach((c) => {
+      collapsedMap[c.id] = false;
+    });
+    domRefs.current = {};
+    setSortCollapsed(collapsedMap);
+    setModalPayload({
+      type: "sort",
+      mode: "sort",
+      data: { ordering },
+    });
+    setModalOpen(true);
+    setTimeout(() => setModalPayload((p) => ({ ...p })), 10);
+  };
+
+  // função utilitária para trocar itens de array
+  const swap = (arr, i, j) => {
+    const next = [...arr];
+    const tmp = next[i];
+    next[i] = next[j];
+    next[j] = tmp;
+    return next;
+  };
+
+  // MOVES com FLIP: capturar rects antes, atualizar estado, rodar flip
+  const moveCategory = (index, direction) => {
+    const before = captureRects();
+    setModalPayload((p) => {
+      const ordering = p.data?.ordering ?? [];
+      const to = index + direction;
+      if (to < 0 || to >= ordering.length) return p;
+      const nextOrdering = swap(ordering, index, to);
+      return { ...p, data: { ...p.data, ordering: nextOrdering } };
+    });
+    // roda flip na próxima frame (após DOM atualizar)
+    requestAnimationFrame(() => runFlip(before));
+  };
+
+  const moveItem = (catIndex, itemIndex, direction) => {
+    const before = captureRects();
+    setModalPayload((p) => {
+      const ordering = p.data?.ordering ?? [];
+      const cat = ordering[catIndex];
+      if (!cat) return p;
+      const items = cat.menu_items || [];
+      const to = itemIndex + direction;
+      if (to < 0 || to >= items.length) return p;
+      const newItems = swap(items, itemIndex, to);
+      const newOrdering = [...ordering];
+      newOrdering[catIndex] = { ...cat, menu_items: newItems };
+      return { ...p, data: { ...p.data, ordering: newOrdering } };
+    });
+    requestAnimationFrame(() => runFlip(before));
+  };
+
+  const toggleCollapse = (catId) => {
+    setSortCollapsed((prev) => ({ ...prev, [catId]: !prev[catId] }));
+  };
+
+  // salva ordenação no supabase (igual ao anterior)
+  const saveSortChanges = async () => {
+    const ordering = modalPayload.data?.ordering ?? [];
+    setCategories(ordering);
+
+    const categoryPromises = ordering.map((cat, idx) => {
+      if (typeof cat.id === "string" && cat.id.startsWith("tmp-")) return Promise.resolve(null);
+      return supabase.from("categories").update({ position: idx }).eq("id", cat.id);
+    });
+
+    const itemPromises = [];
+    ordering.forEach((cat) => {
+      (cat.menu_items || []).forEach((it, itemIdx) => {
+        if (typeof it.id === "string" && it.id.startsWith("tmp-")) return;
+        itemPromises.push(supabase.from("menu_items").update({ position: itemIdx, category_id: cat.id }).eq("id", it.id));
+      });
+    });
+
+    try {
+      const results = await Promise.all([...categoryPromises, ...itemPromises]);
+      const errored = results.find((r) => r && r.error);
+      if (errored) {
+        console.error("Erro ao salvar ordenação:", errored);
+        alert?.("Algumas posições podem não ter sido salvas. Veja o console.", "error");
+      } else {
+        alert?.("Ordenação salva", "success");
+      }
+    } catch (err) {
+      console.error("saveSortChanges error:", err);
+      alert?.("Erro ao salvar ordenação (ver console)", "error");
+    } finally {
+      setModalOpen(false);
+      setModalPayload({ type: null, mode: null, categoryId: null, itemId: null, data: {} });
+    }
+  };
+
   const handleModalSave = async () => {
+    if (modalPayload.type === "sort") {
+      await saveSortChanges();
+      return;
+    }
+    // se for category/item, mantem seu fluxo
     const { type, mode, categoryId, itemId, data } = modalPayload;
 
     if (type === "category") {
@@ -290,7 +426,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
         return;
       }
 
-      data.price = priceNum; // Normaliza para número antes de salvar
+      data.price = priceNum;
     }
 
     if (type === "category") {
@@ -308,13 +444,13 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
     }
 
     setModalOpen(false);
+    setModalPayload({ type: null, mode: null, categoryId: null, itemId: null, data: {} });
   };
 
   const translucidToUse = getContrastTextColor(backgroundColor) === "white" ? "#ffffff15" : "#00000015";
   const grayToUse = getContrastTextColor(backgroundColor) === "white" ? "#cccccc" : "#333333";
   const foregroundToUse = getContrastTextColor(backgroundColor) === "white" ? "#fafafa" : "#171717";
 
-  // ---------- render ----------
   if (menuLoading || loading || categories === null) return <div className="p-4">Carregando categorias...</div>;
   if (!menu) return <div className="p-4">Você ainda não criou um menu.</div>;
 
@@ -328,6 +464,20 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
           >
             + Categoria
           </button>
+          {categories.length > 0 && (
+            <button
+              onClick={openSortModal}
+              className="cursor-pointer px-3 py-1 opacity-75 hover:opacity-100 rounded"
+              style={{
+                backgroundColor: translucidToUse,
+                color: foregroundToUse,
+                border: "1px solid",
+                borderColor: foregroundToUse,
+              }}
+            >
+              Ordenar itens
+            </button>
+          )}
         </div>
       </div>
 
@@ -375,7 +525,6 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
             <div className="space-y-3">
               {(cat.menu_items || []).map((it) => (
                 <div key={it.id} className="flex items-stretch justify-between">
-                  {/* LEFT: ocupa o espaço restante */}
                   <div
                     className="flex-1 flex flex-col items-start gap-2 p-2 rounded-l-lg"
                     style={{ backgroundColor: translucidToUse }}
@@ -434,25 +583,36 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
         <GenericModal onClose={() => setModalOpen(false)}>
           <div className="flex items-center gap-4 mb-4">
             <h3 className="font-bold">
-              {modalPayload.mode === "create" ? "Criar " : "Editar "}
-              {modalPayload.type === "category" ? "categoria" : "item"}
+              {modalPayload.type === "sort"
+                ? "Ordenar itens"
+                : modalPayload.type === "category"
+                ? modalPayload.mode === "create"
+                  ? "Criar categoria"
+                  : "Editar categoria"
+                : modalPayload.type === "item"
+                ? modalPayload.mode === "create"
+                  ? "Criar item"
+                  : "Editar item"
+                : ""}
             </h3>
           </div>
 
-          {modalPayload.type === "category" ? (
-            <>
-              <label className="block mb-2">
-                <div className="text-sm color-gray">Nome da categoria</div>
-                <input
-                  type="text"
-                  value={modalPayload.data.name}
-                  onChange={(e) => setModalPayload((p) => ({ ...p, data: { ...p.data, name: e.target.value } }))}
-                  className="w-full p-2 rounded border bg-translucid mb-2"
-                  placeholder="Item"
-                />
-              </label>
-            </>
-          ) : (
+          {/* Categoria */}
+          {modalPayload.type === "category" && (
+            <label className="block mb-2">
+              <div className="text-sm color-gray">Nome da categoria</div>
+              <input
+                type="text"
+                value={modalPayload.data.name}
+                onChange={(e) => setModalPayload((p) => ({ ...p, data: { ...p.data, name: e.target.value } }))}
+                className="w-full p-2 rounded border bg-translucid mb-2"
+                placeholder="Item"
+              />
+            </label>
+          )}
+
+          {/* Item */}
+          {modalPayload.type === "item" && (
             <>
               <label className="block mb-2">
                 <div className="text-sm color-gray">Nome</div>
@@ -494,12 +654,115 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
             </>
           )}
 
+          {/* Ordenação (com FLIP + colapso) */}
+          {modalPayload.type === "sort" && (
+            <>
+              <div className="space-y-3 max-h-[60vh] overflow-auto">
+                {(modalPayload.data?.ordering || []).map((cat, catIdx) => {
+                  const collapsed = !!sortCollapsed[cat.id];
+                  return (
+                    <div
+                      key={cat.id ?? `cat-${catIdx}`}
+                      ref={(el) => {
+                        if (el) domRefs.current[`cat-${cat.id ?? catIdx}`] = el;
+                        else delete domRefs.current[`cat-${cat.id ?? catIdx}`];
+                        // também guarde com a chave simples caso precise (compatibilidade)
+                        if (el && cat.id != null) domRefs.current[`cat-${cat.id}`] = el;
+                      }}
+                      className="p-2 rounded border"
+                      style={{ transition: "transform 200ms ease, box-shadow 200ms ease" }}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <button
+                            className="cursor-pointer"
+                            onClick={() => toggleCollapse(cat.id)}
+                            title={collapsed ? "Mostrar itens" : "Recolher itens"}
+                          >
+                            {collapsed ? <FaChevronRight /> : <FaChevronDown />}
+                          </button>
+                          <div className="flex flex-col">
+                            <strong>{cat.name}</strong>
+                            <span className="text-sm color-gray">({(cat.menu_items || []).length} itens)</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => moveCategory(catIdx, -1)}
+                            disabled={catIdx === 0}
+                            className="disabled:opacity-50 p-1 cursor-pointer"
+                            title="Mover categoria para cima"
+                          >
+                            <FaChevronUp />
+                          </button>
+                          <button
+                            onClick={() => moveCategory(catIdx, 1)}
+                            disabled={catIdx === (modalPayload.data?.ordering?.length ?? 1) - 1}
+                            className="disabled:opacity-50 p-1 cursor-pointer"
+                            title="Mover categoria para baixo"
+                          >
+                            <FaChevronDown />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div
+                        className="overflow-hidden"
+                        style={{
+                          maxHeight: collapsed ? 0 : undefined,
+                          transition: "max-height 200ms ease, opacity 180ms ease, transform 180ms ease",
+                          opacity: collapsed ? 0 : 1,
+                          transform: collapsed ? "translateY(-6px)" : "translateY(0)",
+                        }}
+                      >
+                        <div className="ml-4 space-y-2 pt-1 pb-1">
+                          {(cat.menu_items || []).map((it, itIdx) => (
+                            <div
+                              key={it.id ?? `it-${itIdx}`}
+                              ref={(el) => {
+                                if (el) domRefs.current[`it-${it.id ?? `${catIdx}-${itIdx}`}`] = el;
+                                else delete domRefs.current[`it-${it.id ?? `${catIdx}-${itIdx}`}`];
+                                if (el && it.id != null) domRefs.current[`it-${it.id}`] = el;
+                              }}
+                              className="flex items-center justify-between bg-transparent px-2 py-1 rounded"
+                            >
+                              <div className="truncate">{it.name}</div>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => moveItem(catIdx, itIdx, -1)}
+                                  disabled={itIdx === 0}
+                                  className="disabled:opacity-50 p-1 cursor-pointer"
+                                  title="Mover item para cima"
+                                >
+                                  <FaChevronUp />
+                                </button>
+                                <button
+                                  onClick={() => moveItem(catIdx, itIdx, 1)}
+                                  disabled={itIdx === (cat.menu_items?.length ?? 1) - 1}
+                                  className="disabled:opacity-50 p-1 cursor-pointer"
+                                  title="Mover item para baixo"
+                                >
+                                  <FaChevronDown />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
           <div className="flex justify-end gap-2 mt-4">
             <button onClick={() => setModalOpen(false)} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded">
               Cancelar
             </button>
             <button onClick={handleModalSave} className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded">
-              {modalPayload.mode === "create" ? "Criar" : "Salvar"}
+              Salvar
             </button>
           </div>
         </GenericModal>
