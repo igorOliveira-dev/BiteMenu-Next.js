@@ -681,7 +681,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
                         else delete domRefs.current[`cat-${cat.id ?? catIdx}`];
                         if (el && cat.id != null) domRefs.current[`cat-${cat.id}`] = el;
                       }}
-                      className="p-2 rounded border"
+                      className="p-2 rounded bg-translucid"
                       style={{ transition: "transform 200ms ease, box-shadow 200ms ease" }}
                     >
                       <div className="flex items-center justify-between mb-2">
@@ -728,7 +728,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
                           transform: collapsed ? "translateY(-6px)" : "translateY(0)",
                         }}
                       >
-                        <div className="ml-4 space-y-2 pt-1 pb-1">
+                        <div className="space-y-2 pt-1 pb-1">
                           {(cat.menu_items || []).map((it, itIdx) => (
                             <div
                               key={it.id ?? `it-${itIdx}`}
@@ -737,7 +737,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
                                 else delete domRefs.current[`it-${it.id ?? `${catIdx}-${itIdx}`}`];
                                 if (el && it.id != null) domRefs.current[`it-${it.id}`] = el;
                               }}
-                              className="flex items-center justify-between bg-transparent px-2 py-1 rounded"
+                              className="flex items-center justify-between bg-transparent px-2 py-1 rounded bg-translucid"
                             >
                               <div className="truncate">{it.name}</div>
                               <div className="flex items-center gap-1">
