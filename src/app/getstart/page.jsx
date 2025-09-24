@@ -436,14 +436,21 @@ export default function GetStart() {
         </div>
         {/* 1. Nome */}
         <div>
-          <label className="block font-semibold mb-2">1. Como seu negócio se chama?</label>
+          <label className="block font-semibold">1. Como seu negócio se chama?</label>
           <input
             type="text"
             value={establishmentName}
-            onChange={(e) => setEstablishmentName(e.target.value)}
+            onChange={(e) => {
+              const v = e.target.value.slice(0, 20);
+              setEstablishmentName(v);
+            }}
+            maxLength={20}
             placeholder="Nome do seu estabelecimento"
             className="w-full px-3 py-2 bg-translucid border border-[var(--low-gray)] rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
+          <div className="flex items-center justify-between mt-2">
+            <div className="text-sm color-gray">{(establishmentName || "").length}/20</div>
+          </div>
         </div>
 
         {/* 2. Serviços */}

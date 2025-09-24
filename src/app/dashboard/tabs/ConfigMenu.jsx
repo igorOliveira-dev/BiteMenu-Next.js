@@ -445,9 +445,19 @@ const ConfigMenu = (props) => {
             type="text"
             placeholder="Novo título"
             value={tempTitle || ""}
-            onChange={(e) => setTempTitle(e.target.value)}
+            onChange={(e) => {
+              const v = e.target.value.slice(0, 20);
+              setTempTitle(v);
+            }}
+            maxLength={20}
             className="w-full p-2 rounded border bg-translucid mb-4"
           />
+
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-sm color-gray">{(tempTitle || "").length}/20</div>
+            <div className="text-sm color-gray">Dica: seja objetivo.</div>
+          </div>
+
           <div className="flex justify-end gap-2">
             <button
               onClick={() => {
@@ -536,9 +546,18 @@ const ConfigMenu = (props) => {
             type="text"
             placeholder="Novo slug"
             value={tempSlug || ""}
-            onChange={(e) => setTempSlug(e.target.value)}
+            onChange={(e) => {
+              const v = e.target.value.slice(0, 20);
+              setTempSlug(v);
+            }}
+            maxLength={20}
             className="w-full p-2 rounded border bg-translucid mb-4"
           />
+
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-sm color-gray">{(tempSlug || "").length}/20</div>
+          </div>
+
           <div className="flex justify-end gap-2">
             <button
               onClick={() => {
