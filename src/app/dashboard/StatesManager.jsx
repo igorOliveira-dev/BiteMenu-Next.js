@@ -402,7 +402,7 @@ export default function StatesManager({
         setServerState(normalized);
         setLocalState(normalized);
         setChangedFields([]);
-        customAlert?.("Alterações salvas com sucesso.");
+        customAlert?.("Alterações salvas com sucesso.", "success");
         if (typeof onSave === "function") onSave(normalized);
       } else {
         // insert (caso sem menuFromServer.id)
@@ -430,7 +430,7 @@ export default function StatesManager({
         setServerState(normalized);
         setLocalState(normalized);
         setChangedFields([]);
-        customAlert?.("Cardápio criado e salvo com sucesso.");
+        customAlert?.("Cardápio criado e salvo com sucesso.", "success");
         if (typeof onSave === "function") onSave(normalized);
       }
     } catch (err) {

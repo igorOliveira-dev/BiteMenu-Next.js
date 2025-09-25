@@ -407,7 +407,7 @@ export default function GetStart() {
       console.error("Erro ao criar cardápio:", err);
       const supaMsg = err?.message ?? err?.error ?? JSON.stringify(err);
       const details = err?.details ?? err?.hint ?? "";
-      alert("Erro ao criar cardápio: " + supaMsg + (details ? " — " + details : ""));
+      alert("Erro ao criar cardápio.", "error");
     } finally {
       setCreatingMenu(false);
       console.log("[submit] finalizado (creatingMenu=false)", new Date().toISOString());
