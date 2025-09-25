@@ -3,7 +3,7 @@
 
 import BackArrow from "@/components/BackArrow";
 import React, { useEffect, useState } from "react";
-import { FaPen, FaInfoCircle, FaChevronLeft } from "react-icons/fa";
+import { FaPen, FaChevronLeft } from "react-icons/fa";
 import { COLOR_PALETTES } from "@/consts/colorPallets";
 import useMenu from "@/hooks/useMenu";
 import Loading from "@/components/Loading";
@@ -224,10 +224,7 @@ const ConfigMenu = (props) => {
           {/* Nome */}
           <div>
             <div className="flex sm:items-center max-w-full min-h-[46px] flex-col sm:flex-row">
-              <div className="flex items-center">
-                <FaInfoCircle fontSize={18} className="cursor-pointer mr-2 shrink-0" />
-                <p className="font-semibold mr-2 whitespace-nowrap">Nome do estabelecimento:</p>
-              </div>
+              <p className="font-semibold mr-2 whitespace-nowrap">Nome do estabelecimento:</p>
               <div onClick={() => setTitleModalOpen(true)} className="flex w-full">
                 <span className="bg-translucid p-2 rounded-lg w-full">
                   {propTitle ? propTitle : <span className="color-gray">Insira o nome</span>}
@@ -243,10 +240,7 @@ const ConfigMenu = (props) => {
           {/* Description */}
           <div>
             <div className="flex sm:items-center max-w-full min-h-[46px] flex-col sm:flex-row">
-              <div className="flex items-center">
-                <FaInfoCircle fontSize={18} className="cursor-pointer mr-2 shrink-0" />
-                <p className="font-semibold mr-2 whitespace-nowrap">Descrição:</p>
-              </div>
+              <p className="font-semibold mr-2 whitespace-nowrap">Descrição:</p>
               <div onClick={() => setDescModalOpen(true)} className="flex w-full">
                 <span className="bg-translucid p-2 rounded-lg w-full">
                   {propDescription ? propDescription : <span className="color-gray">Insira a descrição</span>}
@@ -262,10 +256,7 @@ const ConfigMenu = (props) => {
           {/* Slug */}
           <div>
             <div className="flex sm:items-center max-w-full min-h-[46px] flex-col sm:flex-row">
-              <div className="flex items-center">
-                <FaInfoCircle fontSize={18} className="cursor-pointer mr-2 shrink-0" />
-                <p className="font-semibold mr-2 whitespace-nowrap">Slug:</p>
-              </div>
+              <p className="font-semibold mr-2 whitespace-nowrap">Slug:</p>
               <div onClick={() => setSlugModalOpen(true)} className="flex w-full items-center">
                 <span>bitemenu.com.br/menu/</span>
                 <span className="bg-translucid p-2 rounded-lg w-full overflow-hidden whitespace-nowrap text-ellipsis">
@@ -281,10 +272,7 @@ const ConfigMenu = (props) => {
 
           {/* Colors */}
           <div className="mt-2 max-w-full">
-            <div className="flex items-center mb-2">
-              <FaInfoCircle fontSize={18} className="cursor-pointer mr-2 shrink-0" />
-              <p className="font-semibold">Cores do cardápio:</p>
-            </div>
+            <p className="font-semibold mb-2">Cores do cardápio:</p>
 
             <div className="flex flex-col space-y-3">
               {colorFields.map((item, idx) => (
@@ -315,10 +303,7 @@ const ConfigMenu = (props) => {
 
           {/* Services */}
           <div className="mb-4">
-            <div className="flex items-center mb-2">
-              <FaInfoCircle fontSize={18} className="cursor-pointer mr-2 shrink-0" />
-              <p className="font-semibold">Serviços disponíveis:</p>
-            </div>
+            <p className="font-semibold mb-2">Serviços disponíveis:</p>
             <div className="grid grid-cols-2 gap-4 max-w-160">
               {serviceOptions.map((opt) => (
                 <label key={opt.id} className="flex items-center space-x-2 cursor-pointer">
@@ -346,11 +331,7 @@ const ConfigMenu = (props) => {
 
           {/* Hours */}
           <div className="mb-4">
-            <div className="flex items-center mb-2">
-              <FaInfoCircle fontSize={18} className="cursor-pointer mr-2 shrink-0" />
-              <p className="font-semibold">Horários de funcionamento:</p>
-            </div>
-
+            <p className="font-semibold mb-2">Horários de funcionamento:</p>
             <div className="flex flex-col space-y-2">
               {dayOrder.map((day) => {
                 const value = hours?.[day];
