@@ -1,4 +1,3 @@
-// src/app/dashboard/page.jsx (ou onde seu Dashboard está)
 "use client";
 
 import React, { useState } from "react";

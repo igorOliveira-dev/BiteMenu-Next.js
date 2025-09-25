@@ -1,4 +1,3 @@
-// src/components/StatesManager.jsx
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";

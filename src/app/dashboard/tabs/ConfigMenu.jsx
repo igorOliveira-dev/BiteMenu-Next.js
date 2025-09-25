@@ -1,4 +1,3 @@
-// src/app/dashboard/tabs/ConfigMenu.jsx
 "use client";
 
 import BackArrow from "@/components/BackArrow";
