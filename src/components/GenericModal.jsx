@@ -1,11 +1,11 @@
 import React from "react";
 
-const GenericModal = ({ children, onClose, bgColor }) => {
+const GenericModal = ({ children, onClose, bgColor, maxWidth }) => {
   return (
     <div className="fixed inset-0 bg-dark-gray-90 backdrop-blur-sm flex items-center justify-center z-50" onClick={onClose}>
       <div
-        className="rounded-xl shadow-xl p-6 min-w-80"
-        style={{ backgroundColor: bgColor ? bgColor : "var(--low-gray)" }}
+        className="rounded-xl shadow-xl p-6 min-w-80 mx-2"
+        style={{ backgroundColor: bgColor ? bgColor : "var(--low-gray)", maxWidth: maxWidth ? maxWidth : null }}
         onClick={(e) => e.stopPropagation()}
       >
         {children}

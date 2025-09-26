@@ -68,6 +68,8 @@ export default async function MenuPage({ params }) {
     `
     )
     .eq("slug", slug)
+    .order("position", { foreignTable: "categories", ascending: true })
+    .order("position", { foreignTable: "categories.menu_items", ascending: true })
     .single();
 
   if (!menu) return <NotFoundMenu />;

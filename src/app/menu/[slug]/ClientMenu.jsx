@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FaChevronLeft, FaShoppingCart } from "react-icons/fa";
+import { FaChevronLeft, FaMinus, FaPlus, FaShoppingCart } from "react-icons/fa";
 import Image from "next/image";
 import GenericModal from "@/components/GenericModal";
 
@@ -75,6 +75,21 @@ export default function ClientMenu({ menu }) {
   const timeString = now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
   const localNow = new Date(timeString);
   const todayKey = localNow.toLocaleString("en-US", { weekday: "short" }).toLowerCase();
+
+  const [itemModalOpen, setItemModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+
+  const [quantity, setQuantity] = useState(1);
+
+  const orderedCategories = (menu?.categories || []).slice().sort((a, b) => {
+    return Number(a.position ?? 0) - Number(b.position ?? 0);
+  });
+
+  const handleItemClick = (item) => {
+    setSelectedItem(item);
+    setItemModalOpen(true);
+  };
+
   return (
     <>
       <div className="min-h-screen w-full lg:px-20 xl:px-32 relative" style={{ backgroundColor: menu.background_color }}>
@@ -121,7 +136,7 @@ export default function ClientMenu({ menu }) {
         </p>
 
         <div className="space-y-4 px-4">
-          {menu.categories.map((cat) => (
+          {orderedCategories.map((cat) => (
             <div key={cat.id} className="rounded py-3">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-3">
@@ -136,8 +151,9 @@ export default function ClientMenu({ menu }) {
                 {(cat.menu_items || []).map((it) => (
                   <div key={it.id} className="flex items-stretch justify-between">
                     <div
-                      className="flex-1 h-[120px] flex flex-col items-start justify-between gap-2 p-2 rounded-lg"
+                      className="cursor-pointer flex-1 h-[120px] flex flex-col items-start justify-between gap-2 p-2 rounded-lg"
                       style={{ backgroundColor: translucidToUse }}
+                      onClick={() => handleItemClick(it)}
                     >
                       <div>
                         <div>
@@ -174,7 +190,7 @@ export default function ClientMenu({ menu }) {
         </div>
       </div>
 
-      {hoursModalOpen ? (
+      {hoursModalOpen && (
         <GenericModal bgColor={menu.background_color} onClose={() => setHoursModalOpen(false)}>
           <div className="cursor-pointer flex items-center gap-4 mb-4" style={{ color: foregroundToUse }}>
             <FaChevronLeft onClick={() => setHoursModalOpen(false)} />
@@ -200,7 +216,76 @@ export default function ClientMenu({ menu }) {
             </div>
           </div>
         </GenericModal>
-      ) : null}
+      )}
+
+      {itemModalOpen && selectedItem && (
+        <GenericModal
+          onClose={() => {
+            setItemModalOpen(false);
+            setSelectedItem(null);
+            setQuantity(1);
+          }}
+          bgColor={menu.background_color}
+        >
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 mb-4">
+              <div className="flex flex-col gap-2 max-w-full sm:w-1/2">
+                <div>
+                  <h2 className="text-xl font-bold" style={{ color: foregroundToUse }}>
+                    {selectedItem.name}
+                  </h2>
+                  <p style={{ color: grayToUse }} className="line-clamp-4">
+                    {selectedItem.description}
+                  </p>
+                </div>
+                <span className="text-3xl font-semibold" style={{ color: foregroundToUse }}>
+                  R$ {Number(selectedItem.price).toFixed(2)}
+                </span>
+              </div>
+
+              <div className="max-w-full sm:w-1/2 sm:mt-6">
+                <textarea
+                  className="w-[100%] h-full p-2 border"
+                  style={{
+                    backgroundColor: translucidToUse,
+                    color: foregroundToUse,
+                    borderColor: grayToUse,
+                  }}
+                  placeholder="Comentário (opicional)"
+                ></textarea>
+              </div>
+            </div>
+
+            {/* seletor de quantidade */}
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                className="cursor-pointer p-2 rounded bg-red-500 hover:bg-red-600 font-bold transition"
+              >
+                <FaMinus />
+              </button>
+              <span className="text-xl font-semibold" style={{ color: foregroundToUse }}>
+                {quantity}
+              </span>
+              <button
+                onClick={() => setQuantity((q) => q + 1)}
+                className="cursor-pointer p-2 rounded bg-green-500 hover:bg-green-600 font-bold transition"
+              >
+                <FaPlus />
+              </button>
+              {quantity > 1 && <span style={{ color: grayToUse }}>(R${(selectedItem.price * quantity).toFixed(2)})</span>}
+            </div>
+
+            <button
+              className="cursor-pointer p-2 gap-2 font-bold flex items-center justify-center rounded hover:opacity-90 transition"
+              style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
+            >
+              <span>Adicionar {quantity} ao carrinho</span>
+              <FaShoppingCart />
+            </button>
+          </div>
+        </GenericModal>
+      )}
     </>
   );
 }
