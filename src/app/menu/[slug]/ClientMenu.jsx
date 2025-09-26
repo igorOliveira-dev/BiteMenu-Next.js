@@ -175,19 +175,23 @@ export default function ClientMenu({ menu }) {
       </div>
 
       {hoursModalOpen ? (
-        <GenericModal onClose={() => setHoursModalOpen(false)}>
-          <div className="flex items-center gap-4 mb-4">
+        <GenericModal bgColor={menu.background_color} onClose={() => setHoursModalOpen(false)}>
+          <div className="cursor-pointer flex items-center gap-4 mb-4" style={{ color: foregroundToUse }}>
             <FaChevronLeft onClick={() => setHoursModalOpen(false)} />
             <h3 className="font-semibold">Horários de funcionamento:</h3>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-2" style={{ color: foregroundToUse }}>
             <div className="space-y-2">
               {formatHours(menu.hours).map(({ day, hours }, idx) => {
                 const dayKey = Object.keys(dayNames)[idx]; // mon, tue, wed...
                 const isToday = dayKey === todayKey;
 
                 return (
-                  <div key={day} className={`flex justify-between px-2 py-1 rounded ${isToday ? "bg-translucid" : ""}`}>
+                  <div
+                    key={day}
+                    className="flex justify-between px-2 py-1 rounded"
+                    style={{ backgroundColor: isToday ? translucidToUse : "transparent" }}
+                  >
                     <span>{day}:</span>
                     <span>{hours}</span>
                   </div>
