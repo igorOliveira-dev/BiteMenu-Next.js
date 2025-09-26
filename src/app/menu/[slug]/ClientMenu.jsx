@@ -151,13 +151,13 @@ export default function ClientMenu({ menu }) {
                 {(cat.menu_items || []).map((it) => (
                   <div key={it.id} className="flex items-stretch justify-between">
                     <div
-                      className="cursor-pointer flex-1 h-[120px] flex flex-col items-start justify-between gap-2 p-2 rounded-lg"
+                      className="cursor-pointer flex-1 h-[130px] flex flex-col items-start justify-between gap-2 p-2 rounded-lg"
                       style={{ backgroundColor: translucidToUse }}
                       onClick={() => handleItemClick(it)}
                     >
                       <div>
                         <div>
-                          <div className="text-xl font-bold" style={{ color: foregroundToUse }}>
+                          <div className="text-xl" style={{ color: foregroundToUse }}>
                             {it.name}
                           </div>
                         </div>
@@ -170,7 +170,7 @@ export default function ClientMenu({ menu }) {
                       </div>
 
                       <div className="flex items-center justify-between w-full">
-                        <div className="text-2xl font-medium" style={{ color: foregroundToUse }}>
+                        <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
                           {it.price ? `R$ ${Number(it.price).toFixed(2)}` : "-"}
                         </div>
                         <div className="mr-2 px-6 py-2 rounded" style={{ backgroundColor: menu.details_color }}>
