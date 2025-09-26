@@ -62,7 +62,8 @@ export default async function MenuPage({ params }) {
           id,
           name,
           description,
-          price
+          price,
+          additionals
         )
       )
     `

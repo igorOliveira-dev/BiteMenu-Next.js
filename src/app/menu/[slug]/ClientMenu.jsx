@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { FaChevronLeft, FaMinus, FaPlus, FaShoppingCart } from "react-icons/fa";
 import Image from "next/image";
 import GenericModal from "@/components/GenericModal";
@@ -81,6 +81,9 @@ export default function ClientMenu({ menu }) {
 
   const [quantity, setQuantity] = useState(1);
 
+  // selectedAddons: mapa { "<idx>": true } (boolean selection only)
+  const [selectedAddons, setSelectedAddons] = useState({});
+
   const orderedCategories = (menu?.categories || []).slice().sort((a, b) => {
     return Number(a.position ?? 0) - Number(b.position ?? 0);
   });
@@ -88,6 +91,64 @@ export default function ClientMenu({ menu }) {
   const handleItemClick = (item) => {
     setSelectedItem(item);
     setItemModalOpen(true);
+    setQuantity(1);
+    setSelectedAddons({});
+  };
+
+  const toggleAddon = (idx) => {
+    setSelectedAddons((prev) => {
+      const key = String(idx);
+      const next = { ...prev };
+      if (next[key]) {
+        delete next[key];
+      } else {
+        next[key] = true;
+      }
+      return next;
+    });
+  };
+
+  // calcula total: item * quantity + soma(addon.price)
+  const totalPrice = useMemo(() => {
+    if (!selectedItem) return 0;
+    const base = Number(selectedItem.price || 0) * quantity;
+    const addons = (selectedItem.additionals || []).reduce((acc, a, idx) => {
+      if (selectedAddons[String(idx)]) {
+        return acc + Number(a.price || 0);
+      }
+      return acc;
+    }, 0);
+    return base + addons * quantity;
+  }, [selectedItem, quantity, selectedAddons]);
+
+  // Handler de adicionar ao carrinho (aqui apenas simulo o objeto)
+  const handleAddToCart = () => {
+    if (!selectedItem) return;
+    const selected = (selectedItem.additionals || [])
+      .map((a, idx) => {
+        if (!selectedAddons[String(idx)]) return null;
+        return { name: a.name, price: Number(a.price) };
+      })
+      .filter(Boolean);
+
+    const cartItem = {
+      id: selectedItem.id,
+      name: selectedItem.name,
+      price: Number(selectedItem.price),
+      qty: quantity,
+      additionals: selected,
+      subtotal: totalPrice,
+    };
+
+    // Aqui você integra com seu estado global/carrinho
+    // Por enquanto só log:
+    console.log("Adicionar ao carrinho:", cartItem);
+
+    // fechar modal e resetar
+    setItemModalOpen(false);
+    setSelectedItem(null);
+    setQuantity(1);
+    setSelectedAddons({});
   };
 
   return (
@@ -224,6 +285,7 @@ export default function ClientMenu({ menu }) {
             setItemModalOpen(false);
             setSelectedItem(null);
             setQuantity(1);
+            setSelectedAddons({});
           }}
           bgColor={menu.background_color}
         >
@@ -256,7 +318,47 @@ export default function ClientMenu({ menu }) {
               </div>
             </div>
 
-            {/* seletor de quantidade */}
+            {/* adicionais: somente se existirem */}
+            {Array.isArray(selectedItem.additionals) && selectedItem.additionals.length > 0 && (
+              <div className="space-y-2">
+                <div className="font-semibold" style={{ color: foregroundToUse }}>
+                  Selecione adicionais:
+                </div>
+
+                {/* Linha de boxes que quebra */}
+                <div className="flex flex-wrap gap-3">
+                  {(selectedItem.additionals || []).map((a, idx) => {
+                    const isSelected = !!selectedAddons[String(idx)];
+                    // cores:
+                    const boxBg = isSelected ? "#16a34a44" : translucidToUse; // verde translúcido quando selecionado
+                    const textColor = getContrastTextColor(isSelected ? "#16a34a44" : menu.background_color);
+
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => toggleAddon(idx)}
+                        className="flex flex-col items-center justify-center rounded-lg cursor-pointer p-2 min-w-[120px] text-center"
+                        style={{
+                          backgroundColor: boxBg,
+                          color: textColor,
+                          border: isSelected ? `1px solid #16a34a88` : "1px solid transparent",
+                        }}
+                      >
+                        <div className="font-medium truncate">
+                          {a.name}{" "}
+                          <span className="text-sm" style={{ color: grayToUse }}>
+                            R${Number(a.price).toFixed(2)}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* seletor de quantidade do item */}
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setQuantity((q) => Math.max(1, q - 1))}
@@ -273,10 +375,11 @@ export default function ClientMenu({ menu }) {
               >
                 <FaPlus />
               </button>
-              {quantity > 1 && <span style={{ color: grayToUse }}>(R${(selectedItem.price * quantity).toFixed(2)})</span>}
+              <span style={{ color: grayToUse }}>(R${totalPrice.toFixed(2)})</span>
             </div>
 
             <button
+              onClick={handleAddToCart}
               className="cursor-pointer p-2 gap-2 font-bold flex items-center justify-center rounded hover:opacity-90 transition"
               style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
             >
