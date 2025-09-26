@@ -148,14 +148,14 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
     }
   };
 
-  const createItem = async (categoryId, { name = "Novo item", price = "", description = "" } = {}) => {
+  const createItem = async (categoryId, { name = "Novo item", price = "", description = "", additionals = [] } = {}) => {
     const tempId = uid();
     setCategories((prev = []) =>
       prev.map((c) =>
         c.id === categoryId
           ? {
               ...c,
-              menu_items: [...(c.menu_items || []), { id: tempId, name, price, description }],
+              menu_items: [...(c.menu_items || []), { id: tempId, name, price, description, additionals }],
             }
           : c
       )
@@ -164,7 +164,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
     try {
       const { data, error } = await supabase
         .from("menu_items")
-        .insert({ category_id: categoryId, name, price, description })
+        .insert({ category_id: categoryId, name, price, description, additionals })
         .select()
         .single();
       if (error) throw error;
@@ -305,6 +305,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
         name: item?.name ?? "Novo item",
         price: item?.price ?? "",
         description: item?.description ?? "",
+        additionals: Array.isArray(item?.additionals) ? item.additionals.map((a) => ({ ...a, id: uid() })) : [],
       },
     });
     setModalOpen(true);
@@ -434,12 +435,29 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
         return;
       }
 
-      const priceNum = parseFloat(data.price);
+      const priceNum = parseFloat(String(data.price).replace(",", "."));
       if (isNaN(priceNum)) {
         alert?.("O preço deve ser um número válido.", "error");
         return;
       }
       data.price = priceNum;
+
+      // === Adicionais validation & normalize ===
+      const additionals = Array.isArray(data.additionals) ? data.additionals : [];
+      for (let i = 0; i < additionals.length; i++) {
+        const a = additionals[i];
+        if (!String(a.name || "").trim()) {
+          alert?.(`O nome do adicional #${i + 1} não pode ficar vazio.`, "error");
+          return;
+        }
+        const p = parseFloat(String(a.price).replace(",", "."));
+        if (isNaN(p)) {
+          alert?.(`O preço do adicional "${a.name || `#${i + 1}`}" não é válido.`, "error");
+          return;
+        }
+        additionals[i] = { name: String(a.name).trim(), price: p };
+      }
+      data.additionals = additionals;
     }
 
     if (t === "category") {
@@ -450,9 +468,19 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
       }
     } else if (t === "item") {
       if (mode === "create") {
-        await createItem(categoryId, { name: data.name, price: data.price, description: data.description });
+        await createItem(categoryId, {
+          name: data.name,
+          price: data.price,
+          description: data.description,
+          additionals: data.additionals,
+        });
       } else if (mode === "edit" && itemId) {
-        await updateItem(itemId, { name: data.name, price: data.price, description: data.description });
+        await updateItem(itemId, {
+          name: data.name,
+          price: data.price,
+          description: data.description,
+          additionals: data.additionals,
+        });
       }
     }
 
@@ -539,23 +567,25 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
               {(cat.menu_items || []).map((it) => (
                 <div key={it.id} className="flex items-stretch justify-between">
                   <div
-                    className="flex-1 flex flex-col items-start gap-2 p-2 rounded-l-lg"
+                    className="h-[124px] flex-1 flex flex-col items-start justify-between gap-2 p-2 rounded-l-lg"
                     style={{ backgroundColor: translucidToUse }}
                   >
                     <div>
-                      <div className="text-xl font-bold" style={{ color: foregroundToUse }}>
-                        {it.name}
+                      <div>
+                        <div className="text-xl" style={{ color: foregroundToUse }}>
+                          {it.name}
+                        </div>
                       </div>
-                    </div>
 
-                    <div>
-                      <div className="text-sm line-clamp-2" style={{ color: grayToUse }}>
-                        {it.description}
+                      <div>
+                        <div className="text-sm line-clamp-2" style={{ color: grayToUse }}>
+                          {it.description}
+                        </div>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between w-full">
-                      <div className="text-2xl font-medium" style={{ color: foregroundToUse }}>
+                      <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
                         {it.price ? `R$ ${Number(it.price).toFixed(2)}` : "-"}
                       </div>
                       <div className="mr-2 px-6 py-2 rounded" style={{ backgroundColor: detailsColor }}>
@@ -594,7 +624,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
       {/* Modal */}
       {modalOpen && (
         <GenericModal onClose={() => setModalOpen(false)}>
-          <div className="flex items-center gap-4 mb-4">
+          <div className="flex items-center gap-4 mb-4 w-[380px]">
             <h3 className="font-bold">
               {modalPayload.type === "sort"
                 ? "Ordenar itens"
@@ -664,6 +694,81 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
                   placeholder="Escreva a descrição (opcional)"
                 />
               </label>
+              {/* Adicionais */}
+              <div className="mb-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm color-gray">Adicionais (nome + preço)</div>
+                  <button
+                    onClick={() =>
+                      setModalPayload((p) => ({
+                        ...p,
+                        data: {
+                          ...p.data,
+                          additionals: [...(p.data.additionals || []), { id: uid(), name: "", price: "" }],
+                        },
+                      }))
+                    }
+                    className="cursor-pointer px-2 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white transition"
+                    type="button"
+                  >
+                    + Adicional
+                  </button>
+                </div>
+
+                <div className="space-y-2 mt-2">
+                  {(modalPayload.data.additionals || []).map((add, idx) => (
+                    <div
+                      key={add.id ?? idx}
+                      className="flex flex-wrap items-center gap-2 w-full" /* permite quebra em telas pequenas */
+                    >
+                      <input
+                        type="text"
+                        value={add.name}
+                        onChange={(e) =>
+                          setModalPayload((p) => {
+                            const next = [...(p.data.additionals || [])];
+                            next[idx] = { ...next[idx], name: e.target.value };
+                            return { ...p, data: { ...p.data, additionals: next } };
+                          })
+                        }
+                        className="flex-1 min-w-0 p-2 rounded border bg-translucid"
+                        placeholder="Nome do adicional"
+                      />
+
+                      <input
+                        type="text"
+                        value={String(add.price)}
+                        onChange={(e) => {
+                          let value = e.target.value;
+                          value = value.replace(/[^0-9.,-]/g, "");
+                          value = value.replace(",", ".");
+                          setModalPayload((p) => {
+                            const next = [...(p.data.additionals || [])];
+                            next[idx] = { ...next[idx], price: value };
+                            return { ...p, data: { ...p.data, additionals: next } };
+                          });
+                        }}
+                        className="w-16 flex-none p-2 rounded border bg-translucid"
+                        placeholder="0.00"
+                      />
+
+                      <button
+                        onClick={() =>
+                          setModalPayload((p) => {
+                            const next = [...(p.data.additionals || [])];
+                            next.splice(idx, 1);
+                            return { ...p, data: { ...p.data, additionals: next } };
+                          })
+                        }
+                        className="p-2 rounded bg-red-600 text-white"
+                        type="button"
+                      >
+                        <FaTrash />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </>
           )}
 
