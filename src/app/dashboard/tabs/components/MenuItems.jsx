@@ -715,7 +715,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
                   </button>
                 </div>
 
-                <div className="space-y-2 mt-2">
+                <div className="space-y-2 mt-2 max-h-[200px] overflow-y-auto">
                   {(modalPayload.data.additionals || []).map((add, idx) => (
                     <div
                       key={add.id ?? idx}
@@ -760,7 +760,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
                             return { ...p, data: { ...p.data, additionals: next } };
                           })
                         }
-                        className="p-2 rounded bg-red-600 text-white"
+                        className="p-2 rounded bg-red-600 text-white mr-2"
                         type="button"
                       >
                         <FaTrash />
