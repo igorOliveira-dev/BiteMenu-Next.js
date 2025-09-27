@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { FaChevronLeft, FaMinus, FaPlus, FaShoppingCart } from "react-icons/fa";
 import Image from "next/image";
 import GenericModal from "@/components/GenericModal";
+import { useCartContext } from "@/contexts/CartContext";
+import CartDrawer from "./components/CartDrawer";
 
 // util para contraste de cor
 function getContrastTextColor(hex) {
@@ -64,7 +66,13 @@ function formatHours(hours) {
 }
 
 export default function ClientMenu({ menu }) {
+  const cart = useCartContext();
+
   const [hoursModalOpen, setHoursModalOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
+
+  // ref para leitura dentro do listener popstate
+  const cartOpenRef = useRef(cartOpen);
 
   const open = isOpenNow(menu.hours);
   const translucidToUse = getContrastTextColor(menu.background_color) === "white" ? "#ffffff15" : "#00000015";
@@ -84,6 +92,9 @@ export default function ClientMenu({ menu }) {
   // selectedAddons: mapa { "<idx>": true } (boolean selection only)
   const [selectedAddons, setSelectedAddons] = useState({});
 
+  // comentario / nota do item
+  const [note, setNote] = useState("");
+
   const orderedCategories = (menu?.categories || []).slice().sort((a, b) => {
     return Number(a.position ?? 0) - Number(b.position ?? 0);
   });
@@ -93,6 +104,7 @@ export default function ClientMenu({ menu }) {
     setItemModalOpen(true);
     setQuantity(1);
     setSelectedAddons({});
+    setNote("");
   };
 
   const toggleAddon = (idx) => {
@@ -108,20 +120,20 @@ export default function ClientMenu({ menu }) {
     });
   };
 
-  // calcula total: item * quantity + soma(addon.price)
+  // calcula total: (preço base + soma(addons)) * quantity
   const totalPrice = useMemo(() => {
     if (!selectedItem) return 0;
-    const base = Number(selectedItem.price || 0) * quantity;
-    const addons = (selectedItem.additionals || []).reduce((acc, a, idx) => {
+    const base = Number(selectedItem.price || 0);
+    const addonsPerUnit = (selectedItem.additionals || []).reduce((acc, a, idx) => {
       if (selectedAddons[String(idx)]) {
         return acc + Number(a.price || 0);
       }
       return acc;
     }, 0);
-    return base + addons * quantity;
+    return (base + addonsPerUnit) * quantity;
   }, [selectedItem, quantity, selectedAddons]);
 
-  // Handler de adicionar ao carrinho (aqui apenas simulo o objeto)
+  // Handler de adicionar ao carrinho
   const handleAddToCart = () => {
     if (!selectedItem) return;
     const selected = (selectedItem.additionals || [])
@@ -134,22 +146,76 @@ export default function ClientMenu({ menu }) {
     const cartItem = {
       id: selectedItem.id,
       name: selectedItem.name,
-      price: Number(selectedItem.price),
-      qty: quantity,
+      price: Number(selectedItem.price || 0), // preço base por unidade
+      qty: Number(quantity || 1),
       additionals: selected,
-      subtotal: totalPrice,
+      note: note || "",
     };
 
-    // Aqui você integra com seu estado global/carrinho
-    // Por enquanto só log:
-    console.log("Adicionar ao carrinho:", cartItem);
+    // integra com seu estado global/carrinho
+    cart.addItem(cartItem);
 
     // fechar modal e resetar
     setItemModalOpen(false);
     setSelectedItem(null);
     setQuantity(1);
     setSelectedAddons({});
+    setNote("");
+    // opcional: abrir carrinho automaticamente
+    // openCart();
   };
+
+  // --- LOGICA DO BOTAO "BACK" DO APARELHO ---
+  // abrir carrinho: empurra um estado no history (se ainda não estiver)
+  const openCart = () => {
+    if (typeof window === "undefined") {
+      setCartOpen(true);
+      return;
+    }
+    try {
+      if (!(window.history.state && window.history.state.ui === "cart")) {
+        window.history.pushState({ ui: "cart" }, "");
+      }
+    } catch (e) {
+      console.warn("pushState falhou", e);
+    }
+    setCartOpen(true);
+  };
+
+  // fechar programaticamente: substitui o state se for o do cart e fecha UI
+  const closeCartProgrammatically = () => {
+    if (typeof window !== "undefined") {
+      try {
+        if (window.history.state && window.history.state.ui === "cart") {
+          window.history.replaceState(null, "");
+        }
+      } catch (e) {
+        console.warn("replaceState falhou", e);
+      }
+    }
+    setCartOpen(false);
+  };
+
+  // mantém a ref atualizada para o listener
+  useEffect(() => {
+    cartOpenRef.current = cartOpen;
+  }, [cartOpen]);
+
+  // listener global de popstate: quando o usuário aperta "voltar"
+  useEffect(() => {
+    const onPopState = (event) => {
+      if (cartOpenRef.current) {
+        // se o cart estava aberto, fechar o cart e consumir o evento localmente
+        // (não chamamos history.back() aqui)
+        setCartOpen(false);
+      } else {
+        // deixa o comportamento normal do navegador (navegar pra trás)
+      }
+    };
+
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
 
   return (
     <>
@@ -251,6 +317,21 @@ export default function ClientMenu({ menu }) {
         </div>
       </div>
 
+      {/* Botão do carrinho (fixo) */}
+      <div className="fixed z-40 right-4 bottom-6">
+        <button
+          onClick={openCart}
+          className="flex items-center gap-2 px-4 py-2 rounded-full shadow"
+          style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
+          aria-label="Abrir carrinho"
+        >
+          <FaShoppingCart />
+          <span className="font-bold">
+            {typeof cart.totalItems === "function" ? cart.totalItems() : cart.items?.length || 0}
+          </span>
+        </button>
+      </div>
+
       {hoursModalOpen && (
         <GenericModal bgColor={menu.background_color} onClose={() => setHoursModalOpen(false)}>
           <div className="cursor-pointer flex items-center gap-4 mb-4" style={{ color: foregroundToUse }}>
@@ -286,6 +367,7 @@ export default function ClientMenu({ menu }) {
             setSelectedItem(null);
             setQuantity(1);
             setSelectedAddons({});
+            setNote("");
           }}
           bgColor={menu.background_color}
           maxWidth={"720px"}
@@ -308,6 +390,8 @@ export default function ClientMenu({ menu }) {
 
               <div className="max-w-full sm:w-1/2 sm:mt-6">
                 <textarea
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
                   className="w-[100%] h-full p-2 border"
                   style={{
                     backgroundColor: translucidToUse,
@@ -315,7 +399,7 @@ export default function ClientMenu({ menu }) {
                     borderColor: grayToUse,
                   }}
                   placeholder="Comentário (opicional)"
-                ></textarea>
+                />
               </div>
             </div>
 
@@ -389,6 +473,16 @@ export default function ClientMenu({ menu }) {
           </div>
         </GenericModal>
       )}
+
+      {/* Drawer do Carrinho (componente que você já implementou) */}
+      <CartDrawer
+        open={cartOpen}
+        bgColor={menu.background_color}
+        translucidToUse={translucidToUse}
+        grayToUse={grayToUse}
+        foregroundToUse={foregroundToUse}
+        onClose={closeCartProgrammatically}
+      />
     </>
   );
 }

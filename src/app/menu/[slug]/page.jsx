@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabaseClient";
 import NotFoundMenu from "../NotFoundMenu";
 import ClientMenu from "./ClientMenu";
+import { CartProvider } from "@/contexts/CartContext";
 
 // SEO dinâmico (server only)
 export async function generateMetadata({ params }) {
@@ -76,5 +77,9 @@ export default async function MenuPage({ params }) {
   if (!menu) return <NotFoundMenu />;
 
   // passa dados para o componente client
-  return <ClientMenu menu={menu} />;
+  return (
+    <CartProvider>
+      <ClientMenu menu={menu} />
+    </CartProvider>
+  );
 }
