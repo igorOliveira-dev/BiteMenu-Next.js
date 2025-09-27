@@ -1,29 +1,56 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback } from "react";
+import { FaTimes } from "react-icons/fa";
 
 const AlertContext = createContext(null);
 
 export function AlertProvider({ children }) {
   const [alerts, setAlerts] = useState([]);
 
-  const showAlert = useCallback((message, type = "info", duration = 4000) => {
-    const id = Date.now();
-    const newAlert = { id, message, type, duration, visible: true };
-    setAlerts((prev) => [...prev, newAlert]);
+  const showAlert = useCallback(
+    (
+      message,
+      type = "info",
+      options = {} // aqui vem duração, cores, etc
+    ) => {
+      const { duration = 4000, backgroundColor = null, textColor = null } = options;
 
-    // Inicia a contagem para sumir
-    setTimeout(() => closeAlert(id), duration);
-  }, []);
+      const id = Date.now();
+      const newAlert = {
+        id,
+        message,
+        type,
+        duration,
+        visible: true,
+        backgroundColor,
+        textColor,
+      };
+      setAlerts((prev) => [...prev, newAlert]);
+
+      setTimeout(() => closeAlert(id), duration);
+    },
+    []
+  );
 
   const closeAlert = (id) => {
-    // marca como invisível para animar saída
     setAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, visible: false } : a)));
 
-    // remove de vez depois da animação
     setTimeout(() => {
       setAlerts((prev) => prev.filter((a) => a.id !== id));
-    }, 300); // tempo igual ao do fade-out
+    }, 300); // fade-out duration
+  };
+
+  const getBackgroundColor = (a) => {
+    if (a.backgroundColor) return a.backgroundColor;
+    if (a.type === "error") return "#ff000050";
+    if (a.type === "success") return "#00ff0050";
+    return "var(--translucid)";
+  };
+
+  const getTextColor = (a) => {
+    if (a.textColor) return a.textColor;
+    return "inherit";
   };
 
   return (
@@ -34,23 +61,20 @@ export function AlertProvider({ children }) {
         {alerts.map((a) => (
           <div
             key={a.id}
-            className={`border border-[var(--background)] m-1 relative w-60 sm:w-80 px-4 py-3 pr-5 rounded shadow transform transition-all duration-300 ease-in-out backdrop-blur-md
-              ${a.type === "error" ? "bg-[#ff000050]" : a.type === "success" ? "bg-[#00ff0050]" : "var(--translucid)"}
+            className={`border border-[var(--background)] m-1 relative w-70 px-2 py-3 rounded transform transition-all duration-300 ease-in-out backdrop-blur-md flex items-center justify-between
               ${a.visible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-5"}
             `}
+            style={{
+              backgroundColor: getBackgroundColor(a),
+              color: getTextColor(a),
+            }}
           >
-            {/* mensagem */}
             <span>{a.message}</span>
 
-            {/* botão X */}
-            <button
-              onClick={() => closeAlert(a.id)}
-              className="cursor-pointer absolute top-2 right-2 text-xl hover:text-gray-200"
-            >
-              x
+            <button onClick={() => closeAlert(a.id)} className="cursor-pointer text-xl">
+              <FaTimes />
             </button>
 
-            {/* barra de progresso */}
             <div
               className="absolute bottom-0 left-0 h-1 bg-white/70"
               style={{

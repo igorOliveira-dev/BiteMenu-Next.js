@@ -6,6 +6,7 @@ import Image from "next/image";
 import GenericModal from "@/components/GenericModal";
 import { useCartContext } from "@/contexts/CartContext";
 import CartDrawer from "./components/CartDrawer";
+import { useAlert } from "@/providers/AlertProvider";
 
 // util para contraste de cor
 function getContrastTextColor(hex) {
@@ -67,6 +68,9 @@ function formatHours(hours) {
 
 export default function ClientMenu({ menu }) {
   const cart = useCartContext();
+  const [animateCart, setAnimateCart] = useState(false);
+
+  const alert = useAlert();
 
   const [hoursModalOpen, setHoursModalOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
@@ -154,6 +158,10 @@ export default function ClientMenu({ menu }) {
 
     // integra com seu estado global/carrinho
     cart.addItem(cartItem);
+    alert("Item adicionado ao carrinho!", "info", {
+      backgroundColor: menu.details_color,
+      textColor: getContrastTextColor(menu.details_color),
+    });
 
     // fechar modal e resetar
     setItemModalOpen(false);
@@ -216,6 +224,15 @@ export default function ClientMenu({ menu }) {
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
+
+  // animate cart
+  useEffect(() => {
+    if (cart.items.length === 0) return;
+
+    setAnimateCart(true);
+    const timer = setTimeout(() => setAnimateCart(false), 600); // duração do efeito
+    return () => clearTimeout(timer);
+  }, [cart.items.length]);
 
   return (
     <>
@@ -321,14 +338,18 @@ export default function ClientMenu({ menu }) {
       <div className="fixed z-40 right-4 bottom-6">
         <button
           onClick={openCart}
-          className="flex items-center gap-2 px-4 py-2 rounded-full shadow"
-          style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg shadow-[0_0_20px_var(--shadow)] font-bold transition-transform duration-200 ${
+            animateCart ? "scale-110" : "scale-100"
+          }`}
+          style={{
+            backgroundColor: menu.details_color,
+            color: getContrastTextColor(menu.details_color),
+          }}
           aria-label="Abrir carrinho"
         >
+          <span>Carrinho</span>
           <FaShoppingCart />
-          <span className="font-bold">
-            {typeof cart.totalItems === "function" ? cart.totalItems() : cart.items?.length || 0}
-          </span>
+          <span>{typeof cart.totalItems === "function" ? cart.totalItems() : cart.items?.length || 0}</span>
         </button>
       </div>
 
