@@ -5,32 +5,30 @@ import { FaTimes } from "react-icons/fa";
 import { useCartContext } from "@/contexts/CartContext";
 
 /**
- * CartDrawer - animação de entrada/saída:
- * - >= sm (>=640px): slide da direita (translate-x)
- * - < sm: slide de baixo (translate-y)
- *
- * Robust: monta sempre com isVisible=false e só ativa isVisible após um pequeno delay,
- * forçando a transição de entrada a rodar. Desmonta somente depois do duration.
+ * CartDrawer with swipe-to-close on mobile and slide-from-right on desktop.
  */
 export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, foregroundToUse, bgColor }) {
   const cart = useCartContext();
 
   const DURATION = 300; // ms (sincronizar com duration-300)
-  const MOUNT_DELAY = 20; // ms - tempo para garantir que o browser aplique o estilo inicial
+  const MOUNT_DELAY = 20; // ms
 
-  // montagem e visibilidade para controlar animação
+  // montagem/visibilidade para controlar animação
   const [isMounted, setIsMounted] = useState(false);
-  const [isVisible, setIsVisible] = useState(false); // sempre começar false
-  // isDesktop init síncrono para evitar "jump" na primeira renderização
-  const [isDesktop, setIsDesktop] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.innerWidth >= 640;
-  });
+  const [isVisible, setIsVisible] = useState(false);
+  // isDesktop inicial síncrono para evitar jump
+  const [isDesktop, setIsDesktop] = useState(() => (typeof window === "undefined" ? false : window.innerWidth >= 640));
 
   const timeoutRef = useRef(null);
   const mountTimeoutRef = useRef(null);
 
-  // listener resize para atualizar isDesktop
+  // touch/drag refs & state (mobile)
+  const panelRef = useRef(null);
+  const startYRef = useRef(0);
+  const draggingRef = useRef(false);
+  const [dragOffset, setDragOffset] = useState(0);
+
+  // resize listener
   useEffect(() => {
     if (typeof window === "undefined") return;
     const onResize = () => setIsDesktop(window.innerWidth >= 640);
@@ -38,11 +36,9 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // controle de montagem/visibilidade com delays robustos
+  // mount/visibility logic
   useEffect(() => {
-    // abrir: montar e depois ativar isVisible (entrada)
     if (open) {
-      // cancela timeouts pendentes
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
@@ -53,10 +49,8 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
       }
 
       setIsMounted(true);
-      setIsVisible(false); // garante estado inicial fora da tela
+      setIsVisible(false);
 
-      // dar um pequeno delay para o browser aplicar o estilo inicial,
-      // garantindo que a transição de entrada aconteça
       mountTimeoutRef.current = setTimeout(() => {
         setIsVisible(true);
         mountTimeoutRef.current = null;
@@ -65,11 +59,8 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
       return;
     }
 
-    // fechar: iniciar animação de saída e desmontar depois do DURATION
     if (!open && isMounted) {
-      // iniciar a animação de saída
       setIsVisible(false);
-      // desmonta após a duração da animação
       timeoutRef.current = setTimeout(() => {
         setIsMounted(false);
         timeoutRef.current = null;
@@ -77,7 +68,6 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
     }
   }, [open, isMounted]);
 
-  // cleanup
   useEffect(() => {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -87,7 +77,7 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
 
   if (!isMounted) return null;
 
-  // classes base e transform dependendo do tamanho e visibilidade
+  // base classes
   const basePanelClasses =
     "ml-auto absolute bottom-0 sm:right-0 w-full h-[90dvh] rounded-t-3xl sm:rounded-none sm:h-full sm:w-[480px] p-4 overflow-auto scrollbar-none z-60 transform transition-transform duration-300 ease-in-out";
 
@@ -99,17 +89,82 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
     ? "translate-y-0"
     : "translate-y-full";
 
-  // backdrop fade
   const backdropClasses = `absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
     isVisible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
   }`;
 
-  // adiciona will-change para smoothness
-  const panelStyle = {
+  const panelBaseStyle = {
     backgroundColor: bgColor,
     color: foregroundToUse,
     willChange: "transform, opacity",
   };
+
+  // --- TOUCH HANDLERS (mobile swipe down) ---
+  const handleTouchStart = (e) => {
+    if (isDesktop) return;
+    if (!e.touches || e.touches.length === 0) return;
+    draggingRef.current = true;
+    startYRef.current = e.touches[0].clientY;
+    setDragOffset(0);
+  };
+
+  const handleTouchMove = (e) => {
+    if (isDesktop) return;
+    if (!draggingRef.current) return;
+    if (!e.touches || e.touches.length === 0) return;
+
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - startYRef.current;
+
+    // só considerar arrasto para baixo
+    if (deltaY > 0) {
+      // limita para não extrapolar demais (opcional)
+      const maxOffset = (panelRef.current?.clientHeight || window.innerHeight) * 0.9;
+      const offset = Math.min(deltaY, maxOffset);
+      setDragOffset(offset);
+    } else {
+      setDragOffset(0);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (isDesktop) return;
+    if (!draggingRef.current) return;
+    draggingRef.current = false;
+
+    const panelHeight = panelRef.current?.clientHeight || window.innerHeight;
+    const threshold = Math.min(120, panelHeight * 0.25); // 25% ou 120px
+
+    if (dragOffset >= threshold) {
+      // fecha
+      setDragOffset(0);
+      if (typeof onClose === "function") onClose();
+    } else {
+      // anima de volta: set dragOffset=0; CSS transition fará o retorno suave
+      setDragOffset(0);
+    }
+  };
+
+  // compute inline style for panel when mobile dragging
+  const mobileTransformStyle = (() => {
+    if (isDesktop) return {};
+    // if dragging (dragOffset > 0) -> inline transform follows finger (disable transition)
+    if (dragOffset > 0 && draggingRef.current) {
+      return {
+        transform: `translateY(${dragOffset}px)`,
+        transition: "none",
+      };
+    }
+    // if dragOffset > 0 but not dragging (release) -> animate back using CSS transition
+    if (dragOffset > 0 && !draggingRef.current) {
+      return {
+        transform: `translateY(0px)`,
+        transition: `transform ${DURATION}ms ease-in-out`,
+      };
+    }
+    // otherwise, let tailwind classes control transform (enter/exit)
+    return {};
+  })();
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex">
@@ -124,11 +179,19 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
 
       {/* drawer */}
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label="Carrinho"
         className={`${basePanelClasses} ${transformClass}`}
-        style={panelStyle}
+        style={{
+          ...panelBaseStyle,
+          ...(isDesktop ? {} : mobileTransformStyle),
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
       >
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold">
@@ -159,12 +222,11 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
                     <div className="flex items-baseline gap-2">
                       <div>
                         <span className="truncate min-w-0 max-w-[280px]">{it.name}</span>
-                        <span style={{ color: grayToUse, fontWeight: "400" }} className="ml-2">
+                        <span style={{ color: grayToUse, fontWeight: 400 }} className="ml-2">
                           {it.qty}x
                         </span>
                       </div>
                     </div>
-                    {/* adicionais e nota continuam abaixo */}
                     {it.additionals?.length > 0 && (
                       <div className="text-sm line-clamp-2" style={{ color: grayToUse }}>
                         + {it.additionals.map((a) => a.name).join(", ")}
@@ -189,6 +251,7 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
                 </div>
               );
             })}
+
             <div className="pt-4 border-t flex items-center justify-between">
               <div className="font-semibold">Total</div>
               <div className="text-xl font-bold">R$ {cart.totalPrice().toFixed(2)}</div>
