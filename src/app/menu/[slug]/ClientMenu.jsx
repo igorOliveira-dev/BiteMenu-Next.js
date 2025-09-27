@@ -156,7 +156,7 @@ export default function ClientMenu({ menu }) {
       <div className="min-h-screen w-full lg:px-20 xl:px-32 relative" style={{ backgroundColor: menu.background_color }}>
         {/* Indicador de status no topo direito */}
         <div
-          className={`cursor-pointer absolute mt-2 flex items-center h-[35px] top-[calc(25dvh-50px)] right-2 lg:right-20 xl:right-32 px-3 py-1 mr-2 rounded-lg font-bold text-sm z-2`}
+          className={`cursor-pointer absolute mt-2 flex items-center h-[35px] top-[calc(18dvh-50px)] sm:top-[calc(25dvh-50px)] right-2 lg:right-20 xl:right-32 px-3 py-1 mr-2 rounded-lg font-bold text-sm z-2`}
           style={{ backgroundColor: open ? "#16a34a90" : "#dc262690", color: "white" }}
           onClick={() => setHoursModalOpen(true)}
         >
