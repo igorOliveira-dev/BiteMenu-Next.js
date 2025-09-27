@@ -14,10 +14,15 @@ import { useConfirm } from "@/providers/ConfirmProvider";
 /**
  * StatesManager (versão com checagem de auth e tratamento RLS/storage)
  *
+ * Estratégia aplicada: gera nomes únicos para cada upload (timestamp) **e**
+ * remove explicitamente o arquivo antigo no bucket depois do upload bem-sucedido.
+ * Isso evita acumular lixo no storage enquanto mantém baixa chance de colisão.
+ *
  * Ajuste BUCKET_NAME se necessário (use env NEXT_PUBLIC_SUPABASE_BUCKET).
  */
 const BUCKET_NAME = process.env.NEXT_PUBLIC_SUPABASE_BUCKET || "menus";
 const TABLE_NAME = "menus";
+const DEFAULT_BACKGROUND = "#ffffff";
 
 function rgbToHex(rgb) {
   const match = rgb.match(/\d+/g);
@@ -86,21 +91,42 @@ function buildFilePath(folderPrefix, file) {
   return safePrefix ? `${safePrefix}/${ts}_${safeName}` : `${ts}_${safeName}`;
 }
 
-/* ---------------- upload helper com logs e checagem auth ---------------- */
-async function uploadFileAndGetUrl(file, folderPrefix = "") {
-  if (!file) return null;
-  const path = buildFilePath(folderPrefix, file);
+/* ---------------- storage helpers (nova estratégia) ---------------- */
 
-  console.info("[StatesManager] upload -> bucket/path:", {
+// extrai o path interno usado pelo Supabase a partir de uma publicUrl
+function getPathFromPublicUrl(publicUrl) {
+  if (!publicUrl) return null;
+  try {
+    const u = new URL(publicUrl);
+    // caminho típico: /storage/v1/object/public/<bucket>/<path...>
+    const prefix = `/storage/v1/object/public/${BUCKET_NAME}/`;
+    const idx = u.pathname.indexOf(prefix);
+    if (idx === -1) {
+      // fallback: tentar split
+      const parts = u.pathname.split(`/storage/v1/object/public/${BUCKET_NAME}/`);
+      return parts[1] ? decodeURIComponent(parts[1]) : null;
+    }
+    return decodeURIComponent(u.pathname.slice(idx + prefix.length));
+  } catch (e) {
+    console.warn("getPathFromPublicUrl parse error:", e);
+    return null;
+  }
+}
+
+// faz upload com nome único e tenta remover o arquivo antigo (se informado)
+async function uploadAndReplace(file, folderPrefix = "", oldPublicUrl = null) {
+  if (!file) return null;
+
+  const path = buildFilePath(folderPrefix, file);
+  console.info("[StatesManager] uploadAndReplace -> bucket/path:", {
     bucket: BUCKET_NAME,
     path,
     fileName: file.name,
     fileSize: file.size,
   });
 
-  // checagem rápida de usuário autenticado (necessário se bucket exigir auth)
+  // checar usuário autenticado (importante para buckets privados)
   try {
-    // supabase v2: supabase.auth.getUser()
     const userRes = await supabase.auth.getUser?.();
     const user = userRes?.data?.user ?? null;
     console.info("[StatesManager] auth.getUser:", user?.id ? user.id : user);
@@ -110,53 +136,45 @@ async function uploadFileAndGetUrl(file, folderPrefix = "") {
       throw err;
     }
   } catch (e) {
-    console.warn(
-      "[StatesManager] falha ao verificar auth antes do upload (continuando, mas upload provavelmente falhará):",
-      e
-    );
-    // deixamos continuar para que o upload falhe explicitamente e gere logs detalhados.
+    console.warn("[StatesManager] falha ao verificar auth antes do upload (continuando):", e);
   }
 
+  // upload
+  const { data: uploadData, error: uploadError } = await supabase.storage.from(BUCKET_NAME).upload(path, file, {
+    cacheControl: "3600",
+    upsert: true,
+    contentType: file.type || undefined,
+  });
+
+  if (uploadError) {
+    console.error("[StatesManager] supabase.upload error:", uploadError);
+    throw uploadError;
+  }
+
+  // get public url
+  const publicRes = await supabase.storage.from(BUCKET_NAME).getPublicUrl(path);
+  if (publicRes.error) {
+    console.error("[StatesManager] getPublicUrl error:", publicRes.error);
+    throw publicRes.error;
+  }
+  const newPublicUrl = publicRes.data?.publicUrl ?? publicRes.data?.publicURL ?? null;
+
+  // tentar remover o arquivo antigo (não falhar o fluxo principal se remoção falhar)
   try {
-    const res = await supabase.storage.from(BUCKET_NAME).upload(path, file, {
-      cacheControl: "3600",
-      upsert: true,
-      contentType: file.type || undefined,
-    });
-
-    console.info("[StatesManager] supabase.storage.upload result:", res);
-
-    const { data: uploadData, error: uploadError } = res || {};
-
-    if (uploadError) {
-      console.error("[StatesManager] supabase.upload error (raw):", uploadError);
-      try {
-        console.error(
-          "[StatesManager] supabase.upload error (stringified):",
-          JSON.stringify(uploadError, Object.getOwnPropertyNames(uploadError))
-        );
-      } catch (e) {
-        console.warn("[StatesManager] falha ao stringificar uploadError:", e);
+    const oldPath = getPathFromPublicUrl(oldPublicUrl);
+    if (oldPath && oldPath !== path) {
+      const { data: rmData, error: rmError } = await supabase.storage.from(BUCKET_NAME).remove([oldPath]);
+      if (rmError) {
+        console.warn("[StatesManager] failed to remove old storage object:", rmError);
+      } else {
+        console.info("[StatesManager] old storage object removed:", oldPath);
       }
-      const err = new Error("Supabase storage upload error");
-      err.details = uploadError;
-      err._uploadContext = { path, fileName: file.name, fileType: file.type, fileSize: file.size };
-      throw err;
     }
-
-    // getPublicUrl
-    const publicRes = await supabase.storage.from(BUCKET_NAME).getPublicUrl(path);
-    console.info("[StatesManager] supabase.getPublicUrl result:", publicRes);
-    if (publicRes?.error) {
-      console.error("[StatesManager] supabase.getPublicUrl error:", publicRes.error);
-      throw publicRes.error;
-    }
-
-    return publicRes?.data?.publicUrl ?? publicRes?.data?.publicURL ?? null;
-  } catch (err) {
-    console.error("[StatesManager] uploadFileAndGetUrl caught error:", err, "context:", err?._uploadContext);
-    throw err;
+  } catch (e) {
+    console.warn("[StatesManager] error while removing old file (ignored):", e);
   }
+
+  return newPublicUrl;
 }
 
 /* ---------------- componente principal ---------------- */
@@ -196,8 +214,6 @@ export default function StatesManager({
 
     const handleBeforeUnload = (e) => {
       e.preventDefault();
-      // A maioria dos navegadores ignora mensagens customizadas,
-      // mas é necessário setar returnValue para o aviso aparecer.
       e.returnValue = "Você tem alterações não salvas. Tem certeza que deseja sair?";
     };
 
@@ -256,13 +272,11 @@ export default function StatesManager({
       return prev;
     });
 
-    // se a mudança veio do popstate, não pushState (evita "re-colar" a entrada)
     if (isPoppingRef.current) {
       isPoppingRef.current = false;
       return;
     }
 
-    // opcional: registra a tab no history do navegador
     window.history.pushState({ selectedTab }, "", window.location.pathname);
   }, [selectedTab]);
 
@@ -274,7 +288,6 @@ export default function StatesManager({
         newHistory.pop(); // remove a tab atual
         const previousTab = newHistory[newHistory.length - 1];
 
-        // sinaliza que a próxima alteração de selectedTab veio de popstate
         isPoppingRef.current = true;
         setSelectedTab(previousTab);
         return newHistory;
@@ -341,12 +354,12 @@ export default function StatesManager({
       const folderPrefix = defaultFolderPrefix ?? `${user.id}/${menuFromServer?.id ?? "temp"}`;
       console.info("[StatesManager] saving -> folderPrefix:", folderPrefix);
 
-      // uploads
+      // uploads — usando uploadAndReplace que remove o arquivo anterior
       let bannerUrl = null;
       let logoUrl = null;
 
       if (localState.bannerFile instanceof File) {
-        bannerUrl = await uploadFileAndGetUrl(localState.bannerFile, folderPrefix);
+        bannerUrl = await uploadAndReplace(localState.bannerFile, folderPrefix, serverState?.bannerFile || null);
       } else if (typeof localState.bannerFile === "string") {
         bannerUrl = localState.bannerFile;
       } else {
@@ -354,7 +367,7 @@ export default function StatesManager({
       }
 
       if (localState.logoFile instanceof File) {
-        logoUrl = await uploadFileAndGetUrl(localState.logoFile, folderPrefix);
+        logoUrl = await uploadAndReplace(localState.logoFile, folderPrefix, serverState?.logoFile || null);
       } else if (typeof localState.logoFile === "string") {
         logoUrl = localState.logoFile;
       } else {
@@ -374,9 +387,7 @@ export default function StatesManager({
           .single();
 
         if (error) {
-          // Erro comum: RLS (row-level security) bloqueou a atualização
           console.error("[StatesManager] supabase update error:", error);
-          // Mensagem clara para o dev / usuário
           if (error?.message?.toLowerCase()?.includes("row-level")) {
             customAlert?.(
               "Atualização bloqueada por políticas de segurança do banco (RLS). Verifique se o usuário é o owner do menu.",
@@ -439,7 +450,6 @@ export default function StatesManager({
       }
     } catch (err) {
       console.error("[StatesManager] saveAll error (detailed):", err);
-      // mensagem para usuário já enviada acima em casos específicos; aqui falamos genericamente
       if (!customAlert) window.alert("Erro ao salvar alterações. Veja o console para detalhes.");
     } finally {
       setSaving(false);
@@ -450,12 +460,10 @@ export default function StatesManager({
   const ChangesPopup = () => {
     if (!changedFields || changedFields.length === 0) return null;
 
-    // Decide qual cor de fundo usar:
     let backgroundColorToUse = localState.backgroundColor;
     if (selectedTab !== "menu") {
-      // usa cor de fundo do body
       const bodyBg = getComputedStyle(document.body).backgroundColor;
-      backgroundColorToUse = rgbToHex(bodyBg); // converte para hex se necessário
+      backgroundColorToUse = rgbToHex(bodyBg);
     }
 
     const contrastColor = getContrastTextColor(backgroundColorToUse);
