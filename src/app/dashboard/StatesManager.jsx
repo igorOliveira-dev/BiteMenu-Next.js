@@ -554,9 +554,6 @@ export default function StatesManager({
                     <li key={key} className="flex justify-between items-center border-b pb-2">
                       <div className="flex-1 mr-3">
                         <div className="font-medium">{displayName}</div>
-                        <div className="text-xs text-gray-500">
-                          Valor atual: {String(localState?.[key] ?? "")?.slice(0, 80)}
-                        </div>
                       </div>
                       <div className="flex flex-col items-end gap-1">
                         <button

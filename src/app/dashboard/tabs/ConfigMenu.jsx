@@ -381,7 +381,6 @@ const ConfigMenu = (props) => {
                 </label>
               ))}
             </div>
-            <div className="text-sm color-gray mt-2">As formas selecionadas serão salvas no banco (JSON).</div>
           </div>
 
           {/* Hours */}
