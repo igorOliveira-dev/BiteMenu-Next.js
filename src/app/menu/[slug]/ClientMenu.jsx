@@ -164,7 +164,7 @@ export default function ClientMenu({ menu }) {
         </div>
 
         {menu.banner_url && (
-          <div className="relative w-full h-[25dvh]">
+          <div className="relative w-full h-[18dvh] sm:h-[25dvh]">
             <Image
               alt="Banner do estabelecimento"
               src={menu.banner_url}
@@ -332,7 +332,6 @@ export default function ClientMenu({ menu }) {
                     const isSelected = !!selectedAddons[String(idx)];
                     // cores:
                     const boxBg = isSelected ? "#16a34a44" : translucidToUse; // verde translúcido quando selecionado
-                    const textColor = getContrastTextColor(isSelected ? "#16a34a44" : menu.background_color);
 
                     return (
                       <button
@@ -342,7 +341,7 @@ export default function ClientMenu({ menu }) {
                         className="flex flex-col items-center justify-center rounded-lg cursor-pointer p-2 min-w-[120px] text-center"
                         style={{
                           backgroundColor: boxBg,
-                          color: textColor,
+                          color: foregroundToUse,
                           border: isSelected ? `1px solid #16a34a88` : "1px solid transparent",
                         }}
                       >

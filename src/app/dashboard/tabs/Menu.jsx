@@ -257,7 +257,7 @@ const Menu = (props) => {
           style={{ backgroundColor }}
         >
           {/* Banner */}
-          <div className="relative w-full max-w-full h-[25dvh]">
+          <div className="relative w-full max-w-full h-[18dvh] sm:h-[25dvh]">
             {bannerPreview ? (
               <img alt="Preview do banner" src={bannerPreview} className="object-cover w-full h-full cursor-pointer" />
             ) : (
