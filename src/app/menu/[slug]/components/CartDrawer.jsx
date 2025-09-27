@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { FaTimes } from "react-icons/fa";
 import { useCartContext } from "@/contexts/CartContext";
 
-export default function CartDrawer({ open, onClose, grayToUse, foregroundToUse, bgColor }) {
+export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, foregroundToUse, bgColor }) {
   const cart = useCartContext();
 
   const DURATION = 300;
@@ -184,7 +184,7 @@ export default function CartDrawer({ open, onClose, grayToUse, foregroundToUse, 
             cart.items.map((it, idx) => {
               const addonsTotal = (it.additionals || []).reduce((s, a) => s + Number(a.price || 0), 0);
               return (
-                <div key={idx} className="p-3 border rounded flex flex-col">
+                <div key={idx} className="p-3 rounded-xl flex flex-col" style={{ backgroundColor: translucidToUse }}>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline">
                       <span className="truncate min-w-0 max-w-[280px]">{it.name}</span>
