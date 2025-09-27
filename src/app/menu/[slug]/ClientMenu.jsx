@@ -288,6 +288,7 @@ export default function ClientMenu({ menu }) {
             setSelectedAddons({});
           }}
           bgColor={menu.background_color}
+          maxWidth={"720px"}
         >
           <div className="flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row gap-4 mb-4">
@@ -326,7 +327,7 @@ export default function ClientMenu({ menu }) {
                 </div>
 
                 {/* Linha de boxes que quebra */}
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-3 max-h-[200px] overflow-auto">
                   {(selectedItem.additionals || []).map((a, idx) => {
                     const isSelected = !!selectedAddons[String(idx)];
                     // cores:
