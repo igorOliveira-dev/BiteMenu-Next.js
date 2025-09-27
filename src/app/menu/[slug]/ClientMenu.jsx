@@ -284,7 +284,7 @@ export default function ClientMenu({ menu }) {
                     >
                       <div>
                         <div>
-                          <div className="text-xl" style={{ color: foregroundToUse }}>
+                          <div className="text-xl line-clamp-1" style={{ color: foregroundToUse }}>
                             {it.name}
                           </div>
                         </div>
@@ -376,7 +376,7 @@ export default function ClientMenu({ menu }) {
             <div className="flex flex-col sm:flex-row gap-4 mb-4">
               <div className="flex flex-col gap-2 max-w-full sm:w-1/2">
                 <div>
-                  <h2 className="text-xl font-bold" style={{ color: foregroundToUse }}>
+                  <h2 className="text-xl font-bold line-clamp-1" style={{ color: foregroundToUse }}>
                     {selectedItem.name}
                   </h2>
                   <p style={{ color: grayToUse }} className="line-clamp-4">

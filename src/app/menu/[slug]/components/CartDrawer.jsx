@@ -4,31 +4,25 @@ import { createPortal } from "react-dom";
 import { FaTimes } from "react-icons/fa";
 import { useCartContext } from "@/contexts/CartContext";
 
-/**
- * CartDrawer with swipe-to-close on mobile and slide-from-right on desktop.
- */
-export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, foregroundToUse, bgColor }) {
+export default function CartDrawer({ open, onClose, grayToUse, foregroundToUse, bgColor }) {
   const cart = useCartContext();
 
-  const DURATION = 300; // ms (sincronizar com duration-300)
-  const MOUNT_DELAY = 20; // ms
+  const DURATION = 300;
+  const MOUNT_DELAY = 20;
 
-  // montagem/visibilidade para controlar animação
   const [isMounted, setIsMounted] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  // isDesktop inicial síncrono para evitar jump
   const [isDesktop, setIsDesktop] = useState(() => (typeof window === "undefined" ? false : window.innerWidth >= 640));
 
   const timeoutRef = useRef(null);
   const mountTimeoutRef = useRef(null);
 
-  // touch/drag refs & state (mobile)
   const panelRef = useRef(null);
   const startYRef = useRef(0);
   const draggingRef = useRef(false);
   const [dragOffset, setDragOffset] = useState(0);
 
-  // resize listener
+  // resize
   useEffect(() => {
     if (typeof window === "undefined") return;
     const onResize = () => setIsDesktop(window.innerWidth >= 640);
@@ -36,35 +30,22 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // mount/visibility logic
+  // mount/unmount
   useEffect(() => {
     if (open) {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-      if (mountTimeoutRef.current) {
-        clearTimeout(mountTimeoutRef.current);
-        mountTimeoutRef.current = null;
-      }
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (mountTimeoutRef.current) clearTimeout(mountTimeoutRef.current);
 
       setIsMounted(true);
       setIsVisible(false);
 
-      mountTimeoutRef.current = setTimeout(() => {
-        setIsVisible(true);
-        mountTimeoutRef.current = null;
-      }, MOUNT_DELAY);
-
+      mountTimeoutRef.current = setTimeout(() => setIsVisible(true), MOUNT_DELAY);
       return;
     }
 
     if (!open && isMounted) {
       setIsVisible(false);
-      timeoutRef.current = setTimeout(() => {
-        setIsMounted(false);
-        timeoutRef.current = null;
-      }, DURATION);
+      timeoutRef.current = setTimeout(() => setIsMounted(false), DURATION);
     }
   }, [open, isMounted]);
 
@@ -75,11 +56,72 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
     };
   }, []);
 
+  // lock body scroll
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const docEl = document.documentElement;
+    const body = document.body;
+    const scrollY = window.scrollY || window.pageYOffset;
+
+    if (open) {
+      body.dataset.scrollY = scrollY;
+      docEl.style.overscrollBehavior = "none";
+      body.style.overscrollBehavior = "none";
+      body.style.position = "fixed";
+      body.style.top = `-${scrollY}px`;
+      body.style.width = "100%";
+    } else {
+      docEl.style.overscrollBehavior = "";
+      body.style.overscrollBehavior = "";
+      body.style.position = "";
+      body.style.top = "";
+      body.style.width = "";
+      const prevY = parseInt(body.dataset.scrollY || "0", 10);
+      window.scrollTo(0, prevY);
+      delete body.dataset.scrollY;
+    }
+  }, [open]);
+
   if (!isMounted) return null;
 
-  // base classes
+  // swipe handlers
+  const handleTouchStart = (e) => {
+    if (isDesktop) return;
+    if (!e.touches?.length) return;
+
+    // só ativa swipe se o toque começar fora da lista (header/footer/backdrop)
+    if (e.target.closest(".cart-scrollable")) return;
+
+    draggingRef.current = true;
+    startYRef.current = e.touches[0].clientY;
+    setDragOffset(0);
+  };
+
+  const handleTouchMove = (e) => {
+    if (isDesktop || !draggingRef.current) return;
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - startYRef.current;
+    if (deltaY > 0) {
+      const maxOffset = (panelRef.current?.clientHeight || window.innerHeight) * 0.9;
+      setDragOffset(Math.min(deltaY, maxOffset));
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (isDesktop || !draggingRef.current) return;
+    draggingRef.current = false;
+    const panelHeight = panelRef.current?.clientHeight || window.innerHeight;
+    const threshold = Math.min(120, panelHeight * 0.25);
+    if (dragOffset >= threshold) {
+      setDragOffset(0);
+      onClose?.();
+    } else {
+      setDragOffset(0);
+    }
+  };
+
   const basePanelClasses =
-    "ml-auto absolute bottom-0 sm:right-0 w-full h-[90dvh] rounded-t-3xl sm:rounded-none sm:h-full sm:w-[480px] p-4 overflow-auto scrollbar-none z-60 transform transition-transform duration-300 ease-in-out";
+    "ml-auto absolute bottom-0 sm:right-0 w-full h-[90dvh] rounded-t-3xl sm:rounded-none sm:h-full sm:w-[480px] flex flex-col z-60 transform transition-transform duration-300 ease-in-out";
 
   const transformClass = isDesktop
     ? isVisible
@@ -93,89 +135,21 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
     isVisible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
   }`;
 
-  const panelBaseStyle = {
+  const panelStyle = {
     backgroundColor: bgColor,
     color: foregroundToUse,
     willChange: "transform, opacity",
+    ...(dragOffset > 0 && draggingRef.current
+      ? { transform: `translateY(${dragOffset}px)`, transition: "none" }
+      : dragOffset > 0
+      ? { transform: `translateY(0px)`, transition: `transform ${DURATION}ms ease-in-out` }
+      : {}),
   };
-
-  // --- TOUCH HANDLERS (mobile swipe down) ---
-  const handleTouchStart = (e) => {
-    if (isDesktop) return;
-    if (!e.touches || e.touches.length === 0) return;
-    draggingRef.current = true;
-    startYRef.current = e.touches[0].clientY;
-    setDragOffset(0);
-  };
-
-  const handleTouchMove = (e) => {
-    if (isDesktop) return;
-    if (!draggingRef.current) return;
-    if (!e.touches || e.touches.length === 0) return;
-
-    const currentY = e.touches[0].clientY;
-    const deltaY = currentY - startYRef.current;
-
-    // só considerar arrasto para baixo
-    if (deltaY > 0) {
-      // limita para não extrapolar demais (opcional)
-      const maxOffset = (panelRef.current?.clientHeight || window.innerHeight) * 0.9;
-      const offset = Math.min(deltaY, maxOffset);
-      setDragOffset(offset);
-    } else {
-      setDragOffset(0);
-    }
-  };
-
-  const handleTouchEnd = () => {
-    if (isDesktop) return;
-    if (!draggingRef.current) return;
-    draggingRef.current = false;
-
-    const panelHeight = panelRef.current?.clientHeight || window.innerHeight;
-    const threshold = Math.min(120, panelHeight * 0.25); // 25% ou 120px
-
-    if (dragOffset >= threshold) {
-      // fecha
-      setDragOffset(0);
-      if (typeof onClose === "function") onClose();
-    } else {
-      // anima de volta: set dragOffset=0; CSS transition fará o retorno suave
-      setDragOffset(0);
-    }
-  };
-
-  // compute inline style for panel when mobile dragging
-  const mobileTransformStyle = (() => {
-    if (isDesktop) return {};
-    // if dragging (dragOffset > 0) -> inline transform follows finger (disable transition)
-    if (dragOffset > 0 && draggingRef.current) {
-      return {
-        transform: `translateY(${dragOffset}px)`,
-        transition: "none",
-      };
-    }
-    // if dragOffset > 0 but not dragging (release) -> animate back using CSS transition
-    if (dragOffset > 0 && !draggingRef.current) {
-      return {
-        transform: `translateY(0px)`,
-        transition: `transform ${DURATION}ms ease-in-out`,
-      };
-    }
-    // otherwise, let tailwind classes control transform (enter/exit)
-    return {};
-  })();
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex">
       {/* backdrop */}
-      <div
-        className={backdropClasses}
-        onClick={() => {
-          if (typeof onClose === "function") onClose();
-        }}
-        aria-hidden="true"
-      />
+      <div className={backdropClasses} onClick={() => onClose?.()} aria-hidden="true" />
 
       {/* drawer */}
       <div
@@ -184,48 +158,39 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
         aria-modal="true"
         aria-label="Carrinho"
         className={`${basePanelClasses} ${transformClass}`}
-        style={{
-          ...panelBaseStyle,
-          ...(isDesktop ? {} : mobileTransformStyle),
-        }}
+        style={panelStyle}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onTouchCancel={handleTouchEnd}
       >
-        <div className="flex items-center justify-between mb-4">
+        {/* header fixo */}
+        <div className="sticky top-0 bg-inherit z-10 flex items-center justify-between p-4">
           <h3 className="text-lg font-bold">
             Seu carrinho ({typeof cart.totalItems === "function" ? cart.totalItems() : cart.items?.length || 0})
           </h3>
-          <button
-            onClick={() => {
-              if (typeof onClose === "function") onClose();
-            }}
-            className="cursor-pointer text-xl"
-            aria-label="Fechar carrinho"
-          >
+          <button onClick={() => onClose?.()} className="cursor-pointer text-xl" aria-label="Fechar carrinho">
             <FaTimes />
           </button>
         </div>
 
-        {cart.items.length === 0 ? (
-          <div className="py-10 text-center" style={{ color: grayToUse }}>
-            Carrinho vazio
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {cart.items.map((it, idx) => {
+        {/* scrollável só os itens */}
+        <div className="overflow-y-auto cart-scrollable px-4 space-y-4 py-4 mb-[110px]">
+          {cart.items.length === 0 ? (
+            <div className="py-10 text-center" style={{ color: grayToUse }}>
+              Carrinho vazio
+            </div>
+          ) : (
+            cart.items.map((it, idx) => {
               const addonsTotal = (it.additionals || []).reduce((s, a) => s + Number(a.price || 0), 0);
               return (
                 <div key={idx} className="p-3 border rounded flex flex-col">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline gap-2">
-                      <div>
-                        <span className="truncate min-w-0 max-w-[280px]">{it.name}</span>
-                        <span style={{ color: grayToUse, fontWeight: 400 }} className="ml-2">
-                          {it.qty}x
-                        </span>
-                      </div>
+                    <div className="flex items-baseline">
+                      <span className="truncate min-w-0 max-w-[280px]">{it.name}</span>
+                      <span style={{ color: grayToUse }} className="ml-1">
+                        {it.qty}x
+                      </span>
                     </div>
                     {it.additionals?.length > 0 && (
                       <div className="text-sm line-clamp-2" style={{ color: grayToUse }}>
@@ -238,7 +203,6 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
                       </div>
                     )}
                   </div>
-
                   <div className="flex items-end justify-between mt-4 gap-2">
                     <p className="font-bold text-xl">R${((it.price + addonsTotal) * it.qty).toFixed(2)}</p>
                     <button
@@ -250,22 +214,19 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
                   </div>
                 </div>
               );
-            })}
+            })
+          )}
+        </div>
 
-            <div className="pt-4 border-t flex items-center justify-between">
+        {/* footer fixo */}
+        {cart.items.length > 0 && (
+          <div className="fixed w-full bottom-0 bg-inherit z-10 p-4">
+            <div className="flex items-center justify-between mb-2">
               <div className="font-semibold">Total</div>
               <div className="text-xl font-bold">R$ {cart.totalPrice().toFixed(2)}</div>
             </div>
-
-            <div className="pt-4 flex gap-2">
-              <button
-                onClick={() => {
-                  /* integrar checkout aqui */
-                }}
-                className="flex-1 py-2 rounded bg-green-600 text-white font-bold"
-              >
-                Finalizar compra
-              </button>
+            <div className="flex gap-2">
+              <button className="flex-1 py-2 rounded bg-green-600 text-white font-bold">Finalizar compra</button>
               <button onClick={() => cart.clear()} className="py-2 px-4 rounded border">
                 Limpar
               </button>
