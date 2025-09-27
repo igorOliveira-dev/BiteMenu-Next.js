@@ -171,6 +171,7 @@ export default function StatesManager({
     "logoFile",
     "slug",
     "selectedServices",
+    "selectedPayments",
     "hours",
   ],
   onSave,
@@ -219,6 +220,7 @@ export default function StatesManager({
       logoFile: menuFromServer.logo_url ?? null,
       slug: menuFromServer.slug ?? "",
       selectedServices: menuFromServer.services ?? [],
+      selectedPayments: menuFromServer.payments ?? [],
       hours: menuFromServer.hours ?? null,
     };
     setServerState(normalized);
@@ -331,6 +333,7 @@ export default function StatesManager({
         details_color: localState.detailsColor,
         slug: localState.slug,
         services: localState.selectedServices,
+        payments: localState.selectedPayments,
         hours: localState.hours,
       };
 
@@ -395,6 +398,7 @@ export default function StatesManager({
           logoFile: data.logo_url ?? null,
           slug: data.slug ?? "",
           selectedServices: data.services ?? [],
+          selectedPayments: data.payments ?? [],
           hours: data.hours ?? null,
         };
 
@@ -423,6 +427,7 @@ export default function StatesManager({
           logoFile: data.logo_url ?? null,
           slug: data.slug ?? "",
           selectedServices: data.services ?? [],
+          selectedPayments: data.payments ?? [],
           hours: data.hours ?? null,
         };
 
@@ -539,6 +544,7 @@ export default function StatesManager({
                     logoFile: "Logo",
                     slug: "Identificador",
                     selectedServices: "Serviços selecionados",
+                    selectedPayments: "Formas de pagamento",
                     hours: "Horário",
                   };
 

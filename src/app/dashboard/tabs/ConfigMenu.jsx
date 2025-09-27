@@ -69,16 +69,22 @@ const ConfigMenu = (props) => {
   // estados locais (fallback)
   const [slugLocal, setSlugLocal] = useState(menu?.slug ?? "");
   const [selectedServicesLocal, setSelectedServicesLocal] = useState(menu?.services ?? []);
+  const [selectedPaymentsLocal, setSelectedPaymentsLocal] = useState(menu?.payments ?? []);
   const [hoursLocal, setHoursLocal] = useState(() => normalizeHours(menu?.hours));
 
-  // getters/setters unificados (slug / services)
+  // getters/setters unificados (slug / services / payments)
   const slug = usingExternal ? externalState?.slug : slugLocal;
   const setSlug = usingExternal ? (v) => externalSetState((p) => ({ ...p, slug: v })) : setSlugLocal;
 
-  const selectedServices = usingExternal ? externalState?.selectedServices : selectedServicesLocal;
+  const selectedServices = usingExternal ? externalState?.selectedServices ?? [] : selectedServicesLocal ?? [];
   const setSelectedServices = usingExternal
     ? (arr) => externalSetState((p) => ({ ...p, selectedServices: arr }))
     : setSelectedServicesLocal;
+
+  const selectedPayments = usingExternal ? externalState?.selectedPayments ?? [] : selectedPaymentsLocal ?? [];
+  const setSelectedPayments = usingExternal
+    ? (arr) => externalSetState((p) => ({ ...p, selectedPayments: arr }))
+    : setSelectedPaymentsLocal;
 
   // hours: para renderizar sempre usamos a versão normalizada
   const hours = normalizeHours(usingExternal ? externalState?.hours : hoursLocal);
@@ -140,6 +146,7 @@ const ConfigMenu = (props) => {
         setTempSlug(menu.slug);
       }
       if (menu.services && !usingExternal) setSelectedServices(menu.services);
+      if (menu.payments && !usingExternal) setSelectedPayments(menu.payments);
       if (menu.background_color && !usingExternal && typeof propSetBg === "function") propSetBg(menu.background_color);
       if (menu.title_color && !usingExternal && typeof propSetTitleColor === "function") propSetTitleColor(menu.title_color);
       if (menu.hours && !usingExternal) safeSetHours(menu.hours);
@@ -165,6 +172,13 @@ const ConfigMenu = (props) => {
     { id: "dinein", label: "Comer no local" },
     { id: "takeaway", label: "Para viagem" },
     { id: "driveThru", label: "Drive-thru" },
+  ];
+
+  const paymentOptions = [
+    { id: "cash", label: "Dinheiro" },
+    { id: "debit", label: "Débito" },
+    { id: "credit", label: "Crédito" },
+    { id: "pix", label: "PIX" },
   ];
 
   const dayLabels = {
@@ -205,6 +219,19 @@ const ConfigMenu = (props) => {
     if (prev.includes(id)) next = prev.filter((s) => s !== id);
     else next = [...prev, id];
     setSelectedServices(next);
+  };
+
+  const togglePayment = (id) => {
+    const prev = selectedPayments || [];
+    let next;
+    if (prev.includes(id)) next = prev.filter((p) => p !== id);
+    else next = [...prev, id];
+    // opcional: garantir pelo menos um método — comente a linha abaixo se não quiser essa restrição
+    if (next.length === 0) {
+      customAlert("Mantenha ao menos 1 forma de pagamento.");
+      return;
+    }
+    setSelectedPayments(next);
   };
 
   if (loading) return <Loading />;
@@ -326,6 +353,35 @@ const ConfigMenu = (props) => {
                 </label>
               ))}
             </div>
+          </div>
+
+          {/* Payments */}
+          <div className="mb-4">
+            <p className="font-semibold mb-2">Formas de pagamento:</p>
+            <div className="grid grid-cols-2 gap-4 max-w-160">
+              {paymentOptions.map((opt) => (
+                <label key={opt.id} className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    value={opt.id}
+                    checked={selectedPayments?.includes(opt.id)}
+                    onChange={() => togglePayment(opt.id)}
+                    className="peer appearance-none w-6 h-6 border-2 rounded-md transition-all duration-150 flex items-center justify-center relative"
+                    style={{
+                      borderColor: "#155dfc",
+                      backgroundColor: selectedPayments?.includes(opt.id) ? "#155dfc" : "transparent",
+                    }}
+                  />
+                  <span
+                    className="relative after:content-['✓'] after:absolute after:text-white after:text-sm after:font-bold after:top-[3px] after:left-[-25px] peer-checked:after:opacity-100 after:opacity-0 transition-opacity duration-150"
+                    style={{ color: "var(--gray)" }}
+                  >
+                    {opt.label}
+                  </span>
+                </label>
+              ))}
+            </div>
+            <div className="text-sm color-gray mt-2">As formas selecionadas serão salvas no banco (JSON).</div>
           </div>
 
           {/* Hours */}
