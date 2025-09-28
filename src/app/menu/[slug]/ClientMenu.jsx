@@ -236,7 +236,10 @@ export default function ClientMenu({ menu }) {
 
   return (
     <>
-      <div className="min-h-screen w-full lg:px-20 xl:px-32 relative" style={{ backgroundColor: menu.background_color }}>
+      <div
+        className="min-h-screen w-full lg:px-20 xl:px-32 relative pb-18"
+        style={{ backgroundColor: menu.background_color }}
+      >
         {/* Indicador de status no topo direito */}
         <div
           className={`cursor-pointer absolute mt-2 flex items-center h-[35px] top-[calc(18dvh-50px)] sm:top-[calc(25dvh-50px)] right-2 lg:right-20 xl:right-32 px-3 py-1 mr-2 rounded-lg font-bold text-sm z-2`}
@@ -281,7 +284,7 @@ export default function ClientMenu({ menu }) {
 
         <div className="space-y-4 px-4">
           {orderedCategories.map((cat) => (
-            <div key={cat.id} className="rounded py-3">
+            <div key={cat.id} id={cat.id} className="rounded py-3">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-3">
                   <strong style={{ color: foregroundToUse }}>{cat.name}</strong>
@@ -315,7 +318,7 @@ export default function ClientMenu({ menu }) {
 
                       <div className="flex items-center justify-between w-full">
                         <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
-                          {it.price ? `R$ ${Number(it.price).toFixed(2)}` : "-"}
+                          {it.price ? Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "-"}
                         </div>
                         <div className="mr-2 px-6 py-2 rounded" style={{ backgroundColor: menu.details_color }}>
                           <FaShoppingCart
@@ -338,7 +341,7 @@ export default function ClientMenu({ menu }) {
       <div className="fixed z-40 right-4 bottom-6">
         <button
           onClick={openCart}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg shadow-[0_0_20px_var(--shadow)] font-bold transition-transform duration-200 ${
+          className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg shadow-[0_0_20px_var(--shadow)] font-bold transition-transform duration-200 ${
             animateCart ? "scale-110" : "scale-100"
           }`}
           style={{
@@ -405,7 +408,7 @@ export default function ClientMenu({ menu }) {
                   </p>
                 </div>
                 <span className="text-3xl font-semibold" style={{ color: foregroundToUse }}>
-                  R$ {Number(selectedItem.price).toFixed(2)}
+                  {Number(selectedItem.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                 </span>
               </div>
 
@@ -453,7 +456,7 @@ export default function ClientMenu({ menu }) {
                         <div className="font-medium truncate">
                           {a.name}{" "}
                           <span className="text-sm" style={{ color: grayToUse }}>
-                            R${Number(a.price).toFixed(2)}
+                            {Number(a.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                           </span>
                         </div>
                       </button>
@@ -480,7 +483,9 @@ export default function ClientMenu({ menu }) {
               >
                 <FaPlus />
               </button>
-              <span style={{ color: grayToUse }}>(R${totalPrice.toFixed(2)})</span>
+              <span style={{ color: grayToUse }}>
+                ({totalPrice.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })})
+              </span>
             </div>
 
             <button

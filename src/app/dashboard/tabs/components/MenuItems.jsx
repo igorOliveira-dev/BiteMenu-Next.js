@@ -586,7 +586,9 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
 
                     <div className="flex items-center justify-between w-full">
                       <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
-                        {it.price ? `R$ ${Number(it.price).toFixed(2)}` : "-"}
+                        {it.price
+                          ? `${Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`
+                          : "-"}
                       </div>
                       <div className="mr-2 px-6 py-2 rounded" style={{ backgroundColor: detailsColor }}>
                         <FaShoppingCart style={{ color: getContrastTextColor(detailsColor) }} />
@@ -647,7 +649,11 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
               <input
                 type="text"
                 value={modalPayload.data.name}
-                onChange={(e) => setModalPayload((p) => ({ ...p, data: { ...p.data, name: e.target.value } }))}
+                onChange={(e) => {
+                  const v = e.target.value.slice(0, 20);
+                  setModalPayload((p) => ({ ...p, data: { ...p.data, name: v } }));
+                }}
+                maxLength={20}
                 className="w-full p-2 rounded border bg-translucid mb-2"
                 placeholder="Item"
               />
@@ -662,7 +668,11 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
                 <input
                   type="text"
                   value={modalPayload.data.name}
-                  onChange={(e) => setModalPayload((p) => ({ ...p, data: { ...p.data, name: e.target.value } }))}
+                  onChange={(e) => {
+                    const v = e.target.value.slice(0, 25);
+                    setModalPayload((p) => ({ ...p, data: { ...p.data, name: v } }));
+                  }}
+                  maxLength={25}
                   className="w-full p-2 rounded border bg-translucid mb-2"
                 />
               </label>
@@ -680,6 +690,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
                     if (parts.length > 2) value = parts[0] + "." + parts.slice(1).join("");
                     setModalPayload((p) => ({ ...p, data: { ...p.data, price: value } }));
                   }}
+                  maxLength={10}
                   className="w-full p-2 rounded border bg-translucid mb-2"
                   placeholder="00.00"
                 />
@@ -748,6 +759,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
                             return { ...p, data: { ...p.data, additionals: next } };
                           });
                         }}
+                        maxLength={10}
                         className="w-16 flex-none p-2 rounded border bg-translucid"
                         placeholder="0.00"
                       />

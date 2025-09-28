@@ -204,7 +204,9 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
                     )}
                   </div>
                   <div className="flex items-end justify-between mt-4 gap-2">
-                    <p className="font-bold text-xl">R${((it.price + addonsTotal) * it.qty).toFixed(2)}</p>
+                    <p className="font-bold text-xl">
+                      {((it.price + addonsTotal) * it.qty).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                    </p>
                     <button
                       onClick={() => cart.remove(idx)}
                       className="cursor-pointer text-white bg-red-600 opacity-75 hover:opacity-100 py-1 px-2 text-sm flex items-center gap-2 rounded-lg"
@@ -223,10 +225,12 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
           <div className="fixed w-full bottom-0 bg-inherit z-10 p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="font-semibold">Total</div>
-              <div className="text-xl font-bold">R$ {cart.totalPrice().toFixed(2)}</div>
+              <div className="text-xl font-bold">
+                {cart.totalPrice().toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+              </div>
             </div>
             <div className="flex gap-2">
-              <button className="flex-1 py-2 rounded bg-green-600 text-white font-bold">Finalizar compra</button>
+              <button className="flex-1 py-2 rounded bg-green-600 text-white font-bold">Continuar compra</button>
               <button onClick={() => cart.clear()} className="py-2 px-4 rounded border">
                 Limpar
               </button>
