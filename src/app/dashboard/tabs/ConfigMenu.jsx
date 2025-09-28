@@ -170,8 +170,7 @@ const ConfigMenu = (props) => {
     { id: "delivery", label: "Entrega" },
     { id: "pickup", label: "Retirada" },
     { id: "dinein", label: "Comer no local" },
-    { id: "takeaway", label: "Para viagem" },
-    { id: "driveThru", label: "Drive-thru" },
+    { id: "faceToFace", label: "Atendimento presencial" },
   ];
 
   const paymentOptions = [

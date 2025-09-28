@@ -316,8 +316,29 @@ export default function StatesManager({
     setShowChanges(false);
   };
 
+  async function isSlugDuplicated(slug) {
+    if (!slug) return false;
+
+    const { data, error } = await supabase.from(TABLE_NAME).select("id").eq("slug", slug).limit(1);
+
+    if (error) {
+      console.error("[StatesManager] Erro ao checar slug duplicado:", error);
+      return false;
+    }
+
+    if (!data || data.length === 0) return false;
+
+    // Se existe e não é o mesmo registro atual → duplicado
+    return !menuFromServer?.id || data[0].id !== menuFromServer.id;
+  }
+
   const saveAll = async () => {
     if (!localState) return;
+
+    if (await isSlugDuplicated(localState.slug)) {
+      customAlert?.("O slug selecionado já foi usado. Escolha outro.", "error");
+      return;
+    }
 
     const ok = await confirm("Quer mesmo salvar todas as alterações?");
     if (!ok) {
