@@ -56,6 +56,8 @@ export default async function MenuPage({ params }) {
       title_color,
       details_color,
       hours,
+      services,
+      payments,
       categories (
         id,
         name,

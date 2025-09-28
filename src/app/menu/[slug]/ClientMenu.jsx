@@ -159,7 +159,7 @@ export default function ClientMenu({ menu }) {
     // integra com seu estado global/carrinho
     cart.addItem(cartItem);
     alert("Item adicionado ao carrinho!", "info", {
-      backgroundColor: menu.details_color,
+      backgroundColor: `${menu.details_color}90`,
       textColor: getContrastTextColor(menu.details_color),
     });
 
@@ -502,6 +502,7 @@ export default function ClientMenu({ menu }) {
 
       {/* Drawer do Carrinho (componente que você já implementou) */}
       <CartDrawer
+        menu={menu}
         open={cartOpen}
         bgColor={menu.background_color}
         translucidToUse={translucidToUse}

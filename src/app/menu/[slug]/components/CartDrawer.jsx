@@ -1,30 +1,72 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
-import { FaTimes } from "react-icons/fa";
+import { FaChevronLeft, FaTimes } from "react-icons/fa";
 import { useCartContext } from "@/contexts/CartContext";
+import { useConfirm } from "@/providers/ConfirmProvider";
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
+import { supabase } from "@/lib/supabaseClient";
+import { useAlert } from "@/providers/AlertProvider";
 
-export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, foregroundToUse, bgColor }) {
+function getContrastTextColor(hex) {
+  const cleanHex = (hex || "#ffffff").replace("#", "");
+  const r = parseInt(cleanHex.substring(0, 2), 16);
+  const g = parseInt(cleanHex.substring(2, 4), 16);
+  const b = parseInt(cleanHex.substring(4, 6), 16);
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 128 ? "black" : "white";
+}
+
+export default function CartDrawer({ menu, open, onClose, translucidToUse, grayToUse, foregroundToUse, bgColor }) {
   const cart = useCartContext();
+  const confirm = useConfirm();
+  const customAlert = useAlert();
 
   const DURATION = 300;
   const MOUNT_DELAY = 20;
 
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
-
   const [isMounted, setIsMounted] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [isDesktop, setIsDesktop] = useState(() => (typeof window === "undefined" ? false : window.innerWidth >= 640));
 
   const timeoutRef = useRef(null);
   const mountTimeoutRef = useRef(null);
-
   const panelRef = useRef(null);
   const startYRef = useRef(0);
   const draggingRef = useRef(false);
   const [dragOffset, setDragOffset] = useState(0);
 
-  // resize
+  const [purchaseStage, setPurchaseStage] = useState("services");
+  const [selectedService, setSelectedService] = useState(null);
+
+  const [phone, setPhone] = useState("");
+  const [originalPhone, setOriginalPhone] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const serviceOptions = [
+    { id: "delivery", label: "Entrega" },
+    { id: "pickup", label: "Retirada" },
+    { id: "dinein", label: "Comer no local" },
+    { id: "faceToFace", label: "Atendimento presencial" },
+  ];
+
+  const availableServiceOptions = serviceOptions.filter((option) => menu.services.includes(option.id));
+
+  useEffect(() => {
+    if (availableServiceOptions.length < 2) {
+      setSelectedService(availableServiceOptions[0]?.id || null);
+    }
+  }, [menu]);
+
+  useEffect(() => {
+    if (selectedService != null) {
+      setPurchaseStage("costumerInfos");
+    }
+  }, [selectedService]);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     const onResize = () => setIsDesktop(window.innerWidth >= 640);
@@ -32,7 +74,6 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // mount/unmount
   useEffect(() => {
     if (open) {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -86,14 +127,10 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
 
   if (!isMounted) return null;
 
-  // swipe handlers
   const handleTouchStart = (e) => {
     if (isDesktop) return;
     if (!e.touches?.length) return;
-
-    // só ativa swipe se o toque começar fora da lista (header/footer/backdrop)
     if (e.target.closest(".cart-scrollable")) return;
-
     draggingRef.current = true;
     startYRef.current = e.touches[0].clientY;
     setDragOffset(0);
@@ -148,16 +185,48 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
       : {}),
   };
 
-  const continuePurchase = () => {
-    setIsPurchaseModalOpen(true);
+  const resetPurchase = () => {
+    setIsPurchaseModalOpen(false);
+    setPurchaseStage("services");
+    setSelectedService(null);
+    setPhone("");
+    setOriginalPhone("");
+  };
+
+  const handleServiceSelect = (id) => {
+    setSelectedService(id);
+  };
+
+  const handleSavePhone = async () => {
+    try {
+      const rawValue = `+${phone}`;
+      const phoneNumber = parsePhoneNumberFromString(rawValue);
+      if (!phoneNumber || !phoneNumber.isValid()) {
+        customAlert("Telefone inválido.", "error");
+        return;
+      }
+      const fullPhone = phoneNumber.number.replace(/^\+/, "");
+      setSaving(true);
+      const { error } = await supabase.from("profiles").update({ phone: fullPhone }).eq("id", supabase.auth.getUser()?.id);
+      if (error) {
+        console.error(error.message);
+        customAlert("Não foi possível atualizar o telefone.", "error");
+      } else {
+        customAlert("Telefone atualizado com sucesso!", "success");
+        setOriginalPhone(phone);
+      }
+    } catch (err) {
+      console.error(err);
+      customAlert("Erro inesperado ao salvar telefone.", "error");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex">
-      {/* backdrop */}
       <div className={backdropClasses} onClick={() => onClose?.()} aria-hidden="true" />
 
-      {/* drawer */}
       <div
         ref={panelRef}
         role="dialog"
@@ -170,7 +239,7 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
         onTouchEnd={handleTouchEnd}
         onTouchCancel={handleTouchEnd}
       >
-        {/* header fixo */}
+        {/* HEADER */}
         <div className="sticky top-0 bg-inherit z-10 flex items-center justify-between p-4">
           <h3 className="text-lg font-bold">
             Seu carrinho ({typeof cart.totalItems === "function" ? cart.totalItems() : cart.items?.length || 0})
@@ -180,7 +249,7 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
           </button>
         </div>
 
-        {/* scrollável só os itens */}
+        {/* ITENS */}
         <div className="overflow-y-auto cart-scrollable px-4 space-y-4 py-4 mb-[110px]">
           {cart.items.length === 0 ? (
             <div className="py-10 text-center" style={{ color: grayToUse }}>
@@ -226,7 +295,7 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
           )}
         </div>
 
-        {/* footer fixo */}
+        {/* FOOTER */}
         {cart.items.length > 0 && (
           <div className="fixed w-full bottom-0 bg-inherit z-10 p-4">
             <div className="flex items-center justify-between mb-2">
@@ -237,13 +306,17 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => continuePurchase()}
+                onClick={() => setIsPurchaseModalOpen(true)}
                 className="cursor-pointer flex-1 py-2 rounded bg-green-600 hover:bg-green-700 text-white font-bold transition"
               >
                 Continuar compra
               </button>
               <button
-                onClick={() => cart.clear()}
+                onClick={async () => {
+                  const ok = await confirm("Quer mesmo limpar o carrinho?");
+                  if (!ok) return;
+                  cart.clear();
+                }}
                 className="cursor-pointer py-2 px-4 rounded border opacity-75 hover:opacity-100 transition"
               >
                 Limpar
@@ -253,34 +326,62 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
         )}
       </div>
 
+      {/* MODAL DE COMPRA */}
       {isPurchaseModalOpen && (
         <div className="fixed inset-0 z-65 flex items-center justify-center">
-          {/* backdrop */}
-          <div className={backdropClasses} aria-hidden="true" />
-
-          <div className="rounded-lg p-6 w-[90%] max-w-md z-70" style={{ backgroundColor: bgColor }}>
-            <h2 className="text-xl font-bold mb-4">Confirmar Compra</h2>
-            <p>Deseja continuar com a compra?</p>
-            <div className="mt-6 flex justify-end gap-2">
-              <button onClick={() => setIsPurchaseModalOpen(false)} className="px-4 py-2 rounded border">
-                Cancelar
-              </button>
-              <button
-                onClick={() => {
-                  setIsPurchaseModalOpen(false);
-                  console.log("Compra confirmada!");
-                  // Aqui você pode adicionar a lógica de finalizar compra
-                }}
-                className="px-4 py-2 bg-green-600 text-white rounded"
-              >
-                Confirmar
-              </button>
+          <div className={backdropClasses} aria-hidden="true" onClick={() => resetPurchase()} />
+          <div
+            className="rounded-lg p-6 w-[90%] max-w-md z-70"
+            onClick={(e) => e.stopPropagation()}
+            style={{ backgroundColor: bgColor }}
+          >
+            <div className="flex items-center gap-4 mb-4">
+              <FaChevronLeft onClick={() => resetPurchase()} />
+              <h3 className="font-bold">
+                {purchaseStage === "services"
+                  ? "Como deseja fazer seu pedido?"
+                  : purchaseStage === "costumerInfos"
+                  ? "Telefone"
+                  : null}
+              </h3>
             </div>
+
+            {/* ETAPAS */}
+            {purchaseStage === "services" ? (
+              <div className="flex flex-col gap-2">
+                {availableServiceOptions.map((option) => (
+                  <button
+                    key={option.id}
+                    className="cursor-pointer p-2 hover:opacity-90 transition rounded-lg"
+                    style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
+                    onClick={() => handleServiceSelect(option.id)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            ) : purchaseStage === "costumerInfos" ? (
+              <div className="flex flex-col gap-2">
+                <label className="block text-sm font-medium">Digite seu número para contato:</label>
+                <div className="flex gap-2 items-center">
+                  <PhoneInput
+                    country="br"
+                    value={phone}
+                    onChange={(value) => {
+                      setPhone(value);
+                    }}
+                    inputProps={{ required: true }}
+                    inputClass="!w-[220px] !px-3 !py-2 !bg-[var(--translucid)] !border !border-[var(--low-gray)] !rounded !focus:outline-none !focus:ring-2 !focus:ring-blue-400 !pl-14"
+                    buttonClass="!border-r !border-[var(--low-gray)] !bg-[transparent] !rounded-l !hover:bg-[var(--low-gray)]"
+                    containerClass="!flex !items-center"
+                  />
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       )}
     </div>,
-
     document.body
   );
 }
