@@ -10,6 +10,8 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
   const DURATION = 300;
   const MOUNT_DELAY = 20;
 
+  const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+
   const [isMounted, setIsMounted] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [isDesktop, setIsDesktop] = useState(() => (typeof window === "undefined" ? false : window.innerWidth >= 640));
@@ -146,6 +148,10 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
       : {}),
   };
 
+  const continuePurchase = () => {
+    setIsPurchaseModalOpen(true);
+  };
+
   return createPortal(
     <div className="fixed inset-0 z-50 flex">
       {/* backdrop */}
@@ -230,7 +236,10 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
               </div>
             </div>
             <div className="flex gap-2">
-              <button className="cursor-pointer flex-1 py-2 rounded bg-green-600 hover:bg-green-700 text-white font-bold transition">
+              <button
+                onClick={() => continuePurchase()}
+                className="cursor-pointer flex-1 py-2 rounded bg-green-600 hover:bg-green-700 text-white font-bold transition"
+              >
                 Continuar compra
               </button>
               <button
@@ -243,7 +252,35 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
           </div>
         )}
       </div>
+
+      {isPurchaseModalOpen && (
+        <div className="fixed inset-0 z-65 flex items-center justify-center">
+          {/* backdrop */}
+          <div className={backdropClasses} aria-hidden="true" />
+
+          <div className="rounded-lg p-6 w-[90%] max-w-md z-70" style={{ backgroundColor: bgColor }}>
+            <h2 className="text-xl font-bold mb-4">Confirmar Compra</h2>
+            <p>Deseja continuar com a compra?</p>
+            <div className="mt-6 flex justify-end gap-2">
+              <button onClick={() => setIsPurchaseModalOpen(false)} className="px-4 py-2 rounded border">
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  setIsPurchaseModalOpen(false);
+                  console.log("Compra confirmada!");
+                  // Aqui você pode adicionar a lógica de finalizar compra
+                }}
+                className="px-4 py-2 bg-green-600 text-white rounded"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>,
+
     document.body
   );
 }
