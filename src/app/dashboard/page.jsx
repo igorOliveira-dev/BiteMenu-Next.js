@@ -8,6 +8,7 @@ import Sales from "./tabs/Sales";
 import { useAlert } from "@/providers/AlertProvider";
 import ConfigMenu from "./tabs/ConfigMenu";
 import { FaChevronLeft } from "react-icons/fa";
+import Account from "./tabs/Account";
 
 const Dashboard = ({ menuState: externalMenuState, changedFields, revertField, saveAll, selectedTab, setSelectedTab }) => {
   const { menu, loading } = useMenu();
@@ -77,19 +78,19 @@ const Dashboard = ({ menuState: externalMenuState, changedFields, revertField, s
       <div className="flex items-center">
         <aside className="m-2 rounded-lg bg-translucid h-full max-w-[720px] w-[calc(100dvw-86px)] lg:w-60 shadow-[0_0_10px_var(--shadow)] flex lg:flex-col items-center overflow-hidden lg:h-[calc(100dvh-110px)]">
           <button
-            className="w-full p-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)] text-nowrap"
+            className="w-full px-2 p-4 sm:px-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)] text-nowrap"
             onClick={() => setSelectedTab("menu")}
           >
             {changedFields.length > 0 ? "Cardápio *" : "Cardápio"}
           </button>
           <button
-            className="w-full p-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)]"
+            className="w-full px-2 p-4 sm:px-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)]"
             onClick={() => setSelectedTab("orders")}
           >
             Pedidos
           </button>
           <button
-            className="w-full p-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)]"
+            className="w-full px-2 p-4 sm:px-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)]"
             onClick={() => setSelectedTab("sales")}
           >
             Vendas
@@ -97,7 +98,7 @@ const Dashboard = ({ menuState: externalMenuState, changedFields, revertField, s
           <hr className="hidden lg:block border w-full opacity-50" />
           <button
             className="w-full hidden lg:block p-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)]"
-            onClick={() => customAlert("conta")}
+            onClick={() => setSelectedTab("account")}
           >
             Conta
           </button>
@@ -183,6 +184,9 @@ const Dashboard = ({ menuState: externalMenuState, changedFields, revertField, s
             menuState={usingExternal ? externalMenuState : undefined}
           />
         </div>
+        <div className={selectedTab === "account" ? "block" : "hidden"}>
+          <Account setSelectedTab={setSelectedTab} />
+        </div>
       </main>
 
       {/* Modal central ao clicar no hamburger */}
@@ -222,7 +226,10 @@ const Dashboard = ({ menuState: externalMenuState, changedFields, revertField, s
               <li>
                 <button
                   className="w-full text-left px-2 py-2 hover:bg-white/10 rounded"
-                  onClick={() => customAlert("conta")}
+                  onClick={() => {
+                    setSelectedTab("account");
+                    setIsOpen(false);
+                  }}
                 >
                   Conta
                 </button>
