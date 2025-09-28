@@ -341,7 +341,7 @@ export default function ClientMenu({ menu }) {
       <div className="fixed z-40 right-4 bottom-6">
         <button
           onClick={openCart}
-          className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg shadow-[0_0_20px_var(--shadow)] font-bold transition-transform duration-200 ${
+          className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg shadow-[0_0_20px_var(--shadow)] font-bold transition-transform duration-200 hover:opacity-90 hover:scale-110 ${
             animateCart ? "scale-110" : "scale-100"
           }`}
           style={{

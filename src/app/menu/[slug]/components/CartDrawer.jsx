@@ -230,8 +230,13 @@ export default function CartDrawer({ open, onClose, translucidToUse, grayToUse, 
               </div>
             </div>
             <div className="flex gap-2">
-              <button className="flex-1 py-2 rounded bg-green-600 text-white font-bold">Continuar compra</button>
-              <button onClick={() => cart.clear()} className="py-2 px-4 rounded border">
+              <button className="cursor-pointer flex-1 py-2 rounded bg-green-600 hover:bg-green-700 text-white font-bold transition">
+                Continuar compra
+              </button>
+              <button
+                onClick={() => cart.clear()}
+                className="cursor-pointer py-2 px-4 rounded border opacity-75 hover:opacity-100 transition"
+              >
                 Limpar
               </button>
             </div>
