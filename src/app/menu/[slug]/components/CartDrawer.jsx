@@ -19,7 +19,7 @@ function getContrastTextColor(hex) {
   return yiq >= 128 ? "black" : "white";
 }
 
-export default function CartDrawer({ menu, open, onClose, translucidToUse, grayToUse, foregroundToUse, bgColor }) {
+export default function CartDrawer({ menu, open, onClose, translucidToUse, grayToUse, foregroundToUse, bgColor, isOpen }) {
   const cart = useCartContext();
   const confirm = useConfirm();
   const customAlert = useAlert();
@@ -44,6 +44,7 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
   const [selectedService, setSelectedService] = useState(null);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [costumerName, setCostumerName] = useState("");
+  const [costumerAddress, setCostumerAddress] = useState("");
 
   const [phone, setPhone] = useState("");
 
@@ -319,7 +320,13 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => setIsPurchaseModalOpen(true)}
+                onClick={() => {
+                  if (!isOpen) {
+                    customAlert(`${menu.title} está fechado no momento!`);
+                    return;
+                  }
+                  setIsPurchaseModalOpen(true);
+                }}
                 className="cursor-pointer flex-1 py-2 rounded hover:opacity-90 text-white font-bold transition"
                 style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
               >
@@ -411,9 +418,9 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
                     <input
                       type="text"
                       placeholder="Endereço"
-                      value={costumerName}
+                      value={costumerAddress}
                       onChange={(e) => {
-                        setCostumerName(e.target.value);
+                        setCostumerAddress(e.target.value);
                       }}
                       maxLength={40}
                       className="w-full p-2 rounded mb-2"
@@ -428,7 +435,7 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
                       <label key={option.id} className="flex items-center space-x-2 cursor-pointer">
                         <input
                           type="radio"
-                          name="payment" // importante para agrupar os radios
+                          name="payment"
                           value={option.id}
                           checked={selectedPayment === option.id}
                           onChange={() => setSelectedPayment(option.id)}

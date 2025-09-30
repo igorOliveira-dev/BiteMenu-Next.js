@@ -509,6 +509,7 @@ export default function ClientMenu({ menu }) {
         grayToUse={grayToUse}
         foregroundToUse={foregroundToUse}
         onClose={closeCartProgrammatically}
+        isOpen={open}
       />
     </>
   );

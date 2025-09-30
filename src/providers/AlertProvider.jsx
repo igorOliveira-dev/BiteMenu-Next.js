@@ -57,7 +57,7 @@ export function AlertProvider({ children }) {
     <AlertContext.Provider value={showAlert}>
       {children}
 
-      <div className="fixed top-4 right-4 space-y-3 z-50">
+      <div className="fixed top-4 right-4 space-y-3 z-150">
         {alerts.map((a) => (
           <div
             key={a.id}
