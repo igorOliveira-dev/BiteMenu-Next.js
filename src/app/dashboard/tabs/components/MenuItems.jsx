@@ -532,7 +532,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
         {categories.map((cat) => (
           <div key={cat.id} className="rounded py-3">
             <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <button
                   title="Editar categoria"
                   onClick={() => openCategoryModal("edit", cat)}
@@ -541,16 +541,18 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
                 >
                   <FaPen />
                 </button>
-                <strong style={{ color: foregroundToUse }}>{cat.name}</strong>
-                <span className="text-sm" style={{ color: grayToUse }}>
-                  ({cat.menu_items?.length ?? 0} itens)
-                </span>
+                <div className="flex items-center flex-wrap gap-x-2">
+                  <strong style={{ color: foregroundToUse }}>{cat.name}</strong>
+                  <span className="text-sm" style={{ color: grayToUse }}>
+                    ({cat.menu_items?.length ?? 0} itens)
+                  </span>
+                </div>
               </div>
 
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => openItemModal("create", cat.id)}
-                  className="cursor-pointer px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded"
+                  className="min-w-[32px] cursor-pointer px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded"
                 >
                   + <span className="hidden sm:inline">Item</span>
                 </button>
