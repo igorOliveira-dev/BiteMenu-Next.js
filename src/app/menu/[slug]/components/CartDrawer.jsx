@@ -40,9 +40,13 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
   const [dragOffset, setDragOffset] = useState(0);
 
   const [purchaseStage, setPurchaseStage] = useState("services");
+
   const [selectedService, setSelectedService] = useState(null);
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [costumerName, setCostumerName] = useState("");
 
   const [phone, setPhone] = useState("");
+
   const [originalPhone, setOriginalPhone] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -54,6 +58,15 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
   ];
 
   const availableServiceOptions = serviceOptions.filter((option) => menu.services.includes(option.id));
+
+  const paymentOptions = [
+    { id: "cash", label: "Dinheiro" },
+    { id: "debit", label: "Débito" },
+    { id: "credit", label: "Crédito" },
+    { id: "pix", label: "PIX" },
+  ];
+
+  const availablePaymentsOptions = paymentOptions.filter((option) => menu.payments.includes(option.id));
 
   useEffect(() => {
     if (availableServiceOptions.length < 2) {
@@ -307,7 +320,8 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
             <div className="flex gap-2">
               <button
                 onClick={() => setIsPurchaseModalOpen(true)}
-                className="cursor-pointer flex-1 py-2 rounded bg-green-600 hover:bg-green-700 text-white font-bold transition"
+                className="cursor-pointer flex-1 py-2 rounded hover:opacity-90 text-white font-bold transition"
+                style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
               >
                 Continuar compra
               </button>
@@ -328,7 +342,7 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
 
       {/* MODAL DE COMPRA */}
       {isPurchaseModalOpen && (
-        <div className="fixed inset-0 z-65 flex items-center justify-center">
+        <div className="fixed inset-0 z-65 flex items-center justify-center" style={{ color: foregroundToUse }}>
           <div className={backdropClasses} aria-hidden="true" onClick={() => resetPurchase()} />
           <div
             className="rounded-lg p-6 w-[90%] max-w-md z-70"
@@ -339,9 +353,9 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
               <FaChevronLeft onClick={() => resetPurchase()} />
               <h3 className="font-bold">
                 {purchaseStage === "services"
-                  ? "Como deseja fazer seu pedido?"
+                  ? "Como deseja realizar o pedido?"
                   : purchaseStage === "costumerInfos"
-                  ? "Telefone"
+                  ? "Confirmar compra"
                   : null}
               </h3>
             </div>
@@ -352,7 +366,7 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
                 {availableServiceOptions.map((option) => (
                   <button
                     key={option.id}
-                    className="cursor-pointer p-2 hover:opacity-90 transition rounded-lg"
+                    className="cursor-pointer p-2 hover:opacity-90 transition rounded-lg font-semibold"
                     style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
                     onClick={() => handleServiceSelect(option.id)}
                   >
@@ -362,20 +376,84 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
               </div>
             ) : purchaseStage === "costumerInfos" ? (
               <div className="flex flex-col gap-2">
-                <label className="block text-sm font-medium">Digite seu número para contato:</label>
-                <div className="flex gap-2 items-center">
+                <div>
+                  <label className="block text-sm font-medium">Digite seu nome:</label>
+                  <input
+                    type="text"
+                    placeholder="Nome"
+                    value={costumerName}
+                    onChange={(e) => {
+                      setCostumerName(e.target.value);
+                    }}
+                    maxLength={40}
+                    className="w-full p-2 rounded mb-2"
+                    style={{ backgroundColor: translucidToUse }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium">Digite seu número para contato:</label>
                   <PhoneInput
                     country="br"
                     value={phone}
-                    onChange={(value) => {
-                      setPhone(value);
-                    }}
+                    onChange={(value) => setPhone(value)}
                     inputProps={{ required: true }}
-                    inputClass="!w-[220px] !px-3 !py-2 !bg-[var(--translucid)] !border !border-[var(--low-gray)] !rounded !focus:outline-none !focus:ring-2 !focus:ring-blue-400 !pl-14"
-                    buttonClass="!border-r !border-[var(--low-gray)] !bg-[transparent] !rounded-l !hover:bg-[var(--low-gray)]"
-                    containerClass="!flex !items-center"
+                    inputClass="!w-full !px-3 !py-2 !border !rounded !focus:outline-none !focus:ring-2 !focus:ring-blue-400 !pl-14"
+                    buttonClass="!border-r !bg-transparent !rounded-l"
+                    containerClass="!flex !items-center !mb-2"
+                    inputStyle={{
+                      backgroundColor: translucidToUse,
+                    }}
                   />
                 </div>
+                {selectedService === "delivery" && (
+                  <div>
+                    <label className="block text-sm font-medium">Digite seu endereço:</label>
+                    <input
+                      type="text"
+                      placeholder="Endereço"
+                      value={costumerName}
+                      onChange={(e) => {
+                        setCostumerName(e.target.value);
+                      }}
+                      maxLength={40}
+                      className="w-full p-2 rounded mb-2"
+                      style={{ backgroundColor: translucidToUse }}
+                    />
+                  </div>
+                )}
+                <div>
+                  <label className="block text-sm font-medium">Forma de pagamento:</label>
+                  <div className="flex flex-wrap gap-4 mt-1">
+                    {availablePaymentsOptions.map((option) => (
+                      <label key={option.id} className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="payment" // importante para agrupar os radios
+                          value={option.id}
+                          checked={selectedPayment === option.id}
+                          onChange={() => setSelectedPayment(option.id)}
+                          className="peer appearance-none w-6 h-6 border-2 rounded-full transition-all duration-150 flex items-center justify-center relative"
+                          style={{
+                            borderColor: menu.details_color,
+                            backgroundColor: selectedPayment === option.id ? menu.details_color : "transparent",
+                          }}
+                        />
+                        <span
+                          className="relative after:content-['✓'] after:absolute after:text-white after:text-sm after:font-bold after:top-[3px] after:left-[-25px] peer-checked:after:opacity-100 after:opacity-0 transition-opacity duration-150"
+                          style={{ color: "var(--gray)" }}
+                        >
+                          {option.label}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <button
+                  className="p-2 font-bold"
+                  style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
+                >
+                  Confirmar
+                </button>
               </div>
             ) : null}
           </div>
