@@ -61,7 +61,7 @@ export function AlertProvider({ children }) {
         {alerts.map((a) => (
           <div
             key={a.id}
-            className={`border border-[var(--background)] m-1 relative w-70 px-2 py-3 rounded transform transition-all duration-300 ease-in-out backdrop-blur-md flex items-center justify-between
+            className={`border border-[var(--background)] m-1 relative max-w-120 px-2 py-3 rounded transform transition-all duration-300 ease-in-out backdrop-blur-md flex items-center justify-between
               ${a.visible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-5"}
             `}
             style={{
@@ -71,7 +71,7 @@ export function AlertProvider({ children }) {
           >
             <span>{a.message}</span>
 
-            <button onClick={() => closeAlert(a.id)} className="cursor-pointer text-xl">
+            <button onClick={() => closeAlert(a.id)} className="cursor-pointer text-xl ml-2">
               <FaTimes />
             </button>
 

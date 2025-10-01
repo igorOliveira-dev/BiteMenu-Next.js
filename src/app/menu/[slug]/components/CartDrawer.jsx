@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
-import { FaChevronLeft, FaTimes } from "react-icons/fa";
+import { FaChevronLeft, FaTimes, FaWhatsapp } from "react-icons/fa";
 import { useCartContext } from "@/contexts/CartContext";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import PhoneInput from "react-phone-input-2";
@@ -45,11 +45,7 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [costumerName, setCostumerName] = useState("");
   const [costumerAddress, setCostumerAddress] = useState("");
-
-  const [phone, setPhone] = useState("");
-
-  const [originalPhone, setOriginalPhone] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [costumerPhone, setCostumerPhone] = useState("");
 
   const serviceOptions = [
     { id: "delivery", label: "Entrega" },
@@ -203,38 +199,92 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
     setIsPurchaseModalOpen(false);
     setPurchaseStage("services");
     setSelectedService(null);
-    setPhone("");
-    setOriginalPhone("");
   };
 
   const handleServiceSelect = (id) => {
     setSelectedService(id);
   };
 
-  const handleSavePhone = async () => {
-    try {
-      const rawValue = `+${phone}`;
-      const phoneNumber = parsePhoneNumberFromString(rawValue);
-      if (!phoneNumber || !phoneNumber.isValid()) {
-        customAlert("Telefone inválido.", "error");
+  const confirmPurchase = () => {
+    if (costumerName < 3) {
+      customAlert("O nome deve ter pelo menos 3 letras.", "error");
+      return;
+    }
+
+    if (costumerPhone < 5) {
+      customAlert("Número de telefone inválido.", "error");
+      return;
+    }
+
+    if (costumerAddress < 10) {
+      if (selectedService === "delivery") {
+        customAlert("O endereço deve ter pelo menos 10 letras", "error");
         return;
       }
-      const fullPhone = phoneNumber.number.replace(/^\+/, "");
-      setSaving(true);
-      const { error } = await supabase.from("profiles").update({ phone: fullPhone }).eq("id", supabase.auth.getUser()?.id);
-      if (error) {
-        console.error(error.message);
-        customAlert("Não foi possível atualizar o telefone.", "error");
-      } else {
-        customAlert("Telefone atualizado com sucesso!", "success");
-        setOriginalPhone(phone);
-      }
-    } catch (err) {
-      console.error(err);
-      customAlert("Erro inesperado ao salvar telefone.", "error");
-    } finally {
-      setSaving(false);
     }
+
+    if (!selectedService) {
+      customAlert("Erro inesperado", "error");
+      resetPurchase();
+      return;
+    }
+
+    if (!selectedPayment) {
+      customAlert("Selecione a forma de pagamento", "error");
+      return;
+    }
+
+    console.log(costumerName);
+    console.log(costumerPhone);
+    console.log(costumerAddress);
+    console.log(selectedService);
+    console.log(selectedPayment);
+    console.log(menu.establishmentPhone);
+
+    setPurchaseStage("whatsapp");
+  };
+
+  const whatsappConfirmation = () => {
+    // monta lista dos itens
+    const itemsList = cart.items
+      .map((it) => {
+        const addons = it.additionals?.length > 0 ? `\n   + ${it.additionals.map((a) => a.name).join(", ")}` : "";
+        const note = it.note ? `\n   Obs: ${it.note}` : "";
+        return `• ${it.qty}x ${it.name} - ${(it.price * it.qty).toLocaleString("pt-BR", {
+          style: "currency",
+          currency: "BRL",
+        })}${addons}${note}`;
+      })
+      .join("\n\n");
+
+    // resumo do pedido
+    const total = cart.totalPrice().toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    });
+
+    // dados do cliente
+    const customerInfo = `
+👤 Nome: ${costumerName}
+📞 Telefone: ${costumerPhone}
+${selectedService === "delivery" ? `📍 Endereço: ${costumerAddress}\n` : ""}
+💳 Pagamento: ${paymentOptions.find((p) => p.id === selectedPayment)?.label || "-"}
+🚚 Serviço: ${serviceOptions.find((s) => s.id === selectedService)?.label || "-"}`;
+
+    const message = `‼️ Pedido de ${menu.title}
+
+${itemsList}
+
+————————————
+💰 Total: ${total}
+
+${customerInfo}`;
+
+    // abrir WhatsApp
+    const phone = menu.establishmentPhone;
+    const url = `https://wa.me/${phone}?text=${encodeURI(message)}`;
+
+    window.open(url, "_blank");
   };
 
   return createPortal(
@@ -363,6 +413,8 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
                   ? "Como deseja realizar o pedido?"
                   : purchaseStage === "costumerInfos"
                   ? "Confirmar compra"
+                  : purchaseStage === "whatsapp"
+                  ? "Confirmação no whatsapp"
                   : null}
               </h3>
             </div>
@@ -401,8 +453,8 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
                   <label className="block text-sm font-medium">Digite seu número para contato:</label>
                   <PhoneInput
                     country="br"
-                    value={phone}
-                    onChange={(value) => setPhone(value)}
+                    value={costumerPhone}
+                    onChange={(value) => setCostumerPhone(value)}
                     inputProps={{ required: true }}
                     inputClass="!w-full !px-3 !py-2 !border !rounded !focus:outline-none !focus:ring-2 !focus:ring-blue-400 !pl-14"
                     buttonClass="!border-r !bg-transparent !rounded-l"
@@ -430,7 +482,7 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
                 )}
                 <div>
                   <label className="block text-sm font-medium">Forma de pagamento:</label>
-                  <div className="flex flex-wrap gap-4 mt-1">
+                  <div className="flex flex-wrap gap-4 mt-1 mb-2">
                     {availablePaymentsOptions.map((option) => (
                       <label key={option.id} className="flex items-center space-x-2 cursor-pointer">
                         <input
@@ -456,10 +508,24 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
                   </div>
                 </div>
                 <button
-                  className="p-2 font-bold"
+                  onClick={() => confirmPurchase()}
+                  className="cursor-pointer hover:opacity-90 p-2 font-bold transition"
                   style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
                 >
                   Confirmar
+                </button>
+              </div>
+            ) : purchaseStage === "whatsapp" ? (
+              <div>
+                <p className="text-sm" style={{ color: grayToUse }}>
+                  Para confirmar a compra, você deve enviar uma mensagem de confirmação ao WhatsApp de {menu.title}
+                </p>
+                <button
+                  onClick={() => whatsappConfirmation()}
+                  className="cursor-pointer flex items-center justify-center gap-2 rounded-lg mt-2 w-full p-2 sm:px-4 bg-green-500 hover:bg-green-600 transition font-bold"
+                >
+                  <FaWhatsapp fontSize={22} />
+                  Enviar confirmação
                 </button>
               </div>
             ) : null}
