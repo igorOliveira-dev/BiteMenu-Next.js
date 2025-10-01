@@ -24,6 +24,8 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
   const confirm = useConfirm();
   const customAlert = useAlert();
 
+  const [establishmentPhone, setEstablishmentPhone] = useState(null);
+
   const DURATION = 300;
   const MOUNT_DELAY = 20;
 
@@ -64,6 +66,23 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
   ];
 
   const availablePaymentsOptions = paymentOptions.filter((option) => menu.payments.includes(option.id));
+
+  useEffect(() => {
+    const fetchPhone = async () => {
+      if (!menu?.owner_id) return;
+
+      const { data, error } = await supabase.from("profiles").select("phone").eq("id", menu.owner_id).single();
+
+      if (error) {
+        console.error("Erro ao buscar telefone do dono:", error.message);
+        return;
+      }
+
+      setEstablishmentPhone(data?.phone || null);
+    };
+
+    fetchPhone();
+  }, [menu?.owner_id]);
 
   useEffect(() => {
     if (availableServiceOptions.length < 2) {
@@ -280,10 +299,13 @@ ${itemsList}
 
 ${customerInfo}`;
 
-    // abrir WhatsApp
-    const phone = menu.establishmentPhone;
-    const url = `https://wa.me/${phone}?text=${encodeURI(message)}`;
+    const phone = establishmentPhone;
+    if (!phone) {
+      customAlert("Telefone do estabelecimento não encontrado.", "error");
+      return;
+    }
 
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
   };
 

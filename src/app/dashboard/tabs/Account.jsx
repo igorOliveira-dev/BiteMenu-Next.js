@@ -90,11 +90,14 @@ const Account = ({ setSelectedTab }) => {
       const { error } = await supabase.from("profiles").update({ phone: fullPhone }).eq("id", profile.id);
 
       if (error) {
-        console.error(error.message);
-        customAlert("Não foi possível atualizar o telefone.", "error");
+        if (error.message.includes("duplicate key")) {
+          customAlert("Esse telefone já está em uso.", "error");
+        } else {
+          customAlert("Não foi possível atualizar o telefone.", "error");
+        }
       } else {
         customAlert("Telefone atualizado com sucesso!", "success");
-        setOriginalPhone(phone); // atualiza referência
+        setOriginalPhone(phone);
       }
     } catch (err) {
       console.error(err);
