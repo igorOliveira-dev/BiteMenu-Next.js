@@ -48,6 +48,7 @@ export default async function MenuPage({ params }) {
     .select(
       `
       id,
+      owner_id,
       title,
       description,
       banner_url,

@@ -1,3 +1,4 @@
+// src/components/ClientMenu.jsx
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -138,8 +139,9 @@ export default function ClientMenu({ menu }) {
   }, [selectedItem, quantity, selectedAddons]);
 
   // Handler de adicionar ao carrinho
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!selectedItem) return;
+
     const selected = (selectedItem.additionals || [])
       .map((a, idx) => {
         if (!selectedAddons[String(idx)]) return null;
@@ -156,8 +158,14 @@ export default function ClientMenu({ menu }) {
       note: note || "",
     };
 
-    // integra com seu estado global/carrinho
-    cart.addItem(cartItem);
+    if (!menu?.id) {
+      console.error("menu.id indefinido ao adicionar item ao carrinho");
+      return;
+    }
+
+    // adiciona ao cart do menu atual
+    cart.addItem(menu.id, cartItem);
+
     alert("Item adicionado ao carrinho!", "info", {
       backgroundColor: `${menu.details_color}90`,
       textColor: getContrastTextColor(menu.details_color),
@@ -169,11 +177,8 @@ export default function ClientMenu({ menu }) {
     setQuantity(1);
     setSelectedAddons({});
     setNote("");
-    // opcional: abrir carrinho automaticamente
-    // openCart();
   };
 
-  // --- LOGICA DO BOTAO "BACK" DO APARELHO ---
   // abrir carrinho: empurra um estado no history (se ainda não estiver)
   const openCart = () => {
     if (typeof window === "undefined") {
@@ -211,13 +216,9 @@ export default function ClientMenu({ menu }) {
 
   // listener global de popstate: quando o usuário aperta "voltar"
   useEffect(() => {
-    const onPopState = (event) => {
+    const onPopState = () => {
       if (cartOpenRef.current) {
-        // se o cart estava aberto, fechar o cart e consumir o evento localmente
-        // (não chamamos history.back() aqui)
         setCartOpen(false);
-      } else {
-        // deixa o comportamento normal do navegador (navegar pra trás)
       }
     };
 
@@ -225,14 +226,16 @@ export default function ClientMenu({ menu }) {
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  // animate cart
+  // animate cart (observa totalItems do menu atual)
   useEffect(() => {
-    if (cart.items.length === 0) return;
+    const total = cart.totalItems(menu?.id);
+    if (!total) return;
 
     setAnimateCart(true);
-    const timer = setTimeout(() => setAnimateCart(false), 600); // duração do efeito
+    const timer = setTimeout(() => setAnimateCart(false), 600);
     return () => clearTimeout(timer);
-  }, [cart.items.length]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cart.totalItems(menu?.id)]); // re-render quando o total desse menu muda
 
   return (
     <>
@@ -352,7 +355,7 @@ export default function ClientMenu({ menu }) {
         >
           <span>Carrinho</span>
           <FaShoppingCart />
-          <span>{typeof cart.totalItems === "function" ? cart.totalItems() : cart.items?.length || 0}</span>
+          <span>{typeof cart.totalItems === "function" ? cart.totalItems(menu?.id) : 0}</span>
         </button>
       </div>
 
@@ -434,12 +437,10 @@ export default function ClientMenu({ menu }) {
                   Selecione adicionais:
                 </div>
 
-                {/* Linha de boxes que quebra */}
                 <div className="flex flex-wrap gap-3 max-h-[200px] overflow-auto">
                   {(selectedItem.additionals || []).map((a, idx) => {
                     const isSelected = !!selectedAddons[String(idx)];
-                    // cores:
-                    const boxBg = isSelected ? "#16a34a44" : translucidToUse; // verde translúcido quando selecionado
+                    const boxBg = isSelected ? "#16a34a44" : translucidToUse;
 
                     return (
                       <button
@@ -500,7 +501,6 @@ export default function ClientMenu({ menu }) {
         </GenericModal>
       )}
 
-      {/* Drawer do Carrinho (componente que você já implementou) */}
       <CartDrawer
         menu={menu}
         open={cartOpen}

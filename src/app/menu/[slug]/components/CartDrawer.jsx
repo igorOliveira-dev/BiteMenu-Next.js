@@ -1,3 +1,4 @@
+// src/components/components/CartDrawer.jsx
 "use client";
 import React, { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
@@ -23,6 +24,11 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
   const cart = useCartContext();
   const confirm = useConfirm();
   const customAlert = useAlert();
+
+  // pega apenas os items do menu atual
+  const currentItems = cart.getItems(menu?.id);
+  const currentTotalItems = cart.totalItems(menu?.id);
+  const currentTotalPrice = cart.totalPrice(menu?.id);
 
   const [establishmentPhone, setEstablishmentPhone] = useState(null);
 
@@ -69,20 +75,31 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
 
   useEffect(() => {
     const fetchPhone = async () => {
-      if (!menu?.owner_id) return;
+      let phone = null;
 
-      const { data, error } = await supabase.from("profiles").select("phone").eq("id", menu.owner_id).single();
+      if (menu?.owner_id) {
+        const { data, error } = await supabase.from("profiles").select("phone").eq("id", menu.owner_id).single();
 
-      if (error) {
-        console.error("Erro ao buscar telefone do dono:", error.message);
-        return;
+        if (!error && data?.phone) {
+          phone = data.phone;
+        }
       }
 
-      setEstablishmentPhone(data?.phone || null);
+      // fallback
+      phone = phone || menu?.owner_phone || menu?.phone || null;
+
+      setEstablishmentPhone(phone);
+
+      if (!phone) {
+        console.warn("CartDrawer: nenhum telefone disponível (establishmentPhone/menu.owner_phone/menu.phone)", {
+          establishmentPhone: phone,
+          menuPhone: menu?.phone,
+        });
+      }
     };
 
     fetchPhone();
-  }, [menu?.owner_id]);
+  }, [menu?.owner_id, menu?.owner_phone, menu?.phone]);
 
   useEffect(() => {
     if (availableServiceOptions.length < 2) {
@@ -253,19 +270,11 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
       return;
     }
 
-    console.log(costumerName);
-    console.log(costumerPhone);
-    console.log(costumerAddress);
-    console.log(selectedService);
-    console.log(selectedPayment);
-    console.log(menu.establishmentPhone);
-
     setPurchaseStage("whatsapp");
   };
 
   const whatsappConfirmation = () => {
-    // monta lista dos itens
-    const itemsList = cart.items
+    const itemsList = (currentItems || [])
       .map((it) => {
         const addons = it.additionals?.length > 0 ? `\n   + ${it.additionals.map((a) => a.name).join(", ")}` : "";
         const note = it.note ? `\n   Obs: ${it.note}` : "";
@@ -276,13 +285,8 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
       })
       .join("\n\n");
 
-    // resumo do pedido
-    const total = cart.totalPrice().toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    });
+    const total = (cart.totalPrice(menu?.id) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-    // dados do cliente
     const customerInfo = `
 👤 Nome: ${costumerName}
 📞 Telefone: ${costumerPhone}
@@ -299,13 +303,33 @@ ${itemsList}
 
 ${customerInfo}`;
 
-    const phone = establishmentPhone;
-    if (!phone) {
-      customAlert("Telefone do estabelecimento não encontrado.", "error");
+    // pega o telefone (prioriza establishmentPhone carregado, senão tenta menu)
+    const rawPhone = establishmentPhone || menu?.owner_phone || menu?.phone || null;
+
+    if (!rawPhone) {
+      customAlert(
+        "Telefone do estabelecimento não encontrado. Verifique se o estabelecimento cadastrou um número.",
+        "error"
+      );
+      console.warn("CartDrawer: nenhum telefone disponível (establishmentPhone/menu.owner_phone/menu.phone)", {
+        establishmentPhone,
+        menuPhone: menu?.owner_phone ?? menu?.phone,
+      });
       return;
     }
 
-    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    // normaliza: remove tudo que não é dígito
+    const normalized = String(rawPhone).replace(/\D/g, "");
+
+    // valida tamanho (wa.me aceita entre 8 e 15 dígitos tipicamente; exija pelo menos 8)
+    if (!/^\d{8,15}$/.test(normalized)) {
+      customAlert("Telefone do estabelecimento inválido. Formato inválido para WhatsApp.", "error");
+      console.warn("CartDrawer: telefone normalizado inválido para wa.me:", rawPhone, "->", normalized);
+      return;
+    }
+
+    // monta url do wa.me (sem +, apenas dígitos, sem zeros locais)
+    const url = `https://wa.me/${normalized}?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
   };
 
@@ -328,7 +352,7 @@ ${customerInfo}`;
         {/* HEADER */}
         <div className="sticky top-0 bg-inherit z-10 flex items-center justify-between p-4">
           <h3 className="text-lg font-bold">
-            Seu carrinho ({typeof cart.totalItems === "function" ? cart.totalItems() : cart.items?.length || 0})
+            Seu carrinho ({typeof cart.totalItems === "function" ? cart.totalItems(menu?.id) : currentItems.length})
           </h3>
           <button onClick={() => onClose?.()} className="cursor-pointer text-xl" aria-label="Fechar carrinho">
             <FaTimes />
@@ -337,12 +361,12 @@ ${customerInfo}`;
 
         {/* ITENS */}
         <div className="overflow-y-auto cart-scrollable px-4 space-y-4 py-4 mb-[110px]">
-          {cart.items.length === 0 ? (
+          {!currentItems || currentItems.length === 0 ? (
             <div className="py-10 text-center" style={{ color: grayToUse }}>
               Carrinho vazio
             </div>
           ) : (
-            cart.items.map((it, idx) => {
+            currentItems.map((it, idx) => {
               const addonsTotal = (it.additionals || []).reduce((s, a) => s + Number(a.price || 0), 0);
               return (
                 <div key={idx} className="p-3 rounded-xl flex flex-col" style={{ backgroundColor: translucidToUse }}>
@@ -369,7 +393,7 @@ ${customerInfo}`;
                       {((it.price + addonsTotal) * it.qty).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </p>
                     <button
-                      onClick={() => cart.remove(idx)}
+                      onClick={() => cart.remove(menu.id, idx)}
                       className="cursor-pointer text-white bg-red-600 opacity-75 hover:opacity-100 py-1 px-2 text-sm flex items-center gap-2 rounded-lg"
                     >
                       Remover
@@ -382,12 +406,12 @@ ${customerInfo}`;
         </div>
 
         {/* FOOTER */}
-        {cart.items.length > 0 && (
+        {currentItems && currentItems.length > 0 && (
           <div className="fixed w-full bottom-0 bg-inherit z-10 p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="font-semibold">Total</div>
               <div className="text-xl font-bold">
-                {cart.totalPrice().toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                {(cart.totalPrice(menu?.id) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
               </div>
             </div>
             <div className="flex gap-2">
@@ -406,9 +430,9 @@ ${customerInfo}`;
               </button>
               <button
                 onClick={async () => {
-                  const ok = await confirm("Quer mesmo limpar o carrinho?");
+                  const ok = await confirm("Quer mesmo limpar o carrinho deste estabelecimento?");
                   if (!ok) return;
-                  cart.clear();
+                  cart.clear(menu.id);
                 }}
                 className="cursor-pointer py-2 px-4 rounded border opacity-75 hover:opacity-100 transition"
               >
@@ -441,7 +465,6 @@ ${customerInfo}`;
               </h3>
             </div>
 
-            {/* ETAPAS */}
             {purchaseStage === "services" ? (
               <div className="flex flex-col gap-2">
                 {availableServiceOptions.map((option) => (
