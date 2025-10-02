@@ -103,6 +103,7 @@ export default function SignUp() {
           <div>
             <label className="block text-sm font-medium mb-1">Nome</label>
             <input
+              name="name"
               className="w-[300px] px-3 py-2 bg-translucid border border-low-gray rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
               type="text"
               placeholder="Seu nome completo"
@@ -130,6 +131,7 @@ export default function SignUp() {
           <div>
             <label className="block text-sm font-medium mb-1">Email</label>
             <input
+              name="email"
               className="w-[300px] px-3 py-2 bg-translucid border border-low-gray rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
               type="email"
               placeholder="Seu email"

@@ -69,6 +69,7 @@ export default function SignIn() {
           <div>
             <label className="block text-sm font-medium mb-1">Email</label>
             <input
+              name="email"
               className="w-[300px] px-3 py-2 bg-translucid border border-[var(--low-gray)] rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
               type="email"
               placeholder="Seu email"
@@ -81,6 +82,7 @@ export default function SignIn() {
           <div>
             <label className="block text-sm font-medium mb-1">Senha</label>
             <input
+              name="password"
               className="w-[300px] px-3 py-2 bg-translucid border border-[var(--low-gray)] rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
               type="password"
               placeholder="Sua senha"
