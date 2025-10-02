@@ -9,8 +9,11 @@ import { useAlert } from "@/providers/AlertProvider";
 import ConfigMenu from "./tabs/ConfigMenu";
 import { FaChevronLeft } from "react-icons/fa";
 import Account from "./tabs/Account";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const Dashboard = ({ menuState: externalMenuState, changedFields, revertField, saveAll, selectedTab, setSelectedTab }) => {
+  const router = useRouter();
   const { menu, loading } = useMenu();
   const [isOpen, setIsOpen] = useState(false);
   const customAlert = useAlert();
@@ -78,38 +81,38 @@ const Dashboard = ({ menuState: externalMenuState, changedFields, revertField, s
       <div className="flex items-center">
         <aside className="m-2 rounded-lg bg-translucid h-full max-w-[720px] w-[calc(100dvw-86px)] lg:w-60 shadow-[0_0_10px_var(--shadow)] flex lg:flex-col items-center overflow-hidden lg:h-[calc(100dvh-110px)]">
           <button
-            className="w-full px-2 p-4 sm:px-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)] text-nowrap"
+            className="cursor-pointer w-full px-2 p-4 sm:px-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)] text-nowrap"
             onClick={() => setSelectedTab("menu")}
           >
             {changedFields.length > 0 ? "Cardápio *" : "Cardápio"}
           </button>
           <button
-            className="w-full px-2 p-4 sm:px-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)]"
+            className="cursor-pointer w-full px-2 p-4 sm:px-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)]"
             onClick={() => setSelectedTab("orders")}
           >
             Pedidos
           </button>
           <button
-            className="w-full px-2 p-4 sm:px-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)]"
+            className="cursor-pointer w-full px-2 p-4 sm:px-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)]"
             onClick={() => setSelectedTab("sales")}
           >
             Vendas
           </button>
           <hr className="hidden lg:block border w-full opacity-50" />
           <button
-            className="w-full hidden lg:block p-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)]"
+            className="cursor-pointer w-full hidden lg:block p-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)]"
             onClick={() => setSelectedTab("account")}
           >
             Conta
           </button>
-          <button
-            className="w-full hidden lg:block p-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)]"
-            onClick={() => customAlert("suporte")}
+          <Link
+            className="w-full hidden lg:block p-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)] text-center"
+            href="/support"
           >
             Suporte
-          </button>
+          </Link>
           <button
-            className="w-full hidden lg:block p-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)]"
+            className="cursor-pointer w-full hidden lg:block p-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)]"
             onClick={() => customAlert("políticas de privacidade")}
           >
             Políticas de privacidade
@@ -235,11 +238,10 @@ const Dashboard = ({ menuState: externalMenuState, changedFields, revertField, s
                 </button>
               </li>
               <li>
-                <button
-                  className="w-full text-left px-2 py-2 hover:bg-white/10 rounded"
-                  onClick={() => customAlert("suporte")}
-                >
-                  Suporte
+                <button className="w-full flex text-left px-2 py-2 hover:bg-white/10 rounded">
+                  <Link href="support" className="flex-1">
+                    Suporte
+                  </Link>
                 </button>
               </li>
               <li>
