@@ -15,7 +15,7 @@ export default function Home() {
         </header>
         <div className="p-2 flex items-center justify-center md:justify-around h-full flex-col md:flex-row">
           <div className="pt-50 md:pt-0 text-center sm:text-start">
-            <h1 className="text-5xl lg:text-6xl xl:text-7xl font-bold text-[var(--red)]">BiteMenu</h1>
+            <h1 className="text-5xl lg:text-6xl xl:text-7xl font-bold text-[var(--red)]">Bite Menu</h1>
             <h2>Crie e gerencie seu cardápio digital!</h2>
             <p className="color-gray mb-6 max-w-[400px]">
               Com Bite Menu você constrói a presença online do seus estabelecimento em poucos minutos!
