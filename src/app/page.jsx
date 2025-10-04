@@ -18,7 +18,7 @@ export default function Home() {
             <h1 className="text-5xl lg:text-6xl xl:text-7xl font-bold text-[var(--red)]">BiteMenu</h1>
             <h2>Crie e gerencie seu cardápio digital!</h2>
             <p className="color-gray mb-6 max-w-[400px]">
-              Com bite menu você constrói a presença online do seus estabelecimento em poucos minutos!
+              Com Bite Menu você constrói a presença online do seus estabelecimento em poucos minutos!
             </p>
             <Link className="plan-button" href="register">
               Comece grátis!

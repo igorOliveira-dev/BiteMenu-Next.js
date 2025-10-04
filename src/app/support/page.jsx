@@ -7,7 +7,7 @@ import { FaWhatsapp } from "react-icons/fa";
 
 const page = () => {
   const callSupport = () => {
-    const message = "Olá! Eu gostaria de falar com o suporte do BiteMenu!";
+    const message = "Olá! Eu gostaria de falar com o suporte do Bite Menu!";
 
     const url = `https://wa.me/5514991363976?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
