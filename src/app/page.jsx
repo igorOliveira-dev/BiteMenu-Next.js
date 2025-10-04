@@ -7,9 +7,9 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <>
+    <main>
       <section className="h-[100dvh]" id="begin">
-        <header className="fixed w-[calc(100dvw-15px)] flex items-center justify-between p-2 m-2 my-3 bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)] z-10 backdrop-blur-sm">
+        <header className="fixed inset-x-0 flex items-center justify-between p-2 m-2 my-3 bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)] z-10 backdrop-blur-sm">
           <Image src={logoMark} height={50} width={180} alt="Bite Menu" />
           <ThemeToggle />
         </header>
@@ -30,6 +30,27 @@ export default function Home() {
           </div>
         </div>
       </section>
-    </>
+      <footer className="bg-translucid p-6 mt-6 border-t border-gray-300 dark:border-gray-700">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+          {/* Logos */}
+          <div className="flex items-center gap-4">
+            <Image src={logoMark} height={40} width={140} alt="Bite Menu" />
+          </div>
+
+          {/* Links */}
+          <div className="flex flex-col md:flex-row items-center gap-2 gap-x-4 text-sm">
+            <Link href="/privacy" className="hover:underline">
+              Política de Privacidade
+            </Link>
+            <Link href="support" className="hover:underline">
+              Suporte
+            </Link>
+          </div>
+
+          {/* Direitos */}
+          <div className="text-xs text-gray-500">© {new Date().getFullYear()} Bite Menu. Todos os direitos reservados.</div>
+        </div>
+      </footer>
+    </main>
   );
 }

@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabaseClient";
 import NotFoundMenu from "../NotFoundMenu";
 import ClientMenu from "./ClientMenu";
 import { CartProvider } from "@/contexts/CartContext";
+import MenuFooter from "./components/MenuFooter";
 
 // SEO dinâmico (server only)
 export async function generateMetadata({ params }) {

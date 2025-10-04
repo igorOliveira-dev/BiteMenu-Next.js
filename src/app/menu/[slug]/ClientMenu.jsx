@@ -1,4 +1,3 @@
-// src/components/ClientMenu.jsx
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -8,6 +7,7 @@ import GenericModal from "@/components/GenericModal";
 import { useCartContext } from "@/contexts/CartContext";
 import CartDrawer from "./components/CartDrawer";
 import { useAlert } from "@/providers/AlertProvider";
+import MenuFooter from "./components/MenuFooter";
 
 // util para contraste de cor
 function getContrastTextColor(hex) {
@@ -20,13 +20,11 @@ function getContrastTextColor(hex) {
   return yiq >= 128 ? "black" : "white";
 }
 
-// helper: converte HH:mm -> minutos
 function toMinutes(str) {
   const [h, m] = str.split(":").map(Number);
   return h * 60 + m;
 }
 
-// checa se está aberto agora
 function isOpenNow(hours) {
   const now = new Date();
   const timeString = now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
@@ -44,7 +42,6 @@ function isOpenNow(hours) {
   return nowMins >= openMins && nowMins <= closeMins;
 }
 
-// helper para mapear dias
 const dayNames = {
   mon: "Segunda-feira",
   tue: "Terça-feira",
@@ -57,11 +54,9 @@ const dayNames = {
 
 function formatHours(hours) {
   if (!hours) return [];
-
   return Object.entries(dayNames).map(([key, label]) => {
     const range = hours[key];
     if (!range) return { day: label, hours: "Fechado" };
-
     const [open, close] = range.split("-");
     return { day: label, hours: `${open} às ${close}` };
   });
@@ -70,13 +65,9 @@ function formatHours(hours) {
 export default function ClientMenu({ menu }) {
   const cart = useCartContext();
   const [animateCart, setAnimateCart] = useState(false);
-
   const alert = useAlert();
-
   const [hoursModalOpen, setHoursModalOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
-
-  // ref para leitura dentro do listener popstate
   const cartOpenRef = useRef(cartOpen);
 
   const open = isOpenNow(menu.hours);
@@ -91,13 +82,8 @@ export default function ClientMenu({ menu }) {
 
   const [itemModalOpen, setItemModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
-
   const [quantity, setQuantity] = useState(1);
-
-  // selectedAddons: mapa { "<idx>": true } (boolean selection only)
   const [selectedAddons, setSelectedAddons] = useState({});
-
-  // comentario / nota do item
   const [note, setNote] = useState("");
 
   const orderedCategories = (menu?.categories || []).slice().sort((a, b) => {
@@ -116,62 +102,42 @@ export default function ClientMenu({ menu }) {
     setSelectedAddons((prev) => {
       const key = String(idx);
       const next = { ...prev };
-      if (next[key]) {
-        delete next[key];
-      } else {
-        next[key] = true;
-      }
+      if (next[key]) delete next[key];
+      else next[key] = true;
       return next;
     });
   };
 
-  // calcula total: (preço base + soma(addons)) * quantity
   const totalPrice = useMemo(() => {
     if (!selectedItem) return 0;
     const base = Number(selectedItem.price || 0);
     const addonsPerUnit = (selectedItem.additionals || []).reduce((acc, a, idx) => {
-      if (selectedAddons[String(idx)]) {
-        return acc + Number(a.price || 0);
-      }
+      if (selectedAddons[String(idx)]) return acc + Number(a.price || 0);
       return acc;
     }, 0);
     return (base + addonsPerUnit) * quantity;
   }, [selectedItem, quantity, selectedAddons]);
 
-  // Handler de adicionar ao carrinho
   const handleAddToCart = async () => {
     if (!selectedItem) return;
-
     const selected = (selectedItem.additionals || [])
-      .map((a, idx) => {
-        if (!selectedAddons[String(idx)]) return null;
-        return { name: a.name, price: Number(a.price) };
-      })
+      .map((a, idx) => (selectedAddons[String(idx)] ? { name: a.name, price: Number(a.price) } : null))
       .filter(Boolean);
 
-    const cartItem = {
+    cart.addItem(menu.id, {
       id: selectedItem.id,
       name: selectedItem.name,
-      price: Number(selectedItem.price || 0), // preço base por unidade
+      price: Number(selectedItem.price || 0),
       qty: Number(quantity || 1),
       additionals: selected,
       note: note || "",
-    };
-
-    if (!menu?.id) {
-      console.error("menu.id indefinido ao adicionar item ao carrinho");
-      return;
-    }
-
-    // adiciona ao cart do menu atual
-    cart.addItem(menu.id, cartItem);
+    });
 
     alert("Item adicionado ao carrinho!", "info", {
       backgroundColor: `${menu.details_color}90`,
       textColor: getContrastTextColor(menu.details_color),
     });
 
-    // fechar modal e resetar
     setItemModalOpen(false);
     setSelectedItem(null);
     setQuantity(1);
@@ -179,7 +145,6 @@ export default function ClientMenu({ menu }) {
     setNote("");
   };
 
-  // abrir carrinho: empurra um estado no history (se ainda não estiver)
   const openCart = () => {
     if (typeof window === "undefined") {
       setCartOpen(true);
@@ -195,7 +160,6 @@ export default function ClientMenu({ menu }) {
     setCartOpen(true);
   };
 
-  // fechar programaticamente: substitui o state se for o do cart e fecha UI
   const closeCartProgrammatically = () => {
     if (typeof window !== "undefined") {
       try {
@@ -209,33 +173,49 @@ export default function ClientMenu({ menu }) {
     setCartOpen(false);
   };
 
-  // mantém a ref atualizada para o listener
   useEffect(() => {
     cartOpenRef.current = cartOpen;
   }, [cartOpen]);
 
-  // listener global de popstate: quando o usuário aperta "voltar"
   useEffect(() => {
     const onPopState = () => {
       if (cartOpenRef.current) {
         setCartOpen(false);
       }
     };
-
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  // animate cart (observa totalItems do menu atual)
   useEffect(() => {
     const total = cart.totalItems(menu?.id);
     if (!total) return;
-
     setAnimateCart(true);
     const timer = setTimeout(() => setAnimateCart(false), 600);
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cart.totalItems(menu?.id)]); // re-render quando o total desse menu muda
+  }, [cart.totalItems(menu?.id)]);
+
+  // Ajuste para botão fixo que não sobrepõe footer
+  useEffect(() => {
+    const cartButton = document.getElementById("cart-button-wrapper");
+    const footer = document.querySelector("footer");
+
+    if (!cartButton || !footer) return;
+
+    const onScroll = () => {
+      const footerRect = footer.getBoundingClientRect();
+      const windowHeight = window.innerHeight;
+
+      if (footerRect.top < windowHeight) {
+        cartButton.style.bottom = `${windowHeight - footerRect.top + 20}px`;
+      } else {
+        cartButton.style.bottom = "20px";
+      }
+    };
+
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
     <>
@@ -340,8 +320,11 @@ export default function ClientMenu({ menu }) {
         </div>
       </div>
 
-      {/* Botão do carrinho (fixo) */}
-      <div className="fixed z-40 right-4 bottom-6">
+      {/* Botão do carrinho fixo */}
+      <div
+        id="cart-button-wrapper"
+        style={{ position: "fixed", right: "20px", bottom: "20px", zIndex: 40, transition: "bottom 0.2s ease-in-out" }}
+      >
         <button
           onClick={openCart}
           className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg shadow-[0_0_20px_var(--shadow)] font-bold transition-transform duration-200 hover:opacity-90 hover:scale-110 ${
@@ -511,6 +494,7 @@ export default function ClientMenu({ menu }) {
         onClose={closeCartProgrammatically}
         isOpen={open}
       />
+      <MenuFooter />
     </>
   );
 }
