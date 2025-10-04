@@ -10,7 +10,7 @@ const notFound = () => {
         <Image src={bitemenu} alt="Bite Menu" fill />
       </div>
       <div className="flex items-center gap-4">
-        <h1>404</h1>
+        <h1 className="default-h1">404</h1>
         <hr className="border h-6"></hr>
         <h2>Esta página não existe</h2>
       </div>

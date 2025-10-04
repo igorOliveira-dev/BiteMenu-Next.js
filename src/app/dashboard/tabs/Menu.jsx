@@ -318,7 +318,7 @@ const Menu = (props) => {
             </div>
 
             {/* Título */}
-            <h1 className="text-md md:text-2xl font-bold ml-4" style={{ color: titleColor }}>
+            <h1 className="text-xl md:text-2xl font-bold ml-4" style={{ color: titleColor }}>
               {title}
             </h1>
             <button

@@ -276,7 +276,7 @@ export default function ClientMenu({ menu }) {
             </div>
           )}
 
-          <h1 className="text-2xl font-bold" style={{ color: menu.title_color }}>
+          <h1 className="text-xl md:text-2xl font-bold" style={{ color: menu.title_color }}>
             {menu.title}
           </h1>
         </div>

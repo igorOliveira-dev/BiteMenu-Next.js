@@ -85,6 +85,12 @@ body {
   transition: 0.4s;
 }
 
+.default-h1 {
+  font-size: 32px;
+  font-weight: bold;
+  color: var(--red);
+}
+
 h2 {
   font-size: 24px;
 }
@@ -94,6 +100,9 @@ h3 {
 }
 
 @media (width < 620px) {
+  .default-h1 {
+    font-size: 28px;
+  }
   h2 {
     font-size: 20px;
   }

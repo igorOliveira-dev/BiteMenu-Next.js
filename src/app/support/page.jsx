@@ -16,7 +16,7 @@ const page = () => {
   return (
     <div className="flex flex-col items-center justify-center absolute top-[50%] left-[50%] transform-[translate(-50%,-50%)] bg-translucid p-6 rounded-xl text-center min-w-[90dvw] sm:min-w-[460px]">
       <Image src={logoTip} alt="Bite Menu" className="absolute opacity-10 -z-[1]" />
-      <h1>Suporte</h1>
+      <h1 className="default-h1">Suporte</h1>
       <p>O suporte do Bite Menu é feito diretamente via WhatsApp!</p>
       <button
         onClick={() => callSupport()}
