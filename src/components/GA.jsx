@@ -1,10 +1,10 @@
 "use client";
 
 import Script from "next/script";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
-export default function GA() {
+function GATracker() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -15,6 +15,10 @@ export default function GA() {
     });
   }, [pathname, searchParams]);
 
+  return null;
+}
+
+export default function GA() {
   return (
     <>
       <Script strategy="afterInteractive" src="https://www.googletagmanager.com/gtag/js?id=G-8EMPPK3PCK" />
@@ -32,6 +36,9 @@ export default function GA() {
           `,
         }}
       />
+      <Suspense fallback={null}>
+        <GATracker />
+      </Suspense>
     </>
   );
 }
