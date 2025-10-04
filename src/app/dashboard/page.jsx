@@ -111,12 +111,12 @@ const Dashboard = ({ menuState: externalMenuState, changedFields, revertField, s
           >
             Suporte
           </Link>
-          <button
-            className="cursor-pointer w-full hidden lg:block p-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)]"
-            onClick={() => customAlert("políticas de privacidade")}
+          <Link
+            className="w-full hidden lg:block p-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)] text-center"
+            href="/politica-de-privacidade"
           >
-            Políticas de privacidade
-          </button>
+            Política de privacidade
+          </Link>
         </aside>
 
         {/* Hamburger mobile */}
@@ -245,11 +245,10 @@ const Dashboard = ({ menuState: externalMenuState, changedFields, revertField, s
                 </button>
               </li>
               <li>
-                <button
-                  className="w-full text-left px-2 py-2 hover:bg-white/10 rounded"
-                  onClick={() => customAlert("Políticas de privacidade")}
-                >
-                  Políticas de privacidade
+                <button className="w-full flex text-left px-2 py-2 hover:bg-white/10 rounded">
+                  <Link href="politica-de-privacidade" className="flex-1">
+                    Política de privacidade
+                  </Link>
                 </button>
               </li>
             </ul>
