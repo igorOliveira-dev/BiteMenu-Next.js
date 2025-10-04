@@ -494,7 +494,12 @@ export default function ClientMenu({ menu }) {
         onClose={closeCartProgrammatically}
         isOpen={open}
       />
-      <MenuFooter />
+      <MenuFooter
+        bgColor={menu.background_color}
+        translucidToUse={translucidToUse}
+        grayToUse={grayToUse}
+        foregroundToUse={foregroundToUse}
+      />
     </>
   );
 }
