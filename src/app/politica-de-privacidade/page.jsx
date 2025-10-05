@@ -7,7 +7,7 @@ const page = () => {
       <div className="max-w-2xl flex flex-col gap-6 p-4">
         <div>
           <h1 className="default-h1">Política de Privacidade – Bite Menu</h1>
-          <p>Última atualização: 04/10/2025</p>
+          <p>Última atualização: 05/10/2025</p>
         </div>
 
         <p>
@@ -39,14 +39,20 @@ const page = () => {
             <li>Nome e e-mail;</li>
             <li>Senha (armazenada criptografada via Supabase Auth);</li>
             <li>Arquivos enviados, como logotipo e banner;</li>
-            <li>Dados relacionados aos cardápios criados.</li>
+            <li>Dados relacionados aos cardápios criados;</li>
+            <li>Telefone de contato.</li>
           </ul>
           <p>Essas informações são usadas para:</p>
           <ul className="list-disc ml-6">
             <li>Gerenciar a sua conta;</li>
             <li>Permitir a criação, edição e exibição de cardápios;</li>
+            <li>Permitir que seus clientes te enviem os pedidos;</li>
             <li>Enviar comunicações sobre seu uso do Bite Menu;</li>
-            <li>Cumprir obrigações legais e contratuais.</li>
+            <li>Cumprir obrigações legais e contratuais;</li>
+            <li>
+              Enviar convites, atualizações e informações relacionadas ao Bite Menu, caso você tenha autorizado receber essas
+              comunicações.
+            </li>
           </ul>
           <p>
             Seus dados são armazenados em servidores seguros e criptografados. Não compartilhamos suas informações pessoais
@@ -83,7 +89,17 @@ const page = () => {
         </section>
 
         <section>
-          <h2 className="default-h2">4. Cookies e Rastreamento</h2>
+          <h2 className="default-h2">4. Consentimento para Comunicações</h2>
+          <p>
+            Ao fornecer seu telefone ou e-mail e aceitar receber comunicações, você concorda em receber mensagens
+            relacionadas ao Bite Menu, incluindo convites para testes, novidades, atualizações e informações relevantes sobre
+            o serviço.
+          </p>
+          <p>Esse consentimento pode ser revogado a qualquer momento entrando em contato com nosso suporte.</p>
+        </section>
+
+        <section>
+          <h2 className="default-h2">5. Cookies e Rastreamento</h2>
           <p>
             Podemos utilizar cookies e tecnologias semelhantes para melhorar sua experiência no site, analisar tráfego e
             proteger contra fraudes. Essas informações não identificam diretamente o usuário.
@@ -91,7 +107,7 @@ const page = () => {
         </section>
 
         <section>
-          <h2 className="default-h2">5. Direitos dos Usuários</h2>
+          <h2 className="default-h2">6. Direitos dos Usuários</h2>
           <p>De acordo com a LGPD, todos os titulares de dados possuem direitos, incluindo:</p>
           <ul className="list-disc ml-6">
             <li>Confirmação da existência de tratamento;</li>
@@ -103,7 +119,7 @@ const page = () => {
           </ul>
           <p>
             Para exercer qualquer um desses direitos, envie sua solicitação para o suporte{" "}
-            <Link href="/contact" className="underline text-blue-500 hover:text-blue-700">
+            <Link href="/support" className="underline text-blue-500 hover:text-blue-700">
               clicando aqui
             </Link>
             .
@@ -111,7 +127,7 @@ const page = () => {
         </section>
 
         <section>
-          <h2 className="default-h2">6. Retenção e Segurança</h2>
+          <h2 className="default-h2">7. Retenção e Segurança</h2>
           <p>
             Seus dados serão armazenados apenas pelo tempo necessário para cumprir as finalidades desta política, salvo
             obrigação legal em contrário. Utilizamos medidas técnicas e administrativas adequadas para proteger suas
@@ -120,7 +136,7 @@ const page = () => {
         </section>
 
         <section>
-          <h2 className="default-h2">7. Alterações nesta Política</h2>
+          <h2 className="default-h2">8. Alterações nesta Política</h2>
           <p>
             Podemos atualizar esta política periodicamente. A versão mais recente estará disponível em{" "}
             <Link
@@ -134,17 +150,17 @@ const page = () => {
         </section>
 
         <section>
-          <h2 className="default-h2">8. Contato</h2>
+          <h2 className="default-h2">9. Contato</h2>
           <p>
             Em caso de dúvidas ou solicitações sobre esta Política, entre em contato{" "}
-            <Link href="/contact" className="underline text-blue-500 hover:text-blue-700">
+            <Link href="/support" className="underline text-blue-500 hover:text-blue-700">
               clicando aqui
             </Link>
           </p>
         </section>
 
         <section>
-          <h2 className="default-h2">9. Aceite</h2>
+          <h2 className="default-h2">10. Aceite</h2>
           <p>
             Ao utilizar o Bite Menu, você concorda com esta Política de Privacidade e com o tratamento dos seus dados
             pessoais conforme aqui descrito.
