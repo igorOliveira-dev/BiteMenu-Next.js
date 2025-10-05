@@ -31,7 +31,7 @@ export default function Home() {
       {dashboardPath && (
         <button
           onClick={() => router.replace("/dashboard")}
-          className="cursor-pointer p-2 px-4 bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)] z-10 backdrop-blur-sm fixed top-22 right-2"
+          className="cursor-pointer font-bold p-2 px-4 bg-low-gray rounded-lg shadow-[0_0_10px_var(--shadow)] z-10 backdrop-blur-sm fixed top-22 right-2"
         >
           Acessar meu cardápio
         </button>
