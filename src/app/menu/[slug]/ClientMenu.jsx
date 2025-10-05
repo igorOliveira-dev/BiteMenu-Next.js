@@ -382,11 +382,11 @@ export default function ClientMenu({ menu }) {
           bgColor={menu.background_color}
           maxWidth={"720px"}
         >
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 sm:min-w-[460px]">
             <div className="flex flex-col sm:flex-row gap-4 mb-4">
-              <div className="flex flex-col gap-2 max-w-full sm:w-1/2">
+              <div className="flex flex-col gap-2 justify-between max-w-full sm:w-1/2">
                 <div>
-                  <h2 className="text-xl font-bold line-clamp-1" style={{ color: foregroundToUse }}>
+                  <h2 className="text-xl font-bold w-full line-clamp-1" style={{ color: foregroundToUse }}>
                     {selectedItem.name}
                   </h2>
                   <p style={{ color: grayToUse }} className="line-clamp-4">
