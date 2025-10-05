@@ -1,13 +1,42 @@
+"use client";
+
 import Image from "next/image";
 import logoMark from "../../public/LogoMarca-sem-fundo.png";
 import logoTip from "../../public/LogoTipo-sem-fundo.png";
 import ThemeToggle from "@/components/ThemeToggle";
 import menuCelular from "../../public/bitemenuCelular.png";
 import Link from "next/link";
+import useUser from "@/hooks/useUser";
+import Loading from "@/components/Loading";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const { user, loading } = useUser();
+  const [dashboardPath, setDashboardPath] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && user) {
+      setDashboardPath(true);
+    }
+  }, [user, loading]);
+
+  if (loading) {
+    return <Loading />;
+  }
+
   return (
     <main>
+      {dashboardPath && (
+        <button
+          onClick={() => router.replace("/dashboard")}
+          className="cursor-pointer p-2 px-4 bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)] z-10 backdrop-blur-sm fixed top-22 right-2"
+        >
+          Acessar meu cardápio
+        </button>
+      )}
+
       <section className="h-[100dvh]" id="begin">
         <header className="fixed inset-x-0 flex items-center justify-between p-2 m-2 my-3 bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)] z-10 backdrop-blur-sm">
           <Image src={logoMark} height={50} width={180} alt="Bite Menu" />
