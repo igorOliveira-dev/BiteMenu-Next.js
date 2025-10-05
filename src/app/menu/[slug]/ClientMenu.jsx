@@ -138,11 +138,7 @@ export default function ClientMenu({ menu }) {
       textColor: getContrastTextColor(menu.details_color),
     });
 
-    setItemModalOpen(false);
-    setSelectedItem(null);
-    setQuantity(1);
-    setSelectedAddons({});
-    setNote("");
+    closeItemModal();
   };
 
   const openCart = () => {
@@ -173,19 +169,55 @@ export default function ClientMenu({ menu }) {
     setCartOpen(false);
   };
 
+  const closeItemModal = () => {
+    setItemModalOpen(false);
+    setSelectedItem(null);
+    setQuantity(1);
+    setSelectedAddons({});
+    setNote("");
+  };
+
+  const closeHoursModal = () => {
+    setHoursModalOpen(false);
+  };
+
   useEffect(() => {
     cartOpenRef.current = cartOpen;
   }, [cartOpen]);
 
+  // Fecha o cart com botão voltar
   useEffect(() => {
     const onPopState = () => {
       if (cartOpenRef.current) {
         setCartOpen(false);
       }
+
+      if (itemModalOpen) {
+        closeItemModal();
+      }
+
+      if (hoursModalOpen) {
+        closeHoursModal();
+      }
     };
+
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
-  }, []);
+  }, [itemModalOpen, hoursModalOpen]);
+
+  // Abre o modal de produto adicionando entrada no histórico
+  useEffect(() => {
+    if (itemModalOpen) {
+      window.history.pushState({ ui: "productModal" }, "");
+    }
+  }, [itemModalOpen]);
+
+  // Abre o modal de horários adicionando entrada no histórico
+  useEffect(() => {
+    if (hoursModalOpen) {
+      window.history.pushState({ ui: "hoursModal" }, "");
+    }
+  }, [hoursModalOpen]);
 
   useEffect(() => {
     const total = cart.totalItems(menu?.id);
@@ -195,7 +227,6 @@ export default function ClientMenu({ menu }) {
     return () => clearTimeout(timer);
   }, [cart.totalItems(menu?.id)]);
 
-  // Ajuste para botão fixo que não sobrepõe footer
   useEffect(() => {
     const cartButton = document.getElementById("cart-button-wrapper");
     const footer = document.querySelector("footer");
@@ -219,11 +250,12 @@ export default function ClientMenu({ menu }) {
 
   return (
     <>
+      {/* === Conteúdo da página === */}
       <div
         className="min-h-screen w-full lg:px-20 xl:px-32 relative pb-18"
         style={{ backgroundColor: menu.background_color }}
       >
-        {/* Indicador de status no topo direito */}
+        {/* Indicador de status no topo */}
         <div
           className={`cursor-pointer absolute mt-2 flex items-center h-[35px] top-[calc(18dvh-50px)] sm:top-[calc(25dvh-50px)] right-2 lg:right-20 xl:right-32 px-3 py-1 mr-2 rounded-lg font-bold text-sm z-2`}
           style={{ backgroundColor: open ? "#16a34a90" : "#dc262690", color: "white" }}
@@ -232,6 +264,7 @@ export default function ClientMenu({ menu }) {
           {open ? "Aberto agora" : "Fechado"}
         </div>
 
+        {/* Banner */}
         {menu.banner_url && (
           <div className="relative w-full h-[18dvh] sm:h-[25dvh]">
             <Image
@@ -245,6 +278,7 @@ export default function ClientMenu({ menu }) {
           </div>
         )}
 
+        {/* Conteúdo */}
         <div className="flex items-center mt-2 p-4">
           {menu.logo_url && (
             <div className="relative w-full max-w-[80px] aspect-[1/1] rounded-lg mr-2 sm:mr-4">
@@ -255,7 +289,6 @@ export default function ClientMenu({ menu }) {
               />
             </div>
           )}
-
           <h1 className="text-xl md:text-2xl font-bold" style={{ color: menu.title_color }}>
             {menu.title}
           </h1>
@@ -276,7 +309,6 @@ export default function ClientMenu({ menu }) {
                   </span>
                 </div>
               </div>
-
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {(cat.menu_items || []).map((it) => (
                   <div key={it.id} className="flex items-stretch justify-between">
@@ -286,29 +318,21 @@ export default function ClientMenu({ menu }) {
                       onClick={() => handleItemClick(it)}
                     >
                       <div>
-                        <div>
-                          <div className="text-xl line-clamp-1" style={{ color: foregroundToUse }}>
-                            {it.name}
-                          </div>
-                        </div>
-
-                        <div>
-                          <div className="text-sm line-clamp-2" style={{ color: grayToUse }}>
-                            {it.description}
-                          </div>
+                        <div className="text-xl line-clamp-1" style={{ color: foregroundToUse }}>
+                          {it.name}
                         </div>
                       </div>
-
+                      <div>
+                        <div className="text-sm line-clamp-2" style={{ color: grayToUse }}>
+                          {it.description}
+                        </div>
+                      </div>
                       <div className="flex items-center justify-between w-full">
                         <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
                           {it.price ? Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "-"}
                         </div>
                         <div className="mr-2 px-6 py-2 rounded" style={{ backgroundColor: menu.details_color }}>
-                          <FaShoppingCart
-                            style={{
-                              color: getContrastTextColor(menu.details_color),
-                            }}
-                          />
+                          <FaShoppingCart style={{ color: getContrastTextColor(menu.details_color) }} />
                         </div>
                       </div>
                     </div>
@@ -320,7 +344,7 @@ export default function ClientMenu({ menu }) {
         </div>
       </div>
 
-      {/* Botão do carrinho fixo */}
+      {/* Botão Carrinho */}
       <div
         id="cart-button-wrapper"
         style={{ position: "fixed", right: "20px", bottom: "20px", zIndex: 40, transition: "bottom 0.2s ease-in-out" }}
@@ -342,34 +366,33 @@ export default function ClientMenu({ menu }) {
         </button>
       </div>
 
+      {/* Modal Horários */}
       {hoursModalOpen && (
-        <GenericModal bgColor={menu.background_color} onClose={() => setHoursModalOpen(false)}>
+        <GenericModal bgColor={menu.background_color} onClose={closeHoursModal}>
           <div className="cursor-pointer flex items-center gap-4 mb-4" style={{ color: foregroundToUse }}>
-            <FaChevronLeft onClick={() => setHoursModalOpen(false)} />
+            <FaChevronLeft onClick={closeHoursModal} />
             <h3 className="font-semibold">Horários de funcionamento:</h3>
           </div>
           <div className="space-y-2" style={{ color: foregroundToUse }}>
-            <div className="space-y-2">
-              {formatHours(menu.hours).map(({ day, hours }, idx) => {
-                const dayKey = Object.keys(dayNames)[idx]; // mon, tue, wed...
-                const isToday = dayKey === todayKey;
-
-                return (
-                  <div
-                    key={day}
-                    className="flex justify-between px-2 py-1 rounded"
-                    style={{ backgroundColor: isToday ? translucidToUse : "transparent" }}
-                  >
-                    <span>{day}:</span>
-                    <span>{hours}</span>
-                  </div>
-                );
-              })}
-            </div>
+            {formatHours(menu.hours).map(({ day, hours }, idx) => {
+              const dayKey = Object.keys(dayNames)[idx];
+              const isToday = dayKey === todayKey;
+              return (
+                <div
+                  key={day}
+                  className="flex justify-between px-2 py-1 rounded"
+                  style={{ backgroundColor: isToday ? translucidToUse : "transparent" }}
+                >
+                  <span>{day}:</span>
+                  <span>{hours}</span>
+                </div>
+              );
+            })}
           </div>
         </GenericModal>
       )}
 
+      {/* Modal Produto */}
       {itemModalOpen && selectedItem && (
         <GenericModal
           onClose={() => {
@@ -484,6 +507,7 @@ export default function ClientMenu({ menu }) {
         </GenericModal>
       )}
 
+      {/* Carrinho */}
       <CartDrawer
         menu={menu}
         open={cartOpen}
@@ -494,6 +518,8 @@ export default function ClientMenu({ menu }) {
         onClose={closeCartProgrammatically}
         isOpen={open}
       />
+
+      {/* Footer */}
       <MenuFooter
         bgColor={menu.background_color}
         translucidToUse={translucidToUse}
