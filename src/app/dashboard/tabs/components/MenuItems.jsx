@@ -21,6 +21,8 @@ const uid = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.r
 
 export default function MenuItems({ backgroundColor, detailsColor }) {
   const { menu, loading: menuLoading } = useMenu();
+  const [ownerRole, setOwnerRole] = useState(null);
+
   const alert = useAlert();
   const confirm = useConfirm();
 
@@ -92,8 +94,38 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
     };
   }, [menuLoading, menu?.id]);
 
+  useEffect(() => {
+    if (!menu?.owner_id) return;
+
+    const fetchOwnerRole = async () => {
+      const { data, error } = await supabase.from("profiles").select("role").eq("id", menu.owner_id).single();
+
+      if (error) {
+        console.error("Erro ao buscar role do dono:", error);
+        return;
+      }
+
+      setOwnerRole(data.role);
+    };
+    fetchOwnerRole();
+  }, [menu?.owner_id]);
+
+  useEffect(() => {
+    console.log("Owner role atualizado:", ownerRole);
+  }, [ownerRole]);
+
   // CRUD helpers
   const createCategory = async ({ name = "Nova categoria" } = {}) => {
+    if (ownerRole === "free" && categories.length >= 4) {
+      alert?.("Limite de 4 categorias atingido no plano gratuito.", "error");
+      return;
+    }
+
+    if (ownerRole === "premium" && categories.length >= 20) {
+      alert?.("Limite de 20 categorias atingido no plano premium.", "error");
+      return;
+    }
+
     if (!menu?.id) return null;
     const tempId = uid();
     const temp = { id: tempId, name, menu_items: [] };
@@ -149,6 +181,18 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
   };
 
   const createItem = async (categoryId, { name = "Novo item", price = "", description = "", additionals = [] } = {}) => {
+    const totalItems = categories.reduce((sum, c) => sum + (c.menu_items?.length || 0), 0);
+
+    if (ownerRole === "free" && totalItems >= 30) {
+      alert?.("Limite de 30 itens atingido no plano gratuito.", "error");
+      return;
+    }
+
+    if (ownerRole === "premium" && totalItems >= 200) {
+      alert?.("Limite de 200 itens atingido no plano premium.", "error");
+      return;
+    }
+
     const tempId = uid();
     setCategories((prev = []) =>
       prev.map((c) =>
