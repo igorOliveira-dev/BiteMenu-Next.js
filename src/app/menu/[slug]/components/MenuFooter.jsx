@@ -11,13 +11,13 @@ export default function MenuFooter({ bgColor, translucidToUse, grayToUse, foregr
           style={{ bgColor: translucidToUse }}
         >
           {/* Nome do cardápio */}
-          <div className="w-[220px] flex justify-center">
+          <Link href="https://bitemenu.com.br" className="w-[220px] flex justify-center">
             <Image src={logoMark} height={40} width={140} alt="Bite Menu" />
-          </div>
+          </Link>
 
           {/* Links */}
           <div className="flex flex-col md:flex-row justify-center items-center gap-2 gap-x-4 text-sm w-[220px]">
-            <Link href="/privacy" className="hover:underline">
+            <Link href="/politica-de-privacidade" className="hover:underline">
               Política de Privacidade
             </Link>
             <Link href="/support" className="hover:underline">
