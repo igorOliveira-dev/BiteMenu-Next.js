@@ -171,6 +171,37 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
     }
   }, [open]);
 
+  // Ler dados no local storage
+  useEffect(() => {
+    if (!open) return;
+    if (typeof window === "undefined") return;
+
+    try {
+      const stored = localStorage.getItem("customerInfo");
+      if (stored) {
+        const { name = "", phone = "", address = "" } = JSON.parse(stored);
+        setCostumerName(name);
+        setCostumerPhone(phone);
+        setCostumerAddress(address);
+        console.log("📥 LocalStorage carregado:", { name, phone, address });
+      }
+    } catch (error) {
+      console.warn("⚠ Erro ao ler customerInfo do localStorage", error);
+    }
+  }, [open]);
+
+  // guardar no local storage
+  const saveCustomerInfo = () => {
+    if (typeof window === "undefined") return;
+    const customerInfo = {
+      name: costumerName,
+      phone: costumerPhone,
+      address: costumerAddress,
+    };
+    localStorage.setItem("customerInfo", JSON.stringify(customerInfo));
+    console.log("💾 LocalStorage salvo no fechamento:", customerInfo);
+  };
+
   if (!isMounted) return null;
 
   const handleTouchStart = (e) => {
@@ -242,6 +273,8 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
   };
 
   const confirmPurchase = () => {
+    saveCustomerInfo();
+
     if (costumerName < 3) {
       customAlert("O nome deve ter pelo menos 3 letras.", "error");
       return;
@@ -454,15 +487,32 @@ ${customerInfo}`;
           >
             <div className="flex items-center gap-4 mb-4">
               <FaChevronLeft onClick={() => resetPurchase()} />
-              <h3 className="font-bold">
-                {purchaseStage === "services"
-                  ? "Como deseja realizar o pedido?"
-                  : purchaseStage === "costumerInfos"
-                  ? "Confirmar compra"
-                  : purchaseStage === "whatsapp"
-                  ? "Confirmação no whatsapp"
-                  : null}
-              </h3>
+              <div>
+                <h3 className="font-bold">
+                  {purchaseStage === "services"
+                    ? "Como deseja realizar o pedido?"
+                    : purchaseStage === "costumerInfos"
+                    ? "Confirmar compra"
+                    : purchaseStage === "whatsapp"
+                    ? "Confirmação no whatsapp"
+                    : null}
+                </h3>
+                {purchaseStage === "costumerInfos" && (
+                  <p style={{ color: grayToUse }} className="text-sm">
+                    (
+                    {selectedService === "delivery"
+                      ? "entrega"
+                      : selectedService === "pickup"
+                      ? "retirada"
+                      : selectedService === "dinein"
+                      ? "Comer no local"
+                      : selectedService === "faceToFace"
+                      ? "Atendimento presencial"
+                      : null}
+                    )
+                  </p>
+                )}
+              </div>
             </div>
 
             {purchaseStage === "services" ? (
