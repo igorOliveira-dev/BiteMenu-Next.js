@@ -1,10 +1,13 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { FaChevronLeft, FaMinus, FaPlus, FaShoppingCart } from "react-icons/fa";
+import Image from "next/image";
+import GenericModal from "@/components/GenericModal";
+import { useCartContext } from "@/contexts/CartContext";
 import { supabase } from "@/lib/supabaseClient";
 import useMenu from "@/hooks/useMenu";
-import GenericModal from "@/components/GenericModal";
-import { FaPen, FaTrash, FaShoppingCart, FaChevronRight, FaChevronUp, FaChevronDown } from "react-icons/fa";
+import { FaPen, FaTrash, FaChevronRight, FaChevronUp, FaChevronDown } from "react-icons/fa";
 import { useAlert } from "@/providers/AlertProvider";
 import { useConfirm } from "@/providers/ConfirmProvider";
 
@@ -18,6 +21,28 @@ function getContrastTextColor(hex) {
 }
 
 const uid = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `tmp-${Date.now()}`);
+
+// ----------------- upload helper (usa bucket product-images) -----------------
+async function uploadItemImage(file, ownerId) {
+  if (!file) return null;
+  const ext = file.name.split(".").pop();
+  const path = `menu-items/${ownerId ?? "unknown"}/${Date.now()}.${ext}`;
+
+  const { data, error } = await supabase.storage.from("product-images").upload(path, file, {
+    cacheControl: "3600",
+    upsert: false,
+  });
+
+  if (error) {
+    // se já existir, tentar upsert (opcional) ou repassar erro
+    throw error;
+  }
+
+  const { data: publicUrlData } = await supabase.storage.from("product-images").getPublicUrl(path);
+  return publicUrlData?.publicUrl ?? null;
+}
+
+// ------------------------------------------------------------------------------
 
 export default function MenuItems({ backgroundColor, detailsColor }) {
   const { menu, loading: menuLoading } = useMenu();
@@ -38,6 +63,9 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
     itemId: null,
     data: {},
   });
+
+  // upload state
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // collapse map for sort modal
   const [sortCollapsed, setSortCollapsed] = useState({});
@@ -180,7 +208,12 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
     }
   };
 
-  const createItem = async (categoryId, { name = "Novo item", price = "", description = "", additionals = [] } = {}) => {
+  // -------------------------------------------------------
+  // createItem atualizado para suportar image_url
+  const createItem = async (
+    categoryId,
+    { name = "Novo item", price = "", description = "", additionals = [], image_url = "" } = {}
+  ) => {
     const totalItems = categories.reduce((sum, c) => sum + (c.menu_items?.length || 0), 0);
 
     if (ownerRole === "free" && totalItems >= 30) {
@@ -199,7 +232,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
         c.id === categoryId
           ? {
               ...c,
-              menu_items: [...(c.menu_items || []), { id: tempId, name, price, description, additionals }],
+              menu_items: [...(c.menu_items || []), { id: tempId, name, price, description, additionals, image_url }],
             }
           : c
       )
@@ -208,7 +241,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
     try {
       const { data, error } = await supabase
         .from("menu_items")
-        .insert({ category_id: categoryId, name, price, description, additionals })
+        .insert({ category_id: categoryId, name, price, description, additionals, image_url })
         .select()
         .single();
       if (error) throw error;
@@ -349,6 +382,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
         name: item?.name ?? "Novo item",
         price: item?.price ?? "",
         description: item?.description ?? "",
+        image_url: item?.image_url ?? "",
         additionals: Array.isArray(item?.additionals) ? item.additionals.map((a) => ({ ...a, id: uid() })) : [],
       },
     });
@@ -512,11 +546,13 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
       }
     } else if (t === "item") {
       if (mode === "create") {
+        // inclui image_url
         await createItem(categoryId, {
           name: data.name,
           price: data.price,
           description: data.description,
           additionals: data.additionals,
+          image_url: data.image_url ?? "",
         });
       } else if (mode === "edit" && itemId) {
         await updateItem(itemId, {
@@ -524,6 +560,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
           price: data.price,
           description: data.description,
           additionals: data.additionals,
+          image_url: data.image_url ?? "",
         });
       }
     }
@@ -612,32 +649,51 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
             <div className="space-y-3">
               {(cat.menu_items || []).map((it) => (
                 <div key={it.id} className="flex items-stretch justify-between">
-                  <div
-                    className="h-[124px] flex-1 flex flex-col items-start justify-between gap-2 p-2 rounded-l-lg"
-                    style={{ backgroundColor: translucidToUse }}
-                  >
-                    <div>
-                      <div>
-                        <div className="text-xl" style={{ color: foregroundToUse }}>
-                          {it.name}
+                  <div className="flex items-stretch flex-1">
+                    {it.image_url ? (
+                      <img
+                        src={it.image_url}
+                        alt={it.name}
+                        className="hidden sm:block w-[124px] h-[124px] object-cover rounded-l-lg"
+                        style={{ flexShrink: 0 }}
+                      />
+                    ) : null}
+
+                    <div
+                      className={`h-[124px] flex-1 flex flex-col items-start justify-between gap-2 p-2 ${
+                        !it.image_url && "rounded-l-lg"
+                      }`}
+                      style={{ backgroundColor: translucidToUse }}
+                    >
+                      <div className="flex items-center gap-2">
+                        {it.image_url ? (
+                          <img
+                            src={it.image_url}
+                            alt={it.name}
+                            className="block sm:hidden w-[56px] h-[56px] object-cover rounded-lg"
+                            style={{ flexShrink: 0 }}
+                          />
+                        ) : null}
+                        <div>
+                          <div className="text-xl" style={{ color: foregroundToUse }}>
+                            {it.name}
+                          </div>
+
+                          <div className="text-sm line-clamp-2" style={{ color: grayToUse }}>
+                            {it.description}
+                          </div>
                         </div>
                       </div>
 
-                      <div>
-                        <div className="text-sm line-clamp-2" style={{ color: grayToUse }}>
-                          {it.description}
+                      <div className="flex items-center justify-between w-full">
+                        <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
+                          {it.price
+                            ? `${Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`
+                            : "-"}
                         </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between w-full">
-                      <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
-                        {it.price
-                          ? `${Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`
-                          : "-"}
-                      </div>
-                      <div className="mr-2 px-6 py-2 rounded" style={{ backgroundColor: detailsColor }}>
-                        <FaShoppingCart style={{ color: getContrastTextColor(detailsColor) }} />
+                        <div className="mr-2 px-6 py-2 rounded" style={{ backgroundColor: detailsColor }}>
+                          <FaShoppingCart style={{ color: getContrastTextColor(detailsColor) }} />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -709,41 +765,85 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
           {/* Item */}
           {modalPayload.type === "item" && (
             <>
-              <label className="block mb-2">
-                <div className="text-sm color-gray">Nome</div>
-                <input
-                  type="text"
-                  value={modalPayload.data.name}
-                  onChange={(e) => {
-                    const v = e.target.value.slice(0, 25);
-                    setModalPayload((p) => ({ ...p, data: { ...p.data, name: v } }));
-                  }}
-                  maxLength={25}
-                  className="w-full p-2 rounded border bg-translucid mb-2"
-                />
-              </label>
+              <div className="mb-2">
+                <div className="text-sm color-gray mb-1">Imagem do item:</div>
+
+                <label className="text-center flex flex-col items-center justify-center w-30 h-30 border-2 border-dashed border-[var(--gray)] rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
+                  {modalPayload.data.image_url ? (
+                    <img src={modalPayload.data.image_url} alt="Prévia" className="object-cover w-full h-full" />
+                  ) : (
+                    <span className="color-gray m-4 text-sm">Clique aqui para inserir uma imagem</span>
+                  )}
+
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        setUploadingImage(true);
+                        const url = await uploadItemImage(file, menu?.owner_id);
+                        setModalPayload((p) => ({ ...p, data: { ...p.data, image_url: url } }));
+                      } catch (err) {
+                        console.error("upload image error:", err);
+                        alert?.("Erro ao enviar imagem (ver console)", "error");
+                      } finally {
+                        setUploadingImage(false);
+                      }
+                    }}
+                  />
+                </label>
+
+                {modalPayload.data.image_url && (
+                  <button
+                    onClick={() => setModalPayload((p) => ({ ...p, data: { ...p.data, image_url: "" } }))}
+                    className="mt-1 text-sm text-red-500 hover:underline"
+                    type="button"
+                  >
+                    Remover imagem
+                  </button>
+                )}
+              </div>
+
+              <div className="flex gap-2">
+                <label className="block mb-2 w-3/4">
+                  <div className="text-sm color-gray">Nome:</div>
+                  <input
+                    type="text"
+                    value={modalPayload.data.name}
+                    onChange={(e) => {
+                      const v = e.target.value.slice(0, 25);
+                      setModalPayload((p) => ({ ...p, data: { ...p.data, name: v } }));
+                    }}
+                    maxLength={25}
+                    className="w-full p-2 rounded border bg-translucid mb-2"
+                  />
+                </label>
+
+                <label className="block mb-2 w-1/4">
+                  <div className="text-sm color-gray">Preço:</div>
+                  <input
+                    type="text"
+                    value={modalPayload.data.price}
+                    onChange={(e) => {
+                      let value = e.target.value;
+                      value = value.replace(/[^0-9.,]/g, "");
+                      value = value.replace(",", ".");
+                      const parts = value.split(".");
+                      if (parts.length > 2) value = parts[0] + "." + parts.slice(1).join("");
+                      setModalPayload((p) => ({ ...p, data: { ...p.data, price: value } }));
+                    }}
+                    maxLength={10}
+                    className="w-full p-2 rounded border bg-translucid mb-2"
+                    placeholder="00.00"
+                  />
+                </label>
+              </div>
 
               <label className="block mb-2">
-                <div className="text-sm color-gray">Preço</div>
-                <input
-                  type="text"
-                  value={modalPayload.data.price}
-                  onChange={(e) => {
-                    let value = e.target.value;
-                    value = value.replace(/[^0-9.,]/g, "");
-                    value = value.replace(",", ".");
-                    const parts = value.split(".");
-                    if (parts.length > 2) value = parts[0] + "." + parts.slice(1).join("");
-                    setModalPayload((p) => ({ ...p, data: { ...p.data, price: value } }));
-                  }}
-                  maxLength={10}
-                  className="w-full p-2 rounded border bg-translucid mb-2"
-                  placeholder="00.00"
-                />
-              </label>
-
-              <label className="block mb-2">
-                <div className="text-sm color-gray">Descrição</div>
+                <div className="text-sm color-gray">Descrição:</div>
                 <textarea
                   value={modalPayload.data.description}
                   onChange={(e) => setModalPayload((p) => ({ ...p, data: { ...p.data, description: e.target.value } }))}
@@ -751,6 +851,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
                   placeholder="Escreva a descrição (opcional)"
                 />
               </label>
+
               {/* Adicionais */}
               <div className="mb-2">
                 <div className="flex items-center justify-between">
@@ -772,12 +873,9 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
                   </button>
                 </div>
 
-                <div className="space-y-2 mt-2 max-h-[200px] overflow-y-auto">
+                <div className="space-y-2 mt-2 max-h-[120px] overflow-y-auto">
                   {(modalPayload.data.additionals || []).map((add, idx) => (
-                    <div
-                      key={add.id ?? idx}
-                      className="flex flex-wrap items-center gap-2 w-full" /* permite quebra em telas pequenas */
-                    >
+                    <div key={add.id ?? idx} className="flex flex-wrap items-center gap-2 w-full">
                       <input
                         type="text"
                         value={add.name}

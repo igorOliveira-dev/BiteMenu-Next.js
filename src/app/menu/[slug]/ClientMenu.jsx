@@ -312,26 +312,45 @@ export default function ClientMenu({ menu }) {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {(cat.menu_items || []).map((it) => (
                   <div key={it.id} className="flex items-stretch justify-between">
+                    {it.image_url ? (
+                      <img
+                        src={it.image_url}
+                        alt={it.name}
+                        className="hidden sm:block w-[130px] h-[130px] object-cover rounded-l-lg"
+                        style={{ flexShrink: 0 }}
+                      />
+                    ) : null}
                     <div
-                      className="cursor-pointer flex-1 h-[130px] flex flex-col items-start justify-between gap-2 p-2 rounded-lg"
+                      className={`cursor-pointer flex-1 h-[130px] flex flex-col items-start justify-between gap-2 p-2 px-4 ${
+                        it.image_url ? "rounded-r-lg" : "rounded-lg"
+                      }`}
                       style={{ backgroundColor: translucidToUse }}
                       onClick={() => handleItemClick(it)}
                     >
-                      <div>
-                        <div className="text-xl line-clamp-1" style={{ color: foregroundToUse }}>
-                          {it.name}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm line-clamp-2" style={{ color: grayToUse }}>
-                          {it.description}
+                      <div className="flex items-center gap-2">
+                        {it.image_url ? (
+                          <img
+                            src={it.image_url}
+                            alt={it.name}
+                            className="block sm:hidden w-[56px] h-[56px] object-cover rounded-lg"
+                            style={{ flexShrink: 0 }}
+                          />
+                        ) : null}
+                        <div>
+                          <div className="text-xl" style={{ color: foregroundToUse }}>
+                            {it.name}
+                          </div>
+
+                          <div className="text-sm line-clamp-2" style={{ color: grayToUse }}>
+                            {it.description}
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center justify-between w-full">
                         <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
                           {it.price ? Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "-"}
                         </div>
-                        <div className="mr-2 px-6 py-2 rounded" style={{ backgroundColor: menu.details_color }}>
+                        <div className="px-6 py-2 rounded" style={{ backgroundColor: menu.details_color }}>
                           <FaShoppingCart style={{ color: getContrastTextColor(menu.details_color) }} />
                         </div>
                       </div>
