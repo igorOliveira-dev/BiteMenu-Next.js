@@ -55,7 +55,13 @@ export default function Home() {
           </div>
           <div className="scale-70 md:scale-90 lg:scale-100 transform-[translate(15%,-10%)] md:transform-none">
             <Image src={logoTip} alt="Bite Menu" className="absolute opacity-20 -z-[1] transform-[translate(-30%,20%)]" />
-            <Image src={menuCelular} alt="Cardápio do Bite Menu no celular" height={462} width={300} />
+            <Image
+              src={menuCelular}
+              alt="Cardápio do Bite Menu no celular"
+              height={462}
+              width={300}
+              className="transform-[translate(0,10%)]"
+            />
           </div>
         </div>
       </section>
