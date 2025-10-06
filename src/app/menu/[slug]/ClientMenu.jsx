@@ -321,7 +321,7 @@ export default function ClientMenu({ menu }) {
                       />
                     ) : null}
                     <div
-                      className={`cursor-pointer flex-1 h-[130px] flex flex-col items-start justify-between gap-2 p-2 px-4 ${
+                      className={`cursor-pointer flex-1 h-[130px] flex flex-col items-start justify-between gap-2 p-2 ${
                         it.image_url ? "rounded-r-lg" : "rounded-lg"
                       }`}
                       style={{ backgroundColor: translucidToUse }}
@@ -332,7 +332,7 @@ export default function ClientMenu({ menu }) {
                           <img
                             src={it.image_url}
                             alt={it.name}
-                            className="block sm:hidden w-[56px] h-[56px] object-cover rounded-lg"
+                            className="block sm:hidden w-[72px] h-[72px] object-cover rounded-lg"
                             style={{ flexShrink: 0 }}
                           />
                         ) : null}

@@ -670,7 +670,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
                           <img
                             src={it.image_url}
                             alt={it.name}
-                            className="block sm:hidden w-[56px] h-[56px] object-cover rounded-lg"
+                            className="block sm:hidden w-[68px] h-[68px] object-cover rounded-lg"
                             style={{ flexShrink: 0 }}
                           />
                         ) : null}
