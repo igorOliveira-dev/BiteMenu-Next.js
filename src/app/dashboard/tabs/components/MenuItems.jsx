@@ -10,6 +10,7 @@ import useMenu from "@/hooks/useMenu";
 import { FaPen, FaTrash, FaChevronRight, FaChevronUp, FaChevronDown } from "react-icons/fa";
 import { useAlert } from "@/providers/AlertProvider";
 import { useConfirm } from "@/providers/ConfirmProvider";
+import { uploadItemImage } from "@/lib/uploadImage";
 
 function getContrastTextColor(hex) {
   const cleanHex = (hex || "").replace("#", "");
@@ -21,26 +22,6 @@ function getContrastTextColor(hex) {
 }
 
 const uid = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `tmp-${Date.now()}`);
-
-// ----------------- upload helper (usa bucket product-images) -----------------
-async function uploadItemImage(file, ownerId) {
-  if (!file) return null;
-  const ext = file.name.split(".").pop();
-  const path = `menu-items/${ownerId ?? "unknown"}/${Date.now()}.${ext}`;
-
-  const { data, error } = await supabase.storage.from("product-images").upload(path, file, {
-    cacheControl: "3600",
-    upsert: false,
-  });
-
-  if (error) {
-    // se já existir, tentar upsert (opcional) ou repassar erro
-    throw error;
-  }
-
-  const { data: publicUrlData } = await supabase.storage.from("product-images").getPublicUrl(path);
-  return publicUrlData?.publicUrl ?? null;
-}
 
 // ------------------------------------------------------------------------------
 
@@ -300,14 +281,27 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
     const ok = await confirm("Remover item?");
     if (!ok) return;
     const before = categories;
+    const itemToDelete = categories.find((c) => c.id === categoryId)?.menu_items?.find((it) => it.id === itemId);
+
     setCategories((prev = []) =>
       prev.map((c) =>
         c.id === categoryId ? { ...c, menu_items: (c.menu_items || []).filter((it) => it.id !== itemId) } : c
       )
     );
+
     try {
+      // se o item tiver imagem, remove também do bucket
+      if (itemToDelete?.image_url) {
+        const pathStart = itemToDelete.image_url.indexOf("/object/public/product-images/");
+        if (pathStart !== -1) {
+          const path = itemToDelete.image_url.substring(pathStart + "/object/public/product-images/".length);
+          await supabase.storage.from("product-images").remove([path]);
+        }
+      }
+
       const { error } = await supabase.from("menu_items").delete().eq("id", itemId);
       if (error) throw error;
+
       alert?.("Item removido", "success");
       return true;
     } catch (err) {
@@ -784,7 +778,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
                       if (!file) return;
                       try {
                         setUploadingImage(true);
-                        const url = await uploadItemImage(file, menu?.owner_id);
+                        const url = await uploadItemImage(file, menu?.owner_id, modalPayload.data.image_url);
                         setModalPayload((p) => ({ ...p, data: { ...p.data, image_url: url } }));
                       } catch (err) {
                         console.error("upload image error:", err);
