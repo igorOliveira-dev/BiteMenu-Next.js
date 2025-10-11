@@ -165,16 +165,12 @@ const Account = ({ setSelectedTab }) => {
             <p className="text-sm color-gray pt-1">Este é o número em que você receberá os pedidos.</p>
           </div>
 
-          <div className="mt-4">
+          <div className="mt-4" onClick={() => buyPlan()}>
             <p>Plano:</p>
             <div className="bg-translucid p-2 min-w-[120px] w-max rounded">
               <p className="color-gray">{profile?.role}</p>
             </div>
           </div>
-
-          <button className="plan-button" onClick={() => buyPlan()}>
-            Melhorar plano
-          </button>
         </div>
       </div>
       {nameModalOpen && (

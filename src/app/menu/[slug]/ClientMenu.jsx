@@ -71,7 +71,7 @@ export default function ClientMenu({ menu }) {
   const cartOpenRef = useRef(cartOpen);
 
   const open = isOpenNow(menu.hours);
-  const translucidToUse = getContrastTextColor(menu.background_color) === "white" ? "#ffffff15" : "#00000015";
+  const translucidToUse = getContrastTextColor(menu.background_color) === "white" ? "#ffffff10" : "#00000010";
   const grayToUse = getContrastTextColor(menu.background_color) === "white" ? "#cccccc" : "#333333";
   const foregroundToUse = getContrastTextColor(menu.background_color) === "white" ? "#fafafa" : "#171717";
 
