@@ -140,7 +140,7 @@ const page = () => {
           <p>
             Podemos atualizar esta política periodicamente. A versão mais recente estará disponível em{" "}
             <Link
-              href="https://bitemenu.com.br/politica-de-privacidade"
+              href="https://www.bitemenu.com.br/politica-de-privacidade"
               className="underline text-blue-500 hover:text-blue-700"
             >
               https://bitemenu.com.br/politica-de-privacidade

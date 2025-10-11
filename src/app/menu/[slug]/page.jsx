@@ -21,7 +21,7 @@ export async function generateMetadata({ params }) {
     };
   }
 
-  const baseUrl = "https://bitemenu.com.br";
+  const baseUrl = "https://www.bitemenu.com.br";
   const canonicalUrl = `${baseUrl}/menu/${slug}`;
   const imageUrl = menu.banner_url || menu.logo_url || `${baseUrl}/default-og.jpg`;
 

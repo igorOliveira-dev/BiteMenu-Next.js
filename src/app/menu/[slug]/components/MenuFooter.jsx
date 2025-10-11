@@ -11,7 +11,7 @@ export default function MenuFooter({ bgColor, translucidToUse, grayToUse, foregr
           style={{ bgColor: translucidToUse }}
         >
           {/* Nome do cardápio */}
-          <Link href="https://bitemenu.com.br" className="w-[220px] flex justify-center">
+          <Link href="https://www.bitemenu.com.br" className="w-[220px] flex justify-center">
             <Image src={logoMark} height={40} width={140} alt="Bite Menu" />
           </Link>
 
@@ -34,7 +34,7 @@ export default function MenuFooter({ bgColor, translucidToUse, grayToUse, foregr
         {/* Criado por Bite Menu */}
         <div className="mt-4 text-center text-xs" style={{ color: grayToUse }}>
           Criado por{" "}
-          <Link href="https://bitemenu.com.br" target="_blank" className="underline">
+          <Link href="https://www.bitemenu.com.br" target="_blank" className="underline">
             Bite Menu
           </Link>
         </div>
