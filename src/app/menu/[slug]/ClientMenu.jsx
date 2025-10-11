@@ -318,6 +318,7 @@ export default function ClientMenu({ menu }) {
                         alt={it.name}
                         className="hidden sm:block w-[130px] h-[130px] object-cover rounded-l-lg"
                         style={{ flexShrink: 0 }}
+                        onClick={() => handleItemClick(it)}
                       />
                     ) : null}
                     <div
