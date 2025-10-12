@@ -356,7 +356,7 @@ export default function ClientMenu({ menu }) {
             {orderedCategories.map((cat) => (
               <div key={cat.id}>
                 <button
-                  className="cursor-pointer p-2 px-4"
+                  className="cursor-pointer p-4"
                   onClick={(e) => {
                     e.preventDefault();
                     scrollToCategoryId(cat.id, 40);
