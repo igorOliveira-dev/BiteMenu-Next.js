@@ -132,14 +132,29 @@ const Account = ({ setSelectedTab }) => {
               <FaPen />
             </div>
           </div>
+
+          {/* email */}
           <p className="color-gray">{profile?.email}</p>
-          <button className="cursor-pointer text-red-500 underline" onClick={handleLogout}>
+
+          {/* sair */}
+          <button
+            className="mt-2 cursor-pointer text-white bg-red-700 hover:bg-red-800 px-2 py-1 rounded-lg transition"
+            onClick={handleLogout}
+          >
             Sair da conta
           </button>
 
+          {/* plano */}
+          <div className="mt-4" onClick={() => buyPlan()}>
+            <p className="font-semibold">Plano:</p>
+            <div className="bg-translucid p-2 min-w-[120px] w-max rounded">
+              <p className="color-gray">{profile?.role}</p>
+            </div>
+          </div>
+
           {/* Telefone */}
           <div className="mt-4">
-            <label className="block text-sm font-medium mb-1">Telefone:</label>
+            <label className="block font-semibold mb-1">Telefone:</label>
             <div className="flex gap-2 items-center">
               <div className="flex-shrink">
                 <PhoneInput
@@ -163,13 +178,6 @@ const Account = ({ setSelectedTab }) => {
               )}
             </div>
             <p className="text-sm color-gray pt-1">Este é o número em que você receberá os pedidos.</p>
-          </div>
-
-          <div className="mt-4" onClick={() => buyPlan()}>
-            <p>Plano:</p>
-            <div className="bg-translucid p-2 min-w-[120px] w-max rounded">
-              <p className="color-gray">{profile?.role}</p>
-            </div>
           </div>
         </div>
       </div>
