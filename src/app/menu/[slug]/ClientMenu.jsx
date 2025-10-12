@@ -25,6 +25,56 @@ function toMinutes(str) {
   return h * 60 + m;
 }
 
+// util: encontra o primeiro ancestor rolável (ou retorna window)
+function findScrollParent(el) {
+  let parent = el.parentElement;
+  while (parent) {
+    const style = getComputedStyle(parent);
+    const overflowY = style.overflowY;
+    if ((overflowY === "auto" || overflowY === "scroll") && parent.scrollHeight > parent.clientHeight) {
+      return parent;
+    }
+    parent = parent.parentElement;
+  }
+  return window;
+}
+
+// função robusta de scroll com offset
+function scrollToCategoryId(id, offset = 15) {
+  const el = document.getElementById(id);
+  if (!el) return false;
+
+  const scrollable = findScrollParent(el);
+
+  if (scrollable === window) {
+    const elementTop = el.getBoundingClientRect().top + window.scrollY;
+    const targetY = Math.max(0, elementTop - offset);
+    window.scrollTo({ top: targetY, behavior: "smooth" });
+  } else {
+    const parentRect = scrollable.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    // calcula posição relativa ao scrollable
+    const relativeTop = elRect.top - parentRect.top + scrollable.scrollTop;
+    const target = Math.max(0, relativeTop - offset);
+    scrollable.scrollTo({ top: target, behavior: "smooth" });
+  }
+
+  // atualiza hash sem recarregar a página
+  try {
+    history.replaceState(null, "", `#${id}`);
+  } catch (e) {
+    // fallback silencioso
+  }
+
+  // foco acessível sem scrollear de novo
+  try {
+    el.setAttribute("tabindex", "-1");
+    el.focus({ preventScroll: true });
+  } catch (e) {}
+
+  return true;
+}
+
 function isOpenNow(hours) {
   const now = new Date();
   const timeString = now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
@@ -279,7 +329,7 @@ export default function ClientMenu({ menu }) {
         )}
 
         {/* Conteúdo */}
-        <div className="flex items-center mt-2 p-4">
+        <div className="flex items-center mt-2 px-4">
           {menu.logo_url && (
             <div className="relative w-full max-w-[80px] aspect-[1/1] rounded-lg mr-2 sm:mr-4">
               <img
@@ -297,6 +347,27 @@ export default function ClientMenu({ menu }) {
         <p className="mt-1 px-4" style={{ color: getContrastTextColor(menu.background_color) }}>
           {menu.description}
         </p>
+
+        {orderedCategories.length > 0 && (
+          <div
+            className="flex mt-6 sticky -top-1 border-y-2 overflow-x-auto whitespace-nowrap scrollbar-none"
+            style={{ backgroundColor: menu.background_color, borderColor: translucidToUse, color: foregroundToUse }}
+          >
+            {orderedCategories.map((cat) => (
+              <div key={cat.id}>
+                <button
+                  className="cursor-pointer p-2 px-4"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    scrollToCategoryId(cat.id, 40);
+                  }}
+                >
+                  {cat.name}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="space-y-4 px-4">
           {orderedCategories.map((cat) => (
@@ -338,7 +409,7 @@ export default function ClientMenu({ menu }) {
                           />
                         ) : null}
                         <div>
-                          <div className="text-xl" style={{ color: foregroundToUse }}>
+                          <div className="text-xl line-clamp-1" style={{ color: foregroundToUse }}>
                             {it.name}
                           </div>
 

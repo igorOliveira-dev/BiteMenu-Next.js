@@ -32,7 +32,8 @@ const Menu = (props) => {
     setTitleColor: propSetTitleColor,
     detailsColor: propDetailsColor,
     setDetailsColor: propSetDetailsColor,
-    menuState, // optional [state, setState]
+    menuState,
+    changedFields,
   } = props;
 
   const usingExternal = Array.isArray(menuState) && menuState.length === 2;
@@ -247,7 +248,9 @@ const Menu = (props) => {
       <div className="px-2 lg:grid">
         <button
           onClick={() => setSelectedTab("configMenu")}
-          className="flex lg:hidden cursor-pointer top-24 right-2 p-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition items-center justify-center fixed z-10"
+          className={`flex lg:hidden cursor-pointer ${
+            changedFields.length > 0 ? "bottom-56" : "bottom-20"
+          } right-2 p-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition items-center justify-center fixed z-10`}
         >
           <FiSettings className="text-xl mr-2" />
           Configurar cardápio
@@ -333,7 +336,7 @@ const Menu = (props) => {
             {description}
           </p>
 
-          <MenuItems backgroundColor={backgroundColor} detailsColor={detailsColor} />
+          <MenuItems backgroundColor={backgroundColor} detailsColor={detailsColor} changedFields={changedFields} />
         </div>
 
         {/* Sidebar */}

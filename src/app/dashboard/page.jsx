@@ -12,7 +12,15 @@ import Account from "./tabs/Account";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-const Dashboard = ({ menuState: externalMenuState, changedFields, revertField, saveAll, selectedTab, setSelectedTab }) => {
+const Dashboard = ({
+  menuState: externalMenuState,
+  changedFields,
+  revertField,
+  saveAll,
+  selectedTab,
+  setSelectedTab,
+  showChanges,
+}) => {
   const router = useRouter();
   const { menu, loading } = useMenu();
   const [isOpen, setIsOpen] = useState(false);
@@ -155,11 +163,11 @@ const Dashboard = ({ menuState: externalMenuState, changedFields, revertField, s
             setTitleColor={setTitleColor}
             detailsColor={detailsColor}
             setDetailsColor={setDetailsColor}
-            // caso você deseje funcionalidades extras vindas do StatesManager:
             changedFields={changedFields}
             revertField={revertField}
             saveAll={saveAll}
             menuState={usingExternal ? externalMenuState : undefined}
+            showChanges={showChanges}
           />
         </div>
         <div className={selectedTab === "orders" ? "block" : "hidden"}>

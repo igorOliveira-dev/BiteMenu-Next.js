@@ -25,7 +25,7 @@ const uid = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.r
 
 // ------------------------------------------------------------------------------
 
-export default function MenuItems({ backgroundColor, detailsColor }) {
+export default function MenuItems({ backgroundColor, detailsColor, changedFields }) {
   const { menu, loading: menuLoading } = useMenu();
   const [ownerRole, setOwnerRole] = useState(null);
 
@@ -122,6 +122,56 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
   useEffect(() => {
     console.log("Owner role atualizado:", ownerRole);
   }, [ownerRole]);
+
+  // util: encontra o primeiro ancestor rolável (ou retorna window)
+  function findScrollParent(el) {
+    let parent = el.parentElement;
+    while (parent) {
+      const style = getComputedStyle(parent);
+      const overflowY = style.overflowY;
+      if ((overflowY === "auto" || overflowY === "scroll") && parent.scrollHeight > parent.clientHeight) {
+        return parent;
+      }
+      parent = parent.parentElement;
+    }
+    return window;
+  }
+
+  // função robusta de scroll com offset
+  function scrollToCategoryId(id, offset = 15) {
+    const el = document.getElementById(id);
+    if (!el) return false;
+
+    const scrollable = findScrollParent(el);
+
+    if (scrollable === window) {
+      const elementTop = el.getBoundingClientRect().top + window.scrollY;
+      const targetY = Math.max(0, elementTop - offset);
+      window.scrollTo({ top: targetY, behavior: "smooth" });
+    } else {
+      const parentRect = scrollable.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+      // calcula posição relativa ao scrollable
+      const relativeTop = elRect.top - parentRect.top + scrollable.scrollTop;
+      const target = Math.max(0, relativeTop - offset);
+      scrollable.scrollTo({ top: target, behavior: "smooth" });
+    }
+
+    // atualiza hash sem recarregar a página
+    try {
+      history.replaceState(null, "", `#${id}`);
+    } catch (e) {
+      // fallback silencioso
+    }
+
+    // foco acessível sem scrollear de novo
+    try {
+      el.setAttribute("tabindex", "-1");
+      el.focus({ preventScroll: true });
+    } catch (e) {}
+
+    return true;
+  }
 
   // CRUD helpers
   const createCategory = async ({ name = "Nova categoria" } = {}) => {
@@ -571,7 +621,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
   if (!menu) return <div className="p-4">Você ainda não criou um menu.</div>;
 
   return (
-    <div className="p-4 sm:pb-0 pb-38">
+    <div className={`p-4 ${changedFields.length > 0 ? "pb-48 lg:pb-34" : "pb-12 lg:pb-0"}`}>
       <div className="mb-4">
         <div className="flex gap-2">
           <button
@@ -603,9 +653,30 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
         </div>
       )}
 
+      {categories.length > 0 && (
+        <div
+          className="flex sticky -top-1 border-y-2 overflow-x-auto whitespace-nowrap scrollbar-none"
+          style={{ backgroundColor: backgroundColor, borderColor: translucidToUse, color: foregroundToUse }}
+        >
+          {categories.map((cat) => (
+            <div key={cat.id}>
+              <button
+                className="cursor-pointer p-2 px-4"
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollToCategoryId(cat.id, 40);
+                }}
+              >
+                {cat.name}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="space-y-4">
         {categories.map((cat) => (
-          <div key={cat.id} className="rounded py-3">
+          <div key={cat.id} className="rounded py-3" id={cat.id}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <button
@@ -669,7 +740,7 @@ export default function MenuItems({ backgroundColor, detailsColor }) {
                           />
                         ) : null}
                         <div>
-                          <div className="text-xl" style={{ color: foregroundToUse }}>
+                          <div className="text-xl line-clamp-1" style={{ color: foregroundToUse }}>
                             {it.name}
                           </div>
 
