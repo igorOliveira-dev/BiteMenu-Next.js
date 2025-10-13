@@ -43,8 +43,8 @@ export function AlertProvider({ children }) {
 
   const getBackgroundColor = (a) => {
     if (a.backgroundColor) return a.backgroundColor;
-    if (a.type === "error") return "#ff000050";
-    if (a.type === "success") return "#00ff0050";
+    if (a.type === "error") return "#ff000010";
+    if (a.type === "success") return "#00ff0020";
     return "var(--translucid)";
   };
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { FaChevronLeft, FaMinus, FaPlus, FaShoppingCart } from "react-icons/fa";
+import { FaChevronLeft, FaEye, FaEyeSlash, FaMinus, FaPlus, FaShoppingCart } from "react-icons/fa";
 import Image from "next/image";
 import GenericModal from "@/components/GenericModal";
 import { useCartContext } from "@/contexts/CartContext";
@@ -362,6 +362,54 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     }
   };
 
+  const toggleItemVisibility = async (itemId, currentVisible) => {
+    const newVisible = !currentVisible;
+
+    if (currentVisible === null) {
+      newVisible = true; // se null, muda pra true
+    }
+
+    // Atualiza otimisticamente o estado local
+    setCategories((prev = []) =>
+      prev.map((c) => ({
+        ...c,
+        menu_items: (c.menu_items || []).map((it) => (it.id === itemId ? { ...it, visible: newVisible } : it)),
+      }))
+    );
+
+    try {
+      const { data, error } = await supabase
+        .from("menu_items")
+        .update({ visible: newVisible })
+        .eq("id", itemId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Garante sincronização com o retorno do Supabase
+      setCategories((prev = []) =>
+        prev.map((c) => ({
+          ...c,
+          menu_items: (c.menu_items || []).map((it) => (it.id === itemId ? { ...it, ...data } : it)),
+        }))
+      );
+
+      alert?.(newVisible ? "Item visível no menu" : "Item ocultado", "success");
+    } catch (err) {
+      console.error("toggleItemVisibility error:", err);
+      alert?.("Erro ao alterar visibilidade do item", "error");
+
+      // Reverte se deu erro
+      setCategories((prev = []) =>
+        prev.map((c) => ({
+          ...c,
+          menu_items: (c.menu_items || []).map((it) => (it.id === itemId ? { ...it, visible: currentVisible } : it)),
+        }))
+      );
+    }
+  };
+
   // ---------- helpers FLIP ----------
   const captureRects = () => {
     const map = {};
@@ -655,7 +703,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
       {categories.length > 0 && (
         <div
-          className="flex sticky -top-1 border-y-2 overflow-x-auto whitespace-nowrap scrollbar-none"
+          className="flex sticky -top-1 border-y-2 overflow-x-auto whitespace-nowrap scrollbar-none z-50"
           style={{ backgroundColor: backgroundColor, borderColor: translucidToUse, color: foregroundToUse }}
         >
           {categories.map((cat) => (
@@ -713,7 +761,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
             <div className="space-y-3">
               {(cat.menu_items || []).map((it) => (
-                <div key={it.id} className="flex items-stretch justify-between">
+                <div key={it.id} className={`flex items-stretch justify-between ${it.visible ? "" : "opacity-50"}`}>
                   <div className="flex items-stretch flex-1">
                     {it.image_url ? (
                       <img
@@ -756,9 +804,17 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                             ? `${Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`
                             : "-"}
                         </div>
-                        <div className="mr-2 px-6 py-2 rounded" style={{ backgroundColor: detailsColor }}>
-                          <FaShoppingCart style={{ color: getContrastTextColor(detailsColor) }} />
-                        </div>
+                        <button
+                          onClick={() => toggleItemVisibility(it.id, it.visible)}
+                          className="cursor-pointer mr-2 px-6 py-2 rounded"
+                          style={{ backgroundColor: detailsColor }}
+                        >
+                          {it.visible ? (
+                            <FaEyeSlash style={{ color: getContrastTextColor(detailsColor) }} />
+                          ) : (
+                            <FaEye style={{ color: getContrastTextColor(detailsColor) }} />
+                          )}
+                        </button>
                       </div>
                     </div>
                   </div>

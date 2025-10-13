@@ -382,7 +382,7 @@ export default function ClientMenu({ menu }) {
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {(cat.menu_items || []).map((it) => (
-                  <div key={it.id} className="flex items-stretch justify-between">
+                  <div key={it.id} className={`flex items-stretch justify-between ${!it.visible ? "hidden" : ""}`}>
                     {it.image_url ? (
                       <img
                         src={it.image_url}
