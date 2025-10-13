@@ -1,42 +1,101 @@
 export const COLOR_PALETTES = [
-  { bg: "#F8F9FA", title: "#007BFF", details: "#28A745" },
-  { bg: "#FFF8E1", title: "#FF6F00", details: "#D84315" },
-  { bg: "#E8F5E9", title: "#2E7D32", details: "#1B5E20" },
-  { bg: "#F3E5F5", title: "#6A1B9A", details: "#4A148C" },
-  { bg: "#E3F2FD", title: "#0D47A1", details: "#1976D2" },
-  { bg: "#FEF3C7", title: "#F59E0B", details: "#D97706" },
-  { bg: "#ECFDF5", title: "#059669", details: "#047857" },
-  { bg: "#FDF2F8", title: "#DB2777", details: "#9D174D" },
-  { bg: "#EFF6FF", title: "#1E3A8A", details: "#3B82F6" },
-  { bg: "#FFF1F2", title: "#B91C1C", details: "#991B1B" },
-  { bg: "#FCFCFD", title: "#111827", details: "#6B7280" },
-  { bg: "#F0FDF4", title: "#166534", details: "#15803D" },
-  { bg: "#FEFCE8", title: "#92400E", details: "#78350F" },
-  { bg: "#F3F4F6", title: "#374151", details: "#4B5563" },
-  { bg: "#FFFBEB", title: "#B45309", details: "#92400E" },
-  { bg: "#ECFEFF", title: "#0E7490", details: "#155E75" },
-  { bg: "#FFF7ED", title: "#C2410C", details: "#9A3412" },
-  { bg: "#F9FAFB", title: "#7F1D1D", details: "#991B1B" },
-  { bg: "#EFFAFD", title: "#0369A1", details: "#075985" },
-  { bg: "#FDF4FF", title: "#6B21A8", details: "#581C87" },
+  // 🍝 Italiano clássico — paixão e tradição
+  { bg: "#FFF5F0", title: "#C0392B", details: "#922B21" },
+  { bg: "#2C3E50", title: "#E74C3C", details: "#EC7063" },
+
+  // 🥗 Natural / saudável — leveza e vitalidade
+  { bg: "#F1FAEE", title: "#1D8348", details: "#145A32" },
+  { bg: "#0B3D20", title: "#76C893", details: "#52B788" },
+
+  // 🍔 Fast casual — energia e apetite
+  { bg: "#FFF4E5", title: "#F97316", details: "#C2410C" },
+  { bg: "#1A1A1A", title: "#F97316", details: "#FDBA74" },
+
+  // 🍣 Japonês / sushi — calma e elegância
+  { bg: "#F0F4F8", title: "#1E3A8A", details: "#3B82F6" },
+  { bg: "#0D1117", title: "#58A6FF", details: "#1F6FEB" },
+
+  // 🍷 Gourmet / contemporâneo
+  { bg: "#F5F3F7", title: "#6A1B9A", details: "#4A148C" },
+  { bg: "#1E1B24", title: "#9B59B6", details: "#BB8FCE" },
+
+  // ☕ Cafeteria / artesanal
+  { bg: "#FDF6ED", title: "#8D6E63", details: "#5D4037" },
+  { bg: "#2E1C12", title: "#D7CCC8", details: "#A1887F" },
+
+  // 🐟 Mar / frutos do mar
+  { bg: "#E0F7FA", title: "#006064", details: "#00838F" },
+  { bg: "#012A4A", title: "#00B4D8", details: "#48CAE4" },
+
+  // 🌮 Latino / street food
+  { bg: "#FFF8E1", title: "#F57C00", details: "#E65100" },
+  { bg: "#2B0000", title: "#FF8A00", details: "#FFD180" },
+
+  // 🍫 Sobremesas / doces
+  { bg: "#FFF0F5", title: "#E91E63", details: "#AD1457" },
+  { bg: "#3B0A2A", title: "#F06292", details: "#EC407A" },
+
+  // 🍷 Vinhos / adegas — sobriedade e profundidade
+  { bg: "#F8F5F7", title: "#7B1FA2", details: "#4A0072" },
+  { bg: "#2B1B28", title: "#BA68C8", details: "#CE93D8" },
+
+  // 🌈 Moderno / tech / delivery
+  { bg: "#F5F9FF", title: "#2563EB", details: "#1D4ED8" },
+  { bg: "#0F172A", title: "#3B82F6", details: "#60A5FA" },
+
+  // 🍕 Americana / retrô
+  { bg: "#FFF7EB", title: "#E63946", details: "#D62828" },
+  { bg: "#1A1A1A", title: "#E63946", details: "#FFB703" },
+
+  // 🧊 Minimal clean / neutro
+  { bg: "#FAFAFA", title: "#212121", details: "#757575" },
+  { bg: "#1E1E1E", title: "#E0E0E0", details: "#9E9E9E" },
+
+  // 🌿 Mediterrâneo / leve
+  { bg: "#F0FFF4", title: "#2F855A", details: "#276749" },
+  { bg: "#00332E", title: "#68D391", details: "#48BB78" },
+
+  // 🍛 Indiano / especiarias
+  { bg: "#FFF6E5", title: "#D97706", details: "#B45309" },
+  { bg: "#2A1500", title: "#F59E0B", details: "#FBBF24" },
+
+  // 🧀 Queijarias / rustic chic
+  { bg: "#FFFBEA", title: "#CA8A04", details: "#A16207" },
+  { bg: "#1B1300", title: "#FFD54F", details: "#FFB300" },
+
+  // 🌸 Romântico / patisserie
+  { bg: "#FFF1F5", title: "#DB2777", details: "#BE185D" },
+  { bg: "#2B0A1A", title: "#F472B6", details: "#EC4899" },
+
+  // 🌌 Dark premium / elegante
   { bg: "#121212", title: "#BB86FC", details: "#03DAC6" },
-  { bg: "#1E1E1E", title: "#FF6E40", details: "#FFAB40" },
-  { bg: "#2D2D2D", title: "#82B1FF", details: "#448AFF" },
-  { bg: "#242424", title: "#FF4081", details: "#F50057" },
-  { bg: "#1B1B2F", title: "#E94560", details: "#0F3460" },
-  { bg: "#0D0D0D", title: "#C62828", details: "#FF5252" },
-  { bg: "#181818", title: "#00E676", details: "#64DD17" },
-  { bg: "#20232A", title: "#61DAFB", details: "#21A1F1" },
-  { bg: "#282C34", title: "#61DAFB", details: "#98C379" },
-  { bg: "#1C1C1E", title: "#FF9500", details: "#FFCC00" },
-  { bg: "#0F0E13", title: "#FFD600", details: "#FFEA00" },
-  { bg: "#263238", title: "#80DEEA", details: "#26C6DA" },
-  { bg: "#1A237E", title: "#C5CAE9", details: "#7986CB" },
-  { bg: "#311B92", title: "#E1BEE7", details: "#BA68C8" },
-  { bg: "#1B262C", title: "#BBDEFB", details: "#90CAF9" },
-  { bg: "#232323", title: "#FFD740", details: "#FFC400" },
-  { bg: "#272727", title: "#FF4081", details: "#F50057" },
-  { bg: "#1C1C1C", title: "#00BFA5", details: "#1DE9B6" },
-  { bg: "#0E0E10", title: "#7C4DFF", details: "#651FFF" },
-  { bg: "#161616", title: "#FFEB3B", details: "#FDD835" },
+  { bg: "#0E0E10", title: "#FFAB40", details: "#FF6E40" },
+
+  // 🌇 Sunset vibes / restaurantes de praia
+  { bg: "#FFF8E7", title: "#FF8C42", details: "#E76F51" },
+  { bg: "#2C1810", title: "#F4A261", details: "#E9C46A" },
+
+  // 🪵 Churrasco / defumados
+  { bg: "#FDF6F0", title: "#8B4513", details: "#5A2E0F" },
+  { bg: "#1C0A00", title: "#D2691E", details: "#FFB347" },
+
+  // 🧭 Mediterrâneo noturno
+  { bg: "#E6F4F1", title: "#006D77", details: "#83C5BE" },
+  { bg: "#001219", title: "#00B4D8", details: "#90E0EF" },
+
+  // ⚡ Jovem / fast digital
+  { bg: "#F5F3FF", title: "#7C3AED", details: "#6D28D9" },
+  { bg: "#1E1B2E", title: "#A78BFA", details: "#C4B5FD" },
+
+  // 🌵 Mexicano / vibrante
+  { bg: "#FFF4E6", title: "#D97706", details: "#C2410C" },
+  { bg: "#2C0E00", title: "#FBBF24", details: "#F59E0B" },
+
+  // 🧊 Frio e elegante
+  { bg: "#ECFDF5", title: "#0E7490", details: "#155E75" },
+  { bg: "#0B132B", title: "#3A506B", details: "#5BC0BE" },
+
+  // 🪶 Sofisticado neutro
+  { bg: "#F3F4F6", title: "#374151", details: "#4B5563" },
+  { bg: "#111827", title: "#9CA3AF", details: "#6B7280" },
 ];
