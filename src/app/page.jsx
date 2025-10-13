@@ -67,23 +67,25 @@ export default function Home() {
       </section>
       <footer className="bg-translucid p-6 mt-6 border-t border-gray-300 dark:border-gray-700">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          {/* Logos */}
-          <div className="flex items-center gap-4">
+          {/* Logo */}
+          <Link href="https://www.bitemenu.com.br" className="w-[220px] flex justify-center">
             <Image src={logoMark} height={40} width={140} alt="Bite Menu" />
-          </div>
+          </Link>
 
           {/* Links */}
-          <div className="flex flex-col md:flex-row items-center gap-2 gap-x-4 text-sm">
+          <div className="flex flex-col md:flex-row justify-center items-center gap-2 gap-x-4 text-sm w-[220px]">
             <Link href="/politica-de-privacidade" className="hover:underline">
               Política de Privacidade
             </Link>
-            <Link href="support" className="hover:underline">
+            <Link href="/support" className="hover:underline">
               Suporte
             </Link>
           </div>
 
           {/* Direitos */}
-          <div className="text-xs text-gray-500">© {new Date().getFullYear()} Bite Menu. Todos os direitos reservados.</div>
+          <div className="text-xs text-center md:text-right w-[220px] color-gray">
+            © {new Date().getFullYear()} Bite Menu. <br /> Todos os direitos reservados.
+          </div>
         </div>
       </footer>
     </main>
