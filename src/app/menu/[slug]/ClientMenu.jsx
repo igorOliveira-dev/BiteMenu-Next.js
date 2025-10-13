@@ -359,7 +359,7 @@ export default function ClientMenu({ menu }) {
                   className="cursor-pointer p-4"
                   onClick={(e) => {
                     e.preventDefault();
-                    scrollToCategoryId(cat.id, 40);
+                    scrollToCategoryId(cat.id.slice(0, 5), 40);
                   }}
                 >
                   {cat.name}
@@ -371,7 +371,7 @@ export default function ClientMenu({ menu }) {
 
         <div className="space-y-4 px-4">
           {orderedCategories.map((cat) => (
-            <div key={cat.id} id={cat.id} className="rounded py-3">
+            <div key={cat.id} id={cat.id.slice(0, 5)} className="rounded py-3">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-3">
                   <strong style={{ color: foregroundToUse }}>{cat.name}</strong>

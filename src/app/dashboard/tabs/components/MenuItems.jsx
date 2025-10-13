@@ -664,7 +664,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                 className="cursor-pointer p-4"
                 onClick={(e) => {
                   e.preventDefault();
-                  scrollToCategoryId(cat.id, 40);
+                  scrollToCategoryId(cat.id.slice(0, 5), 40);
                 }}
               >
                 {cat.name}
@@ -676,7 +676,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
       <div className="space-y-4">
         {categories.map((cat) => (
-          <div key={cat.id} className="rounded py-3" id={cat.id}>
+          <div key={cat.id} className="rounded py-3" id={cat.id.slice(0, 5)}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <button
