@@ -24,8 +24,6 @@ export default function useMenu() {
       const fetchMenu = async () => {
         setLoading(true);
 
-        // select("*") já inclui payments; caso queira explicitar:
-        // const { data, error } = await supabase.from("menus").select("*, payments").eq("owner_id", user.id).single();
         const { data, error } = await supabase.from("menus").select("*").eq("owner_id", user.id).single();
 
         if (error && error.code !== "PGRST116") {
