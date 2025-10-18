@@ -385,6 +385,7 @@ ${customerInfo}`;
             name: it.name,
             qty: it.qty,
             price: it.price,
+            image_url: it.image_url || null,
             additionals: it.additionals || [],
             note: it.note || "",
           })),

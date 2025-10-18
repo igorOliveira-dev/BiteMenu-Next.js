@@ -491,7 +491,7 @@ export default function StatesManager({
 
     return createPortal(
       <div
-        className={`fixed bottom-22 right-2 lg:bottom-6 w-[340px] z-10
+        className={`fixed bottom-22 right-2 lg:bottom-6 w-[340px] z-100
         ${selectedTab === "menu" ? "lg:left-[50%] lg:transform lg:-translate-x-1/2" : ""}
         ${selectedTab === "configMenu" ? "right-4" : ""}
         ${selectedTab === "menu" || selectedTab === "configMenu" ? "" : "hidden"}

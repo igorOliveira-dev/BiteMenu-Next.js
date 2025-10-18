@@ -134,6 +134,7 @@ export function CartProvider({ children }) {
       const normalized = {
         id: item.id,
         name: item.name,
+        image_url: item.image_url || null,
         price: Number(item.price || 0),
         qty: Number(item.qty || 1),
         additionals: item.additionals || [],

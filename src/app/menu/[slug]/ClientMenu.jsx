@@ -177,6 +177,7 @@ export default function ClientMenu({ menu }) {
     cart.addItem(menu.id, {
       id: selectedItem.id,
       name: selectedItem.name,
+      image_url: selectedItem.image_url || null,
       price: Number(selectedItem.price || 0),
       qty: Number(quantity || 1),
       additionals: selected,

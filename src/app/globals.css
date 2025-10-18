@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+@theme {
+  --breakpoint-xs: 30rem;
+  --breakpoint-xxs: 340px;
+}
+
 :root {
   --background: #fafafa;
   --foreground: #171717;
@@ -117,6 +122,10 @@ h3 {
 
 .border-low-gray {
   border-color: var(--low-gray);
+}
+
+.border-translucid {
+  border-color: var(--translucid);
 }
 
 .bg-translucid {

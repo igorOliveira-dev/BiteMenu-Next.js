@@ -250,7 +250,7 @@ const Menu = (props) => {
           onClick={() => setSelectedTab("configMenu")}
           className={`flex lg:hidden cursor-pointer ${
             changedFields.length > 0 ? "bottom-56" : "bottom-20"
-          } right-2 p-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition items-center justify-center fixed z-10`}
+          } right-2 p-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition items-center justify-center fixed z-100`}
         >
           <FiSettings className="text-xl mr-2" />
           Configurar cardápio
