@@ -9,7 +9,7 @@ const page = () => {
   const callSupport = () => {
     const message = "Olá! Eu gostaria de falar com o suporte do Bite Menu!";
 
-    const url = `https://wa.me/5514991363976?text=${encodeURIComponent(message)}`;
+    const url = `https://wa.me/5514991085780?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
   };
 
