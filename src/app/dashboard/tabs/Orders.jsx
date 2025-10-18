@@ -288,15 +288,17 @@ const Orders = ({ setSelectedTab }) => {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold mb-1">Endereço</label>
-                  <input
-                    type="text"
-                    className="input w-full bg-translucid p-2 rounded"
-                    value={selectedOrder.address || ""}
-                    onChange={(e) => setSelectedOrder({ ...selectedOrder, address: e.target.value })}
-                  />
-                </div>
+                {selectedOrder.address && (
+                  <div>
+                    <label className="block text-sm font-semibold mb-1">Endereço</label>
+                    <input
+                      type="text"
+                      className="input w-full bg-translucid p-2 rounded"
+                      value={selectedOrder.address || ""}
+                      onChange={(e) => setSelectedOrder({ ...selectedOrder, address: e.target.value })}
+                    />
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 gap-2 xs:grid-cols-2">
                   <div>

@@ -389,14 +389,15 @@ ${customerInfo}`;
             additionals: it.additionals || [],
             note: it.note || "",
           })),
-          address: costumerAddress || null,
+          address: selectedService === "delivery" ? costumerAddress : null,
           is_paid: false,
           total,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
 
-        const { data, error } = await supabase.from("orders").insert([payload]);
+        cart.clear(menu.id);
+        const { data, error } = await supabase.from("orders").insert([payload]); // limpa o carrinho do menu atual
 
         if (error) {
           console.error("❌ Erro ao salvar pedido no Supabase:", error);
