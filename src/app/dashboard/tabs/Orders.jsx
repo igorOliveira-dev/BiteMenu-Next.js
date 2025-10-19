@@ -1,28 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import useMenu from "@/hooks/useMenu";
 import { useAlert } from "@/providers/AlertProvider";
 import { supabase } from "@/lib/supabaseClient";
 import Loading from "@/components/Loading";
-import { FaCheck, FaTimes, FaMoneyBill, FaTrash, FaChevronLeft } from "react-icons/fa";
+import { FaCheck, FaTrash, FaMoneyBill, FaChevronLeft } from "react-icons/fa";
 import GenericModal from "@/components/GenericModal";
 import { useConfirm } from "@/providers/ConfirmProvider";
+import OrdersFilter from "./components/OrdersFilter"; // import do filtro
 
 const Orders = ({ setSelectedTab }) => {
   const { menu, loading } = useMenu();
   const customAlert = useAlert();
+  const confirm = useConfirm();
+
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
+  const [filters, setFilters] = useState({});
   const [orderModalOpen, setOrderModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const confirm = useConfirm();
 
   useEffect(() => {
     if (!menu?.id) return;
     fetchOrders();
 
-    // Realtime update (opcional)
     const channel = supabase
       .channel("orders-changes")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload) => {
@@ -45,7 +47,7 @@ const Orders = ({ setSelectedTab }) => {
       console.error(error);
       customAlert("Erro ao carregar pedidos", "error");
     } else {
-      setOrders(data);
+      setOrders(data || []);
     }
     setLoadingOrders(false);
   };
@@ -58,12 +60,7 @@ const Orders = ({ setSelectedTab }) => {
 
   const finalizeOrder = async (id) => {
     const ok = await confirm("Quer mesmo finalizar esse pedido?");
-    if (!ok) {
-      console.log("[submit] usuário cancelou");
-      return;
-    }
-    console.log("finalizar", id);
-    // deverá enviar para vendas e excluir de orders, como ainda não tem vendas, exclui por enquanto
+    if (!ok) return;
     const { error } = await supabase.from("orders").delete().eq("id", id);
     if (error) return customAlert("Erro ao excluir pedido", "error");
     fetchOrders();
@@ -71,19 +68,15 @@ const Orders = ({ setSelectedTab }) => {
 
   const deleteOrder = async (id) => {
     const ok = await confirm("Quer mesmo excluir esse pedido?");
-    if (!ok) {
-      console.log("[submit] usuário cancelou");
-      return;
-    }
+    if (!ok) return;
     const { error } = await supabase.from("orders").delete().eq("id", id);
     if (error) return customAlert("Erro ao excluir pedido", "error");
     fetchOrders();
   };
 
   const openOrderModal = (order) => {
-    setOrderModalOpen(true);
     setSelectedOrder(order);
-    console.log(order);
+    setOrderModalOpen(true);
   };
 
   const computeTotal = (order) => {
@@ -96,27 +89,81 @@ const Orders = ({ setSelectedTab }) => {
     }, 0);
   };
 
+  // --- AQUI ESTÁ A FILTRAGEM LOCAL ---
+  const filteredOrders = useMemo(() => {
+    let list = [...orders];
+
+    // FILTRO isPaid
+    if (filters.isPaid === true) {
+      list = list.filter((o) => o.is_paid === true);
+    } else if (filters.isPaid === false) {
+      list = list.filter((o) => o.is_paid === false);
+    }
+
+    // FILTRO deliveryType
+    if (filters.deliveryType && filters.deliveryType !== "all") {
+      list = list.filter((o) => o.service === filters.deliveryType);
+    }
+
+    // FILTRO payment
+    if (filters.payment && filters.payment !== "all") {
+      list = list.filter((o) => o.payment_method === filters.payment);
+    }
+
+    // FILTRO de busca
+    if (filters.search && filters.search.trim() !== "") {
+      const term = filters.search.toLowerCase();
+      list = list.filter(
+        (o) =>
+          o.costumer_name?.toLowerCase().includes(term) ||
+          o.items_list?.some((it) => it.name.toLowerCase().includes(term)) ||
+          o.id?.toString().includes(term)
+      );
+    }
+
+    // FILTRO de datas
+    if (filters.dateFrom) {
+      const from = new Date(filters.dateFrom);
+      list = list.filter((o) => new Date(o.created_at) >= from);
+    }
+    if (filters.dateTo) {
+      const to = new Date(filters.dateTo);
+      list = list.filter((o) => new Date(o.created_at) <= to);
+    }
+
+    // ORDENAÇÃO sempre crescente
+    if (filters.sortBy) {
+      list.sort((a, b) => {
+        // ignoramos sortDir, sempre crescente
+        if (filters.sortBy === "total") return (a.total || 0) - (b.total || 0);
+        if (filters.sortBy === "customer_name") return (a.costumer_name || "").localeCompare(b.costumer_name || "");
+        if (filters.sortBy === "created_at") return new Date(a.created_at) - new Date(b.created_at);
+        return 0;
+      });
+    }
+
+    return list;
+  }, [orders, filters]);
+  // --- FIM DA FILTRAGEM LOCAL ---
+
   if (loading || loadingOrders) return <Loading />;
   if (!menu) return <p>Você ainda não criou seu cardápio.</p>;
 
   return (
     <div className="px-2 lg:grid">
       <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[768px] min-h-[calc(100dvh-110px)] rounded-lg overflow-y-auto">
-        <div className="p-4 flex justify-between items-center sticky top-0 z-10 mb-4">
-          <h2 className="text-2xl font-bold">Pedidos Recebidos</h2>
-        </div>
+        <h2 className="text-2xl font-bold mb-2">Pedidos Recebidos</h2>
+        <OrdersFilter onChange={setFilters} />
 
-        {orders.length === 0 ? (
-          <p className="text-center color-gray p-6">Nenhum pedido recebido ainda.</p>
+        {filteredOrders.length === 0 ? (
+          <p className="text-center color-gray p-6">Nenhum pedido encontrado com esses filtros.</p>
         ) : (
           <div className="space-y-4">
-            {orders.map((order) => (
+            {filteredOrders.map((order) => (
               <div key={order.id} className="p-4 rounded-lg shadow-sm bg-low-gray flex flex-col xs:flex-row justify-between">
                 <div>
                   <h3 className="font-bold text-lg line-clamp-1">{order.costumer_name || "Cliente"}</h3>
-
                   <span className="text-sm color-gray xs:hidden">{new Date(order.updated_at).toLocaleString("pt-BR")}</span>
-
                   <p className="text-sm color-gray">
                     <span className="line-clamp-1">
                       <strong>Método:</strong>{" "}
@@ -143,23 +190,19 @@ const Orders = ({ setSelectedTab }) => {
                         : "Não informado"}
                     </span>
                   </p>
-
                   {order.address && (
                     <p className="text-sm color-gray mt-1 line-clamp-1">
                       <strong>Endereço:</strong> {order.address}
                     </p>
                   )}
-
                   <ul className="mt-2 text-sm">
                     {order.items_list?.slice(0, 4).map((item, i) => (
                       <li key={i} className="line-clamp-1">
                         • {item.qty}x {item.name} — R$ {(item.price * item.qty).toFixed(2)}
                       </li>
                     ))}
-
                     {order.items_list?.length > 4 && <li className="text-gray-400">...</li>}
                   </ul>
-
                   <p className="mt-2 font-semibold text-lg">Total: R$ {Number(order.total || 0).toFixed(2)}</p>
                 </div>
 
@@ -167,7 +210,6 @@ const Orders = ({ setSelectedTab }) => {
                   <span className="text-sm color-gray hidden xs:block">
                     {new Date(order.updated_at).toLocaleString("pt-BR")}
                   </span>
-
                   <div className="grid grid-rows-2 w-full xs:flex xs:flex-col gap-2">
                     <div className="grid grid-cols-2 xs:flex xs:flex-col gap-2">
                       <button
@@ -182,21 +224,17 @@ const Orders = ({ setSelectedTab }) => {
                           order.is_paid ? "bg-green-600 text-white" : "bg-yellow-500 text-black hover:bg-yellow-600"
                         }`}
                       >
-                        <div className="hidden xs:block">
-                          <FaMoneyBill />
-                        </div>
+                        <FaMoneyBill />
                         {order.is_paid ? "Pago" : "Marcar como pago"}
                       </button>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      {order.status !== "finalizado" && (
-                        <button
-                          onClick={() => finalizeOrder(order.id)}
-                          className="w-full xs:w-auto cursor-pointer px-3 py-2 bg-blue-600 text-white rounded-lg text-sm flex items-center justify-center gap-2 hover:bg-blue-700"
-                        >
-                          <FaCheck /> Finalizar
-                        </button>
-                      )}
+                      <button
+                        onClick={() => finalizeOrder(order.id)}
+                        className="w-full xs:w-auto cursor-pointer px-3 py-2 bg-blue-600 text-white rounded-lg text-sm flex items-center justify-center gap-2 hover:bg-blue-700"
+                      >
+                        <FaCheck /> Finalizar
+                      </button>
                       <button
                         onClick={() => deleteOrder(order.id)}
                         className="w-full xs:w-auto cursor-pointer px-3 py-2 bg-red-600 text-white rounded-lg text-sm flex items-center justify-center gap-2 hover:bg-red-700"
@@ -216,23 +254,22 @@ const Orders = ({ setSelectedTab }) => {
       <aside className="hidden p-2 m-2 fixed right-0 rounded-lg bg-translucid w-[calc(30dvw-36px)] shadow-[0_0_10px_var(--shadow)] lg:flex flex-col h-[calc(100dvh-110px)] justify-between">
         <div className="p-4">
           <h3 className="font-bold mb-2">Resumo</h3>
-          <p>Total de pedidos: {orders.length}</p>
+          <p>Total de pedidos: {filteredOrders.length}</p>
           <p>
             Total pago: R${" "}
-            {orders
+            {filteredOrders
               .filter((o) => o.is_paid)
               .reduce((sum, o) => sum + (Number(o.total) || 0), 0)
               .toFixed(2)}
           </p>
           <p>
             Total pendente: R${" "}
-            {orders
+            {filteredOrders
               .filter((o) => !o.is_paid)
               .reduce((sum, o) => sum + (Number(o.total) || 0), 0)
               .toFixed(2)}
           </p>
         </div>
-
         <div className="p-4">
           <button
             onClick={() => fetchOrders()}
