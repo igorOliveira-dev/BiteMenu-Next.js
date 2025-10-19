@@ -412,11 +412,12 @@ const Orders = ({ setSelectedTab }) => {
                             <label className="text-sm color-gray">Preço unidade:</label>
                             <input
                               type="number"
-                              step="0.01"
+                              step="1"
                               min="0"
                               className="input max-w-21 flex-1 text-sm bg-translucid p-2 rounded"
                               value={item.price}
                               onChange={(e) => {
+                                const value = e.target.value;
                                 const updated = [...selectedOrder.items_list];
                                 updated[i] = { ...updated[i], price: value === "" ? null : Number(value) };
                                 setSelectedOrder({ ...selectedOrder, items_list: updated });
@@ -524,7 +525,7 @@ const Orders = ({ setSelectedTab }) => {
                         ],
                       })
                     }
-                    className="px-3 py-2 bg-dark-gray-80 text-white rounded"
+                    className="cursor-pointer px-2 py-1 mt-4 bg-blue-600 hover:bg-blue-700 transition text-white rounded"
                   >
                     + Adicionar item
                   </button>
@@ -540,7 +541,7 @@ const Orders = ({ setSelectedTab }) => {
                 <div className="flex gap-2">
                   <button
                     type="submit"
-                    className="flex-1 w-full bg-blue-600 text-white py-2 rounded-lg mt-3 hover:bg-blue-700 transition"
+                    className="cursor-pointer flex-1 w-full bg-blue-600 text-white py-2 rounded-lg mt-3 hover:bg-blue-700 transition"
                   >
                     Salvar alterações
                   </button>
