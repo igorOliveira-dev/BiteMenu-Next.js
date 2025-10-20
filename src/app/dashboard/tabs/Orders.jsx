@@ -273,7 +273,7 @@ const Orders = ({ setSelectedTab }) => {
         <div className="p-4">
           <button
             onClick={() => fetchOrders()}
-            className="cursor-pointer w-full bg-translucid border text-white py-2 rounded-lg opacity-75 hover:opacity-100 transition"
+            className="cursor-pointer w-full bg-translucid border py-2 rounded-lg opacity-75 hover:opacity-100 transition"
           >
             Atualizar pedidos
           </button>
