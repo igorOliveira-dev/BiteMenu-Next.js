@@ -158,16 +158,22 @@ export default function OrdersFilter({ onChange, initial = {} }) {
       {/* Chips de filtros ativos */}
       <div className="mt-3 flex gap-2 flex-wrap">
         {deliveryType !== "all" && (
-          <span className="px-2 py-1 rounded text-sm">Serviço: {serviceLabels[deliveryType] ?? deliveryType}</span>
+          <span className="px-2 py-1 rounded text-sm color-gray">
+            Serviço: {serviceLabels[deliveryType] ?? deliveryType}
+          </span>
         )}
         {payment !== "all" && (
-          <span className="px-2 py-1 rounded text-sm">Pagamento: {paymentLabels[payment] ?? payment}</span>
+          <span className="px-2 py-1 rounded text-sm color-gray">Pagamento: {paymentLabels[payment] ?? payment}</span>
         )}
         {isPaid !== "all" && (
-          <span className="px-2 py-1 rounded text-sm">{isPaid === "true" ? "Somente pagos" : "Somente não pagos"}</span>
+          <span className="px-2 py-1 rounded text-sm color-gray">
+            {isPaid === "true" ? "Somente pagos" : "Somente não pagos"}
+          </span>
         )}
-        {search && <span className="px-2 py-1 rounded text-sm">Busca: {search}</span>}
-        {sortBy && <span className="px-2 py-1 rounded text-sm">Ordenado por: {sortedByLabels[sortBy] ?? sortBy}</span>}
+        {search && <span className="px-2 py-1 rounded text-sm color-gray">Busca: {search}</span>}
+        {sortBy && (
+          <span className="px-2 py-1 rounded text-sm color-gray">Ordenado por: {sortedByLabels[sortBy] ?? sortBy}</span>
+        )}
       </div>
     </div>
   );
