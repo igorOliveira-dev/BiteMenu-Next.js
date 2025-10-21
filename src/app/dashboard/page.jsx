@@ -203,7 +203,7 @@ const Dashboard = ({
       {/* Modal central ao clicar no hamburger */}
       {isOpen && (
         <div
-          className="fixed lg:hidden top-0 left-0 right-0 bg-black/50 backdrop-blur-sm z-40 flex justify-center items-center transition-opacity duration-300"
+          className="fixed lg:hidden top-0 left-0 right-0 bg-black/50 backdrop-blur-sm z-150 flex justify-center items-center transition-opacity duration-300"
           style={{ height: "calc(100dvh - 72px)" }}
           onClick={() => setIsOpen(false)}
         >

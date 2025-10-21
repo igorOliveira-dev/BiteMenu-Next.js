@@ -358,7 +358,7 @@ const Menu = (props) => {
               </button>
             </div>
 
-            <hr className="border-[var(--gray)] m-2 mb-4 max-w-full" />
+            <hr className="border-2 border-translucid m-2 mb-4 max-w-full" />
             <div className="mt-2 max-w-full">
               <div className="flex items-center mb-2">
                 <p className="font-semibold">Cores do cardápio:</p>
@@ -390,7 +390,7 @@ const Menu = (props) => {
               </div>
             </div>
 
-            <hr className="border-[var(--gray)] mt-2 mb-4 max-w-full" />
+            <hr className="border-2 border-translucid mt-2 mb-4 max-w-full" />
             <button
               onClick={() => setSelectedTab("configMenu")}
               className="cursor-pointer w-full max-w-[320px] mt-2 p-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition flex items-center justify-center"
