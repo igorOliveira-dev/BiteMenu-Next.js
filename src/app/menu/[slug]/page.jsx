@@ -10,7 +10,7 @@ export async function generateMetadata({ params }) {
 
   const { data: menu } = await supabase
     .from("menus")
-    .select("title, description, banner_url, logo_url")
+    .select("title, description, banner_url, logo_url, orders")
     .eq("slug", slug)
     .single();
 
@@ -60,6 +60,7 @@ export default async function MenuPage({ params }) {
       hours,
       services,
       payments,
+      orders,
       categories (
         id,
         name,

@@ -173,6 +173,7 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
 
   // Ler dados no local storage
   useEffect(() => {
+    console.log(menu.orders);
     if (!open) return;
     if (typeof window === "undefined") return;
 
@@ -367,49 +368,50 @@ ${customerInfo}`;
     // Inserir pedido no Supabase (com created_at)
     (async () => {
       try {
-        // Calcula o total do pedido com base nos itens e adicionais
-        const total = (currentItems || []).reduce((acc, item) => {
-          const base = (Number(item.price) || 0) * (Number(item.qty) || 0);
-          const extrasPerItem = (item.additionals || []).reduce((s, a) => s + (Number(a.price) || 0), 0);
-          const extras = extrasPerItem * (Number(item.qty) || 0);
-          return acc + base + extras;
-        }, 0);
+        // Só salva no Supabase se o menu for "site_whatsapp"
+        if (menu.orders === "site_whatsapp") {
+          const total = (currentItems || []).reduce((acc, item) => {
+            const base = (Number(item.price) || 0) * (Number(item.qty) || 0);
+            const extrasPerItem = (item.additionals || []).reduce((s, a) => s + (Number(a.price) || 0), 0);
+            const extras = extrasPerItem * (Number(item.qty) || 0);
+            return acc + base + extras;
+          }, 0);
 
-        const payload = {
-          menu_id: menu?.id || null,
-          costumer_name: costumerName || null,
-          costumer_phone: costumerPhone || null,
-          payment_method: selectedPayment || null,
-          service: selectedService || null,
-          items_list: (currentItems || []).map((it) => ({
-            name: it.name,
-            qty: it.qty,
-            price: it.price,
-            image_url: it.image_url || null,
-            additionals: it.additionals || [],
-            note: it.note || "",
-          })),
-          address: selectedService === "delivery" ? costumerAddress : null,
-          is_paid: false,
-          total,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
+          const payload = {
+            menu_id: menu?.id || null,
+            costumer_name: costumerName || null,
+            costumer_phone: costumerPhone || null,
+            payment_method: selectedPayment || null,
+            service: selectedService || null,
+            items_list: (currentItems || []).map((it) => ({
+              name: it.name,
+              qty: it.qty,
+              price: it.price,
+              image_url: it.image_url || null,
+              additionals: it.additionals || [],
+              note: it.note || "",
+            })),
+            address: selectedService === "delivery" ? costumerAddress : null,
+            is_paid: false,
+            total,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
 
-        cart.clear(menu.id);
-        const { data, error } = await supabase.from("orders").insert([payload]); // limpa o carrinho do menu atual
+          const { data, error } = await supabase.from("orders").insert([payload]);
 
-        if (error) {
-          console.error("❌ Erro ao salvar pedido no Supabase:", error);
-          // notifica o usuário de forma leve, mas continua o fluxo do WhatsApp
-          customAlert("Erro ao salvar pedido no sistema. Tentamos avisar o estabelecimento via WhatsApp.", "error");
-        } else {
-          console.log("✅ Pedido salvo com sucesso no Supabase:", data);
+          if (error) {
+            console.error("❌ Erro ao salvar pedido no Supabase:", error);
+            customAlert("Erro ao salvar pedido no sistema. Tentamos avisar o estabelecimento via WhatsApp.", "error");
+          } else {
+            console.log("✅ Pedido salvo com sucesso no Supabase:", data);
+          }
         }
       } catch (err) {
         console.error("⚠ Erro inesperado ao salvar pedido:", err);
       } finally {
-        // abre o WhatsApp após a tentativa de salvar
+        // Abre o WhatsApp SEMPRE, independentemente do banco
+        cart.clear(menu.id);
         window.open(url, "_blank");
       }
     })();

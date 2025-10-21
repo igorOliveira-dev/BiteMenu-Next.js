@@ -437,26 +437,28 @@ export default function ClientMenu({ menu }) {
       </div>
 
       {/* Botão Carrinho */}
-      <div
-        id="cart-button-wrapper"
-        style={{ position: "fixed", right: "20px", bottom: "20px", zIndex: 40, transition: "bottom 0.2s ease-in-out" }}
-      >
-        <button
-          onClick={openCart}
-          className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg shadow-[0_0_20px_var(--shadow)] font-bold transition-transform duration-200 hover:opacity-90 hover:scale-110 ${
-            animateCart ? "scale-110" : "scale-100"
-          }`}
-          style={{
-            backgroundColor: menu.details_color,
-            color: getContrastTextColor(menu.details_color),
-          }}
-          aria-label="Abrir carrinho"
+      {menu.orders === "whatsapp" || menu.orders === "site_whatsapp" ? (
+        <div
+          id="cart-button-wrapper"
+          style={{ position: "fixed", right: "20px", bottom: "20px", zIndex: 40, transition: "bottom 0.2s ease-in-out" }}
         >
-          <span>Carrinho</span>
-          <FaShoppingCart />
-          <span>{typeof cart.totalItems === "function" ? cart.totalItems(menu?.id) : 0}</span>
-        </button>
-      </div>
+          <button
+            onClick={openCart}
+            className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg shadow-[0_0_20px_var(--shadow)] font-bold transition-transform duration-200 hover:opacity-90 hover:scale-110 ${
+              animateCart ? "scale-110" : "scale-100"
+            }`}
+            style={{
+              backgroundColor: menu.details_color,
+              color: getContrastTextColor(menu.details_color),
+            }}
+            aria-label="Abrir carrinho"
+          >
+            <span>Carrinho</span>
+            <FaShoppingCart />
+            <span>{typeof cart.totalItems === "function" ? cart.totalItems(menu?.id) : 0}</span>
+          </button>
+        </div>
+      ) : null}
 
       {/* Modal Horários */}
       {hoursModalOpen && (
@@ -498,8 +500,11 @@ export default function ClientMenu({ menu }) {
           maxWidth={"720px"}
         >
           <div className="flex flex-col gap-4 sm:min-w-[460px]">
-            <div className="flex flex-col sm:flex-row gap-4 mb-4">
-              <div className="flex flex-col gap-2 justify-between max-w-full sm:w-1/2">
+            <div className="flex flex-row gap-4 mb-2">
+              <div className="h-30 w-30 relative">
+                <Image src={selectedItem.image_url} fill alt={selectedItem.name} className="rounded-xl" />
+              </div>
+              <div className="flex flex-col gap-2 justify-between w-[calc(100%-120px)]">
                 <div>
                   <h2 className="text-xl font-bold w-full line-clamp-1" style={{ color: foregroundToUse }}>
                     {selectedItem.name}
@@ -512,8 +517,10 @@ export default function ClientMenu({ menu }) {
                   {Number(selectedItem.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                 </span>
               </div>
+            </div>
 
-              <div className="max-w-full sm:w-1/2 sm:mt-6">
+            {menu.orders != "none" ? (
+              <div className="max-w-full">
                 <textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
@@ -526,75 +533,91 @@ export default function ClientMenu({ menu }) {
                   placeholder="Comentário (opicional)"
                 />
               </div>
-            </div>
+            ) : null}
 
-            {/* adicionais: somente se existirem */}
-            {Array.isArray(selectedItem.additionals) && selectedItem.additionals.length > 0 && (
-              <div className="space-y-2">
-                <div className="font-semibold" style={{ color: foregroundToUse }}>
-                  Selecione adicionais:
-                </div>
-
-                <div className="flex flex-wrap gap-3 max-h-[200px] overflow-auto">
-                  {(selectedItem.additionals || []).map((a, idx) => {
-                    const isSelected = !!selectedAddons[String(idx)];
-                    const boxBg = isSelected ? "#16a34a44" : translucidToUse;
-
-                    return (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => toggleAddon(idx)}
-                        className="flex flex-col items-center justify-center rounded-lg cursor-pointer p-2 min-w-[120px] text-center"
-                        style={{
-                          backgroundColor: boxBg,
-                          color: foregroundToUse,
-                          border: isSelected ? `1px solid #16a34a88` : "1px solid transparent",
-                        }}
-                      >
-                        <div className="font-medium truncate">
-                          {a.name}{" "}
-                          <span className="text-sm" style={{ color: grayToUse }}>
-                            {Number(a.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+            {menu.orders === "none" && Array.isArray(selectedItem.additionals) && selectedItem.additionals.length > 0 ? (
+              <div>
+                <p className="font-bold">Adicionais disponíveis:</p>
+                {selectedItem.additionals.map((a, idx) => (
+                  <span key={idx}>
+                    {a.name}
+                    {idx < selectedItem.additionals.length - 1 && ", "}
+                  </span>
+                ))}
               </div>
-            )}
+            ) : null}
 
-            {/* seletor de quantidade do item */}
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                className="cursor-pointer p-2 rounded bg-red-500 hover:bg-red-600 font-bold transition"
-              >
-                <FaMinus />
-              </button>
-              <span className="text-xl font-semibold" style={{ color: foregroundToUse }}>
-                {quantity}
-              </span>
-              <button
-                onClick={() => setQuantity((q) => q + 1)}
-                className="cursor-pointer p-2 rounded bg-green-500 hover:bg-green-600 font-bold transition"
-              >
-                <FaPlus />
-              </button>
-              <span style={{ color: grayToUse }}>
-                ({totalPrice.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })})
-              </span>
-            </div>
+            {menu.orders != "none" ? (
+              <>
+                {/* adicionais: somente se existirem */}
+                {Array.isArray(selectedItem.additionals) && selectedItem.additionals.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="font-semibold" style={{ color: foregroundToUse }}>
+                      Selecione adicionais:
+                    </div>
 
-            <button
-              onClick={handleAddToCart}
-              className="cursor-pointer p-2 gap-2 font-bold flex items-center justify-center rounded hover:opacity-90 transition"
-              style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
-            >
-              <span>Adicionar {quantity} ao carrinho</span>
-              <FaShoppingCart />
-            </button>
+                    <div className="flex flex-wrap gap-3 max-h-[200px] overflow-auto">
+                      {(selectedItem.additionals || []).map((a, idx) => {
+                        const isSelected = !!selectedAddons[String(idx)];
+                        const boxBg = isSelected ? "#16a34a44" : translucidToUse;
+
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => toggleAddon(idx)}
+                            className="flex flex-col items-center justify-center rounded-lg cursor-pointer p-2 min-w-[120px] text-center"
+                            style={{
+                              backgroundColor: boxBg,
+                              color: foregroundToUse,
+                              border: isSelected ? `1px solid #16a34a88` : "1px solid transparent",
+                            }}
+                          >
+                            <div className="font-medium truncate">
+                              {a.name}{" "}
+                              <span className="text-sm" style={{ color: grayToUse }}>
+                                {Number(a.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* seletor de quantidade do item */}
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                    className="cursor-pointer p-2 rounded bg-red-500 hover:bg-red-600 font-bold transition"
+                  >
+                    <FaMinus />
+                  </button>
+                  <span className="text-xl font-semibold" style={{ color: foregroundToUse }}>
+                    {quantity}
+                  </span>
+                  <button
+                    onClick={() => setQuantity((q) => q + 1)}
+                    className="cursor-pointer p-2 rounded bg-green-500 hover:bg-green-600 font-bold transition"
+                  >
+                    <FaPlus />
+                  </button>
+                  <span style={{ color: grayToUse }}>
+                    ({totalPrice.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })})
+                  </span>
+                </div>
+
+                <button
+                  onClick={handleAddToCart}
+                  className="cursor-pointer p-2 gap-2 font-bold flex items-center justify-center rounded hover:opacity-90 transition"
+                  style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
+                >
+                  <span>Adicionar {quantity} ao carrinho</span>
+                  <FaShoppingCart />
+                </button>
+              </>
+            ) : null}
           </div>
         </GenericModal>
       )}
