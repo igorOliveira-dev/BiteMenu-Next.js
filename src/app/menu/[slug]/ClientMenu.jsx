@@ -330,28 +330,26 @@ export default function ClientMenu({ menu }) {
         )}
 
         {/* Conteúdo */}
-        <div className="flex items-center mt-2 px-4">
-          {menu.logo_url && (
-            <div className="relative w-full max-w-[80px] aspect-[1/1] rounded-lg mr-2 sm:mr-4">
-              <img
-                alt="Logo do estabelecimento"
-                src={menu.logo_url}
-                className="object-cover rounded-lg cursor-pointer w-full h-full"
-              />
-            </div>
-          )}
-          <h1 className="text-xl md:text-2xl font-bold" style={{ color: menu.title_color }}>
-            {menu.title}
-          </h1>
-        </div>
+        <div className="my-4">
+          <div className="flex items-center px-4">
+            {menu.logo_url && (
+              <div className="relative w-full max-w-[80px] aspect-[1/1] rounded-lg mr-2 sm:mr-4">
+                <img alt="Logo do estabelecimento" src={menu.logo_url} className="object-cover rounded-lg w-full h-full" />
+              </div>
+            )}
+            <h1 className="text-xl md:text-2xl font-bold" style={{ color: menu.title_color }}>
+              {menu.title}
+            </h1>
+          </div>
 
-        <p className="mt-1 px-4" style={{ color: getContrastTextColor(menu.background_color) }}>
-          {menu.description}
-        </p>
+          <p className="mt-1 px-4" style={{ color: getContrastTextColor(menu.background_color) }}>
+            {menu.description}
+          </p>
+        </div>
 
         {orderedCategories.length > 0 && (
           <div
-            className="flex mt-6 sticky -top-1 border-y-2 overflow-x-auto whitespace-nowrap scrollbar-none"
+            className="flex sticky -top-1 border-y-2 overflow-x-auto whitespace-nowrap scrollbar-none"
             style={{ backgroundColor: menu.background_color, borderColor: translucidToUse, color: foregroundToUse }}
           >
             {orderedCategories.map((cat) => (
