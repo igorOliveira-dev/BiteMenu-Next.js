@@ -142,6 +142,7 @@ const Orders = ({ setSelectedTab }) => {
       list = list.filter(
         (o) =>
           o.costumer_name?.toLowerCase().includes(term) ||
+          o.costumer_phone?.toLowerCase().includes(term) ||
           o.items_list?.some((it) => it.name.toLowerCase().includes(term)) ||
           o.id?.toString().includes(term)
       );
@@ -269,9 +270,12 @@ const Orders = ({ setSelectedTab }) => {
                             ? "Atendimento presencial"
                             : "Não informado"}
                         </span>
+                        <span className="text-sm color-gray">
+                          <strong>Telefone:</strong> {order.costumer_phone}
+                        </span>
                       </p>
                       {order.address && (
-                        <p className="text-sm color-gray mt-1 line-clamp-1">
+                        <p className="text-sm color-gray line-clamp-1">
                           <strong>Endereço:</strong> {order.address}
                         </p>
                       )}
