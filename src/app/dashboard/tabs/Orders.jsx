@@ -8,7 +8,7 @@ import Loading from "@/components/Loading";
 import { FaCheck, FaTrash, FaMoneyBill, FaChevronLeft, FaChevronDown } from "react-icons/fa";
 import GenericModal from "@/components/GenericModal";
 import { useConfirm } from "@/providers/ConfirmProvider";
-import OrdersFilter from "./components/OrdersFilter"; // import do filtro
+import OrdersFilter from "./components/OrdersFilter";
 
 const Orders = ({ setSelectedTab }) => {
   const { menu, loading } = useMenu();
@@ -87,8 +87,37 @@ const Orders = ({ setSelectedTab }) => {
   const finalizeOrder = async (id) => {
     const ok = await confirm("Quer mesmo finalizar esse pedido?");
     if (!ok) return;
-    const { error } = await supabase.from("orders").delete().eq("id", id);
-    if (error) return customAlert("Erro ao excluir pedido", "error");
+
+    const { data: order, error: fetchError } = await supabase.from("orders").select("*").eq("id", id).single();
+
+    if (fetchError || !order) {
+      return customAlert("Erro ao localizar pedido", "error");
+    }
+
+    const { error: insertError } = await supabase.from("sales").insert([
+      {
+        menu_id: order.menu_id,
+        costumer_name: order.costumer_name,
+        costumer_phone: order.costumer_phone,
+        payment_method: order.payment_method,
+        service: order.service,
+        items_list: order.items_list,
+        created_at: order.created_at,
+        updated_at: new Date().toISOString(),
+      },
+    ]);
+
+    if (insertError) {
+      console.error(insertError);
+      return customAlert("Erro ao registrar venda", "error");
+    }
+
+    const { error: deleteError } = await supabase.from("orders").delete().eq("id", id);
+    if (deleteError) {
+      return customAlert("Erro ao excluir pedido", "error");
+    }
+
+    customAlert("Pedido finalizado e registrado como venda!", "success");
     fetchOrders();
   };
 
@@ -179,16 +208,19 @@ const Orders = ({ setSelectedTab }) => {
   return (
     <div className="px-2 lg:grid">
       <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[768px] min-h-[calc(100dvh-110px)] rounded-lg overflow-y-auto">
-        <h2 className="text-2xl font-bold mb-2">Pedidos Recebidos</h2>
+        <h2 className="text-2xl font-bold mb-2 ml-2">Pedidos Recebidos</h2>
 
-        <button onClick={() => setShowConfig(!showConfig)} className="cursor-pointer flex items-center gap-2 color-gray z-2">
+        <button
+          onClick={() => setShowConfig(!showConfig)}
+          className="cursor-pointer flex items-center gap-2 color-gray z-2 ml-2"
+        >
           Configurar pedidos <FaChevronDown />
         </button>
 
         <div
           className={`${
-            showConfig ? "p-2 h-auto" : "p-0 h-0"
-          } w-full bg-translucid overflow-hidden flex flex-col gap-1 rounded-b-lg`}
+            showConfig ? "p-2 h-auto border-2" : "p-0 h-0"
+          } max-w-[calc(100%-6px)] ml-2 border-translucid overflow-hidden flex flex-col gap-1 rounded-b-lg`}
         >
           <p>Receber pedidos:</p>
 
