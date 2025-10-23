@@ -554,7 +554,7 @@ export default function StatesManager({
                 <FaChevronLeft onClick={() => setShowChanges(false)} />
                 <h3 className="font-semibold">Alterações não salvas</h3>
               </div>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm color-gray">
                 Estes campos foram modificados. Você pode revisar e decidir salvar ou reverter cada um.
               </p>
             </div>
