@@ -59,12 +59,10 @@ const Orders = ({ setSelectedTab }) => {
       .eq("menu_id", menu.id)
       .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error(error);
-      customAlert("Erro ao carregar pedidos", "error");
-    } else {
-      setOrders(data || []);
-    }
+    if (error) return customAlert("Erro ao carregar pedidos", "error");
+
+    const withTotal = (data || []).map((order) => ({ ...order, total: computeTotal(order) }));
+    setOrders(withTotal);
     setLoadingOrders(false);
   };
 
@@ -81,7 +79,7 @@ const Orders = ({ setSelectedTab }) => {
   const togglePaid = async (id, current) => {
     const { error } = await supabase.from("orders").update({ is_paid: !current }).eq("id", id);
     if (error) return customAlert("Erro ao atualizar pagamento", "error");
-    fetchOrders();
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, is_paid: !current } : o)));
   };
 
   const finalizeOrder = async (id) => {
@@ -138,8 +136,9 @@ const Orders = ({ setSelectedTab }) => {
     if (!order) return 0;
     const items = order.items_list || [];
     return items.reduce((acc, it) => {
-      const itemBase = (Number(it.price) || 0) * (Number(it.qty) || 0);
-      const adds = (it.additionals || []).reduce((sa, a) => sa + (Number(a.price) || 0), 0);
+      const qty = Number(it.qty) || 0;
+      const itemBase = (Number(it.price) || 0) * qty;
+      const adds = (it.additionals || []).reduce((sa, a) => sa + (Number(a.price) || 0), 0) * qty;
       return acc + itemBase + adds;
     }, 0);
   };
@@ -571,7 +570,7 @@ const Orders = ({ setSelectedTab }) => {
                             <label className="text-sm color-gray">Preço unidade:</label>
                             <input
                               type="number"
-                              step="1"
+                              step="0.01"
                               min="0"
                               className="input max-w-21 flex-1 text-sm bg-translucid p-2 rounded"
                               value={item.price}
@@ -637,7 +636,7 @@ const Orders = ({ setSelectedTab }) => {
                           />
                           <input
                             type="number"
-                            step="1"
+                            step="0.01"
                             min="0"
                             className="input w-12 xs:w-28 text-sm bg-translucid p-2 rounded"
                             value={add.price ?? ""}

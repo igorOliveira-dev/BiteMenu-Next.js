@@ -5,61 +5,87 @@ import useMenu from "@/hooks/useMenu";
 import { useAlert } from "@/providers/AlertProvider";
 import { supabase } from "@/lib/supabaseClient";
 import Loading from "@/components/Loading";
-import { FaTrash, FaChevronLeft, FaChevronDown, FaChevronRight } from "react-icons/fa";
+import { FaTrash, FaChevronLeft, FaChevronDown, FaChevronRight, FaChevronUp } from "react-icons/fa";
 import GenericModal from "@/components/GenericModal";
 import { useConfirm } from "@/providers/ConfirmProvider";
-import OrdersFilter from "./components/OrdersFilter";
 
 const Sales = ({ setSelectedTab }) => {
   const { menu, loading } = useMenu();
   const customAlert = useAlert();
   const confirm = useConfirm();
 
-  const [sales, setSales] = useState([]);
-  const [loadingSales, setLoadingSales] = useState(true);
+  const [monthData, setMonthData] = useState({}); // Dados por mês
+  const [loadingSales, setLoadingSales] = useState(false);
   const [filters, setFilters] = useState({});
   const [saleModalOpen, setSaleModalOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState(null);
-  const [expandedMonths, setExpandedMonths] = useState({}); // chave: "MMMM YYYY" => boolean
+  const [expandedMonths, setExpandedMonths] = useState({});
+  const [monthsList, setMonthsList] = useState([]);
+
+  useEffect(() => {
+    // Remove meses que ficaram vazios
+    setMonthsList((prev) => prev.filter((m) => monthData[m.key]?.length !== 0 || m.count > 0));
+  }, [monthData]);
 
   useEffect(() => {
     if (!menu?.id) return;
-    fetchSales();
-
     const channel = supabase
       .channel("sales-changes")
       .on("postgres_changes", { event: "*", schema: "public", table: "sales" }, (payload) => {
-        if (payload.new?.menu_id === menu.id) fetchSales();
+        if (payload.new?.menu_id === menu.id) {
+          // Atualiza apenas o mês da venda modificada
+          const d = new Date(payload.new.created_at);
+          const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
+          const key = d.toLocaleString("pt-BR", { month: "long", year: "numeric" });
+          const end = new Date(monthStart);
+          end.setMonth(end.getMonth() + 1);
+          fetchSalesByMonth(monthStart, end, key);
+        }
       })
       .subscribe();
 
     return () => supabase.removeChannel(channel);
   }, [menu?.id]);
 
-  const fetchSales = async () => {
+  const fetchSalesByMonth = async (monthStart, monthEnd, monthKey) => {
+    if (!menu?.id) return;
     setLoadingSales(true);
+
     const { data, error } = await supabase
       .from("sales")
       .select("*")
       .eq("menu_id", menu.id)
+      .gte("created_at", monthStart.toISOString())
+      .lt("created_at", monthEnd.toISOString())
       .order("created_at", { ascending: false });
 
     if (error) {
       console.error(error);
-      customAlert("Erro ao carregar vendas", "error");
+      customAlert("Erro ao carregar vendas do mês", "error");
     } else {
-      setSales(data || []);
+      setMonthData((prev) => ({ ...prev, [monthKey]: data }));
     }
+
     setLoadingSales(false);
   };
 
-  const deleteSale = async (id) => {
+  const deleteSale = async (id, monthKey) => {
     const ok = await confirm("Quer mesmo excluir essa venda?");
     if (!ok) return;
     const { error } = await supabase.from("sales").delete().eq("id", id);
     if (error) return customAlert("Erro ao excluir venda", "error");
     customAlert("Venda excluída.", "success");
-    fetchSales();
+
+    // Atualiza apenas o mês afetado
+    const currentMonth = Object.keys(monthData).find((key) => monthData[key].some((s) => s.id === id));
+    if (currentMonth) {
+      const firstSale = monthData[currentMonth][0];
+      const d = new Date(firstSale.created_at);
+      const start = new Date(d.getFullYear(), d.getMonth(), 1);
+      const end = new Date(start);
+      end.setMonth(end.getMonth() + 1);
+      fetchSalesByMonth(start, end, currentMonth);
+    }
   };
 
   const openSaleModal = (sale) => {
@@ -67,42 +93,104 @@ const Sales = ({ setSelectedTab }) => {
     setSaleModalOpen(true);
   };
 
-  const computeTotal = (order) => {
-    if (!order) return 0;
-    const items = order.items_list || [];
+  const computeTotal = (sale) => {
+    if (!sale) return 0;
+    const items = sale.items_list || [];
     return items.reduce((acc, it) => {
-      const itemBase = (Number(it.price) || 0) * (Number(it.qty) || 0);
-      const adds = (it.additionals || []).reduce((sa, a) => sa + (Number(a.price) || 0), 0);
+      const qty = Number(it.qty) || 0;
+      const itemBase = (Number(it.price) || 0) * qty;
+      const adds = (it.additionals || []).reduce((sa, a) => sa + (Number(a.price) || 0), 0) * qty;
       return acc + itemBase + adds;
     }, 0);
   };
 
-  // --- AGRUPAMENTO POR MÊS ---
-  const salesGroupedByMonth = useMemo(() => {
-    // mapa: key -> { key, monthStart, items: [] }
-    const map = {};
+  useEffect(() => {
+    if (!menu?.id) return;
 
-    sales.forEach((s) => {
-      const d = new Date(s.created_at || s.updated_at || Date.now());
-      const monthStart = new Date(d.getFullYear(), d.getMonth(), 1).getTime();
-      const key = d.toLocaleString("pt-BR", { month: "long", year: "numeric" }); // "outubro de 2025" or "outubro 2025" depending env
-      if (!map[key]) {
-        map[key] = { key, monthStart, items: [] };
+    const fetchMonths = async () => {
+      const { data, error } = await supabase
+        .from("sales")
+        .select("created_at, items_list")
+        .eq("menu_id", menu.id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error(error);
+        return customAlert("Erro ao carregar meses de vendas", "error");
       }
-      map[key].items.push(s);
+
+      const monthsMap = {};
+
+      data.forEach((sale) => {
+        const d = new Date(sale.created_at);
+        const key = d.toLocaleString("pt-BR", { month: "long", year: "numeric" });
+        const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
+
+        // calcula total da venda com base nos itens
+        const computeTotal = (s) => {
+          const items = s.items_list || [];
+          return items.reduce((acc, it) => {
+            const itemBase = (Number(it.price) || 0) * (Number(it.qty) || 0);
+            const adds = (it.additionals || []).reduce((sa, a) => sa + (Number(a.price) || 0), 0);
+            return acc + itemBase + adds;
+          }, 0);
+        };
+
+        if (!monthsMap[key]) monthsMap[key] = { key, monthStart: monthStart.getTime(), count: 0, total: 0 };
+
+        monthsMap[key].count++;
+        monthsMap[key].total += computeTotal(sale);
+      });
+
+      const monthsArray = Object.values(monthsMap);
+      setMonthsList(monthsArray);
+    };
+
+    fetchMonths();
+  }, [menu?.id]);
+
+  useEffect(() => {
+    setMonthsList((prev) => prev.filter((m) => monthData[m.key]?.length !== 0 || m.count > 0));
+  }, [monthData]);
+
+  const toggleMonth = async (key, monthStart) => {
+    setExpandedMonths((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      if (!prev[key] && !monthData[key]) {
+        const start = new Date(monthStart);
+        const end = new Date(start);
+        end.setMonth(start.getMonth() + 1);
+        fetchSalesByMonth(start, end, key);
+      }
+      return next;
     });
-
-    // transformar em array e ordenar por monthStart descendente (mais recente primeiro)
-    const arr = Object.values(map).sort((a, b) => b.monthStart - a.monthStart);
-    return arr;
-  }, [sales]);
-  // --- FIM AGRUPAMENTO ---
-
-  const toggleMonth = (key) => {
-    setExpandedMonths((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  if (loading || loadingSales) return <Loading />;
+  const getFilteredSales = (key) => {
+    const query = filters[key]?.query?.toLowerCase() || "";
+    let salesList = monthData[key] || [];
+
+    const filtered = salesList.filter(
+      (s) => s.costumer_name?.toLowerCase().includes(query) || s.costumer_phone?.toLowerCase().includes(query)
+    );
+
+    const order = filters[key]?.order;
+    if (order?.startsWith("date")) {
+      filtered.sort((a, b) =>
+        order === "date" ? new Date(a.created_at) - new Date(b.created_at) : new Date(b.created_at) - new Date(a.created_at)
+      );
+    } else if (order?.startsWith("value")) {
+      filtered.sort((a, b) => {
+        const totalA = Number(a.total ?? computeTotal(a));
+        const totalB = Number(b.total ?? computeTotal(b));
+        return order === "value" ? totalA - totalB : totalB - totalA;
+      });
+    }
+
+    return filtered;
+  };
+
+  if (loading) return <Loading />;
   if (!menu) return <p>Você ainda não criou seu cardápio.</p>;
 
   return (
@@ -110,120 +198,175 @@ const Sales = ({ setSelectedTab }) => {
       <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[768px] min-h-[calc(100dvh-110px)] rounded-lg overflow-y-auto">
         <h2 className="text-2xl font-bold mb-2 ml-2">Histórico de Vendas</h2>
 
-        <div>
-          {salesGroupedByMonth.length === 0 ? (
-            <p className="text-center color-gray p-6">Nenhuma venda encontrada com esses filtros.</p>
-          ) : (
-            <div className="space-y-6">
-              {salesGroupedByMonth.map((group) => {
-                const monthTotal = group.items.reduce((sum, s) => sum + (Number(s.total) || computeTotal(s)), 0);
-                const monthCount = group.items.length;
-                const isOpen = expandedMonths[group.key] ?? true;
-                return (
-                  <section key={group.key} className="border border-translucid rounded-lg overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() => toggleMonth(group.key)}
-                      className="w-full flex justify-between items-center p-3 bg-low-gray hover:opacity-95"
-                    >
-                      <div>
-                        <h3 className="font-semibold text-lg capitalize">{group.key}</h3>
-                        <p className="text-sm color-gray text-start flex gap-2 items-center">{monthCount} venda(s)</p>
-                      </div>
-                      <div className="text-right flex items-center gap-4">
-                        <p className="font-semibold">R$ {monthTotal.toFixed(2)}</p>
-                        {isOpen ? <FaChevronDown /> : <FaChevronRight />}
-                      </div>
-                    </button>
+        <div className="space-y-6">
+          {monthsList.map((group) => {
+            const key = group.key;
+            const isOpen = expandedMonths[key] ?? false;
+            const monthSales = monthData[key] || [];
+            const monthTotal = monthSales.reduce((sum, s) => sum + (Number(s.total) || computeTotal(s)), 0);
 
-                    {isOpen && (
-                      <div className="p-4 space-y-4">
-                        {group.items.map((sale) => (
-                          <div
-                            key={sale.id}
-                            className="p-4 rounded-lg shadow-sm bg-low-gray flex flex-col xs:flex-row justify-between"
+            return (
+              <section key={key} className="border border-translucid rounded-lg overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => toggleMonth(key, group.monthStart)}
+                  className="w-full flex justify-between items-center p-3 bg-low-gray hover:opacity-95"
+                >
+                  <div>
+                    <h3 className="font-semibold text-lg capitalize">{key}</h3>
+                    <p className="text-sm color-gray text-start flex gap-2 items-center">
+                      {group.count ?? monthSales.length} venda(s)
+                    </p>
+                  </div>
+                  <div className="text-right flex items-center gap-4">
+                    <p className="font-semibold">R$ {(group.total ?? monthTotal).toFixed(2)}</p>
+                    {isOpen ? <FaChevronDown /> : <FaChevronRight />}
+                  </div>
+                </button>
+
+                {isOpen && (
+                  <div className="p-4 space-y-4">
+                    {/* Barra de pesquisa */}
+                    <input
+                      type="text"
+                      placeholder="Pesquisar por nome ou telefone..."
+                      className="input w-full bg-translucid p-2 rounded mb-3"
+                      value={filters[key]?.query || ""}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          [key]: { ...prev[key], query: e.target.value },
+                        }))
+                      }
+                    />
+
+                    {/* Ordenação */}
+                    <div className="flex gap-2 mb-2">
+                      {[
+                        { key: "date", label: "Data" },
+                        { key: "value", label: "Valor" },
+                      ].map(({ key: type, label }) => {
+                        const current = filters[key]?.order || "";
+                        const isActive = current.startsWith(type);
+                        const isDesc = current.endsWith("-desc");
+
+                        return (
+                          <button
+                            key={type}
+                            onClick={() =>
+                              setFilters((prev) => ({
+                                ...prev,
+                                [key]: {
+                                  ...prev[key],
+                                  order: current === type ? `${type}-desc` : current === `${type}-desc` ? type : type,
+                                },
+                              }))
+                            }
+                            className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded transition-all border
+                            ${
+                              isActive
+                                ? "bg-[#6060ff80] text-white border-[#6060ff] shadow-md"
+                                : "bg-translucid hover:opacity-90"
+                            }`}
                           >
-                            <div>
-                              <h3 className="font-bold text-lg line-clamp-1">{sale.costumer_name || "Cliente"}</h3>
-                              <span className="text-sm color-gray xs:hidden">
-                                {new Date(sale.created_at).toLocaleString("pt-BR")}
+                            <span>Ordenar por {label}</span>
+                            {isActive &&
+                              (isDesc ? <FaChevronDown className="text-xs" /> : <FaChevronUp className="text-xs" />)}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {loadingSales && <Loading />}
+
+                    {getFilteredSales(key).length === 0 && !loadingSales ? (
+                      <p className="text-center color-gray">Nenhuma venda neste mês.</p>
+                    ) : (
+                      getFilteredSales(key).map((sale) => (
+                        <div
+                          key={sale.id}
+                          className="p-4 rounded-lg shadow-sm bg-low-gray flex flex-col xs:flex-row justify-between"
+                        >
+                          <div>
+                            <h3 className="font-bold text-lg line-clamp-1">{sale.costumer_name || "Cliente"}</h3>
+                            <span className="text-sm color-gray xs:hidden">
+                              {new Date(sale.created_at).toLocaleString("pt-BR")}
+                            </span>
+                            <p className="text-sm color-gray">
+                              <span className="line-clamp-1">
+                                <strong>Método:</strong>{" "}
+                                {sale.payment_method === "pix"
+                                  ? "Pix"
+                                  : sale.payment_method === "debit"
+                                  ? "Débito"
+                                  : sale.payment_method === "credit"
+                                  ? "Crédito"
+                                  : sale.payment_method === "cash"
+                                  ? "Dinheiro"
+                                  : "Não informado"}
                               </span>
-                              <p className="text-sm color-gray">
-                                <span className="line-clamp-1">
-                                  <strong>Método:</strong>{" "}
-                                  {sale.payment_method === "pix"
-                                    ? "Pix"
-                                    : sale.payment_method === "debit"
-                                    ? "Débito"
-                                    : sale.payment_method === "credit"
-                                    ? "Crédito"
-                                    : sale.payment_method === "cash"
-                                    ? "Dinheiro"
-                                    : "Não informado"}
-                                </span>
-                                <span className="line-clamp-1">
-                                  <strong>Serviço:</strong>{" "}
-                                  {sale.service === "delivery"
-                                    ? "Entrega"
-                                    : sale.service === "pickup"
-                                    ? "Retirada"
-                                    : sale.service === "dinein"
-                                    ? "No local"
-                                    : sale.service === "faceToFace"
-                                    ? "Atendimento presencial"
-                                    : "Não informado"}
-                                </span>
-                                <span className="text-sm color-gray">
-                                  <strong>Telefone:</strong> {sale.costumer_phone}
-                                </span>
-                              </p>
-
-                              {sale.items_list && (
-                                <ul className="mt-2 text-sm">
-                                  {sale.items_list?.slice(0, 4).map((item, i) => (
-                                    <li key={i} className="line-clamp-1">
-                                      • {item.qty}x {item.name} — R$ {(item.price * item.qty).toFixed(2)}
-                                    </li>
-                                  ))}
-                                  {sale.items_list?.length > 4 && <li className="text-gray-400">...</li>}
-                                </ul>
-                              )}
-
-                              <p className="mt-2 font-semibold text-lg">
-                                Total: R$ {Number(sale.total || computeTotal(sale)).toFixed(2)}
-                              </p>
-                            </div>
-
-                            <div className="mt-2 flex flex-col justify-between items-start xs:items-end">
-                              <span className="text-sm color-gray hidden xs:block">
-                                {new Date(sale.updated_at).toLocaleString("pt-BR")}
+                              <span className="line-clamp-1">
+                                <strong>Serviço:</strong>{" "}
+                                {sale.service === "delivery"
+                                  ? "Entrega"
+                                  : sale.service === "pickup"
+                                  ? "Retirada"
+                                  : sale.service === "dinein"
+                                  ? "No local"
+                                  : sale.service === "faceToFace"
+                                  ? "Atendimento presencial"
+                                  : "Não informado"}
                               </span>
-                              <div className="grid grid-rows-2 w-full xs:flex xs:flex-col gap-2">
-                                <div className="grid grid-cols-2 xs:flex xs:flex-col gap-2">
-                                  <button
-                                    onClick={() => openSaleModal(sale)}
-                                    className="w-full cursor-pointer px-3 py-2 rounded-lg flex items-center justify-center gap-2 text-sm font-medium bg-translucid border hover:opacity-100 opacity-75 transition"
-                                  >
-                                    Detalhes
-                                  </button>
-                                  <button
-                                    onClick={() => deleteSale(sale.id)}
-                                    className="w-full cursor-pointer px-3 py-2 rounded-lg flex items-center justify-center gap-2 text-xs xxs:text-sm font-medium bg-red-600 text-white hover:bg-red-700"
-                                  >
-                                    <FaTrash /> Excluir
-                                  </button>
-                                </div>
+                              <span className="text-sm color-gray">
+                                <strong>Telefone:</strong> {sale.costumer_phone}
+                              </span>
+                            </p>
+
+                            {sale.items_list && (
+                              <ul className="mt-2 text-sm">
+                                {sale.items_list?.slice(0, 4).map((item, i) => (
+                                  <li key={i} className="line-clamp-1">
+                                    • {item.qty}x {item.name} — R$ {(item.price * item.qty).toFixed(2)}
+                                  </li>
+                                ))}
+                                {sale.items_list?.length > 4 && <li className="text-gray-400">...</li>}
+                              </ul>
+                            )}
+
+                            <p className="mt-2 font-semibold text-lg">
+                              Total: R$ {Number(sale.total || computeTotal(sale)).toFixed(2)}
+                            </p>
+                          </div>
+
+                          <div className="mt-2 flex flex-col justify-between items-start xs:items-end">
+                            <span className="text-sm color-gray hidden xs:block">
+                              {new Date(sale.created_at).toLocaleString("pt-BR")}
+                            </span>
+                            <div className="grid grid-rows-2 w-full xs:flex xs:flex-col gap-2">
+                              <div className="grid grid-cols-2 xs:flex xs:flex-col gap-2">
+                                <button
+                                  onClick={() => openSaleModal(sale)}
+                                  className="w-full cursor-pointer px-3 py-2 rounded-lg flex items-center justify-center gap-2 text-sm font-medium bg-translucid border hover:opacity-100 opacity-75 transition"
+                                >
+                                  Detalhes
+                                </button>
+                                <button
+                                  onClick={() => deleteSale(sale.id, key)}
+                                  className="w-full cursor-pointer px-3 py-2 rounded-lg flex items-center justify-center gap-2 text-xs xxs:text-sm font-medium bg-red-600 text-white hover:bg-red-700"
+                                >
+                                  <FaTrash /> Excluir
+                                </button>
                               </div>
                             </div>
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      ))
                     )}
-                  </section>
-                );
-              })}
-            </div>
-          )}
+                  </div>
+                )}
+              </section>
+            );
+          })}
         </div>
       </div>
 
@@ -243,11 +386,22 @@ const Sales = ({ setSelectedTab }) => {
                 e.preventDefault();
                 const total = computeTotal(selectedSale);
                 const payload = { ...selectedSale, total, updated_at: new Date().toISOString() };
+
                 const { error } = await supabase.from("sales").update(payload).eq("id", selectedSale.id);
                 if (error) return customAlert("Erro ao atualizar venda", "error");
+
+                // Atualiza localmente o item no estado monthData
+                setMonthData((prev) => {
+                  const updated = { ...prev };
+                  const monthKey = Object.keys(prev).find((key) => prev[key].some((s) => s.id === selectedSale.id));
+                  if (monthKey) {
+                    updated[monthKey] = prev[monthKey].map((s) => (s.id === selectedSale.id ? { ...s, ...payload } : s));
+                  }
+                  return updated;
+                });
+
                 customAlert("Venda atualizada com sucesso!", "success");
                 setSaleModalOpen(false);
-                fetchSales();
               }}
             >
               {/* ... o resto do formulário permanece exatamente como antes ... */}
@@ -386,7 +540,7 @@ const Sales = ({ setSelectedTab }) => {
                             <label className="text-sm color-gray">Preço unidade:</label>
                             <input
                               type="number"
-                              step="1"
+                              step="0.01"
                               min="0"
                               className="input max-w-21 flex-1 text-sm bg-translucid p-2 rounded"
                               value={item.price}
@@ -452,7 +606,7 @@ const Sales = ({ setSelectedTab }) => {
                           />
                           <input
                             type="number"
-                            step="1"
+                            step="0.01"
                             min="0"
                             className="input w-12 xs:w-28 text-sm bg-translucid p-2 rounded"
                             value={add.price ?? ""}
