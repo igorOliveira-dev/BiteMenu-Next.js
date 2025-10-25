@@ -108,7 +108,7 @@ const Account = ({ setSelectedTab }) => {
   };
 
   const buyPlan = () => {
-    customAlert("Entre em contato com o suporte solicitando o plano premium!");
+    customAlert("Entre em contato com o suporte solicitando o plano Plus!");
   };
 
   if (loading) {

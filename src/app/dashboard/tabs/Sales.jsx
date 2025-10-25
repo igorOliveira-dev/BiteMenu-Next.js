@@ -210,7 +210,7 @@ const Sales = ({ setSelectedTab }) => {
   return (
     <div className="px-2 lg:grid">
       <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[768px] min-h-[calc(100dvh-110px)] rounded-lg overflow-y-auto">
-        <h2 className="text-2xl font-bold mb-2 ml-2">Vendas</h2>
+        <h2 className="text-2xl font-bold mb-2">Vendas</h2>
 
         {/* <h3 className="mb-2">Dashboard de vendas</h3>
         <SalesDashboard /> */}
