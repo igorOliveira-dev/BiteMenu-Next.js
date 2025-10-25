@@ -131,8 +131,9 @@ const Sales = ({ setSelectedTab }) => {
         const computeTotal = (s) => {
           const items = s.items_list || [];
           return items.reduce((acc, it) => {
-            const itemBase = (Number(it.price) || 0) * (Number(it.qty) || 0);
-            const adds = (it.additionals || []).reduce((sa, a) => sa + (Number(a.price) || 0), 0);
+            const qty = Number(it.qty) || 0;
+            const itemBase = (Number(it.price) || 0) * qty;
+            const adds = (it.additionals || []).reduce((sa, a) => sa + (Number(a.price) || 0), 0) * qty;
             return acc + itemBase + adds;
           }, 0);
         };
@@ -228,7 +229,7 @@ const Sales = ({ setSelectedTab }) => {
                 <button
                   type="button"
                   onClick={() => toggleMonth(key, group.monthStart)}
-                  className="w-full flex justify-between items-center p-3 bg-translucid hover:opacity-95"
+                  className="cursor-pointer w-full flex justify-between items-center p-3 bg-translucid hover:opacity-95"
                 >
                   <div>
                     <h3 className="xs:font-semibold text-lg capitalize">{key}</h3>
@@ -690,7 +691,6 @@ const Sales = ({ setSelectedTab }) => {
                   <button
                     type="button"
                     onClick={() => {
-                      fetchSales();
                       setSaleModalOpen(false);
                     }}
                     className="w-32 py-2 rounded-lg mt-3 border"
