@@ -170,9 +170,22 @@ const Sales = ({ setSelectedTab }) => {
     const query = filters[key]?.query?.toLowerCase() || "";
     let salesList = monthData[key] || [];
 
-    const filtered = salesList.filter(
-      (s) => s.costumer_name?.toLowerCase().includes(query) || s.costumer_phone?.toLowerCase().includes(query)
-    );
+    const filtered = salesList.filter((s) => {
+      const queryLower = query.toLowerCase();
+
+      // Pesquisa por cliente
+      if (s.costumer_name?.toLowerCase().includes(queryLower)) return true;
+      if (s.costumer_phone?.toLowerCase().includes(queryLower)) return true;
+
+      // Pesquisa pelos itens da venda
+      if (s.items_list?.some((item) => item.name?.toLowerCase().includes(queryLower))) return true;
+
+      // Pesquisa pelos adicionais de cada item
+      if (s.items_list?.some((item) => item.additionals?.some((add) => add.name?.toLowerCase().includes(queryLower))))
+        return true;
+
+      return false;
+    });
 
     const order = filters[key]?.order;
     if (order?.startsWith("date")) {
@@ -210,7 +223,7 @@ const Sales = ({ setSelectedTab }) => {
                 <button
                   type="button"
                   onClick={() => toggleMonth(key, group.monthStart)}
-                  className="w-full flex justify-between items-center p-3 bg-low-gray hover:opacity-95"
+                  className="w-full flex justify-between items-center p-3 bg-translucid hover:opacity-95"
                 >
                   <div>
                     <h3 className="font-semibold text-lg capitalize">{key}</h3>
@@ -229,7 +242,7 @@ const Sales = ({ setSelectedTab }) => {
                     {/* Barra de pesquisa */}
                     <input
                       type="text"
-                      placeholder="Pesquisar por nome ou telefone..."
+                      placeholder="Pesquisar por nome, telefone, itens..."
                       className="input w-full bg-translucid p-2 rounded mb-3"
                       value={filters[key]?.query || ""}
                       onChange={(e) =>
@@ -262,12 +275,8 @@ const Sales = ({ setSelectedTab }) => {
                                 },
                               }))
                             }
-                            className={`cursor-pointer flex items-center gap-2 text-sm px-3 py-1.5 rounded transition-all border
-                            ${
-                              isActive
-                                ? "bg-[#6060ff80] text-white border-[#6060ff] shadow-md"
-                                : "bg-translucid hover:opacity-90"
-                            }`}
+                            className={`cursor-pointer flex items-center gap-2 text-sm px-3 py-1.5 rounded transition-all border border-2 border-translucid
+                            ${isActive ? "bg-[#6060ff80] border-[#6060ff] shadow-md" : "bg-translucid hover:opacity-90"}`}
                           >
                             <span>Ordenar por {label}</span>
                             {isActive &&
@@ -285,7 +294,7 @@ const Sales = ({ setSelectedTab }) => {
                       getFilteredSales(key).map((sale) => (
                         <div
                           key={sale.id}
-                          className="p-4 rounded-lg shadow-sm bg-low-gray flex flex-col xs:flex-row justify-between"
+                          className="p-4 rounded-lg shadow-sm bg-translucid flex flex-col xs:flex-row justify-between"
                         >
                           <div>
                             <h3 className="font-bold text-lg line-clamp-1">{sale.costumer_name || "Cliente"}</h3>

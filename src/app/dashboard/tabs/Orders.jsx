@@ -269,7 +269,7 @@ const Orders = ({ setSelectedTab }) => {
                 {filteredOrders.map((order) => (
                   <div
                     key={order.id}
-                    className="p-4 rounded-lg shadow-sm bg-low-gray flex flex-col xs:flex-row justify-between"
+                    className="p-4 rounded-lg shadow-sm bg-translucid flex flex-col xs:flex-row justify-between"
                   >
                     <div>
                       <h3 className="font-bold text-lg line-clamp-1">{order.costumer_name || "Cliente"}</h3>
