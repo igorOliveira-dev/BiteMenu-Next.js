@@ -217,7 +217,7 @@ const Dashboard = ({
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4 mb-4">
-                <FaChevronLeft onClick={() => setIsOpen(false)} />
+                <FaChevronLeft className="cursor-pointer" onClick={() => setIsOpen(false)} />
                 <h3 className="font-bold">Compartilhe seu cardápio!</h3>
               </div>
             </div>

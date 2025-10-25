@@ -213,8 +213,8 @@ const Sales = ({ setSelectedTab }) => {
       <div className="md:m-auto lg:m-2 lg:w-[calc(80dvw-256px)] max-w-[768px] min-h-[calc(100dvh-110px)] rounded-lg overflow-y-auto">
         <h2 className="font-bold mb-2">Vendas</h2>
 
-        {/* <h3 className="mb-2">Dashboard de vendas</h3>
-        <SalesSummary setSelectedTab={setSelectedTab} /> */}
+        <h3 className="mb-2">Dashboard de vendas</h3>
+        <SalesSummary setSelectedTab={setSelectedTab} />
 
         <h3 className="mb-2">Histórico de vendas</h3>
         <div className="space-y-2">
@@ -361,7 +361,7 @@ const Sales = ({ setSelectedTab }) => {
                               <div className="grid grid-cols-2 xs:flex xs:flex-col gap-2">
                                 <button
                                   onClick={() => openSaleModal(sale)}
-                                  className="w-full cursor-pointer px-3 py-2 rounded-lg flex items-center justify-center gap-2 text-sm font-medium bg-translucid border hover:opacity-100 opacity-75 transition"
+                                  className="w-full cursor-pointer px-3 py-2 rounded-lg flex items-center justify-center gap-2 text-sm font-medium bg-translucid border-2 border-translucid hover:opacity-80 opacity-100 transition"
                                 >
                                   Detalhes
                                 </button>
@@ -390,7 +390,7 @@ const Sales = ({ setSelectedTab }) => {
           <div className="max-h-[90vh] sm:max-h-[80vh] w-[min(900px,90vw)] overflow-y-auto scrollbar-none space-y-4">
             <div className="flex items-center gap-4 mb-2 sticky top-0 bg-low-gray pb-2">
               <div onClick={() => setSaleModalOpen(false)}>
-                <FaChevronLeft />
+                <FaChevronLeft className="cursor-pointer" />
               </div>
               <h2 className="text-xl font-bold">Detalhes da venda</h2>
             </div>

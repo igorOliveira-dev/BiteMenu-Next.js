@@ -537,7 +537,7 @@ ${customerInfo}`;
             style={{ backgroundColor: bgColor }}
           >
             <div className="flex items-center gap-4 mb-4">
-              <FaChevronLeft onClick={() => resetPurchase()} />
+              <FaChevronLeft className="cursor-pointer" onClick={() => resetPurchase()} />
               <div>
                 <h3 className="font-bold">
                   {purchaseStage === "services"

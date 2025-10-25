@@ -236,11 +236,11 @@ const ConfigMenu = (props) => {
 
   return (
     <>
-      <div className="sm:pb-0 pb-32 flex flex-col items-center lg:items-start">
+      <div className="sm:pb-0 m-2 pb-32 flex flex-col items-center lg:items-start">
         <div className="max-w-[720px] sm:w-[calc(100dvw-86px)] w-[calc(100dvw-20px)]">
           <div className="flex items-center mb-4 gap-2">
             <div onClick={() => setSelectedTab("menu")}>
-              <FaChevronLeft />
+              <FaChevronLeft className="cursor-pointer" />
             </div>
             <h2 className="xs:font-semibold">Configurações do cardápio</h2>
           </div>
@@ -258,7 +258,7 @@ const ConfigMenu = (props) => {
                 </button>
               </div>
             </div>
-            <hr className="border-[var(--gray)] mt-2 mb-4 max-w-full" />
+            <hr className="border-2 border-translucid mt-2 mb-4 max-w-full" />
           </div>
 
           {/* Description */}
@@ -274,7 +274,7 @@ const ConfigMenu = (props) => {
                 </button>
               </div>
             </div>
-            <hr className="border-[var(--gray)] mt-2 mb-4 max-w-full" />
+            <hr className="border-2 border-translucid mt-2 mb-4 max-w-full" />
           </div>
 
           {/* Slug */}
@@ -291,7 +291,7 @@ const ConfigMenu = (props) => {
                 </button>
               </div>
             </div>
-            <hr className="border-[var(--gray)] mt-2 mb-4 max-w-full" />
+            <hr className="border-2 border-translucid mt-2 mb-4 max-w-full" />
           </div>
 
           {/* Colors */}
@@ -322,7 +322,7 @@ const ConfigMenu = (props) => {
                 💡 Sugerir cores
               </button>
             </div>
-            <hr className="border-[var(--gray)] mt-2 mb-4 max-w-full" />
+            <hr className="border-2 border-translucid mt-2 mb-4 max-w-full" />
           </div>
 
           {/* Services */}
@@ -450,7 +450,7 @@ const ConfigMenu = (props) => {
 
             <button
               type="button"
-              className="mt-3 gray-button px-4 py-2 rounded-lg"
+              className="cursor-pointer mt-3 bg-translucid border-2 border-translucid px-4 py-2 rounded-lg opacity-100 hover:opacity-80 transition"
               onClick={() => {
                 safeSetHours((prev) => {
                   const newObj = { ...prev };
@@ -471,7 +471,7 @@ const ConfigMenu = (props) => {
       {titleModalOpen && (
         <GenericModal onClose={() => setTitleModalOpen(false)}>
           <div className="flex items-center gap-4 mb-4">
-            <FaChevronLeft onClick={() => setTitleModalOpen(false)} />
+            <FaChevronLeft className="cursor-pointer" onClick={() => setTitleModalOpen(false)} />
             <h3 className="font-bold">Alterar nome</h3>
           </div>
           <input
@@ -518,7 +518,7 @@ const ConfigMenu = (props) => {
       {descModalOpen && (
         <GenericModal onClose={() => setDescModalOpen(false)}>
           <div className="flex items-center gap-4 mb-4">
-            <FaChevronLeft onClick={() => setDescModalOpen(false)} />
+            <FaChevronLeft className="cursor-pointer" onClick={() => setDescModalOpen(false)} />
             <h3 className="font-bold">Alterar descrição</h3>
           </div>
 
@@ -572,7 +572,7 @@ const ConfigMenu = (props) => {
       {slugModalOpen && (
         <GenericModal onClose={() => setSlugModalOpen(false)}>
           <div className="flex items-center gap-4 mb-4">
-            <FaChevronLeft onClick={() => setSlugModalOpen(false)} />
+            <FaChevronLeft className="cursor-pointer" onClick={() => setSlugModalOpen(false)} />
             <h3 className="font-bold">Alterar slug</h3>
           </div>
           <input

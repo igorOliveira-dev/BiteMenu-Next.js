@@ -551,7 +551,7 @@ export default function StatesManager({
           <div className="flex flex-col max-h-80 w-full">
             <div className="mb-2">
               <div className="flex items-center gap-4 mb-1">
-                <FaChevronLeft onClick={() => setShowChanges(false)} />
+                <FaChevronLeft className="cursor-pointer" onClick={() => setShowChanges(false)} />
                 <h3 className="font-semibold">Alterações não salvas</h3>
               </div>
               <p className="text-sm color-gray">

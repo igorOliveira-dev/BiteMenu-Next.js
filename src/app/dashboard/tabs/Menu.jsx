@@ -406,7 +406,7 @@ const Menu = (props) => {
       {titleModalOpen && (
         <GenericModal onClose={() => setTitleModalOpen(false)}>
           <div className="flex items-center gap-4 mb-4">
-            <FaChevronLeft onClick={() => setTitleModalOpen(false)} />
+            <FaChevronLeft className="cursor-pointer" onClick={() => setTitleModalOpen(false)} />
             <h3 className="font-bold">Alterar nome</h3>
           </div>
           <input
@@ -442,7 +442,7 @@ const Menu = (props) => {
       {bannerModalOpen && (
         <GenericModal onClose={() => setBannerModalOpen(false)}>
           <div className="flex items-center gap-4 mb-4">
-            <FaChevronLeft onClick={() => setBannerModalOpen(false)} />
+            <FaChevronLeft className="cursor-pointer" onClick={() => setBannerModalOpen(false)} />
             <h3 className="font-bold">Alterar banner</h3>
           </div>
           <label className="text-center flex flex-col items-center justify-center w-full h-30 border-2 border-dashed border-[var(--gray)] rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
@@ -478,7 +478,7 @@ const Menu = (props) => {
       {logoModalOpen && (
         <GenericModal onClose={() => setLogoModalOpen(false)}>
           <div className="flex items-center gap-4 mb-4">
-            <FaChevronLeft onClick={() => setLogoModalOpen(false)} />
+            <FaChevronLeft className="cursor-pointer" onClick={() => setLogoModalOpen(false)} />
             <h3 className="font-bold">Alterar logo</h3>
           </div>
           <label className="text-center flex flex-col items-center justify-center w-30 h-30 border-2 border-dashed border-[var(--gray)] rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">

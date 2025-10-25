@@ -326,7 +326,7 @@ const Orders = ({ setSelectedTab }) => {
                         <div className="grid grid-cols-2 xs:flex xs:flex-col gap-2">
                           <button
                             onClick={() => openOrderModal(order)}
-                            className="w-full cursor-pointer px-3 py-2 rounded-lg flex items-center justify-center gap-2 text-sm font-medium bg-translucid border hover:opacity-100 opacity-75 transition"
+                            className="w-full cursor-pointer px-3 py-2 rounded-lg flex items-center justify-center gap-2 text-sm font-medium bg-translucid border-2 border-translucid hover:opacity-80 opacity-100 transition"
                           >
                             Detalhes
                           </button>
@@ -389,7 +389,7 @@ const Orders = ({ setSelectedTab }) => {
           <div className="p-4">
             <button
               onClick={() => fetchOrders()}
-              className="cursor-pointer w-full bg-translucid border py-2 rounded-lg opacity-75 hover:opacity-100 transition"
+              className="cursor-pointer w-full bg-translucid border-2 border-translucid py-2 rounded-lg opacity-100 hover:opacity-80 transition"
             >
               Atualizar pedidos
             </button>
@@ -402,7 +402,7 @@ const Orders = ({ setSelectedTab }) => {
           <div className="max-h-[90vh] sm:max-h-[80vh] w-[min(900px,90vw)] overflow-y-auto scrollbar-none space-y-4">
             <div className="flex items-center gap-4 mb-2 sticky top-0 bg-low-gray pb-2">
               <div onClick={() => setOrderModalOpen(false)}>
-                <FaChevronLeft />
+                <FaChevronLeft className="cursor-pointer" />
               </div>
               <h2 className="text-xl font-bold">Detalhes do pedido</h2>
             </div>

@@ -119,7 +119,7 @@ const Account = ({ setSelectedTab }) => {
       <div className="p-2">
         <div className="flex items-center mb-4">
           <div onClick={() => setSelectedTab("menu")}>
-            <FaChevronLeft />
+            <FaChevronLeft className="cursor-pointer" />
           </div>
           <h2 className="ml-2">Conta</h2>
         </div>
@@ -183,7 +183,7 @@ const Account = ({ setSelectedTab }) => {
       {nameModalOpen && (
         <GenericModal onClose={() => setNameModalOpen(false)}>
           <div className="flex items-center gap-4 mb-4">
-            <FaChevronLeft onClick={() => setNameModalOpen(false)} />
+            <FaChevronLeft className="cursor-pointer" onClick={() => setNameModalOpen(false)} />
             <h3 className="font-bold">Alterar nome</h3>
           </div>
           <input
