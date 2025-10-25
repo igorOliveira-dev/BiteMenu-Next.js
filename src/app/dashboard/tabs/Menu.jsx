@@ -250,7 +250,7 @@ const Menu = (props) => {
           onClick={() => setSelectedTab("configMenu")}
           className={`flex lg:hidden cursor-pointer ${
             changedFields.length > 0 ? "bottom-56" : "bottom-20"
-          } right-2 p-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition items-center justify-center fixed z-100`}
+          } right-4 p-2 bg-low-gray border-2 border-translucid font-semibold rounded-lg hover:opacity-80 transition items-center justify-center fixed z-100`}
         >
           <FiSettings className="text-xl mr-2" />
           Configurar cardápio
@@ -393,7 +393,7 @@ const Menu = (props) => {
             <hr className="border-2 border-translucid mt-2 mb-4 max-w-full" />
             <button
               onClick={() => setSelectedTab("configMenu")}
-              className="cursor-pointer w-full max-w-[320px] mt-2 p-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition flex items-center justify-center"
+              className="cursor-pointer w-full max-w-[320px] mt-2 p-2 bg-low-gray border-2 border-translucid font-semibold rounded-lg hover:opacity-80 transition flex items-center justify-center"
             >
               <FiSettings className="text-xl mr-2" />
               Configurar cardápio

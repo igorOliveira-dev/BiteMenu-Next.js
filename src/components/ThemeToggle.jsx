@@ -22,7 +22,7 @@ export default function ThemeToggle() {
   };
 
   return (
-    <button className="mr-2 p-2 rounded-xl transition-colors hover-bg-translucid" onClick={toggleTheme}>
+    <button className="cursor-pointer mr-2 p-2 rounded-xl transition-colors hover-bg-translucid" onClick={toggleTheme}>
       {theme === "dark" ? <FaSun size={26} /> : <FaMoon size={26} />}
     </button>
   );
