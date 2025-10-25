@@ -8,7 +8,7 @@ import Loading from "@/components/Loading";
 import { FaTrash, FaChevronLeft, FaChevronDown, FaChevronRight, FaChevronUp } from "react-icons/fa";
 import GenericModal from "@/components/GenericModal";
 import { useConfirm } from "@/providers/ConfirmProvider";
-import SalesDashboard from "./components/SalesDashboard";
+import SalesSummary from "./components/SalesSummary";
 
 const Sales = ({ setSelectedTab }) => {
   const { menu, loading } = useMenu();
@@ -210,10 +210,10 @@ const Sales = ({ setSelectedTab }) => {
   return (
     <div className="px-2 lg:grid">
       <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[768px] min-h-[calc(100dvh-110px)] rounded-lg overflow-y-auto">
-        <h2 className="text-2xl font-bold mb-2">Vendas</h2>
+        <h2 className="font-bold mb-2">Vendas</h2>
 
         {/* <h3 className="mb-2">Dashboard de vendas</h3>
-        <SalesDashboard /> */}
+        <SalesSummary setSelectedTab={setSelectedTab} /> */}
 
         <h3 className="mb-2">Histórico de vendas</h3>
         <div className="space-y-2">
@@ -231,7 +231,7 @@ const Sales = ({ setSelectedTab }) => {
                   className="w-full flex justify-between items-center p-3 bg-translucid hover:opacity-95"
                 >
                   <div>
-                    <h3 className="font-semibold text-lg capitalize">{key}</h3>
+                    <h3 className="xs:font-semibold text-lg capitalize">{key}</h3>
                     <p className="text-sm color-gray text-start flex gap-2 items-center">
                       {group.count ?? monthSales.length} venda(s)
                     </p>

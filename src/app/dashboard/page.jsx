@@ -11,6 +11,7 @@ import { FaChevronLeft } from "react-icons/fa";
 import Account from "./tabs/Account";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import SalesDashboard from "./tabs/SalesDashboard";
 
 const Dashboard = ({
   menuState: externalMenuState,
@@ -174,7 +175,10 @@ const Dashboard = ({
           <Orders />
         </div>
         <div className={selectedTab === "sales" ? "block" : "hidden"}>
-          <Sales />
+          <Sales setSelectedTab={setSelectedTab} />
+        </div>
+        <div className={selectedTab === "salesDashboard" ? "block" : "hidden"}>
+          <SalesDashboard setSelectedTab={setSelectedTab} />
         </div>
         <div className={selectedTab === "configMenu" ? "block" : "hidden"}>
           <ConfigMenu

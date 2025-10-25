@@ -239,11 +239,11 @@ const ConfigMenu = (props) => {
     <>
       <div className="sm:pb-0 pb-32 flex flex-col items-center lg:items-start">
         <div className="m-2 max-w-[720px] sm:w-[calc(100dvw-86px)] w-[calc(100dvw-40px)]">
-          <div className="flex items-center mb-4">
+          <div className="flex items-center mb-4 gap-1">
             <div onClick={() => setSelectedTab("menu")}>
               <BackArrow />
             </div>
-            <h2 className="ml-2">Configurações do cardápio</h2>
+            <h2 className="xs:font-semibold">Configurações do cardápio</h2>
           </div>
 
           {/* Nome */}
