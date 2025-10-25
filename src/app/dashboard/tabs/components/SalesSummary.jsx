@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useState } from "react";
 import useMenu from "@/hooks/useMenu";
 import { useAlert } from "@/providers/AlertProvider";
@@ -25,6 +27,7 @@ const SalesSummary = ({ setSelectedTab }) => {
 
       setOwnerRole(data.role);
     };
+
     fetchOwnerRole();
   }, [menu?.owner_id]);
 
@@ -41,6 +44,7 @@ const SalesSummary = ({ setSelectedTab }) => {
         return;
       }
 
+      // Totais gerais
       const count = data.length;
       let total = 0;
       data.forEach((sale) => {
@@ -65,14 +69,12 @@ const SalesSummary = ({ setSelectedTab }) => {
     alert("Entre em contato com o suporte solicitando seu plano Plus!");
   };
 
-  if (loading || loadingSales) {
-    return <Loading />;
-  }
+  if (loading || loadingSales) return <Loading />;
 
   if (ownerRole === "free") {
     return (
       <div className="mb-6 h-40 lg:w-[calc(70dvw-256px)] max-w-[768px] rounded-lg bg-translucid border-2 border-translucid flex flex-col justify-center items-center">
-        <h4 className="color-gray mb-2">Seu plano não tem acesso ao dashboard</h4>
+        <h4 className="color-gray mb-2">Seu plano não tem acesso ao dashboard de vendas</h4>
         <button
           onClick={() => upgradePlan()}
           className="cursor-pointer font-bold p-2 px-4 rounded-xl bg-[#3131ff90] border-2 border-translucid hover:bg-[#4040ff] transition"
@@ -84,28 +86,29 @@ const SalesSummary = ({ setSelectedTab }) => {
   }
 
   return (
-    <div className="p-4 mb-6 lg:w-[calc(70dvw-256px)] max-w-[768px] rounded-lg bg-translucid border-2 border-translucid flex flex-col justify-center items-center p-4">
-      <h3 className="text-lg font-semibold mb-2">Resumo das vendas</h3>
-
-      <div className="flex gap-6 mb-4">
+    <div className="p-6 mb-6 lg:w-[calc(80dvw-256px)] max-w-3xl rounded-xl bg-translucid border border-translucid shadow-md flex flex-col gap-3">
+      <h3 className="text font-semibold text-center">Resumo das vendas</h3>
+      {/* Totais */}
+      <div className="flex flex-col xs:flex-row justify-around py-8 items-center gap-4 bg-translucid border-2 border-translucid rounded-xl">
         <div className="flex flex-col items-center">
-          <span className="color-gray text-sm">Total de vendas</span>
-          <span className="text-xl font-bold">{salesCount}</span>
+          <span className="text-sm color-gray">Total de vendas</span>
+          <span className="text-3xl font-bold">{salesCount}</span>
         </div>
-
         <div className="flex flex-col items-center">
-          <span className="color-gray text-sm">Total faturado</span>
-          <span className="text-xl font-bold">R$ {salesTotal.toFixed(2)}</span>
+          <span className="text-sm color-gray">Total faturado</span>
+          <span className="text-3xl font-bold">R$ {salesTotal.toFixed(2)}</span>
         </div>
       </div>
-      <button
-        onClick={() => {
-          setSelectedTab("salesDashboard");
-        }}
-        className="cursor-pointer mb-1 font-bold px-4 py-2 bg-[#3131ff90] rounded-xl border-2 border-translucid hover:bg-[#4040ff] transition"
-      >
-        Ver dashboard completo
-      </button>
+
+      {/* Botão */}
+      <div className="flex justify-center mt-2">
+        <button
+          onClick={() => setSelectedTab("salesDashboard")}
+          className="cursor-pointer px-5 py-2 font-bold bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white transition"
+        >
+          Ver dashboard completo
+        </button>
+      </div>
     </div>
   );
 };

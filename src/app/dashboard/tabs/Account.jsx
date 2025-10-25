@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import useUser from "@/hooks/useUser";
-import BackArrow from "@/components/BackArrow";
 import { FaChevronLeft, FaPen } from "react-icons/fa";
 import Loading from "@/components/Loading";
 import PhoneInput from "react-phone-input-2";
@@ -120,7 +119,7 @@ const Account = ({ setSelectedTab }) => {
       <div className="p-2">
         <div className="flex items-center mb-4">
           <div onClick={() => setSelectedTab("menu")}>
-            <BackArrow />
+            <FaChevronLeft />
           </div>
           <h2 className="ml-2">Conta</h2>
         </div>

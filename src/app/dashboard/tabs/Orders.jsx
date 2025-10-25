@@ -207,19 +207,16 @@ const Orders = ({ setSelectedTab }) => {
   return (
     <div className="px-2 lg:grid">
       <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[768px] min-h-[calc(100dvh-110px)] rounded-lg overflow-y-auto">
-        <h2 className="text-2xl font-bold mb-2 ml-2">Pedidos Recebidos</h2>
+        <h2 className="text-2xl font-bold mb-2">Pedidos Recebidos</h2>
 
-        <button
-          onClick={() => setShowConfig(!showConfig)}
-          className="cursor-pointer flex items-center gap-2 color-gray z-2 ml-2"
-        >
+        <button onClick={() => setShowConfig(!showConfig)} className="cursor-pointer flex items-center gap-2 color-gray z-2">
           Configurar pedidos <FaChevronDown />
         </button>
 
         <div
           className={`${
             showConfig ? "p-2 h-auto border-2" : "p-0 h-0"
-          } max-w-[calc(100%-6px)] ml-2 border-translucid overflow-hidden flex flex-col gap-1 rounded-b-lg`}
+          } max-w-[calc(100%-6px)] border-translucid overflow-hidden flex flex-col gap-1 rounded-b-lg`}
         >
           <p>Receber pedidos:</p>
 

@@ -1,6 +1,5 @@
 "use client";
 
-import BackArrow from "@/components/BackArrow";
 import React, { useEffect, useState } from "react";
 import { FaPen, FaChevronLeft } from "react-icons/fa";
 import { COLOR_PALETTES } from "@/consts/colorPallets";
@@ -238,10 +237,10 @@ const ConfigMenu = (props) => {
   return (
     <>
       <div className="sm:pb-0 pb-32 flex flex-col items-center lg:items-start">
-        <div className="m-2 max-w-[720px] sm:w-[calc(100dvw-86px)] w-[calc(100dvw-40px)]">
-          <div className="flex items-center mb-4 gap-1">
+        <div className="max-w-[720px] sm:w-[calc(100dvw-86px)] w-[calc(100dvw-20px)]">
+          <div className="flex items-center mb-4 gap-2">
             <div onClick={() => setSelectedTab("menu")}>
-              <BackArrow />
+              <FaChevronLeft />
             </div>
             <h2 className="xs:font-semibold">Configurações do cardápio</h2>
           </div>

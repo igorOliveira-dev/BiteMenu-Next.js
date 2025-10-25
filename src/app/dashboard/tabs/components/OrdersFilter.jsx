@@ -63,7 +63,7 @@ export default function OrdersFilter({ onChange, initial = {} }) {
   };
 
   return (
-    <div className="mb-4 p-3 rounded-md shadow-sm">
+    <div className="my-4 rounded-md shadow-sm">
       <div className="flex flex-col justify-center gap-2 flex-wrap">
         <div className="flex items-center gap-2">
           <FaFilter />
