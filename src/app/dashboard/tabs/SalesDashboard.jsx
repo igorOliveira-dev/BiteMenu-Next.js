@@ -289,21 +289,21 @@ const SalesDashboard = ({ setSelectedTab }) => {
         </div>
 
         {/* Totais */}
-        <div className="bg-translucid border border-translucid rounded-lg py-6 shadow-sm mb-4 flex flex-col items-center justify-between">
+        <div className="bg-translucid p-4 border border-translucid rounded-lg py-6 shadow-sm mb-4 flex flex-col items-center justify-between">
           <div className="flex flex-wrap justify-around w-full gap-6 text-center items-center mb-4">
-            <div className="w-[145px] sm:w-[180px]">
+            <div className=" sm:w-[180px]">
               <p className="text-sm sm:text-base">Total no período:</p>
               <p className="text-blue-500 text-xl sm:text-2xl font-bold">R$ {totalPeriod.toFixed(2)}</p>
             </div>
-            <div className="w-[145px] sm:w-[180px]">
+            <div className=" sm:w-[180px]">
               <p className="text-sm sm:text-base">Quantidade de vendas:</p>
               <p className="text-green-500 text-xl sm:text-2xl font-bold">{totalSalesCount}</p>
             </div>
-            <div className="w-[145px] sm:w-[180px]">
+            <div className=" sm:w-[180px]">
               <p className="text-sm sm:text-base">Ticket médio:</p>
               <p className="font-bold text-xl sm:text-2xl">R$ {averageTicket.toFixed(2)}</p>
             </div>
-            <p className="text-sm color-gray xs:hidden w-[145px]">
+            <p className="text-sm color-gray xs:hidden ">
               ({formatLabelDate(startDate)} - {formatLabelDate(endDate)})
             </p>
           </div>
