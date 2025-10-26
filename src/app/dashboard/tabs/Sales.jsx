@@ -267,8 +267,8 @@ const Sales = ({ setSelectedTab }) => {
   if (!menu) return <p>Você ainda não criou seu cardápio.</p>;
 
   return (
-    <div className="px-2 lg:grid">
-      <div className="md:m-auto lg:m-2 lg:w-[calc(80dvw-256px)] max-w-[768px] min-h-[calc(100dvh-110px)] rounded-lg overflow-y-auto">
+    <div className="px-4 sm:px-2 lg:grid">
+      <div className="md:m-auto lg:m-2 lg:w-[calc(80dvw-256px)] max-w-[1024px] min-h-[calc(100dvh-110px)] rounded-lg overflow-y-auto">
         <div className="flex items-center gap-4 mb-2">
           <h2 className="font-bold">Vendas</h2>
           <FaSyncAlt

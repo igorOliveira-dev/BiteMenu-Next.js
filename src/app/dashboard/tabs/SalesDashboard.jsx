@@ -144,6 +144,11 @@ const SalesDashboard = ({ setSelectedTab }) => {
   const totalPeriod = useMemo(() => salesData.reduce((sum, d) => sum + d.total, 0), [salesData]);
   const totalSalesCount = useMemo(() => salesData.reduce((sum, d) => sum + d.count, 0), [salesData]);
 
+  const averageTicket = useMemo(() => {
+    if (totalSalesCount === 0) return 0;
+    return totalPeriod / totalSalesCount;
+  }, [totalPeriod, totalSalesCount]);
+
   if (loading || ownerRole === null || loadingSales) return <Loading />;
 
   if (ownerRole === "free") {
@@ -168,7 +173,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
         tension: 0.15,
         fill: true,
         pointRadius: 2,
-        borderWidth: 1.5,
+        borderWidth: 1.2,
         yAxisID: "y",
       },
       {
@@ -228,8 +233,8 @@ const SalesDashboard = ({ setSelectedTab }) => {
   };
 
   return (
-    <div className="px-2 lg:grid">
-      <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[812px] min-h-[calc(100dvh-110px)] rounded-lg overflow-y-auto">
+    <div className="px-4 sm:px-2 lg:grid">
+      <div className="md:m-auto lg:m-2 lg:w-[calc(80dvw-256px)] max-w-[1024px] min-h-[calc(100dvh-110px)] rounded-lg overflow-y-auto">
         {/* Cabeçalho */}
         <div className="flex items-center gap-2 mb-4">
           <div className="cursor-pointer" onClick={() => setSelectedTab("sales")}>
@@ -284,14 +289,25 @@ const SalesDashboard = ({ setSelectedTab }) => {
         </div>
 
         {/* Totais */}
-        <div className="bg-translucid border border-translucid rounded-lg p-4 text-center shadow-sm mb-4">
-          <p className="text-lg font-semibold">
-            Total no período: <span className="text-blue-500">R$ {totalPeriod.toFixed(2)}</span>
-          </p>
-          <p className="text-md font-semibold">
-            Quantidade de vendas: <span className="text-green-500">{totalSalesCount}</span>
-          </p>
-          <p className="text-sm color-gray">
+        <div className="bg-translucid border border-translucid rounded-lg py-6 shadow-sm mb-4 flex flex-col items-center justify-between">
+          <div className="flex flex-wrap justify-around w-full gap-6 text-center items-center mb-4">
+            <div className="w-[145px] sm:w-[180px]">
+              <p className="text-sm sm:text-base">Total no período:</p>
+              <p className="text-blue-500 text-xl sm:text-2xl font-bold">R$ {totalPeriod.toFixed(2)}</p>
+            </div>
+            <div className="w-[145px] sm:w-[180px]">
+              <p className="text-sm sm:text-base">Quantidade de vendas:</p>
+              <p className="text-green-500 text-xl sm:text-2xl font-bold">{totalSalesCount}</p>
+            </div>
+            <div className="w-[145px] sm:w-[180px]">
+              <p className="text-sm sm:text-base">Ticket médio:</p>
+              <p className="font-bold text-xl sm:text-2xl">R$ {averageTicket.toFixed(2)}</p>
+            </div>
+            <p className="text-sm color-gray xs:hidden w-[145px]">
+              ({formatLabelDate(startDate)} - {formatLabelDate(endDate)})
+            </p>
+          </div>
+          <p className="text-sm color-gray xs:block hidden">
             ({formatLabelDate(startDate)} - {formatLabelDate(endDate)})
           </p>
         </div>

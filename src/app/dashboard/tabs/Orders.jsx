@@ -102,6 +102,7 @@ const Orders = ({ setSelectedTab }) => {
         items_list: order.items_list,
         created_at: order.created_at,
         updated_at: new Date().toISOString(),
+        total: order.total,
       },
     ]);
 
@@ -205,7 +206,7 @@ const Orders = ({ setSelectedTab }) => {
   if (!menu) return <p>Você ainda não criou seu cardápio.</p>;
 
   return (
-    <div className="px-2 lg:grid">
+    <div className="px-4 sm:px-2 lg:grid">
       <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[812px] min-h-[calc(100dvh-110px)] rounded-lg overflow-y-auto">
         <div className="flex items-center gap-4 mb-2">
           <h2 className="text-2xl font-bold">Pedidos recebidos</h2>

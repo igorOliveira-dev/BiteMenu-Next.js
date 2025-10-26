@@ -13,6 +13,7 @@ const SalesSummary = ({ setSelectedTab, refreshSignal }) => {
   const [salesCount, setSalesCount] = useState(0);
   const [salesTotal, setSalesTotal] = useState(0);
   const [loadingSales, setLoadingSales] = useState(true);
+  const [averageTicket, setAverageTicket] = useState(0);
 
   useEffect(() => {
     if (!menu?.owner_id) return;
@@ -45,7 +46,13 @@ const SalesSummary = ({ setSelectedTab, refreshSignal }) => {
 
     let total = 0;
     data.forEach((sale) => {
-      const items = sale.items_list || [];
+      let items = [];
+      try {
+        items = typeof sale.items_list === "string" ? JSON.parse(sale.items_list) : sale.items_list || [];
+      } catch {
+        items = [];
+      }
+
       total += items.reduce((acc, it) => {
         const qty = Number(it.qty) || 0;
         const itemBase = (Number(it.price) || 0) * qty;
@@ -57,6 +64,9 @@ const SalesSummary = ({ setSelectedTab, refreshSignal }) => {
     setSalesCount(data.length);
     setSalesTotal(total);
     setLoadingSales(false);
+    // Calcula ticket médio
+    const avg = data.length > 0 ? total / data.length : 0;
+    setAverageTicket(avg);
   };
 
   useEffect(() => {
@@ -71,7 +81,7 @@ const SalesSummary = ({ setSelectedTab, refreshSignal }) => {
 
   if (ownerRole === "free") {
     return (
-      <div className="mb-6 h-40 lg:w-[calc(70dvw-256px)] max-w-[768px] rounded-lg bg-translucid border-2 border-translucid flex flex-col justify-center items-center">
+      <div className="mb-6 h-40 lg:w-[calc(80dvw-256px)] max-w-[1024px] rounded-lg bg-translucid border-2 border-translucid flex flex-col justify-center items-center">
         <h4 className="color-gray mb-2">Seu plano não tem acesso ao dashboard de vendas</h4>
         <button
           onClick={() => upgradePlan()}
@@ -84,7 +94,7 @@ const SalesSummary = ({ setSelectedTab, refreshSignal }) => {
   }
 
   return (
-    <div className="p-6 mb-6 lg:w-[calc(80dvw-256px)] max-w-3xl rounded-xl bg-translucid border border-translucid shadow-md flex flex-col gap-3">
+    <div className="p-6 mb-6 lg:w-[calc(80dvw-256px)] max-w-[1024px] rounded-xl bg-translucid border border-translucid shadow-md flex flex-col gap-3">
       <h3 className="text font-semibold text-center">Resumo das vendas</h3>
       {/* Totais */}
       <div className="flex flex-col xs:flex-row justify-around py-8 items-center gap-4 bg-translucid border-2 border-translucid rounded-xl">
@@ -95,6 +105,10 @@ const SalesSummary = ({ setSelectedTab, refreshSignal }) => {
         <div className="flex flex-col items-center">
           <span className="text-sm color-gray">Total faturado</span>
           <span className="text-3xl font-bold">R$ {salesTotal.toFixed(2)}</span>
+        </div>
+        <div className="flex flex-col items-center">
+          <span className="text-sm color-gray">Ticket médio</span>
+          <span className="text-3xl font-bold">R$ {averageTicket.toFixed(2)}</span>
         </div>
       </div>
 
