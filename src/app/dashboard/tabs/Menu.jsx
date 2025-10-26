@@ -256,7 +256,7 @@ const Menu = (props) => {
           Configurar cardápio
         </button>
         <div
-          className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[768px] min-h-[calc(100dvh-110px)]"
+          className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[812px] min-h-[calc(100dvh-110px)]"
           style={{ backgroundColor }}
         >
           {/* Banner */}

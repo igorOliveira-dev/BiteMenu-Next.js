@@ -5,7 +5,7 @@ import useMenu from "@/hooks/useMenu";
 import { useAlert } from "@/providers/AlertProvider";
 import { supabase } from "@/lib/supabaseClient";
 import Loading from "@/components/Loading";
-import { FaCheck, FaTrash, FaMoneyBill, FaChevronLeft, FaChevronDown } from "react-icons/fa";
+import { FaCheck, FaTrash, FaMoneyBill, FaChevronLeft, FaChevronDown, FaSyncAlt } from "react-icons/fa";
 import GenericModal from "@/components/GenericModal";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import OrdersFilter from "./components/OrdersFilter";
@@ -206,8 +206,11 @@ const Orders = ({ setSelectedTab }) => {
 
   return (
     <div className="px-2 lg:grid">
-      <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[768px] min-h-[calc(100dvh-110px)] rounded-lg overflow-y-auto">
-        <h2 className="text-2xl font-bold mb-2">Pedidos Recebidos</h2>
+      <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[812px] min-h-[calc(100dvh-110px)] rounded-lg overflow-y-auto">
+        <div className="flex items-center gap-4 mb-2">
+          <h2 className="text-2xl font-bold">Pedidos recebidos</h2>
+          <FaSyncAlt className="cursor-pointer opacity-80 hover:opacity-100 transition" onClick={() => fetchOrders()} />
+        </div>
 
         <button onClick={() => setShowConfig(!showConfig)} className="cursor-pointer flex items-center gap-2 color-gray z-2">
           Configurar pedidos <FaChevronDown />
@@ -385,14 +388,6 @@ const Orders = ({ setSelectedTab }) => {
                 .reduce((sum, o) => sum + (Number(o.total) || 0), 0)
                 .toFixed(2)}
             </p>
-          </div>
-          <div className="p-4">
-            <button
-              onClick={() => fetchOrders()}
-              className="cursor-pointer w-full bg-translucid border-2 border-translucid py-2 rounded-lg opacity-100 hover:opacity-80 transition"
-            >
-              Atualizar pedidos
-            </button>
           </div>
         </aside>
       ) : null}

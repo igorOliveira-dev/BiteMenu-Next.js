@@ -6,7 +6,7 @@ import { useAlert } from "@/providers/AlertProvider";
 import Loading from "@/components/Loading";
 import { supabase } from "@/lib/supabaseClient";
 
-const SalesSummary = ({ setSelectedTab }) => {
+const SalesSummary = ({ setSelectedTab, refreshSignal }) => {
   const alert = useAlert();
   const { menu, loading } = useMenu();
   const [ownerRole, setOwnerRole] = useState(null);
@@ -31,39 +31,37 @@ const SalesSummary = ({ setSelectedTab }) => {
     fetchOwnerRole();
   }, [menu?.owner_id]);
 
-  useEffect(() => {
+  const fetchSalesSummary = async () => {
     if (!menu?.id) return;
+    setLoadingSales(true);
 
-    const fetchSalesSummary = async () => {
-      setLoadingSales(true);
-      const { data, error } = await supabase.from("sales").select("items_list").eq("menu_id", menu.id);
+    const { data, error } = await supabase.from("sales").select("items_list").eq("menu_id", menu.id);
 
-      if (error) {
-        console.error("Erro ao buscar vendas:", error);
-        setLoadingSales(false);
-        return;
-      }
-
-      // Totais gerais
-      const count = data.length;
-      let total = 0;
-      data.forEach((sale) => {
-        const items = sale.items_list || [];
-        total += items.reduce((acc, it) => {
-          const qty = Number(it.qty) || 0;
-          const itemBase = (Number(it.price) || 0) * qty;
-          const adds = (it.additionals || []).reduce((sa, a) => sa + (Number(a.price) || 0), 0) * qty;
-          return acc + itemBase + adds;
-        }, 0);
-      });
-
-      setSalesCount(count);
-      setSalesTotal(total);
+    if (error) {
+      console.error("Erro ao buscar vendas:", error);
       setLoadingSales(false);
-    };
+      return;
+    }
 
+    let total = 0;
+    data.forEach((sale) => {
+      const items = sale.items_list || [];
+      total += items.reduce((acc, it) => {
+        const qty = Number(it.qty) || 0;
+        const itemBase = (Number(it.price) || 0) * qty;
+        const adds = (it.additionals || []).reduce((sa, a) => sa + (Number(a.price) || 0), 0) * qty;
+        return acc + itemBase + adds;
+      }, 0);
+    });
+
+    setSalesCount(data.length);
+    setSalesTotal(total);
+    setLoadingSales(false);
+  };
+
+  useEffect(() => {
     fetchSalesSummary();
-  }, [menu?.id]);
+  }, [menu?.id, refreshSignal]);
 
   const upgradePlan = () => {
     alert("Entre em contato com o suporte solicitando seu plano Plus!");

@@ -5,7 +5,7 @@ import useMenu from "@/hooks/useMenu";
 import { useAlert } from "@/providers/AlertProvider";
 import { supabase } from "@/lib/supabaseClient";
 import Loading from "@/components/Loading";
-import { FaTrash, FaChevronLeft, FaChevronDown, FaChevronRight, FaChevronUp } from "react-icons/fa";
+import { FaTrash, FaChevronLeft, FaChevronDown, FaChevronRight, FaChevronUp, FaSyncAlt } from "react-icons/fa";
 import GenericModal from "@/components/GenericModal";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import SalesSummary from "./components/SalesSummary";
@@ -14,6 +14,8 @@ const Sales = ({ setSelectedTab }) => {
   const { menu, loading } = useMenu();
   const customAlert = useAlert();
   const confirm = useConfirm();
+
+  const [refreshSummary, setRefreshSummary] = useState(0);
 
   const [monthData, setMonthData] = useState({}); // Dados por mês
   const [loadingSales, setLoadingSales] = useState(false);
@@ -48,6 +50,16 @@ const Sales = ({ setSelectedTab }) => {
     return () => supabase.removeChannel(channel);
   }, [menu?.id]);
 
+  // recalcula os totais dos meses a partir do monthData
+  useEffect(() => {
+    const updatedMonths = monthsList.map((m) => {
+      const sales = monthData[m.key] || [];
+      const total = sales.reduce((sum, s) => sum + Number(s.total ?? computeTotal(s)), 0);
+      return { ...m, count: sales.length, total };
+    });
+    setMonthsList(updatedMonths);
+  }, [monthData]);
+
   const fetchSalesByMonth = async (monthStart, monthEnd, monthKey) => {
     if (!menu?.id) return;
     setLoadingSales(true);
@@ -70,22 +82,24 @@ const Sales = ({ setSelectedTab }) => {
     setLoadingSales(false);
   };
 
-  const deleteSale = async (id, monthKey) => {
+  const deleteSale = async (id) => {
     const ok = await confirm("Quer mesmo excluir essa venda?");
     if (!ok) return;
+
     const { error } = await supabase.from("sales").delete().eq("id", id);
     if (error) return customAlert("Erro ao excluir venda", "error");
     customAlert("Venda excluída.", "success");
 
-    // Atualiza apenas o mês afetado
-    const currentMonth = Object.keys(monthData).find((key) => monthData[key].some((s) => s.id === id));
-    if (currentMonth) {
-      const firstSale = monthData[currentMonth][0];
-      const d = new Date(firstSale.created_at);
-      const start = new Date(d.getFullYear(), d.getMonth(), 1);
+    // Atualiza o mês afetado de forma segura
+    const monthKey = Object.keys(monthData).find((key) => monthData[key].some((s) => s.id === id));
+
+    if (monthKey) {
+      const monthStartTimestamp = monthData[monthKey][0] ? new Date(monthData[monthKey][0].created_at) : new Date(); // caso o mês fique vazio
+      const start = new Date(monthStartTimestamp.getFullYear(), monthStartTimestamp.getMonth(), 1);
       const end = new Date(start);
       end.setMonth(end.getMonth() + 1);
-      fetchSalesByMonth(start, end, currentMonth);
+
+      fetchSalesByMonth(start, end, monthKey);
     }
   };
 
@@ -205,16 +219,68 @@ const Sales = ({ setSelectedTab }) => {
     return filtered;
   };
 
+  const resetSales = () => {
+    setMonthData({});
+    setFilters({});
+    setExpandedMonths({});
+    setMonthsList([]);
+
+    // Opcional: refazer a lista de meses
+    if (menu?.id) {
+      const fetchMonths = async () => {
+        const { data, error } = await supabase
+          .from("sales")
+          .select("created_at, items_list")
+          .eq("menu_id", menu.id)
+          .order("created_at", { ascending: false });
+
+        if (error) return customAlert("Erro ao carregar meses de vendas", "error");
+
+        const monthsMap = {};
+        data.forEach((sale) => {
+          const d = new Date(sale.created_at);
+          const key = d.toLocaleString("pt-BR", { month: "long", year: "numeric" });
+          const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
+
+          if (!monthsMap[key]) monthsMap[key] = { key, monthStart: monthStart.getTime(), count: 0, total: 0 };
+
+          const items = sale.items_list || [];
+          const total = items.reduce((acc, it) => {
+            const qty = Number(it.qty) || 0;
+            const itemBase = (Number(it.price) || 0) * qty;
+            const adds = (it.additionals || []).reduce((sa, a) => sa + (Number(a.price) || 0), 0) * qty;
+            return acc + itemBase + adds;
+          }, 0);
+
+          monthsMap[key].count++;
+          monthsMap[key].total += total;
+        });
+
+        setMonthsList(Object.values(monthsMap));
+      };
+
+      fetchMonths();
+    }
+  };
+
   if (loading) return <Loading />;
   if (!menu) return <p>Você ainda não criou seu cardápio.</p>;
 
   return (
     <div className="px-2 lg:grid">
       <div className="md:m-auto lg:m-2 lg:w-[calc(80dvw-256px)] max-w-[768px] min-h-[calc(100dvh-110px)] rounded-lg overflow-y-auto">
-        <h2 className="font-bold mb-2">Vendas</h2>
+        <div className="flex items-center gap-4 mb-2">
+          <h2 className="font-bold">Vendas</h2>
+          <FaSyncAlt
+            className="cursor-pointer opacity-80 hover:opacity-100 transition"
+            onClick={() => {
+              resetSales(), setRefreshSummary((prev) => prev + 1);
+            }}
+          />
+        </div>
 
         <h3 className="mb-2">Dashboard de vendas</h3>
-        <SalesSummary setSelectedTab={setSelectedTab} />
+        <SalesSummary setSelectedTab={setSelectedTab} refreshSignal={refreshSummary} />
 
         <h3 className="mb-2">Histórico de vendas</h3>
         <div className="space-y-2">
