@@ -94,7 +94,7 @@ const SalesSummary = ({ setSelectedTab, refreshSignal }) => {
   }
 
   return (
-    <div className="p-6 mb-6 lg:w-[calc(80dvw-256px)] max-w-[1024px] rounded-xl bg-translucid border border-translucid shadow-md flex flex-col gap-3">
+    <div className="p-2 mb-6 lg:w-[calc(80dvw-256px)] max-w-[1024px] rounded-xl bg-translucid border border-translucid shadow-md flex flex-col gap-3">
       <h3 className="text font-semibold text-center">Resumo das vendas</h3>
       {/* Totais */}
       <div className="flex flex-col xs:flex-row justify-around py-8 items-center gap-4 bg-translucid border-2 border-translucid rounded-xl">
