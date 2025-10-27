@@ -7,13 +7,15 @@ import Loading from "@/components/Loading";
 import useUser from "@/hooks/useUser";
 import Image from "next/image";
 import LogoMark from "../../../public/LogoMarca-sem-fundo.png";
+import LogoTip from "../../../public/LogoTipo-sem-fundo.png";
 import ThemeToggle from "@/components/ThemeToggle";
-import StatesManager from "./StatesManager";
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
-  const { user, loading } = useUser();
+  const { user, profile, loading } = useUser();
   const [checkingMenu, setCheckingMenu] = useState(true);
+  const [ownerPlan, setOwnerPlan] = useState(null);
+  const [showPlanButton, setShowPlanButton] = useState(false);
 
   useEffect(() => {
     const checkUserMenu = async () => {
@@ -34,12 +36,28 @@ export default function DashboardLayout({ children }) {
         setCheckingMenu(false);
       } catch (err) {
         console.error("Erro ao buscar menus:", err);
-        setCheckingMenu(false); // garante que não trava o loader
+        setCheckingMenu(false);
       }
     };
 
     checkUserMenu();
   }, [user, loading, router]);
+
+  useEffect(() => {
+    if (user && profile) {
+      setOwnerPlan(profile.role);
+    }
+  }, [user, router, checkingMenu]);
+
+  useEffect(() => {
+    if (window.location.pathname === "/dashboard") {
+      if (ownerPlan === "free" || ownerPlan === "plus" || ownerPlan === "admin") {
+        setShowPlanButton(true);
+      } else {
+        setShowPlanButton(false);
+      }
+    }
+  }, [ownerPlan]);
 
   if (loading || checkingMenu) {
     return (
@@ -52,12 +70,42 @@ export default function DashboardLayout({ children }) {
   return (
     <>
       <header className="flex items-center justify-between p-2 m-2 my-3 bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)]">
-        <Image src={LogoMark} height={50} width={180} alt="Bite Menu" />
-        <ThemeToggle />
+        {/* logo marca - telas grandes */}
+        <Image
+          src={LogoMark}
+          height={50}
+          width={180}
+          alt="Bite Menu"
+          onClick={() => (window.location.href = "/dashboard")}
+          className="hidden xs:block"
+        />
+
+        {/* logo tipo - telas pequenas */}
+        <Image
+          src={LogoTip}
+          height={50}
+          width={50}
+          alt="Bite Menu"
+          onClick={() => (window.location.href = "/dashboard")}
+          className="block xs:hidden"
+        />
+
+        <div className="flex items-center gap-2">
+          {/* botao de melhorar plano */}
+          {showPlanButton ? (
+            <a
+              href="/dashboard/pricing"
+              className="p-1 px-2 xs:p-2 xs:px-4 rounded-xl border-2 bg-translucid border-translucid mr-2 font-bold"
+            >
+              Melhorar plano!
+            </a>
+          ) : null}
+
+          {/* troca de temas */}
+          <ThemeToggle />
+        </div>
       </header>
-      <main>
-        <StatesManager />
-      </main>
+      <main>{children}</main>
     </>
   );
 }

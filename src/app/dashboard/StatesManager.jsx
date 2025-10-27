@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { supabase } from "@/lib/supabaseClient";
 import useMenu from "@/hooks/useMenu";
-import Dashboard from "./page"; // ajuste se necessário
+import Dashboard from "./Dashboard";
 import Loading from "@/components/Loading";
 import { useAlert } from "@/providers/AlertProvider";
 import GenericModal from "@/components/GenericModal";
