@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { FaChevronLeft, FaMinus, FaPlus, FaShoppingCart } from "react-icons/fa";
+import { FaChevronLeft, FaMinus, FaPlus, FaShoppingCart, FaWhatsapp } from "react-icons/fa";
 import Image from "next/image";
 import GenericModal from "@/components/GenericModal";
 import { useCartContext } from "@/contexts/CartContext";
 import CartDrawer from "./components/CartDrawer";
 import { useAlert } from "@/providers/AlertProvider";
 import MenuFooter from "./components/MenuFooter";
+import { supabase } from "@/lib/supabaseClient";
 
 // util para contraste de cor
 function getContrastTextColor(hex) {
@@ -120,6 +121,8 @@ export default function ClientMenu({ menu }) {
   const [cartOpen, setCartOpen] = useState(false);
   const cartOpenRef = useRef(cartOpen);
 
+  const [establishmentPhone, setEstablishmentPhone] = useState(null);
+
   const open = isOpenNow(menu.hours);
   const translucidToUse = getContrastTextColor(menu.background_color) === "white" ? "#ffffff10" : "#00000010";
   const grayToUse = getContrastTextColor(menu.background_color) === "white" ? "#cccccc" : "#333333";
@@ -136,9 +139,35 @@ export default function ClientMenu({ menu }) {
   const [selectedAddons, setSelectedAddons] = useState({});
   const [note, setNote] = useState("");
 
-  const orderedCategories = (menu?.categories || []).slice().sort((a, b) => {
-    return Number(a.position ?? 0) - Number(b.position ?? 0);
-  });
+  const orderedCategories = useMemo(() => {
+    return (menu?.categories || []).slice().sort((a, b) => {
+      return Number(a.position ?? 0) - Number(b.position ?? 0);
+    });
+  }, [menu?.categories]);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredCategories, setFilteredCategories] = useState(orderedCategories);
+
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredCategories(orderedCategories);
+      return;
+    }
+
+    const lower = searchTerm.toLowerCase();
+    const filtered = orderedCategories
+      .map((cat) => {
+        const filteredItems = (cat.menu_items || []).filter(
+          (it) =>
+            it.visible &&
+            (it.name.toLowerCase().includes(lower) || (it.description && it.description.toLowerCase().includes(lower)))
+        );
+        return { ...cat, menu_items: filteredItems };
+      })
+      .filter((cat) => cat.menu_items.length > 0);
+
+    setFilteredCategories(filtered);
+  }, [searchTerm, orderedCategories]);
 
   const handleItemClick = (item) => {
     setSelectedItem(item);
@@ -231,6 +260,35 @@ export default function ClientMenu({ menu }) {
   const closeHoursModal = () => {
     setHoursModalOpen(false);
   };
+
+  // Busca o telefone do estabelecimento
+  useEffect(() => {
+    const fetchPhone = async () => {
+      let phone = null;
+
+      if (menu?.owner_id) {
+        const { data, error } = await supabase.from("profiles").select("phone").eq("id", menu.owner_id).single();
+
+        if (!error && data?.phone) {
+          phone = data.phone;
+        }
+      }
+
+      // fallback
+      phone = phone || menu?.owner_phone || menu?.phone || null;
+
+      setEstablishmentPhone(phone);
+
+      if (!phone) {
+        console.warn("CartDrawer: nenhum telefone disponível (establishmentPhone/menu.owner_phone/menu.phone)", {
+          establishmentPhone: phone,
+          menuPhone: menu?.phone,
+        });
+      }
+    };
+
+    fetchPhone();
+  }, [menu?.owner_id, menu?.owner_phone, menu?.phone]);
 
   useEffect(() => {
     cartOpenRef.current = cartOpen;
@@ -331,20 +389,46 @@ export default function ClientMenu({ menu }) {
 
         {/* Conteúdo */}
         <div className="my-4">
-          <div className="flex items-center px-4">
-            {menu.logo_url && (
-              <div className="relative w-full max-w-[80px] aspect-[1/1] rounded-lg mr-2 sm:mr-4">
-                <img alt="Logo do estabelecimento" src={menu.logo_url} className="object-cover rounded-lg w-full h-full" />
-              </div>
-            )}
-            <h1 className="text-xl md:text-2xl font-bold" style={{ color: menu.title_color }}>
-              {menu.title}
-            </h1>
+          <div className="flex items-center justify-between px-4">
+            <div className="flex items-center">
+              {menu.logo_url && (
+                <div className="relative w-full max-w-[80px] aspect-[1/1] rounded-lg mr-2 sm:mr-4">
+                  <img alt="Logo do estabelecimento" src={menu.logo_url} className="object-cover rounded-lg w-full h-full" />
+                </div>
+              )}
+              <h1 className="text-xl md:text-2xl font-bold" style={{ color: menu.title_color }}>
+                {menu.title}
+              </h1>
+            </div>
+            <div
+              className="cursor-pointer hover:scale-[1.1] transition"
+              onClick={() => {
+                const url = `https://wa.me/${establishmentPhone}`;
+                window.open(url, "_blank");
+              }}
+            >
+              <FaWhatsapp size={28} />
+            </div>
           </div>
 
           <p className="mt-1 px-4" style={{ color: getContrastTextColor(menu.background_color) }}>
             {menu.description}
           </p>
+        </div>
+
+        <div className="px-4 my-4">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Buscar item do cardápio..."
+            className="w-full p-3 rounded-lg border-2 outline-none"
+            style={{
+              backgroundColor: translucidToUse,
+              color: foregroundToUse,
+              borderColor: translucidToUse,
+            }}
+          />
         </div>
 
         {orderedCategories.length > 0 && (
@@ -369,7 +453,7 @@ export default function ClientMenu({ menu }) {
         )}
 
         <div className="space-y-4 px-4">
-          {orderedCategories.map((cat) => (
+          {filteredCategories.map((cat) => (
             <div key={cat.id} id={cat.id.slice(0, 5)} className="rounded py-3">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-3">
