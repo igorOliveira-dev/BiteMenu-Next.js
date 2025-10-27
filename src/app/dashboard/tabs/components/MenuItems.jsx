@@ -176,7 +176,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   // CRUD helpers
   const createCategory = async ({ name = "Nova categoria" } = {}) => {
     if (ownerRole === "free" && categories.length >= 4) {
-      alert?.("Limite de 4 categorias atingido no plano gratuito.", "error");
+      alert?.("Limite de 5 categorias atingido no plano gratuito.", "error");
       return;
     }
 
