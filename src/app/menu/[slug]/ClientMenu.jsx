@@ -365,13 +365,15 @@ export default function ClientMenu({ menu }) {
         style={{ backgroundColor: menu.background_color }}
       >
         {/* Indicador de status no topo */}
-        <div
-          className={`cursor-pointer absolute mt-2 flex items-center h-[35px] top-[calc(18dvh-50px)] sm:top-[calc(25dvh-50px)] right-2 lg:right-20 xl:right-32 px-3 py-1 mr-2 rounded-lg font-bold text-sm z-2`}
-          style={{ backgroundColor: open ? "#16a34a90" : "#dc262690", color: "white" }}
-          onClick={() => setHoursModalOpen(true)}
-        >
-          {open ? "Aberto agora" : "Fechado"}
-        </div>
+        {menu.banner_url ? (
+          <div
+            className={`cursor-pointer absolute mt-2 flex items-center h-[35px] top-[calc(18dvh-50px)] sm:top-[calc(25dvh-50px)] right-2 lg:right-20 xl:right-32 px-3 py-1 mr-2 rounded-lg font-bold text-sm z-2`}
+            style={{ backgroundColor: open ? "#16a34a" : "#dc2626", color: "white" }}
+            onClick={() => setHoursModalOpen(true)}
+          >
+            {open ? "Aberto agora" : "Fechado"}
+          </div>
+        ) : null}
 
         {/* Banner */}
         {menu.banner_url && (
@@ -388,26 +390,37 @@ export default function ClientMenu({ menu }) {
         )}
 
         {/* Conteúdo */}
-        <div className="my-4">
+        <div className="py-4">
           <div className="flex items-center justify-between px-4">
-            <div className="flex items-center">
+            <div className="flex items-center min-w-full">
               {menu.logo_url && (
-                <div className="relative w-full max-w-[80px] aspect-[1/1] rounded-lg mr-2 sm:mr-4">
+                <div className="relative w-full max-w-[45px] xxs:max-w-[55px] sm:max-w-[80px] aspect-[1/1] rounded-lg mr-2 sm:mr-4">
                   <img alt="Logo do estabelecimento" src={menu.logo_url} className="object-cover rounded-lg w-full h-full" />
                 </div>
               )}
-              <h1 className="text-xl md:text-2xl font-bold" style={{ color: menu.title_color }}>
-                {menu.title}
-              </h1>
+              <div className="flex flex-col">
+                <h1 className="text-lg xs:text-xl md:text-2xl font-bold" style={{ color: menu.title_color }}>
+                  {menu.title}
+                </h1>
+                {menu.banner_url ? null : (
+                  <div
+                    className={`cursor-pointer flex items-center h-[30px] px-2 mr-2 rounded-lg font-bold text-sm z-2`}
+                    style={{ backgroundColor: open ? "#16a34a" : "#dc2626", color: "white" }}
+                    onClick={() => setHoursModalOpen(true)}
+                  >
+                    {open ? "Aberto agora" : "Fechado"}
+                  </div>
+                )}
+              </div>
             </div>
             <div
-              className="cursor-pointer hover:scale-[1.1] transition"
+              className="cursor-pointer hover:scale-[1.1] transition transform-[translatex(-100%)]"
               onClick={() => {
                 const url = `https://wa.me/${establishmentPhone}`;
                 window.open(url, "_blank");
               }}
             >
-              <FaWhatsapp size={28} />
+              <FaWhatsapp style={{ color: foregroundToUse }} size={28} />
             </div>
           </div>
 
@@ -416,13 +429,13 @@ export default function ClientMenu({ menu }) {
           </p>
         </div>
 
-        <div className="px-4 my-4">
+        <div className="px-4 mb-4">
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Buscar item do cardápio..."
-            className="w-full p-3 rounded-lg border-2 outline-none"
+            className="w-full py-1 px-3 rounded-lg border-2 outline-none"
             style={{
               backgroundColor: translucidToUse,
               color: foregroundToUse,
