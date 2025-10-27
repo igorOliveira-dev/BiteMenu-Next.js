@@ -1,33 +1,95 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import useAllMenus from "@/hooks/useAllMenus";
-import Loading from "@/components/Loading"; // caso já tenha um loader
+import { supabase } from "@/lib/supabaseClient";
+import Loading from "@/components/Loading";
 
 const Admin = () => {
-  const { menus, loading } = useAllMenus();
+  const { menus, loading: menusLoading } = useAllMenus();
+  const [fullMenus, setFullMenus] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log("Menus carregados:", menus);
-  }, [menus]);
+    const fetchOwnerProfiles = async () => {
+      if (menusLoading) return;
 
-  if (loading) return <Loading />;
+      setLoading(true);
+
+      if (!menus || menus.length === 0) {
+        setFullMenus([]);
+        setLoading(false);
+        return;
+      }
+
+      // 🔹 1. Coleta todos os owner_ids únicos
+      const ownerIds = [...new Set(menus.map((menu) => menu.owner_id))];
+
+      // 🔹 2. Busca os profiles dos donos (id, display_name, role, email)
+      const { data: profiles, error } = await supabase
+        .from("profiles")
+        .select("id, display_name, role, email")
+        .in("id", ownerIds);
+
+      if (error) {
+        console.error("Erro ao buscar perfis:", error);
+        setFullMenus(menus);
+        setLoading(false);
+        return;
+      }
+
+      // 🔹 3. Faz o merge entre menus e perfis correspondentes
+      const merged = menus.map((menu) => {
+        const ownerProfile = profiles.find((p) => p.id === menu.owner_id);
+        return {
+          ...menu,
+          owner_name: ownerProfile?.display_name || "Sem nome",
+          owner_email: ownerProfile?.email || "Sem e-mail",
+          owner_role: ownerProfile?.role || "desconhecido",
+        };
+      });
+
+      setFullMenus(merged);
+      setLoading(false);
+    };
+
+    fetchOwnerProfiles();
+  }, [menus, menusLoading]);
+
+  useEffect(() => {
+    console.log("Menus com dados completos:", fullMenus);
+  }, [fullMenus]);
+
+  if (loading || menusLoading) return <Loading />;
 
   return (
     <div className="p-4">
       <h1 className="default-h1 mb-4">Admin dashboard</h1>
 
-      {menus.length === 0 ? (
+      {fullMenus.length === 0 ? (
         <p className="text-gray-400">Nenhum cardápio encontrado.</p>
       ) : (
         <ul className="space-y-2">
-          {menus.map((menu) => (
-            <li key={menu.id} className="p-4 bg-translucid border border-translucid rounded-lg">
+          {fullMenus.map((menu) => (
+            <li key={menu.id} className="p-4 bg-translucid border border-translucid rounded-lg flex flex-col gap-2">
               <h2 className="text-lg font-semibold">{menu.title}</h2>
-              <p className="text-sm text-gray-500">{menu.description}</p>
-              <p className="text-xs text-gray-400 mt-1">
+
+              <p className="text-xs text-gray-400">
                 slug: <span className="font-mono">{menu.slug}</span>
               </p>
+
+              <div className="text-xs text-gray-400">
+                dono: <span className="font-semibold text-white">{menu.owner_name}</span> (
+                <span className="font-mono">{menu.owner_role}</span>)
+              </div>
+
+              <p className="text-xs text-gray-400">
+                email: <span className="font-mono">{menu.owner_email}</span>
+              </p>
+
+              <a href={`${window.location.origin}/${menu.slug}`} target="_blank" className="underline text-blue-500">
+                acessar
+              </a>
             </li>
           ))}
         </ul>
