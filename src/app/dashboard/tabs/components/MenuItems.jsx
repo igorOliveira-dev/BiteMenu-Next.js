@@ -185,6 +185,11 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       return;
     }
 
+    if (ownerRole === "pro" && categories.length >= 100) {
+      alert?.("Limite de 100 categorias atingido no plano Pro.", "error");
+      return;
+    }
+
     if (!menu?.id) return null;
     const tempId = uid();
     const temp = { id: tempId, name, menu_items: [] };
@@ -254,6 +259,11 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
     if (ownerRole === "plus" && totalItems >= 200) {
       alert?.("Limite de 200 itens atingido no plano Plus.", "error");
+      return;
+    }
+
+    if (ownerRole === "pro" && totalItems >= 1000) {
+      alert?.("Limite de 1000 itens atingido no plano Pro.", "error");
       return;
     }
 

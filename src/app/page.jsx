@@ -61,8 +61,8 @@ export default function Home() {
       name: "Pro",
       features: [
         "Cardápio digital",
-        "Itens ilimitados",
-        "Categorias ilimitadas",
+        "1000 Itens",
+        "100 Categorias",
         "Controle de pedidos",
         "Controle de vendas",
         "Dashboard de vendas",
