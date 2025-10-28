@@ -106,10 +106,6 @@ const Account = ({ setSelectedTab }) => {
     }
   };
 
-  const buyPlan = () => {
-    customAlert("Entre em contato com o suporte solicitando o plano Plus!");
-  };
-
   if (loading) {
     return <Loading />;
   }
@@ -144,11 +140,14 @@ const Account = ({ setSelectedTab }) => {
           </button>
 
           {/* plano */}
-          <div className="mt-4" onClick={() => buyPlan()}>
+          <div className="mt-4">
             <p className="font-semibold">Plano:</p>
             <div className="bg-translucid p-2 min-w-[120px] w-max rounded">
-              <p className="color-gray">{profile?.role}</p>
+              <p className="color-gray capitalize">{profile?.role}</p>
             </div>
+            <p className="text-sm color-gray mt-1 underline cursor-pointer" onClick={() => setSelectedTab("planDetails")}>
+              Detalhes do plano
+            </p>
           </div>
 
           {/* Telefone */}

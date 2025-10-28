@@ -74,7 +74,7 @@ const SalesSummary = ({ setSelectedTab, refreshSignal }) => {
   }, [menu?.id, refreshSignal]);
 
   const upgradePlan = () => {
-    alert("Entre em contato com o suporte solicitando seu plano Plus!");
+    window.location.href = "/dashboard/pricing";
   };
 
   if (loading || loadingSales) return <Loading />;
