@@ -213,21 +213,34 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="flex p-4 flex-col justify-center items-center h-[70dvh]">
-        <h2 className="font-bold mb-4">Alguma dúvida?</h2>
-        <div className="flex items-center">
-          <div className="flex flex-col items-center gap-2">
-            <div className="flex flex-col items-center justify-center bg-translucid backdrop-blur-sm border-2 border-translucid p-6 rounded-xl text-center min-w-[90dvw] sm:min-w-[460px]">
-              <p>O suporte do Bite Menu é feito diretamente via WhatsApp!</p>
-              <button
-                onClick={() => callSupport()}
-                className="cursor-pointer text-white flex items-center justify-center gap-2 rounded-lg mt-2 w-full p-2 sm:px-4 bg-green-500 hover:bg-green-600 transition font-bold"
-              >
-                <FaWhatsapp fontSize={22} />
-                Envie uma mensagem!
-              </button>
-            </div>
-          </div>
+      <section className="flex p-4 flex-col items-center justify-center h-[70dvh]">
+        <h2 className="font-bold text-2xl mb-12">Alguma dúvida?</h2>
+
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 flex-wrap relative">
+          {/* Botão Sobre */}
+          <a
+            href="/about"
+            className="cursor-pointer text-white flex items-center justify-center gap-2 rounded-lg w-full sm:w-auto p-3 bg-blue-600 hover:bg-blue-700 transition font-bold"
+          >
+            Sobre o Bite Menu
+          </a>
+
+          {/* Botão FAQs */}
+          <a
+            href="/faqs"
+            className="cursor-pointer flex items-center justify-center gap-2 rounded-lg w-full sm:w-auto p-3 bg-translucid border-2 border-translucid hover:opacity-80 transition font-bold"
+          >
+            Perguntas Frequentes
+          </a>
+
+          {/* Botão WhatsApp */}
+          <button
+            onClick={() => callSupport()}
+            className="cursor-pointer text-white flex items-center justify-center gap-2 rounded-lg w-full sm:w-auto p-3 bg-green-500 hover:bg-green-600 transition font-bold"
+          >
+            <FaWhatsapp fontSize={22} />
+            Envie uma mensagem!
+          </button>
         </div>
       </section>
 
