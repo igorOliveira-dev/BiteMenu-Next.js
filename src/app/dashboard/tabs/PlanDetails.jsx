@@ -91,15 +91,26 @@ export default function PlanDetails({ setSelectedTab }) {
 
       {subscription ? (
         <>
-          <p className="capitalize">
-            Plano: {subscription.plan_name}{" "}
-            {subscription.plan_price && `(R$ ${Number(subscription.plan_price).toFixed(2).replace(".", ",")})`}
-          </p>
+          <div className=" flex flex-col my-4">
+            <p>Plano:</p>
+            <p className="capitalize text-4xl font-extrabold">{subscription.plan_name}</p>
+            <p className="text-sm color-gray">
+              {subscription.plan_price && `R$ ${Number(subscription.plan_price).toFixed(2).replace(".", ",")}/mes`}
+            </p>
+          </div>
 
           {subscription.current_period_end ? (
-            <p>Próxima cobrança: {formatDate(subscription.current_period_end)}</p>
+            <p className="color-gray text-sm sm:text-base">
+              Próxima cobrança: {formatDate(subscription.current_period_end)}
+            </p>
           ) : (
-            <p>Sem data de cobrança disponível</p>
+            <p className="color-gray text-sm sm:text-base">Sem data de cobrança disponível</p>
+          )}
+
+          {subscription.card_info && (
+            <p className="text-sm color-gray mt-2">
+              💳 {subscription.card_info.brand.toUpperCase()} **** **** **** {subscription.card_info.last4} <br />
+            </p>
           )}
 
           {subscription.id && (
@@ -110,13 +121,13 @@ export default function PlanDetails({ setSelectedTab }) {
                 const ok = await confirm(
                   `Tem certeza que quer cancelar o plano? Se confirmar, você perderá os benefícios do Bite Menu ${capitalize(
                     subscription.plan_name
-                  )} no dia ${formatDate(subscription.current_period_end)}`
+                  )} imediatamente`
                 );
                 if (!ok) return;
 
                 cancelSubscription(subscription.id);
               }}
-              className="mt-2 cursor-pointer text-white bg-red-700 hover:bg-red-800 px-2 py-1 rounded-lg transition"
+              className="underline mt-2 cursor-pointer text-red-500 hover:text-red-600 py-1 transition"
             >
               Cancelar Plano
             </button>

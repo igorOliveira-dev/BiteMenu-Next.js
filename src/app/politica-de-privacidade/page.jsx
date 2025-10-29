@@ -7,14 +7,16 @@ const page = () => {
       <div className="max-w-2xl flex flex-col gap-6 p-4">
         <div>
           <h1 className="default-h1">Política de Privacidade – Bite Menu</h1>
-          <p>Última atualização: 05/10/2025</p>
+          <p>Última atualização: 29/10/2025</p>
         </div>
 
         <p>
           O <strong>Bite Menu</strong> valoriza sua privacidade e está comprometido com a proteção dos seus dados pessoais.
           Esta Política de Privacidade descreve como coletamos, utilizamos, armazenamos e protegemos suas informações ao
           utilizar nossos serviços, em conformidade com a{" "}
-          <strong>Lei Geral de Proteção de Dados Pessoais (Lei nº 13.709/2018 - LGPD)</strong>.
+          <strong>Lei Geral de Proteção de Dados Pessoais (Lei nº 13.709/2018 - LGPD)</strong>. Esta política também se
+          aplica aos usuários que realizam pagamentos de planos no Bite Menu, cujas informações são processadas de forma
+          segura através do <strong>Stripe</strong>.
         </p>
 
         <section>
@@ -40,7 +42,8 @@ const page = () => {
             <li>Senha (armazenada criptografada via Supabase Auth);</li>
             <li>Arquivos enviados, como logotipo e banner;</li>
             <li>Dados relacionados aos cardápios criados;</li>
-            <li>Telefone de contato.</li>
+            <li>Telefone de contato;</li>
+            <li>Informações relacionadas à assinatura e ao pagamento (processadas via Stripe);</li>
           </ul>
           <p>Essas informações são usadas para:</p>
           <ul className="list-disc ml-6">
@@ -57,7 +60,11 @@ const page = () => {
           <p>
             Seus dados são armazenados em servidores seguros e criptografados. Não compartilhamos suas informações pessoais
             com terceiros, exceto fornecedores de infraestrutura necessários para o funcionamento da plataforma (por exemplo,
-            Supabase).
+            Supabase e Stripe).
+          </p>
+          <p>
+            Os dados de pagamento não são armazenados diretamente pelo Bite Menu, mas sim pelo Stripe, que atua como operador
+            de pagamento em conformidade com as normas PCI-DSS.
           </p>
         </section>
 
@@ -136,7 +143,47 @@ const page = () => {
         </section>
 
         <section>
-          <h2 className="default-h2">8. Alterações nesta Política</h2>
+          <h2 className="default-h2">8. Pagamentos e Dados Financeiros</h2>
+          <p>
+            O Bite Menu utiliza o serviço <strong>Stripe</strong> para processar pagamentos dos planos <strong>Plus</strong>{" "}
+            e <strong>Pro</strong>. O Stripe é responsável por garantir a segurança das transações financeiras e o
+            cumprimento das normas de proteção de dados aplicáveis.
+          </p>
+          <p>
+            Ao contratar um plano pago, você será redirecionado para uma página segura do Stripe, onde poderá inserir seus
+            dados de pagamento. O Bite Menu <strong>não armazena nem tem acesso</strong> a informações sensíveis como número
+            de cartão, código de segurança (CVV) ou data de validade.
+          </p>
+          <p>As informações que podemos receber do Stripe incluem:</p>
+          <ul className="list-disc ml-6">
+            <li>Identificador da transação;</li>
+            <li>Status do pagamento (ex: ativo, cancelado, pendente);</li>
+            <li>Plano contratado e período de validade;</li>
+            <li>Data de início e término da assinatura.</li>
+          </ul>
+          <p>Esses dados são usados exclusivamente para:</p>
+          <ul className="list-disc ml-6">
+            <li>Gerenciar e validar a sua assinatura no Bite Menu;</li>
+            <li>Atualizar seu status de plano (“free”, “plus” ou “pro”) na plataforma;</li>
+            <li>Emitir recibos e notas fiscais, quando aplicável;</li>
+            <li>Cumprir obrigações legais e contábeis.</li>
+          </ul>
+          <p>
+            O processamento dos pagamentos está sujeito à{" "}
+            <a
+              href="https://stripe.com/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline text-blue-500 hover:text-blue-700"
+            >
+              Política de Privacidade do Stripe
+            </a>
+            .
+          </p>
+        </section>
+
+        <section>
+          <h2 className="default-h2">9. Alterações nesta Política</h2>
           <p>
             Podemos atualizar esta política periodicamente. A versão mais recente estará disponível em{" "}
             <Link
@@ -150,20 +197,27 @@ const page = () => {
         </section>
 
         <section>
-          <h2 className="default-h2">9. Contato</h2>
+          <h2 className="default-h2">10. Contato</h2>
           <p>
             Em caso de dúvidas ou solicitações sobre esta Política, entre em contato{" "}
             <Link href="/support" className="underline text-blue-500 hover:text-blue-700">
               clicando aqui
             </Link>
+            .
           </p>
         </section>
 
         <section>
-          <h2 className="default-h2">10. Aceite</h2>
+          <h2 className="default-h2">11. Aceite</h2>
           <p>
             Ao utilizar o Bite Menu, você concorda com esta Política de Privacidade e com o tratamento dos seus dados
             pessoais conforme aqui descrito.
+          </p>
+
+          <p className="text-sm color-gray mt-4">
+            O Bite Menu cumpre a Lei Geral de Proteção de Dados (Lei nº 13.709/2018 – LGPD) e segue boas práticas
+            internacionais de segurança da informação. Todas as transações financeiras são processadas com criptografia e
+            certificação PCI-DSS por meio do Stripe.
           </p>
         </section>
       </div>

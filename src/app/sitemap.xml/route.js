@@ -2,12 +2,12 @@ import { supabaseServer } from "@/lib/supabaseServer";
 
 export async function GET() {
   const staticPages = [
-    { url: "https://bitemenu.com.br/", lastmod: "2025-10-27" },
+    { url: "https://bitemenu.com.br/", lastmod: "2025-10-29" },
     { url: "https://bitemenu.com.br/support", lastmod: "2025-10-01" },
     { url: "https://bitemenu.com.br/register", lastmod: "2025-10-01" },
     { url: "https://bitemenu.com.br/login", lastmod: "2025-10-01" },
-    { url: "https://bitemenu.com.br/politica-de-privacidade", lastmod: "2025-10-05" },
-    { url: "https://bitemenu.com.br/pricing", lastmod: "2025-10-27" },
+    { url: "https://bitemenu.com.br/politica-de-privacidade", lastmod: "2025-10-29" },
+    { url: "https://bitemenu.com.br/pricing", lastmod: "2025-10-29" },
   ];
 
   // 🌐 Busca todos os menus registrados

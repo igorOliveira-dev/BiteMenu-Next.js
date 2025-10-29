@@ -131,14 +131,6 @@ const Account = ({ setSelectedTab }) => {
           {/* email */}
           <p className="color-gray">{profile?.email}</p>
 
-          {/* sair */}
-          <button
-            className="mt-2 cursor-pointer text-white bg-red-700 hover:bg-red-800 px-2 py-1 rounded-lg transition"
-            onClick={handleLogout}
-          >
-            Sair da conta
-          </button>
-
           {/* plano */}
           <div className="mt-4">
             <p className="font-semibold">Plano:</p>
@@ -177,6 +169,14 @@ const Account = ({ setSelectedTab }) => {
             </div>
             <p className="text-sm color-gray pt-1">Este é o número em que você receberá os pedidos.</p>
           </div>
+
+          {/* sair */}
+          <button
+            className="underline mt-2 cursor-pointer text-red-500 hover:text-red-600 py-1 transition"
+            onClick={handleLogout}
+          >
+            Sair da conta
+          </button>
         </div>
       </div>
       {nameModalOpen && (

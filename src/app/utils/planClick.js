@@ -33,11 +33,21 @@ export const planClick = async (plan) => {
     }),
   });
 
+  const result = await res.json();
+
   if (!res.ok) {
-    alert("Erro ao iniciar o pagamento. Tente novamente.");
+    if (result.existing_subscription) {
+      alert("Você já possui um plano ativo. Cancele o atual antes de assinar outro.");
+      window.location.href = "/dashboard"; // opcional
+    } else {
+      alert(result.error || "Erro ao iniciar o pagamento. Tente novamente.");
+    }
     return;
   }
 
-  const { url } = await res.json();
-  window.location.href = url;
+  if (result.url) {
+    window.location.href = result.url;
+  } else {
+    alert("Nenhuma URL de pagamento retornada. Tente novamente mais tarde.");
+  }
 };

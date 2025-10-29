@@ -9,7 +9,6 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const subscriptionId = searchParams.get("subscriptionId");
 
-    // 🟢 Caso o usuário esteja no plano Free
     if (!subscriptionId) {
       return new Response(
         JSON.stringify({
@@ -87,6 +86,23 @@ export async function GET(req) {
       }
     }
 
+    // Buscar método de pagamento principal
+    const paymentMethods = await stripe.paymentMethods.list({
+      customer: subscription.customer,
+      type: "card",
+    });
+
+    let cardInfo = null;
+    if (paymentMethods.data.length > 0) {
+      const card = paymentMethods.data[0].card;
+      cardInfo = {
+        brand: card.brand,
+        last4: card.last4,
+        exp_month: card.exp_month,
+        exp_year: card.exp_year,
+      };
+    }
+
     // 4️⃣ Retornar tudo pro frontend
     return new Response(
       JSON.stringify({
@@ -95,6 +111,7 @@ export async function GET(req) {
         plan_name: planName,
         plan_price: planPrice,
         current_period_end: currentPeriodEnd,
+        card_info: cardInfo,
       }),
       {
         status: 200,
