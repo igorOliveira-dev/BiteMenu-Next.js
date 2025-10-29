@@ -12,6 +12,7 @@ import Account from "./tabs/Account";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SalesDashboard from "./tabs/SalesDashboard";
+import PlanDetails from "./tabs/PlanDetails";
 
 const Dashboard = ({
   menuState: externalMenuState,
@@ -201,6 +202,9 @@ const Dashboard = ({
         </div>
         <div className={selectedTab === "account" ? "block" : "hidden"}>
           <Account setSelectedTab={setSelectedTab} />
+        </div>
+        <div className={selectedTab === "planDetails" ? "block" : "hidden"}>
+          <PlanDetails setSelectedTab={setSelectedTab} />
         </div>
       </main>
 

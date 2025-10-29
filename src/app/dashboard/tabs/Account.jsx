@@ -117,7 +117,7 @@ const Account = ({ setSelectedTab }) => {
           <div onClick={() => setSelectedTab("menu")}>
             <FaChevronLeft className="cursor-pointer" />
           </div>
-          <h2 className="ml-2">Conta</h2>
+          <h2 className="ml-2 xs:font-semibold">Conta</h2>
         </div>
 
         <div className="px-2">
