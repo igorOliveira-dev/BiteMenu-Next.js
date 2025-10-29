@@ -1,7 +1,6 @@
-"use client";
 import SuccessClient from "./SuccessClient";
 
-// Garantir que a página não será prerenderizada
+// Evita prerendering e força render dinâmico
 export const dynamic = "force-dynamic";
 
 export default function Page() {
