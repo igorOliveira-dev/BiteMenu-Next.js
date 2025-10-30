@@ -56,7 +56,7 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
   const [costumerPhone, setCostumerPhone] = useState("");
 
   const serviceOptions = [
-    { id: "delivery", label: "Entrega" },
+    { id: "delivery", label: `Entrega ${menu.delivery_fee > 0 ? `(R$ ${menu.delivery_fee.toFixed(2)})` : ""}` },
     { id: "pickup", label: "Retirada" },
     { id: "dinein", label: "Comer no local" },
     { id: "faceToFace", label: "Atendimento presencial" },
@@ -319,7 +319,8 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
       })
       .join("\n\n");
 
-    const total = (cart.totalPrice(menu?.id) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    const subtotal = cart.totalPrice(menu?.id) || 0;
+    const total = subtotal + menu.delivery_fee;
 
     const customerInfo = `
 👤 Nome: ${costumerName}
@@ -333,7 +334,8 @@ ${selectedService === "delivery" ? `📍 Endereço: ${costumerAddress}\n` : ""}
 ${itemsList}
 
 ————————————
-💰 Total: ${total}
+${menu.delivery_fee > 0 ? `Subtotal: ${subtotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}` : ""}
+💰 Total: ${total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
 
 ${customerInfo}`;
 

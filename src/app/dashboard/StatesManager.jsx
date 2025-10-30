@@ -69,6 +69,11 @@ function detectChanges(local, server, watchKeys = []) {
       continue;
     }
 
+    if (key === "deliveryFee") {
+      if (Number(lv ?? 0) !== Number(sv ?? 0)) diffs.push(key);
+      continue;
+    }
+
     if ((lv ?? "") !== (sv ?? "")) diffs.push(key);
   }
   return diffs.sort();
@@ -190,6 +195,7 @@ export default function StatesManager({
     "slug",
     "selectedServices",
     "selectedPayments",
+    "deliveryFee",
     "hours",
   ],
   onSave,
@@ -205,7 +211,7 @@ export default function StatesManager({
   const [showChanges, setShowChanges] = useState(false);
 
   const [serverState, setServerState] = useState(null);
-  const [localState, setLocalState] = useState(null);
+  const [localState, setLocalState] = useState(0);
   const [changedFields, setChangedFields] = useState([]);
   const [saving, setSaving] = useState(false);
 
@@ -237,6 +243,7 @@ export default function StatesManager({
       slug: menuFromServer.slug ?? "",
       selectedServices: menuFromServer.services ?? [],
       selectedPayments: menuFromServer.payments ?? [],
+      deliveryFee: menuFromServer.delivery_fee ?? 0,
       hours: menuFromServer.hours ?? null,
     };
     setServerState(normalized);
@@ -368,6 +375,7 @@ export default function StatesManager({
         slug: localState.slug,
         services: localState.selectedServices,
         payments: localState.selectedPayments,
+        delivery_fee: parseFloat(localState.deliveryFee) || 0,
         hours: localState.hours,
       };
 
@@ -431,6 +439,7 @@ export default function StatesManager({
           slug: data.slug ?? "",
           selectedServices: data.services ?? [],
           selectedPayments: data.payments ?? [],
+          deliveryFee: data.delivery_fee ?? 0,
           hours: data.hours ?? null,
         };
 
@@ -460,6 +469,7 @@ export default function StatesManager({
           slug: data.slug ?? "",
           selectedServices: data.services ?? [],
           selectedPayments: data.payments ?? [],
+          deliveryFee: data.delivery_fee ?? 0,
           hours: data.hours ?? null,
         };
 
@@ -574,6 +584,7 @@ export default function StatesManager({
                     slug: "Identificador",
                     selectedServices: "Serviços selecionados",
                     selectedPayments: "Formas de pagamento",
+                    deliveryFee: "Taxa de entrega",
                     hours: "Horário",
                   };
 

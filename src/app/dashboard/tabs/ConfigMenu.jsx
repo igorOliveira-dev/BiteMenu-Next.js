@@ -69,6 +69,7 @@ const ConfigMenu = (props) => {
   const [slugLocal, setSlugLocal] = useState(menu?.slug ?? "");
   const [selectedServicesLocal, setSelectedServicesLocal] = useState(menu?.services ?? []);
   const [selectedPaymentsLocal, setSelectedPaymentsLocal] = useState(menu?.payments ?? []);
+  const [deliveryFeeLocal, setDeliveryFeeLocal] = useState(menu?.delivery_fee ?? 0);
   const [hoursLocal, setHoursLocal] = useState(() => normalizeHours(menu?.hours));
 
   // getters/setters unificados (slug / services / payments)
@@ -84,6 +85,10 @@ const ConfigMenu = (props) => {
   const setSelectedPayments = usingExternal
     ? (arr) => externalSetState((p) => ({ ...p, selectedPayments: arr }))
     : setSelectedPaymentsLocal;
+
+  const deliveryFee = usingExternal ? externalState?.deliveryFee ?? 0 : deliveryFeeLocal;
+
+  const setDeliveryFee = usingExternal ? (v) => externalSetState((p) => ({ ...p, deliveryFee: v })) : setDeliveryFeeLocal;
 
   // hours: para renderizar sempre usamos a versão normalizada
   const hours = normalizeHours(usingExternal ? externalState?.hours : hoursLocal);
@@ -146,6 +151,7 @@ const ConfigMenu = (props) => {
       }
       if (menu.services && !usingExternal) setSelectedServices(menu.services);
       if (menu.payments && !usingExternal) setSelectedPayments(menu.payments);
+      if (menu.delivery_fee && !usingExternal) setDeliveryFee(menu.delivery_fee);
       if (menu.background_color && !usingExternal && typeof propSetBg === "function") propSetBg(menu.background_color);
       if (menu.title_color && !usingExternal && typeof propSetTitleColor === "function") propSetTitleColor(menu.title_color);
       if (menu.hours && !usingExternal) safeSetHours(menu.hours);
@@ -351,6 +357,25 @@ const ConfigMenu = (props) => {
                 </label>
               ))}
             </div>
+            <div className="mt-4">
+              <label>
+                <span>Taxa de entrega (R$)</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={deliveryFee || ""}
+                  onChange={(e) => {
+                    let value = e.target.value;
+                    if (value.includes("-")) value = value.replace("-", "");
+                    if (parseFloat(value) < 0) value = "0";
+                    setDeliveryFee(value);
+                  }}
+                  placeholder="0.00"
+                  className="p-1 ml-2 rounded border-2 border-translucid bg-translucid w-24"
+                />
+              </label>
+            </div>
           </div>
 
           {/* Payments */}
@@ -483,7 +508,7 @@ const ConfigMenu = (props) => {
               setTempTitle(v);
             }}
             maxLength={20}
-            className="w-full p-2 rounded border bg-translucid mb-4"
+            className="w-full p-2 rounded border-2 border-translucid bg-translucid mb-4"
           />
 
           <div className="flex items-center justify-between mb-4">
@@ -532,7 +557,7 @@ const ConfigMenu = (props) => {
             }}
             maxLength={200}
             rows={4}
-            className="w-full p-2 rounded border bg-translucid mb-2"
+            className="w-full p-2 rounded border-2 border-translucid bg-translucid mb-4"
           />
 
           <div className="flex items-center justify-between mb-4">
@@ -584,7 +609,7 @@ const ConfigMenu = (props) => {
               setTempSlug(v);
             }}
             maxLength={20}
-            className="w-full p-2 rounded border bg-translucid mb-4"
+            className="w-full p-2 rounded border-2 border-translucid bg-translucid mb-4"
           />
 
           <div className="flex items-center justify-between mb-4">

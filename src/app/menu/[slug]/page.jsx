@@ -60,6 +60,7 @@ export default async function MenuPage({ params }) {
       hours,
       services,
       payments,
+      delivery_fee,
       orders,
       categories (
         id,
