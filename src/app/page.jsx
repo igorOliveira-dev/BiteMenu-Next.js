@@ -218,20 +218,20 @@ export default function Home() {
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 flex-wrap relative">
           {/* Botão Sobre */}
-          <a
+          <Link
             href="/about"
             className="cursor-pointer text-white flex items-center justify-center gap-2 rounded-lg w-full sm:w-auto p-3 bg-blue-600 hover:bg-blue-700 transition font-bold"
           >
             Sobre o Bite Menu
-          </a>
+          </Link>
 
           {/* Botão FAQs */}
-          <a
+          <Link
             href="/faqs"
             className="cursor-pointer flex items-center justify-center gap-2 rounded-lg w-full sm:w-auto p-3 bg-translucid border-2 border-translucid hover:opacity-80 transition font-bold"
           >
             Perguntas Frequentes
-          </a>
+          </Link>
 
           {/* Botão WhatsApp */}
           <button
