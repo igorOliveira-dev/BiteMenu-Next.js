@@ -8,6 +8,7 @@ import useMenu from "@/hooks/useMenu";
 import { supabase } from "@/lib/supabaseClient";
 import Loading from "@/components/Loading";
 import { useAlert } from "@/providers/AlertProvider";
+import SalesCharts from "./components/SalesCharts";
 
 ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend);
 
@@ -16,6 +17,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
   const customAlert = useAlert();
 
   const [ownerRole, setOwnerRole] = useState(null);
+  const [rawSales, setRawSales] = useState([]);
   const [salesData, setSalesData] = useState([]);
   const [loadingSales, setLoadingSales] = useState(false);
 
@@ -62,7 +64,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
     const { data, error } = await supabase
       .from("sales")
-      .select("created_at, items_list, total")
+      .select("created_at, items_list, total, payment_method, service")
       .eq("menu_id", menu.id)
       .gte("created_at", start.toISOString())
       .lte("created_at", end.toISOString())
@@ -129,6 +131,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
     }
 
     setSalesData(entries);
+    setRawSales(data);
     setLoadingSales(false);
   };
 
@@ -234,7 +237,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
   return (
     <div className="px-4 sm:px-2 lg:grid">
-      <div className="md:m-auto lg:m-2 lg:w-[calc(80dvw-256px)] max-w-[1024px] min-h-[calc(100dvh-110px)] rounded-lg overflow-y-auto">
+      <div className="md:m-auto lg:m-2 lg:w-[calc(80dvw-256px)] max-w-[1024px] min-h-[calc(100dvh-110px)] rounded-lg overflow-y-auto scrollbar-none">
         {/* Cabeçalho */}
         <div className="flex items-center gap-2 mb-4">
           <div className="cursor-pointer" onClick={() => setSelectedTab("sales")}>
@@ -321,6 +324,9 @@ const SalesDashboard = ({ setSelectedTab }) => {
               <Line data={chartData} options={chartOptions} />
             </div>
           )}
+        </div>
+        <div className="mt-6">
+          <SalesCharts sales={rawSales} />
         </div>
       </div>
     </div>
