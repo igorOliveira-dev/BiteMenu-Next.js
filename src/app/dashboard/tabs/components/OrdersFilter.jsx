@@ -44,9 +44,7 @@ export default function OrdersFilter({ onChange, initial = {} }) {
     cash: "Dinheiro",
     debit: "Débito",
     credit: "Crédito",
-    card: "Cartão",
     pix: "PIX",
-    whatsapp: "Pagamento por WhatsApp",
   };
 
   const serviceLabels = {
