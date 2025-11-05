@@ -270,7 +270,7 @@ const Orders = ({ setSelectedTab }) => {
                 {filteredOrders.map((order) => (
                   <div
                     key={order.id}
-                    className="p-4 rounded-lg shadow-sm bg-translucid flex flex-col xs:flex-row justify-between"
+                    className="p-4 rounded-lg shadow-sm bg-translucid border-2 border-translucid flex flex-col xs:flex-row justify-between"
                   >
                     <div>
                       <h3 className="font-bold text-lg line-clamp-1">{order.costumer_name || "Cliente"}</h3>
@@ -371,7 +371,7 @@ const Orders = ({ setSelectedTab }) => {
       {/* Sidebar */}
 
       {enabledOrders ? (
-        <aside className="hidden p-2 m-2 fixed right-0 rounded-lg bg-translucid w-[calc(30dvw-36px)] shadow-[0_0_10px_var(--shadow)] lg:flex flex-col h-[calc(100dvh-110px)] justify-between">
+        <aside className="hidden p-2 m-2 fixed right-0 rounded-lg bg-translucid border-2 border-translucid w-[calc(30dvw-36px)] shadow-[0_0_10px_var(--shadow)] lg:flex flex-col h-[calc(100dvh-110px)] justify-between">
           <div className="p-4">
             <h3 className="font-bold mb-2">Resumo</h3>
             <p>Total de pedidos: {filteredOrders.length}</p>

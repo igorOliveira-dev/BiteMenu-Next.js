@@ -291,7 +291,7 @@ const Sales = ({ setSelectedTab }) => {
             const monthTotal = monthSales.reduce((sum, s) => sum + (Number(s.total) || computeTotal(s)), 0);
 
             return (
-              <section key={key} className="border border-translucid rounded-lg overflow-hidden">
+              <section key={key} className="border-2 border-translucid rounded-lg overflow-hidden">
                 <button
                   type="button"
                   onClick={() => toggleMonth(key, group.monthStart)}
@@ -315,7 +315,7 @@ const Sales = ({ setSelectedTab }) => {
                     <input
                       type="text"
                       placeholder="Pesquisar por nome, telefone, itens..."
-                      className="input w-full bg-translucid p-2 rounded mb-3"
+                      className="input w-full bg-translucid border-2 border-translucid p-2 rounded mb-3"
                       value={filters[key]?.query || ""}
                       onChange={(e) =>
                         setFilters((prev) => ({
@@ -366,7 +366,7 @@ const Sales = ({ setSelectedTab }) => {
                       getFilteredSales(key).map((sale) => (
                         <div
                           key={sale.id}
-                          className="p-4 rounded-lg shadow-sm bg-translucid flex flex-col xs:flex-row justify-between"
+                          className="p-4 rounded-lg shadow-sm bg-translucid border-2 border-translucid flex flex-col xs:flex-row justify-between"
                         >
                           <div>
                             <h3 className="font-bold text-lg line-clamp-1">{sale.costumer_name || "Cliente"}</h3>

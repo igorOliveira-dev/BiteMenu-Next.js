@@ -558,11 +558,7 @@ export default function GetStart() {
 
           {/* Botão de sugerir paleta aleatória */}
           <div className="mt-4 flex justify-begin">
-            <button
-              type="button"
-              onClick={suggestRandomPalette}
-              className="px-6 py-4 rounded-lg gray-button text-sm font-medium transition"
-            >
+            <button type="button" onClick={suggestRandomPalette} className="custom-gray-button">
               💡 Sugerir cores
             </button>
           </div>

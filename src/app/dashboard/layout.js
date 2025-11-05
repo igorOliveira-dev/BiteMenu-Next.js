@@ -9,6 +9,7 @@ import Image from "next/image";
 import LogoMark from "../../../public/LogoMarca-sem-fundo.png";
 import LogoTip from "../../../public/LogoTipo-sem-fundo.png";
 import ThemeToggle from "@/components/ThemeToggle";
+import { FaBolt } from "react-icons/fa";
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
@@ -69,7 +70,7 @@ export default function DashboardLayout({ children }) {
 
   return (
     <>
-      <header className="z-10 backdrop-blur-sm flex items-center fixed top-0 w-[calc(100%-20px)] justify-between p-2 m-2 my-3 bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)]">
+      <header className="z-10 backdrop-blur-sm flex items-center fixed top-0 w-[calc(100%-20px)] justify-between p-2 m-2 my-3 bg-translucid border-2 border-translucid rounded-lg shadow-[0_0_10px_var(--shadow)]">
         {/* logo marca - telas grandes */}
         <Image
           src={LogoMark}
@@ -93,10 +94,10 @@ export default function DashboardLayout({ children }) {
         <div className="flex items-center gap-2">
           {/* botao de melhorar plano */}
           {showPlanButton ? (
-            <a
-              href="/dashboard/pricing"
-              className="p-1 px-2 xs:p-2 xs:px-4 rounded-xl border-2 bg-translucid border-translucid mr-2 font-bold"
-            >
+            <a href="/dashboard/pricing" className="dashboard-plan-button">
+              <span className="hidden xxs:block">
+                <FaBolt />
+              </span>
               Melhorar plano!
             </a>
           ) : null}

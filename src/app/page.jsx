@@ -100,7 +100,7 @@ export default function Home() {
             <p className="color-gray mb-6 max-w-[400px]">
               Com Bite Menu você constrói a presença online do seu estabelecimento em poucos minutos!
             </p>
-            <Link className="plan-button" href="register">
+            <Link className="landing-page-call-action" href="register">
               Comece grátis!
             </Link>
           </div>
@@ -174,7 +174,7 @@ export default function Home() {
           <h2 className="mb-6">
             Teste um cardápio feito no <strong>Bite Menu!</strong>
           </h2>
-          <a href="https://www.bitemenu.com.br/menu/bite-menu" target="_blank" className="plan-button">
+          <a href="https://www.bitemenu.com.br/menu/bite-menu" target="_blank" className="landing-page-call-action">
             Acesse o cardápio teste
           </a>
         </div>
@@ -204,7 +204,7 @@ export default function Home() {
                   {plan.price}
                   <span className="text-base color-gray">/mes</span>
                 </p>
-                <button onClick={() => planClick(plan.id)} className="plan-button w-full text-center">
+                <button onClick={() => planClick(plan.id)} className="landing-page-call-action w-full text-center">
                   Selecionar
                 </button>
               </div>

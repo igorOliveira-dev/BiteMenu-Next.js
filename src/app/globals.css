@@ -148,11 +148,33 @@ h3 {
   background-color: var(--dark-gray-90);
 }
 
-.gray-button {
-  border: 1px solid var(--low-gray);
+.custom-gray-button {
+  border: 1px solid var(--translucid);
+  cursor: pointer;
+  padding-inline: 16px;
+  padding-block: 8px;
+  border-radius: 8px;
   background-color: var(--translucid);
+  transition: 0.3s;
   &:hover {
-    background-color: var(--low-gray);
+    opacity: 0.8;
+  }
+}
+
+.dashboard-plan-button {
+  cursor: pointer;
+  border-radius: 8px;
+  padding-block: 6px;
+  padding-inline: 16px;
+  background-color: rgb(61, 61, 255);
+  transition: 0.3s;
+  border: 2px solid var(--translucid);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: bold;
+  &:hover {
+    opacity: 0.8;
   }
 }
 
@@ -191,7 +213,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   filter: invert(var(--time-icon-invert));
 }
 
-.plan-button {
+.landing-page-call-action {
   border-radius: 6px;
   padding: 12px 24px;
   margin-top: 12px;
@@ -205,7 +227,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   transition: transform 0.2s ease;
 }
 
-.plan-button:hover {
+.landing-page-call-action:hover {
   transform: scale(1.05);
 }
 

@@ -74,7 +74,7 @@ const page = () => {
                 {plan.price}
                 <span className="text-base color-gray">/mes</span>
               </p>
-              <button onClick={() => planClick(plan.id)} className="plan-button w-full text-center">
+              <button onClick={() => planClick(plan.id)} className="landing-page-call-action w-full text-center">
                 Selecionar
               </button>
             </div>

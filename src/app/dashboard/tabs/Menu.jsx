@@ -340,7 +340,7 @@ const Menu = (props) => {
         </div>
 
         {/* Sidebar */}
-        <aside className="hidden p-2 pt-4 m-2 fixed right-0 rounded-lg bg-translucid w-[calc(30dvw-36px)] shadow-[0_0_10px_var(--shadow)] lg:flex items-center flex-col overflow-hidden h-[calc(100dvh-110px)]">
+        <aside className="hidden p-2 pt-4 m-2 fixed right-0 rounded-lg bg-translucid border-2 border-translucid w-[calc(30dvw-36px)] shadow-[0_0_10px_var(--shadow)] lg:flex items-center flex-col overflow-hidden h-[calc(100dvh-110px)]">
           <div className="h-full py-4 flex flex-col justify-between">
             <div>
               <h3>Compartilhe seu cardápio!</h3>
@@ -380,11 +380,7 @@ const Menu = (props) => {
               </div>
 
               <div className="mt-4 flex items-center space-x-3">
-                <button
-                  type="button"
-                  onClick={suggestRandomPalette}
-                  className="cursor-pointer px-4 py-2 rounded-lg gray-button text-sm font-medium transition"
-                >
+                <button type="button" onClick={suggestRandomPalette} className="custom-gray-button">
                   💡 Sugerir cores
                 </button>
               </div>

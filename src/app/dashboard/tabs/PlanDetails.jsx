@@ -10,8 +10,8 @@ const PlanoFree = () => {
   return (
     <div>
       <p className="mb-4">Você está no plano Free!</p>
-      <a href="/dashboard/pricing" className="plan-button">
-        Melhorar plano
+      <a href="/dashboard/pricing" className="dashboard-plan-button">
+        <FaBolt /> Melhorar plano
       </a>
     </div>
   );

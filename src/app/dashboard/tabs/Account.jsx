@@ -178,6 +178,12 @@ const Account = ({ setSelectedTab }) => {
             Sair da conta
           </button>
         </div>
+
+        {profile?.role === "admin" && (
+          <a href="/admin" className="ml-2 underline color-gray">
+            Admin page
+          </a>
+        )}
       </div>
       {nameModalOpen && (
         <GenericModal onClose={() => setNameModalOpen(false)}>

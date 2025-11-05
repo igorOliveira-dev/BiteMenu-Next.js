@@ -264,7 +264,7 @@ const ConfigMenu = (props) => {
                 </button>
               </div>
             </div>
-            <hr className="border-2 border-translucid mt-2 mb-4 max-w-full" />
+            <hr className="border-1 border-translucid mt-2 mb-4 max-w-full" />
           </div>
 
           {/* Description */}
@@ -280,7 +280,7 @@ const ConfigMenu = (props) => {
                 </button>
               </div>
             </div>
-            <hr className="border-2 border-translucid mt-2 mb-4 max-w-full" />
+            <hr className="border-1 border-translucid mt-2 mb-4 max-w-full" />
           </div>
 
           {/* Slug */}
@@ -297,7 +297,7 @@ const ConfigMenu = (props) => {
                 </button>
               </div>
             </div>
-            <hr className="border-2 border-translucid mt-2 mb-4 max-w-full" />
+            <hr className="border-1 border-translucid mt-2 mb-4 max-w-full" />
           </div>
 
           {/* Colors */}
@@ -320,15 +320,11 @@ const ConfigMenu = (props) => {
             </div>
 
             <div className="mt-4 flex items-center space-x-3">
-              <button
-                type="button"
-                onClick={suggestRandomPalette}
-                className="cursor-pointer px-4 py-2 rounded-lg gray-button text-sm font-medium transition"
-              >
+              <button type="button" onClick={suggestRandomPalette} className="custom-gray-button">
                 💡 Sugerir cores
               </button>
             </div>
-            <hr className="border-2 border-translucid mt-2 mb-4 max-w-full" />
+            <hr className="border-1 border-translucid mt-2 mb-4 max-w-full" />
           </div>
 
           {/* Services */}
@@ -376,6 +372,7 @@ const ConfigMenu = (props) => {
                 />
               </label>
             </div>
+            <hr className="border-1 border-translucid mt-2 mb-4 max-w-full" />
           </div>
 
           {/* Payments */}
@@ -404,6 +401,7 @@ const ConfigMenu = (props) => {
                 </label>
               ))}
             </div>
+            <hr className="border-1 border-translucid mt-2 mb-4 max-w-full" />
           </div>
 
           {/* Hours */}
@@ -475,7 +473,7 @@ const ConfigMenu = (props) => {
 
             <button
               type="button"
-              className="cursor-pointer mt-3 bg-translucid border-2 border-translucid px-4 py-2 rounded-lg opacity-100 hover:opacity-80 transition"
+              className="custom-gray-button mt-4"
               onClick={() => {
                 safeSetHours((prev) => {
                   const newObj = { ...prev };
