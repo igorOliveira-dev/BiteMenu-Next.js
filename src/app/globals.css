@@ -225,6 +225,13 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   box-shadow: 0 0 5px var(--red);
   animation: planBtnAnim 2s infinite alternate;
   transition: transform 0.2s ease;
+  &.small {
+    margin-top: 0;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    scale: 0.8;
+  }
 }
 
 .landing-page-call-action:hover {

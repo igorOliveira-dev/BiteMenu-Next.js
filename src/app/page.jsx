@@ -90,8 +90,28 @@ export default function Home() {
 
       <section className="sm:h-[100dvh] mb-6" id="begin">
         <header className="fixed inset-x-0 flex items-center justify-between p-2 m-2 my-3 bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)] z-10 backdrop-blur-sm">
-          <Image src={logoMark} height={50} width={180} alt="Bite Menu" onClick={() => (window.location.href = "/")} />
-          <ThemeToggle />
+          <Image
+            src={logoMark}
+            height={50}
+            width={180}
+            alt="Bite Menu"
+            onClick={() => (window.location.href = "/")}
+            className="hidden xs:block"
+          />
+          <Image
+            src={logoTip}
+            height={50}
+            width={50}
+            alt="Bite Menu"
+            onClick={() => (window.location.href = "/")}
+            className="block xs:hidden"
+          />
+          <div className="flex">
+            <Link className="landing-page-call-action small" href="register">
+              Criar cardápio!
+            </Link>
+            <ThemeToggle />
+          </div>
         </header>
         <div className="p-2 flex items-center justify-center md:justify-around h-full flex-col md:flex-row">
           <div className="pt-40 md:pt-0 text-center sm:text-start">
