@@ -87,7 +87,7 @@ const Admin = () => {
                 email: <span className="font-mono">{menu.owner_email}</span>
               </p>
 
-              <a href={`${window.location.origin}/${menu.slug}`} target="_blank" className="underline text-blue-500">
+              <a href={`${window.location.origin}/menu/${menu.slug}`} target="_blank" className="underline text-blue-500">
                 acessar
               </a>
             </li>
