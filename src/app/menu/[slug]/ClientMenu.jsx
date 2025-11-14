@@ -399,7 +399,10 @@ export default function ClientMenu({ menu }) {
                 </div>
               )}
               <div className="flex flex-col">
-                <h1 className="text-lg xs:text-xl md:text-2xl font-bold" style={{ color: menu.title_color }}>
+                <h1
+                  className="text-lg xs:text-xl md:text-2xl font-bold line-clamp-2 pr-8"
+                  style={{ color: menu.title_color }}
+                >
                   {menu.title}
                 </h1>
                 {menu.banner_url ? null : (
@@ -596,10 +599,16 @@ export default function ClientMenu({ menu }) {
         >
           <div className="flex flex-col gap-4 sm:min-w-[460px]">
             <div className="flex flex-row gap-4 mb-2">
-              <div className="h-30 w-30 relative">
-                <Image src={selectedItem.image_url} fill alt={selectedItem.name} className="rounded-xl" />
-              </div>
-              <div className="flex flex-col gap-2 justify-between w-[calc(100%-120px)]">
+              {selectedItem.image_url && (
+                <div className="h-26 w-26 sm:h-30 sm:w-30 relative">
+                  <Image src={selectedItem.image_url} fill alt={selectedItem.name} className="rounded-xl" />
+                </div>
+              )}
+              <div
+                className={`flex flex-col gap-2 justify-between ${
+                  selectedItem.image_url ? "w-[calc(100%-120px)]" : "w-[100%]"
+                }`}
+              >
                 <div>
                   <h2 className="text-xl font-bold w-full line-clamp-1" style={{ color: foregroundToUse }}>
                     {selectedItem.name}
