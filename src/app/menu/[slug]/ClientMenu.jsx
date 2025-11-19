@@ -512,8 +512,15 @@ export default function ClientMenu({ menu }) {
                             {it.name}
                           </div>
 
-                          <div className="text-sm line-clamp-2" style={{ color: grayToUse }}>
-                            {it.description}
+                          <div
+                            className="text-sm line-clamp-2"
+                            style={{
+                              color: grayToUse,
+                              wordBreak: "normal",
+                              overflowWrap: "anywhere",
+                            }}
+                          >
+                            {it.description?.replace(/,\s*/g, ", ")}
                           </div>
                         </div>
                       </div>
@@ -613,8 +620,15 @@ export default function ClientMenu({ menu }) {
                   <h2 className="text-xl font-bold w-full line-clamp-1" style={{ color: foregroundToUse }}>
                     {selectedItem.name}
                   </h2>
-                  <p style={{ color: grayToUse }} className="line-clamp-4">
-                    {selectedItem.description}
+                  <p
+                    className="line-clamp-4"
+                    style={{
+                      color: grayToUse,
+                      wordBreak: "normal",
+                      overflowWrap: "anywhere",
+                    }}
+                  >
+                    {selectedItem.description?.replace(/,\s*/g, ", ")}
                   </p>
                 </div>
                 <span className="text-3xl font-semibold" style={{ color: foregroundToUse }}>
