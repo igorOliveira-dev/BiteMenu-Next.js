@@ -398,7 +398,7 @@ export default function ClientMenu({ menu }) {
                   <img alt="Logo do estabelecimento" src={menu.logo_url} className="object-cover rounded-lg w-full h-full" />
                 </div>
               )}
-              <div className="flex flex-col">
+              <div className="flex flex-col items-start">
                 <h1
                   className="text-lg xs:text-xl md:text-2xl font-bold line-clamp-2 pr-8"
                   style={{ color: menu.title_color }}
