@@ -12,14 +12,14 @@
   --low-gray: #bbb;
   --dark-gray-90: #22222290;
   --medium-gray: #aaa;
-  --translucid: #00000015;
+  --translucid: #00000008;
   --red: #d42020;
   --shadow: #00000070;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #1b1c1e;
+    --background: #060606;
     --foreground: #fafafa;
     --gray: #ccc;
     --low-gray: #222;
@@ -37,13 +37,13 @@
   --low-gray: #bbb;
   --dark-gray-90: #22222290;
   --medium-gray: #aaa;
-  --translucid: #00000015;
+  --translucid: #00000008;
   --red: #d42020;
   --shadow: #00000070;
 }
 
 [data-theme="dark"] {
-  --background: #1b1c1e;
+  --background: #060606;
   --foreground: #fafafa;
   --gray: #ccc;
   --low-gray: #222;
