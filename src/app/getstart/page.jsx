@@ -440,15 +440,15 @@ export default function GetStart() {
             type="text"
             value={establishmentName}
             onChange={(e) => {
-              const v = e.target.value.slice(0, 20);
+              const v = e.target.value.slice(0, 30);
               setEstablishmentName(v);
             }}
-            maxLength={20}
+            maxLength={30}
             placeholder="Nome do seu estabelecimento"
             className="w-full px-3 py-2 bg-translucid border border-[var(--low-gray)] rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
           <div className="flex items-center justify-between mt-2">
-            <div className="text-sm color-gray">{(establishmentName || "").length}/20</div>
+            <div className="text-sm color-gray">{(establishmentName || "").length}/30</div>
           </div>
         </div>
 

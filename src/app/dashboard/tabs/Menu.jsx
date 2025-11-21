@@ -409,9 +409,17 @@ const Menu = (props) => {
             type="text"
             placeholder="Novo título"
             value={tempTitle ?? ""}
-            onChange={(e) => setTempTitle(e.target.value)}
+            onChange={(e) => {
+              const v = e.target.value.slice(0, 30);
+              setTempTitle(v);
+            }}
+            maxLength={30}
             className="w-full p-2 rounded border bg-translucid mb-4"
           />
+
+          <div className="flex items-center justify-between mt-2">
+            <div className="text-sm color-gray">{(tempTitle || "").length}/30</div>
+          </div>
           <div className="flex justify-end gap-2">
             <button
               onClick={() => {

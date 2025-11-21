@@ -502,16 +502,15 @@ const ConfigMenu = (props) => {
             placeholder="Novo título"
             value={tempTitle || ""}
             onChange={(e) => {
-              const v = e.target.value.slice(0, 20);
+              const v = e.target.value.slice(0, 30);
               setTempTitle(v);
             }}
-            maxLength={20}
+            maxLength={30}
             className="w-full p-2 rounded border-2 border-translucid bg-translucid mb-4"
           />
 
           <div className="flex items-center justify-between mb-4">
-            <div className="text-sm color-gray">{(tempTitle || "").length}/20</div>
-            <div className="text-sm color-gray">Dica: seja objetivo.</div>
+            <div className="text-sm color-gray">{(tempTitle || "").length}/30</div>
           </div>
 
           <div className="flex justify-end gap-2">
