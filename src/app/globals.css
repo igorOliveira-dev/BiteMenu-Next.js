@@ -172,6 +172,8 @@ h3 {
   border: 2px solid var(--translucid);
   gap: 4px;
   font-weight: bold;
+  display: flex;
+  align-items: center;
   &:hover {
     opacity: 0.8;
   }

@@ -91,10 +91,10 @@ export default function DashboardLayout({ children }) {
           className="block xs:hidden"
         />
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center">
           {/* botao de melhorar plano */}
           {showPlanButton ? (
-            <a href="/dashboard/pricing" className="cta-button">
+            <a href="/dashboard/pricing" className="cta-button small">
               <span className="hidden xxs:block">
                 <FaBolt />
               </span>
