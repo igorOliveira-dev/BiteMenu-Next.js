@@ -82,7 +82,7 @@ export default function Home() {
       {dashboardPath && (
         <button
           onClick={() => router.replace("/dashboard")}
-          className="cursor-pointer font-bold p-2 px-4 bg-low-gray rounded-lg shadow-[0_0_10px_var(--shadow)] z-10 backdrop-blur-sm fixed top-22 right-2"
+          className="cursor-pointer font-bold p-2 px-4 bg-low-gray border-2 border-translucid rounded-lg z-10 backdrop-blur-sm fixed top-22 right-2 hover:opacity-80 transition"
         >
           Acessar meu cardápio
         </button>
@@ -107,24 +107,25 @@ export default function Home() {
             className="block xs:hidden"
           />
           <div className="flex">
-            <Link className="landing-page-call-action small" href="register">
+            <Link className="cta-button small" href="register">
               Criar cardápio!
             </Link>
             <ThemeToggle />
           </div>
         </header>
-        <div className="p-2 flex items-center justify-center md:justify-around h-full flex-col md:flex-row">
-          <div className="pt-40 md:pt-0 text-center sm:text-start">
-            <h1 className="text-5xl lg:text-6xl xl:text-7xl font-bold text-[var(--red)]">Bite Menu</h1>
-            <h2>Crie e gerencie seu cardápio digital!</h2>
-            <p className="color-gray mb-6 max-w-[400px]">
+        <div className="p-4 flex items-center justify-center md:justify-around h-full flex-col lg:flex-row">
+          <div className="pt-40 lg:pt-0 text-center lg:text-start max-w-2xl">
+            <h1 className="text-3xl lg:text-5xl font-bold text-[var(--red)]">
+              Crie e gerencie seu cardápio digital de graça!
+            </h1>
+            <p className="leading-tight mt-3 mb-6 text-lg lg:text-xl">
               Com Bite Menu você constrói a presença online do seu estabelecimento em poucos minutos!
             </p>
-            <Link className="landing-page-call-action" href="register">
+            <Link className="cta-button" href="register">
               Comece grátis!
             </Link>
           </div>
-          <div className="scale-70 md:scale-90 lg:scale-100 transform-[translate(15%,-10%)] md:transform-none">
+          <div className="scale-70 lg:scale-100 transform-[translate(15%,-10%)] lg:transform-none">
             <Image src={logoTip} alt="Bite Menu" className="absolute opacity-20 -z-[1] transform-[translate(-30%,20%)]" />
             <Image
               src={menuCelular}
@@ -134,69 +135,6 @@ export default function Home() {
               className="transform-[translate(0,10%)]"
             />
           </div>
-        </div>
-      </section>
-
-      <section className="bg-translucid flex flex-col items-center">
-        <div className="p-4 relative overflow-hidden w-[96vw] flex justify-center">
-          <div
-            id="carousel"
-            className=" flex gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-none px-[calc(50vw-180px)] sm:px-[calc(50vw-210px)] lg:px-[calc(50vw-240px)] xl:px-0"
-          >
-            {[
-              { src: CrieCardapio, title: "Crie seu cardápio" },
-              { src: RecebaWhatsapp, title: "Receba pedidos pelo WhatsApp" },
-              { src: ControlePedidos, title: "Controle seus pedidos" },
-              { src: AcompanheSuasVendas, title: "Acompanhe suas vendas" },
-              { src: EncontreDadosVendas, title: "Receba insights relevantes" },
-            ].map((item, i) => (
-              <div
-                key={i}
-                className="min-w-[280px] lg:min-w-[350px] rounded-xl snap-center flex-shrink-0 flex flex-col items-center justify-center text-center"
-              >
-                <h3 className="text-medium font-semibold mt-4">{item.title}</h3>
-                <Image
-                  src={item.src}
-                  alt={item.title}
-                  width={240}
-                  height={240}
-                  className="rounded-lg mb-3 object-cover"
-                  style={{ transform: "scaleY(0.9)" }}
-                />
-              </div>
-            ))}
-          </div>
-
-          <button
-            onClick={() => document.getElementById("carousel").scrollBy({ left: -400, behavior: "smooth" })}
-            className="cursor-pointer absolute left-1 top-1/2 -translate-y-1/2 bg-translucid backdrop-blur-sm p-2 rounded-full shadow-md hover:scale-110 transition"
-          >
-            <FaChevronLeft />
-          </button>
-
-          <button
-            onClick={() => document.getElementById("carousel").scrollBy({ left: 400, behavior: "smooth" })}
-            className="cursor-pointer absolute right-1 top-1/2 -translate-y-1/2 bg-translucid backdrop-blur-sm p-2 rounded-full shadow-md hover:scale-110 transition"
-          >
-            <FaChevronRight />
-          </button>
-        </div>
-      </section>
-
-      <section className="p-6 py-12 flex-col sm:flex-row flex items-center justify-center gap-[8vw] scrollbar-none">
-        <iframe
-          src="https://www.bitemenu.com.br/menu/bite-menu"
-          className="hidden sm:block"
-          height={500}
-          width={320}
-        ></iframe>
-        <div className="sm:w-[320px]">
-          <h2 className="mb-6">
-            Teste um cardápio feito no <strong>Bite Menu!</strong>
-          </h2>
-          <a href="https://www.bitemenu.com.br/menu/bite-menu" target="_blank" className="landing-page-call-action">
-            Acesse o cardápio teste
-          </a>
         </div>
       </section>
 
@@ -219,12 +157,12 @@ export default function Home() {
                   ))}
                 </ul>
               </div>
-              <div className="w-full flex flex-col">
+              <div className="w-full flex flex-col gap-2">
                 <p className="text-4xl font-bold">
                   {plan.price}
                   <span className="text-base color-gray">/mes</span>
                 </p>
-                <button onClick={() => planClick(plan.id)} className="landing-page-call-action w-full text-center">
+                <button onClick={() => planClick(plan.id)} className="cta-button">
                   Selecionar
                 </button>
               </div>
@@ -233,46 +171,18 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="flex p-4 flex-col items-center justify-center h-[70dvh]">
-        <h2 className="font-bold text-2xl mb-12">Alguma dúvida?</h2>
-
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 flex-wrap relative">
-          {/* Botão Sobre */}
-          <Link
-            href="/about"
-            className="cursor-pointer text-white flex items-center justify-center gap-2 rounded-lg w-full sm:w-auto p-3 bg-blue-600 hover:bg-blue-700 transition font-bold"
-          >
-            Sobre o Bite Menu
-          </Link>
-
-          {/* Botão FAQs */}
-          <Link
-            href="/faqs"
-            className="cursor-pointer flex items-center justify-center gap-2 rounded-lg w-full sm:w-auto p-3 bg-translucid border-2 border-translucid hover:opacity-80 transition font-bold"
-          >
-            Perguntas Frequentes
-          </Link>
-
-          {/* Botão WhatsApp */}
-          <button
-            onClick={() => callSupport()}
-            className="cursor-pointer text-white flex items-center justify-center gap-2 rounded-lg w-full sm:w-auto p-3 bg-green-500 hover:bg-green-600 transition font-bold"
-          >
-            <FaWhatsapp fontSize={22} />
-            Envie uma mensagem!
-          </button>
-        </div>
-      </section>
-
       <footer className="bg-low-gray p-6 border-t border-gray-300 dark:border-gray-700">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           {/* Logo */}
-          <Link href="https://www.bitemenu.com.br" className="w-[220px] flex justify-center">
+          <Link href="https://www.bitemenu.com.br" className="flex justify-center">
             <Image src={logoMark} height={40} width={140} alt="Bite Menu" />
           </Link>
 
           {/* Links */}
-          <div className="flex flex-col md:flex-row justify-center items-center gap-2 gap-x-4 text-sm w-[220px]">
+          <div className="flex flex-col md:flex-row justify-center items-center gap-2 gap-x-4 text-sm">
+            <Link href="/faqs" className="hover:underline">
+              Perguntas frequentes
+            </Link>
             <Link href="/politica-de-privacidade" className="hover:underline">
               Política de Privacidade
             </Link>
@@ -282,7 +192,7 @@ export default function Home() {
           </div>
 
           {/* Direitos */}
-          <div className="text-xs text-center md:text-right w-[220px] color-gray">
+          <div className="text-xs text-center md:text-right color-gray">
             © {new Date().getFullYear()} Bite Menu. <br /> Todos os direitos reservados.
           </div>
         </div>

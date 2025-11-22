@@ -161,20 +161,23 @@ h3 {
   }
 }
 
-.dashboard-plan-button {
+.cta-button {
   cursor: pointer;
   border-radius: 8px;
-  padding-block: 6px;
-  padding-inline: 16px;
-  background-color: rgb(61, 61, 255);
+  padding-block: 12px;
+  padding-inline: 22px;
+  background-color: #2030d4;
+  color: #fafafa;
   transition: 0.3s;
   border: 2px solid var(--translucid);
-  display: flex;
-  align-items: center;
   gap: 4px;
   font-weight: bold;
   &:hover {
     opacity: 0.8;
+  }
+  &.small {
+    padding: 6px 12px;
+    scale: 0.8;
   }
 }
 
@@ -213,28 +216,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   filter: invert(var(--time-icon-invert));
 }
 
-.landing-page-call-action {
-  border-radius: 6px;
-  padding: 12px 24px;
-  margin-top: 12px;
-  background-color: var(--red);
-  font-weight: bold;
-  color: white;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 0 5px var(--red);
-  animation: planBtnAnim 2s infinite alternate;
-  transition: transform 0.2s ease;
-  &.small {
-    margin-top: 0;
-    padding: 6px 12px;
-    display: flex;
-    align-items: center;
-    scale: 0.8;
-  }
-}
-
-.landing-page-call-action:hover {
+.cta-button:hover {
   transform: scale(1.05);
 }
 
