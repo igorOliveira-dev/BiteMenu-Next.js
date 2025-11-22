@@ -6,12 +6,12 @@ import logoMark from "../../public/LogoMarca-sem-fundo.png";
 
 export const metadata = {
   metadataBase: new URL("https://www.bitemenu.com.br"),
-  title: "Bite Menu - Crie seu cardápio digital",
+  title: "Criar cardápio digital grátis | Bite Menu",
   description:
     "Crie seu cardápio digital grátis com o Bite Menu. Simples, moderno e feito para estabelecimentos que querem vender mais e registrar pedidos com facilidade.",
   alternates: { canonical: "https://www.bitemenu.com.br" },
   openGraph: {
-    title: "Bite Menu - Crie seu cardápio digital",
+    title: "Crie seu cardápio digital grátis | Bite Menu",
     description:
       "Crie seu cardápio digital grátis com o Bite Menu. Simples, moderno e feito para estabelecimentos que querem vender mais e registrar pedidos com facilidade.",
     url: "https://www.bitemenu.com.br",

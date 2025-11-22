@@ -137,7 +137,7 @@ export default function Home() {
         <h2></h2>
       </section> */}
 
-      <section className="py-12 px-6 min-h-[70vh] flex flex-col items-center justify-center">
+      <section className="py-12 px-6 min-h-[70vh] flex flex-col items-center justify-center bg-translucid">
         <h2 className="font-bold scale-130 xxs:scale-150 mb-8 text-center">Planos disponíveis:</h2>
         <div className="w-full max-w-[1248px] flex justify-around flex-wrap gap-6 lg:gap-12">
           {plans.map((plan) => (
