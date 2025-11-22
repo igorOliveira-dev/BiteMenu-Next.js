@@ -91,25 +91,33 @@ const Dashboard = ({
       <div className="flex items-center">
         <aside className="m-2 rounded-lg bg-translucid border-2 border-translucid h-full max-w-[720px] w-[calc(100dvw-86px)] lg:w-60 shadow-[0_0_10px_var(--shadow)] flex lg:flex-col items-center overflow-hidden lg:h-[calc(100dvh-110px)]">
           <button
-            className="cursor-pointer w-full px-2 p-4 sm:px-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)] text-nowrap"
+            className={`cursor-pointer w-full px-2 p-4 sm:px-4 hover-bg-translucid ${
+              selectedTab === "menu" ? "bg-translucid" : ""
+            } transition-colors font-semibold border-b-2 border-[var(--translucid)] text-nowrap`}
             onClick={() => setSelectedTab("menu")}
           >
             {changedFields.length > 0 ? "Cardápio *" : "Cardápio"}
           </button>
           <button
-            className="cursor-pointer w-full px-2 p-4 sm:px-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)]"
+            className={`cursor-pointer w-full px-2 p-4 sm:px-4 hover-bg-translucid ${
+              selectedTab === "orders" ? "bg-translucid" : ""
+            } transition-colors font-semibold border-b-2 border-[var(--translucid)]`}
             onClick={() => setSelectedTab("orders")}
           >
             Pedidos
           </button>
           <button
-            className="cursor-pointer w-full px-2 p-4 sm:px-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)]"
+            className={`cursor-pointer w-full px-2 p-4 sm:px-4 hover-bg-translucid ${
+              selectedTab === "sales" ? "bg-translucid" : ""
+            } transition-colors font-semibold border-b-2 border-[var(--translucid)]`}
             onClick={() => setSelectedTab("sales")}
           >
             Vendas
           </button>
           <button
-            className="cursor-pointer w-full hidden lg:block p-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)]"
+            className={`cursor-pointer w-full hidden lg:block p-4 hover-bg-translucid ${
+              selectedTab === "account" ? "bg-translucid" : ""
+            } transition-colors font-semibold border-b-2 border-[var(--translucid)]`}
             onClick={() => setSelectedTab("account")}
           >
             Conta
