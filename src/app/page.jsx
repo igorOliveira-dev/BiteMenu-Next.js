@@ -5,6 +5,8 @@ import logoMark from "../../public/LogoMarca-sem-fundo.png";
 import logoTip from "../../public/LogoTipo-sem-fundo.png";
 import ThemeToggle from "@/components/ThemeToggle";
 import menuCelular from "../../public/bitemenuCelular.png";
+import crieerecebawhatsapp from "../../public/mockups/crieerecebawhatsapp.png";
+import controlepedidosevendas from "../../public/mockups/controlepedidosevendas.png";
 import Link from "next/link";
 import useUser from "@/hooks/useUser";
 import Loading from "@/components/Loading";
@@ -133,11 +135,27 @@ export default function Home() {
         </div>
       </section>
 
-      {/* <section className="p-20 bg-translucid">
-        <h2></h2>
-      </section> */}
+      <section className="px-4 py-6 sd:py-20 bg-translucid">
+        <div className="mb-12 sm:mb-0 flex items-center flex-col-reverse sm:flex-row justify-center gap-6 sm:gap-24">
+          <div className="w-[184px] h-[228px] xs:w-[292px] xs:h-[365px] sm:w-[194px] sm:h-[243px] md:w-[292px] md:h-[365px] lg:w-[324px] lg:h-[405px] relative">
+            <Image src={crieerecebawhatsapp} fill alt="Crie seu cardápio e receba pedidos pelo WhatsApp" />
+          </div>
+          <h1 className="text-center sm:text-start font-bold sm:max-w-[40%] text-xl xs:text-3xl">
+            Crie seu cardápio digital e receba pedidos pelo WhatsApp.
+          </h1>
+        </div>
+        <div className="flex items-center flex-col sm:flex-row justify-center sm:gap-24">
+          <h1 className="text-center sm:text-start font-bold sm:max-w-[40%] text-xl xs:text-3xl">
+            Controle completamente seus pedidos e suas vendas pelo site.
+          </h1>
 
-      <section className="py-12 px-6 min-h-[70vh] flex flex-col items-center justify-center bg-translucid">
+          <div className="w-[216px] h-[270px] xs:w-[324px] xs:h-[405px] sm:w-[216px] sm:h-[270px] md:w-[324px] md:h-[405px] lg:w-[360px] lg:h-[450px] relative">
+            <Image src={controlepedidosevendas} fill alt="Controle pedidos e vendas" />
+          </div>
+        </div>
+      </section>
+
+      <section className="py-12 px-6 min-h-[70vh] flex flex-col items-center justify-center">
         <h2 className="font-bold scale-130 xxs:scale-150 mb-8 text-center">Planos disponíveis:</h2>
         <div className="w-full max-w-[1248px] flex justify-around flex-wrap gap-6 lg:gap-12">
           {plans.map((plan) => (
