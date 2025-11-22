@@ -172,14 +172,16 @@ h3 {
   border: 2px solid var(--translucid);
   gap: 4px;
   font-weight: bold;
-  display: flex;
-  align-items: center;
   &:hover {
     opacity: 0.8;
   }
   &.small {
     padding: 6px 12px;
     scale: 0.8;
+  }
+  &.has-icon {
+    display: flex;
+    align-items: center;
   }
 }
 

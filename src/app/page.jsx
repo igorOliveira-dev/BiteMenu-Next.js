@@ -12,11 +12,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaCheck, FaChevronLeft, FaChevronRight, FaWhatsapp } from "react-icons/fa";
 
-import CrieCardapio from "../../public/carousel/CrieSeuCardapio.jpg";
-import RecebaWhatsapp from "../../public/carousel/RecebaPedidosNoWhatsapp.jpg";
-import ControlePedidos from "../../public/carousel/ControleSeusPedidos.jpg";
-import AcompanheSuasVendas from "../../public/carousel/AcompanheSuasVendas.jpg";
-import EncontreDadosVendas from "../../public/carousel/EncontreDadosSobreSuasVendas.jpg";
 import { planClick } from "./utils/planClick";
 
 export default function Home() {
