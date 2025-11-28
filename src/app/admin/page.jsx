@@ -9,6 +9,8 @@ const Admin = () => {
   const { menus, loading: menusLoading } = useAllMenus();
   const [fullMenus, setFullMenus] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showOnlyPaid, setShowOnlyPaid] = useState(false);
+  const [search, setSearch] = useState(""); // 🔍 pesquisa por nome
 
   useEffect(() => {
     const fetchOwnerProfiles = async () => {
@@ -22,13 +24,11 @@ const Admin = () => {
         return;
       }
 
-      // 🔹 1. Coleta todos os owner_ids únicos
       const ownerIds = [...new Set(menus.map((menu) => menu.owner_id))];
 
-      // 🔹 2. Busca os profiles dos donos (id, display_name, role, email)
       const { data: profiles, error } = await supabase
         .from("profiles")
-        .select("id, display_name, role, email")
+        .select("id, display_name, role, email, stripe_customer_id")
         .in("id", ownerIds);
 
       if (error) {
@@ -38,7 +38,6 @@ const Admin = () => {
         return;
       }
 
-      // 🔹 3. Faz o merge entre menus e perfis correspondentes
       const merged = menus
         .map((menu) => {
           const ownerProfile = profiles.find((p) => p.id === menu.owner_id);
@@ -47,6 +46,7 @@ const Admin = () => {
             owner_name: ownerProfile?.display_name || "Sem nome",
             owner_email: ownerProfile?.email || "Sem e-mail",
             owner_role: ownerProfile?.role || "desconhecido",
+            stripe_costumer_id: ownerProfile?.stripe_customer_id || null,
           };
         })
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -58,21 +58,51 @@ const Admin = () => {
     fetchOwnerProfiles();
   }, [menus, menusLoading]);
 
-  useEffect(() => {
-    console.log("Menus com dados completos:", fullMenus);
-  }, [fullMenus]);
-
   if (loading || menusLoading) return <Loading />;
+
+  // 🔹 Filtragem combinada
+  let visibleMenus = [...fullMenus];
+
+  if (showOnlyPaid) {
+    visibleMenus = visibleMenus.filter((m) => m.stripe_costumer_id != null);
+  }
+
+  if (search.trim() !== "") {
+    const s = search.toLowerCase();
+    visibleMenus = visibleMenus.filter((m) => m.title.toLowerCase().includes(s));
+  }
 
   return (
     <div className="p-4">
       <h1 className="default-h1 mb-4">Admin dashboard</h1>
 
-      {fullMenus.length === 0 ? (
+      {/* 🔹 Filtros */}
+      <div className="flex flex-col gap-4 mb-4">
+        {/* Pesquisa */}
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Pesquisar..."
+          className="px-3 py-1 rounded bg-translucid border border-translucid text-sm max-w-80"
+        />
+        {/* Toggle Stripe */}
+        <label className="flex items-center gap-2 text-sm text-gray-300">
+          Só quem quase me deu lucro (ou me deu lucro)
+          <input
+            type="checkbox"
+            checked={showOnlyPaid}
+            onChange={(e) => setShowOnlyPaid(e.target.checked)}
+            className="toggle toggle-primary"
+          />
+        </label>
+      </div>
+
+      {visibleMenus.length === 0 ? (
         <p className="text-gray-400">Nenhum cardápio encontrado.</p>
       ) : (
         <ul className="space-y-2">
-          {fullMenus.map((menu) => (
+          {visibleMenus.map((menu) => (
             <li
               key={menu.id}
               className={`p-4 bg-translucid border-2 ${
@@ -83,7 +113,10 @@ const Admin = () => {
                   : "border-translucid"
               } rounded-lg flex flex-col gap-2`}
             >
-              <h2 className="text-lg font-semibold">{menu.title}</h2>
+              <div className="flex items-center gap-2">
+                {menu.stripe_costumer_id != null ? <span className="text-gray-400">!</span> : ""}
+                <h2 className="text-lg font-semibold">{menu.title}</h2>
+              </div>
 
               <p className="text-xs text-gray-400 font-mono">
                 {new Date(menu.created_at).toLocaleString("pt-BR", {
