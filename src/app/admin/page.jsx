@@ -39,15 +39,17 @@ const Admin = () => {
       }
 
       // 🔹 3. Faz o merge entre menus e perfis correspondentes
-      const merged = menus.map((menu) => {
-        const ownerProfile = profiles.find((p) => p.id === menu.owner_id);
-        return {
-          ...menu,
-          owner_name: ownerProfile?.display_name || "Sem nome",
-          owner_email: ownerProfile?.email || "Sem e-mail",
-          owner_role: ownerProfile?.role || "desconhecido",
-        };
-      });
+      const merged = menus
+        .map((menu) => {
+          const ownerProfile = profiles.find((p) => p.id === menu.owner_id);
+          return {
+            ...menu,
+            owner_name: ownerProfile?.display_name || "Sem nome",
+            owner_email: ownerProfile?.email || "Sem e-mail",
+            owner_role: ownerProfile?.role || "desconhecido",
+          };
+        })
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
       setFullMenus(merged);
       setLoading(false);
@@ -71,8 +73,27 @@ const Admin = () => {
       ) : (
         <ul className="space-y-2">
           {fullMenus.map((menu) => (
-            <li key={menu.id} className="p-4 bg-translucid border border-translucid rounded-lg flex flex-col gap-2">
+            <li
+              key={menu.id}
+              className={`p-4 bg-translucid border-2 ${
+                menu.owner_role === "admin"
+                  ? "border-red-500"
+                  : menu.owner_role === "plus" || menu.owner_role === "pro"
+                  ? "border-blue-500"
+                  : "border-translucid"
+              } rounded-lg flex flex-col gap-2`}
+            >
               <h2 className="text-lg font-semibold">{menu.title}</h2>
+
+              <p className="text-xs text-gray-400 font-mono">
+                {new Date(menu.created_at).toLocaleString("pt-BR", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
 
               <p className="text-xs text-gray-400">
                 slug: <span className="font-mono">{menu.slug}</span>
