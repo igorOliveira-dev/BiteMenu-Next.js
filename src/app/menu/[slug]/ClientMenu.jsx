@@ -607,9 +607,12 @@ export default function ClientMenu({ menu }) {
           <div className="flex flex-col gap-4 sm:min-w-[460px]">
             <div className="flex flex-row gap-4 mb-2">
               {selectedItem.image_url && (
-                <div className="h-26 w-26 sm:h-30 sm:w-30 relative">
-                  <Image src={selectedItem.image_url} fill alt={selectedItem.name} className="rounded-xl" />
-                </div>
+                <img
+                  src={selectedItem.image_url}
+                  alt={selectedItem.name}
+                  className="block h-26 w-26 sm:h-30 sm:w-30 object-cover rounded-lg"
+                  style={{ flexShrink: 0 }}
+                />
               )}
               <div
                 className={`flex flex-col gap-2 justify-between ${
