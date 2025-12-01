@@ -93,7 +93,6 @@ body {
 .default-h1 {
   font-size: 32px;
   font-weight: bold;
-  color: var(--red);
 }
 
 h2 {

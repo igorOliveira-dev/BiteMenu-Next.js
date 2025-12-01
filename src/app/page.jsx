@@ -192,16 +192,23 @@ export default function Home() {
           </Link>
 
           {/* Links */}
-          <div className="flex flex-col md:flex-row justify-center items-center gap-2 gap-x-4 text-sm">
-            <Link href="/faqs" className="hover:underline">
-              Perguntas frequentes
-            </Link>
-            <Link href="/politica-de-privacidade" className="hover:underline">
-              Política de Privacidade
-            </Link>
-            <Link href="/support" className="hover:underline">
-              Suporte
-            </Link>
+          <div className="flex flex-col lg:flex-row gap-4">
+            <div className="flex flex-col md:flex-row justify-center items-center gap-8 text-sm">
+              <Link href="/about" className="hover:underline">
+                Sobre
+              </Link>
+              <Link href="/faqs" className="hover:underline">
+                Perguntas frequentes
+              </Link>
+            </div>
+            <div className="flex flex-col md:flex-row justify-center items-center gap-2 gap-x-4 text-sm">
+              <Link href="/politica-de-privacidade" className="hover:underline">
+                Política de Privacidade
+              </Link>
+              <Link href="/support" className="hover:underline">
+                Suporte
+              </Link>
+            </div>
           </div>
 
           {/* Direitos */}

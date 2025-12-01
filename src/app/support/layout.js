@@ -1,3 +1,4 @@
+import ReturnLandingPage from "@/components/ReturnLandingPage";
 import React from "react";
 
 export const metadata = {
@@ -14,5 +15,12 @@ export const metadata = {
 };
 
 export default function layout({ children }) {
-  return <div>{children}</div>;
+  return (
+    <div>
+      <div className="absolute top-2 left-2">
+        <ReturnLandingPage />
+      </div>
+      {children}
+    </div>
+  );
 }
