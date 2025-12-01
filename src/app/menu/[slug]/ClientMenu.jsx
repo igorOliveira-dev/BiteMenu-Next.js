@@ -603,6 +603,7 @@ export default function ClientMenu({ menu }) {
           }}
           bgColor={menu.background_color}
           maxWidth={"720px"}
+          margin={"12px"}
         >
           <div className="flex flex-col gap-4 sm:min-w-[460px]">
             <div className="flex flex-row gap-4 mb-2">
@@ -624,7 +625,7 @@ export default function ClientMenu({ menu }) {
                     {selectedItem.name}
                   </h2>
                   <p
-                    className="line-clamp-4"
+                    className="max-h-[80px] sm:max-h-[98px] overflow-auto text-sm pr-1 scrollbar-none"
                     style={{
                       color: grayToUse,
                       wordBreak: "normal",
