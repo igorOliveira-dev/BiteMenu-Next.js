@@ -414,6 +414,7 @@ ${customerInfo}`;
       } finally {
         // Abre o WhatsApp SEMPRE, independentemente do banco
         cart.clear(menu.id);
+        resetPurchase();
         window.open(url, "_blank");
       }
     })();
