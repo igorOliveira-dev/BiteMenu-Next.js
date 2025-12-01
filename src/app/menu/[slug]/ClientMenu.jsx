@@ -124,7 +124,7 @@ export default function ClientMenu({ menu }) {
   const [establishmentPhone, setEstablishmentPhone] = useState(null);
 
   const open = isOpenNow(menu.hours);
-  const translucidToUse = getContrastTextColor(menu.background_color) === "white" ? "#ffffff10" : "#00000010";
+  const translucidToUse = getContrastTextColor(menu.background_color) === "white" ? "#ffffff15" : "#00000015";
   const grayToUse = getContrastTextColor(menu.background_color) === "white" ? "#cccccc" : "#333333";
   const foregroundToUse = getContrastTextColor(menu.background_color) === "white" ? "#fafafa" : "#171717";
 

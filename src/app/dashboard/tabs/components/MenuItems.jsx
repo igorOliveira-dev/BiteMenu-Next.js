@@ -671,7 +671,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     setModalPayload({ type: null, mode: null, categoryId: null, itemId: null, data: {} });
   };
 
-  const translucidToUse = getContrastTextColor(backgroundColor) === "white" ? "#ffffff10" : "#00000010";
+  const translucidToUse = getContrastTextColor(backgroundColor) === "white" ? "#ffffff15" : "#00000015";
   const grayToUse = getContrastTextColor(backgroundColor) === "white" ? "#cccccc" : "#333333";
   const foregroundToUse = getContrastTextColor(backgroundColor) === "white" ? "#fafafa" : "#171717";
 
