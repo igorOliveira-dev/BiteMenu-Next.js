@@ -642,13 +642,14 @@ ${customerInfo}`;
                           onChange={() => setSelectedPayment(option.id)}
                           className="peer appearance-none w-6 h-6 border-2 rounded-full transition-all duration-150 flex items-center justify-center relative"
                           style={{
-                            borderColor: menu.details_color,
+                            borderColor: grayToUse,
+                            color: grayToUse,
                             backgroundColor: selectedPayment === option.id ? menu.details_color : "transparent",
                           }}
                         />
                         <span
-                          className="relative after:content-['✓'] after:absolute after:text-white after:text-sm after:font-bold after:top-[3px] after:left-[-25px] peer-checked:after:opacity-100 after:opacity-0 transition-opacity duration-150"
-                          style={{ color: "var(--gray)" }}
+                          className="relative after:content-['✓'] after:absolute after:text-sm after:font-bold after:top-[3px] after:left-[-25px] peer-checked:after:opacity-100 after:opacity-0 after:text-[var(--check-color)] transition-opacity duration-150"
+                          style={{ "--check-color": grayToUse }}
                         >
                           {option.label}
                         </span>
