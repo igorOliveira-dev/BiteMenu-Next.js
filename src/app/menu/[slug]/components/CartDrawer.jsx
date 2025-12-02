@@ -25,6 +25,8 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
   const confirm = useConfirm();
   const customAlert = useAlert();
 
+  const [whatsappURL, setWhatsappURL] = useState(null);
+
   // pega apenas os items do menu atual
   const currentItems = cart.getItems(menu?.id);
   const currentTotalItems = cart.totalItems(menu?.id);
@@ -276,12 +278,12 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
   const confirmPurchase = () => {
     saveCustomerInfo();
 
-    if (costumerName < 3) {
+    if (costumerName.length < 3) {
       customAlert("O nome deve ter pelo menos 3 letras.", "error");
       return;
     }
 
-    if (costumerPhone < 5) {
+    if (costumerPhone.length < 5) {
       customAlert("Número de telefone inválido.", "error");
       return;
     }
@@ -304,6 +306,7 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
       return;
     }
 
+    whatsappConfirmation();
     setPurchaseStage("whatsapp");
   };
 
@@ -312,10 +315,7 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
       .map((it) => {
         const addons = it.additionals?.length > 0 ? `\n   + ${it.additionals.map((a) => a.name).join(", ")}` : "";
         const note = it.note ? `\n   Obs: ${it.note}` : "";
-        return `• ${it.qty}x ${it.name} - ${(it.price * it.qty).toLocaleString("pt-BR", {
-          style: "currency",
-          currency: "BRL",
-        })}${addons}${note}`;
+        return `• ${it.qty}x ${it.name}${addons}${note}`;
       })
       .join("\n\n");
 
@@ -339,38 +339,22 @@ ${menu.delivery_fee > 0 ? `Subtotal: ${subtotal.toLocaleString("pt-BR", { style:
 
 ${customerInfo}`;
 
-    // pega o telefone (prioriza establishmentPhone carregado, senão tenta menu)
     const rawPhone = establishmentPhone || menu?.owner_phone || menu?.phone || null;
 
     if (!rawPhone) {
-      customAlert(
-        "Telefone do estabelecimento não encontrado. Verifique se o estabelecimento cadastrou um número.",
-        "error"
-      );
-      console.warn("CartDrawer: nenhum telefone disponível (establishmentPhone/menu.owner_phone/menu.phone)", {
-        establishmentPhone,
-        menuPhone: menu?.owner_phone ?? menu?.phone,
-      });
+      customAlert("Telefone do estabelecimento não encontrado.", "error");
       return;
     }
 
-    // normaliza: remove tudo que não é dígito
     const normalized = String(rawPhone).replace(/\D/g, "");
 
-    // valida tamanho (wa.me aceita entre 8 e 15 dígitos tipicamente; exija pelo menos 8)
-    if (!/^\d{8,15}$/.test(normalized)) {
-      customAlert("Telefone do estabelecimento inválido. Formato inválido para WhatsApp.", "error");
-      console.warn("CartDrawer: telefone normalizado inválido para wa.me:", rawPhone, "->", normalized);
-      return;
-    }
-
-    // monta url do wa.me (sem +, apenas dígitos, sem zeros locais)
     const url = `https://wa.me/${normalized}?text=${encodeURIComponent(message)}`;
 
-    // Inserir pedido no Supabase (com created_at)
+    setWhatsappURL(url);
+
+    //
     (async () => {
       try {
-        // Só salva no Supabase se o menu for "site_whatsapp"
         if (menu.orders === "site_whatsapp") {
           const total = (currentItems || []).reduce((acc, item) => {
             const base = (Number(item.price) || 0) * (Number(item.qty) || 0);
@@ -411,12 +395,9 @@ ${customerInfo}`;
         }
       } catch (err) {
         console.error("⚠ Erro inesperado ao salvar pedido:", err);
-      } finally {
-        // Abre o WhatsApp SEMPRE, independentemente do banco
-        cart.clear(menu.id);
-        resetPurchase();
-        window.open(url, "_blank");
       }
+
+      cart.clear(menu.id);
     })();
   };
 
@@ -533,12 +514,8 @@ ${customerInfo}`;
       {/* MODAL DE COMPRA */}
       {isPurchaseModalOpen && (
         <div className="fixed inset-0 z-65 flex items-center justify-center" style={{ color: foregroundToUse }}>
-          <div className={backdropClasses} aria-hidden="true" onClick={() => resetPurchase()} />
-          <div
-            className="rounded-lg p-6 w-[90%] max-w-md z-70"
-            onClick={(e) => e.stopPropagation()}
-            style={{ backgroundColor: bgColor }}
-          >
+          <div className={backdropClasses} aria-hidden="true" />
+          <div className="rounded-lg p-6 w-[90%] max-w-md z-70" style={{ backgroundColor: bgColor }}>
             <div className="flex items-center gap-4 mb-4">
               <FaChevronLeft className="cursor-pointer" onClick={() => resetPurchase()} />
               <div>
@@ -658,7 +635,9 @@ ${customerInfo}`;
                   </div>
                 </div>
                 <button
-                  onClick={() => confirmPurchase()}
+                  onClick={() => {
+                    confirmPurchase();
+                  }}
                   className="cursor-pointer hover:opacity-90 p-2 font-bold transition"
                   style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
                 >
@@ -670,13 +649,15 @@ ${customerInfo}`;
                 <p className="text-sm" style={{ color: grayToUse }}>
                   Para confirmar a compra, você deve enviar uma mensagem de confirmação ao WhatsApp de {menu.title}
                 </p>
-                <button
-                  onClick={() => whatsappConfirmation()}
-                  className="cursor-pointer flex items-center justify-center gap-2 rounded-lg mt-2 w-full p-2 sm:px-4 bg-green-500 hover:bg-green-600 transition font-bold"
-                >
-                  <FaWhatsapp fontSize={22} />
-                  Enviar confirmação
-                </button>
+                <a href={whatsappURL || "#"} rel="noopener noreferrer">
+                  <span
+                    className="cursor-pointer py-2 px-4 rounded font-bold text-white flex items-center justify-center gap-2 mt-2"
+                    style={{ backgroundColor: menu.details_color }}
+                  >
+                    <FaWhatsapp />
+                    Enviar confirmação
+                  </span>
+                </a>
               </div>
             ) : null}
           </div>
