@@ -373,7 +373,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   };
 
   const toggleItemVisibility = async (itemId, currentVisible) => {
-    const newVisible = !currentVisible;
+    let newVisible = !currentVisible;
 
     if (currentVisible === null) {
       newVisible = true; // se null, muda pra true
