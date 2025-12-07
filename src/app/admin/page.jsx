@@ -98,6 +98,11 @@ const Admin = () => {
         </label>
       </div>
 
+      <p className="text-gray-400 mb-4">
+        <span className="font-semibold text-white text-8xl">{visibleMenus.length}</span> cardápios
+        <span className="text-gray-500 text-xs ml-2">(de {fullMenus.length} no total)</span>
+      </p>
+
       {visibleMenus.length === 0 ? (
         <p className="text-gray-400">Nenhum cardápio encontrado.</p>
       ) : (
