@@ -11,6 +11,7 @@ const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [showOnlyPaid, setShowOnlyPaid] = useState(false);
   const [search, setSearch] = useState(""); // 🔍 pesquisa por nome
+  const [avgPerWeekday, setAvgPerWeekday] = useState(null);
 
   useEffect(() => {
     const fetchOwnerProfiles = async () => {
@@ -58,6 +59,37 @@ const Admin = () => {
     fetchOwnerProfiles();
   }, [menus, menusLoading]);
 
+  useEffect(() => {
+    if (fullMenus.length === 0) return;
+
+    // 🧹 Remover um cardápio específico (exemplo: pelo ID)
+    const filteredMenus = fullMenus.filter((m) => m.id !== "3c3d7889-fa34-4bb3-a9c1-9950c76c6a81");
+
+    // Agora sim, pega as datas válidas
+    const dates = filteredMenus.map((m) => new Date(m.created_at));
+
+    // encontra a menor e a maior data
+    const minDate = new Date(Math.min(...dates));
+    const maxDate = new Date(Math.max(...dates));
+
+    // quantas semanas existem entre essas datas?
+    const diffMs = maxDate - minDate;
+    const weeks = diffMs / (1000 * 60 * 60 * 24 * 7);
+    const totalWeeks = Math.max(1, weeks); // evitar divisão por zero
+
+    // contador por dia da semana
+    const counts = Array(7).fill(0); // 0=Domingo ... 6=Sábado
+
+    dates.forEach((d) => {
+      counts[d.getDay()]++;
+    });
+
+    // média por semana
+    const averages = counts.map((c) => c / totalWeeks);
+
+    setAvgPerWeekday(averages);
+  }, [fullMenus]);
+
   if (loading || menusLoading) return <Loading />;
 
   // 🔹 Filtragem combinada
@@ -74,21 +106,21 @@ const Admin = () => {
 
   return (
     <div className="p-4">
-      <h1 className="default-h1 mb-4">Admin dashboard</h1>
+      <h1 className="default-h1 mb-4 text-center">Admin dashboard</h1>
 
       {/* 🔹 Filtros */}
-      <div className="flex flex-col gap-4 mb-4">
+      <div className="flex flex-col items-center gap-4 mb-4">
         {/* Pesquisa */}
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Pesquisar..."
-          className="px-3 py-1 rounded bg-translucid border border-translucid text-sm max-w-80"
+          className="px-3 py-1 w-full rounded bg-translucid border border-translucid text-sm max-w-lg"
         />
         {/* Toggle Stripe */}
         <label className="flex items-center gap-2 text-sm text-gray-300">
-          Só quem quase me deu lucro (ou me deu lucro)
+          Somente com stripe_costumer_id
           <input
             type="checkbox"
             checked={showOnlyPaid}
@@ -98,15 +130,31 @@ const Admin = () => {
         </label>
       </div>
 
-      <p className="text-gray-400 mb-4">
-        <span className="font-semibold text-white text-8xl">{visibleMenus.length}</span> cardápios
-        <span className="text-gray-500 text-xs ml-2">(de {fullMenus.length} no total)</span>
+      <p className="my-28 text-3xl xs:text-5xl sm:text-7xl lg:text-9xl font-bold text-center">
+        <span>{visibleMenus.length}</span> Registros
+        <span className="text-[var(--gray)] text-xs ml-2">(de {fullMenus.length} no total)</span>
       </p>
 
+      {avgPerWeekday && (
+        <div className="my-6">
+          <h3 className="mb-2">Média de registros por dia da semana</h3>
+
+          <div className="grid grid-cols-4 sm:grid-cols-7 gap-1 sm:gap-4 text-center text-[var(--gray)]">
+            {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((day, i) => (
+              <div key={day} className="py-3 bg-translucid rounded-lg border border-translucid">
+                <p className="text-xs sm:text-lg font-semibold">{day}</p>
+                <p className="text-xs sm:text-2xl font-bold text-white">{avgPerWeekday[i].toFixed(2)}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {visibleMenus.length === 0 ? (
-        <p className="text-gray-400">Nenhum cardápio encontrado.</p>
+        <p className="text-[var(--gray)]">Nenhum cardápio encontrado.</p>
       ) : (
         <ul className="space-y-2">
+          <h3>Lista de registros:</h3>
           {visibleMenus.map((menu) => (
             <li
               key={menu.id}
