@@ -195,6 +195,15 @@ const ConfigMenu = (props) => {
     sun: "Dom",
   };
 
+  function slugify(value) {
+    return value
+      .toLowerCase()
+      .normalize("NFD") // separa letra + acento
+      .replace(/[\u0300-\u036f]/g, "") // remove os acentos
+      .replace(/[^a-z0-9-]/g, "") // remove tudo que NÃO seja letra, número ou hífen
+      .replace(/-+/g, "-"); // evita múltiplos hífens seguidos
+  }
+
   const dayOrder = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
   const suggestRandomPalette = () => {
@@ -603,7 +612,7 @@ const ConfigMenu = (props) => {
             value={tempSlug || ""}
             onChange={(e) => {
               const v = e.target.value.slice(0, 20);
-              setTempSlug(v);
+              setTempSlug(slugify(v));
             }}
             maxLength={20}
             className="w-full p-2 rounded border-2 border-translucid bg-translucid mb-4"

@@ -14,16 +14,6 @@ const BUCKET = "menus";
 const USE_TIMEOUTS = true; // ativado por segurança/debug;
 // -----------------
 
-// ---- helpers ----
-const slugify = (text = "") =>
-  text
-    .toString()
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, "-")
-    .replace(/[^\w\-]+/g, "")
-    .replace(/\-\-+/g, "-");
-
 const getExt = (file) => {
   if (!file || !file.name) return "";
   const parts = file.name.split(".");
@@ -222,6 +212,15 @@ export default function GetStart() {
     const b = parseInt(cleanHex.substring(4, 6), 16);
     const yiq = (r * 299 + g * 587 + b * 114) / 1000;
     return yiq >= 128 ? "black" : "white";
+  }
+
+  function slugify(value) {
+    return value
+      .toLowerCase()
+      .normalize("NFD") // separa letra + acento
+      .replace(/[\u0300-\u036f]/g, "") // remove os acentos
+      .replace(/[^a-z0-9-]/g, "") // remove tudo que NÃO seja letra, número ou hífen
+      .replace(/-+/g, "-"); // evita múltiplos hífens seguidos
   }
 
   if (loading) {
