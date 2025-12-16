@@ -357,6 +357,8 @@ export default function ClientMenu({ menu }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const navCategories = orderedCategories.filter((cat) => (cat.menu_items || []).some((it) => it.visible));
+
   return (
     <>
       {/* === Conteúdo da página === */}
@@ -447,12 +449,16 @@ export default function ClientMenu({ menu }) {
           />
         </div>
 
-        {orderedCategories.length > 0 && (
+        {navCategories.length > 0 && (
           <div
             className="flex sticky -top-1 border-y-2 overflow-x-auto whitespace-nowrap scrollbar-none"
-            style={{ backgroundColor: menu.background_color, borderColor: translucidToUse, color: foregroundToUse }}
+            style={{
+              backgroundColor: menu.background_color,
+              borderColor: translucidToUse,
+              color: foregroundToUse,
+            }}
           >
-            {orderedCategories.map((cat) => (
+            {navCategories.map((cat) => (
               <div key={cat.id}>
                 <button
                   className="cursor-pointer p-4"
@@ -469,75 +475,84 @@ export default function ClientMenu({ menu }) {
         )}
 
         <div className="space-y-4 px-4">
-          {filteredCategories.map((cat) => (
-            <div key={cat.id} id={cat.id.slice(0, 5)} className="rounded py-3">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
-                  <strong style={{ color: foregroundToUse }}>{cat.name}</strong>
-                  <span className="text-sm" style={{ color: grayToUse }}>
-                    ({cat.menu_items?.length ?? 0} itens)
-                  </span>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {(cat.menu_items || []).map((it) => (
-                  <div key={it.id} className={`flex items-stretch justify-between ${!it.visible ? "hidden" : ""}`}>
-                    {it.image_url ? (
-                      <img
-                        src={it.image_url}
-                        alt={it.name}
-                        className="hidden sm:block w-[130px] h-[130px] object-cover rounded-l-lg"
-                        style={{ flexShrink: 0 }}
-                        onClick={() => handleItemClick(it)}
-                      />
-                    ) : null}
-                    <div
-                      className={`cursor-pointer flex-1 h-[130px] flex flex-col items-start justify-between gap-2 p-2 ${
-                        it.image_url ? "rounded-r-lg" : "rounded-lg"
-                      }`}
-                      style={{ backgroundColor: translucidToUse }}
-                      onClick={() => handleItemClick(it)}
-                    >
-                      <div className="flex items-center gap-2">
-                        {it.image_url ? (
-                          <img
-                            src={it.image_url}
-                            alt={it.name}
-                            className="block sm:hidden w-[72px] h-[72px] object-cover rounded-lg"
-                            style={{ flexShrink: 0 }}
-                          />
-                        ) : null}
-                        <div>
-                          <div className="text-xl line-clamp-1" style={{ color: foregroundToUse }}>
-                            {it.name}
-                          </div>
+          {filteredCategories.map((cat) => {
+            const visibleItems = (cat.menu_items || []).filter((it) => it.visible);
 
-                          <div
-                            className="text-sm line-clamp-2"
-                            style={{
-                              color: grayToUse,
-                              wordBreak: "normal",
-                              overflowWrap: "anywhere",
-                            }}
-                          >
-                            {it.description?.replace(/,\s*/g, ", ")}
+            if (visibleItems.length === 0) return null;
+
+            return (
+              <div key={cat.id} id={cat.id.slice(0, 5)} className="rounded py-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <strong style={{ color: foregroundToUse }}>{cat.name}</strong>
+                    <span className="text-sm" style={{ color: grayToUse }}>
+                      ({visibleItems.length} itens)
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {visibleItems.map((it) => (
+                    <div key={it.id} className="flex items-stretch justify-between">
+                      {it.image_url && (
+                        <img
+                          src={it.image_url}
+                          alt={it.name}
+                          className="hidden sm:block w-[130px] h-[130px] object-cover rounded-l-lg"
+                          onClick={() => handleItemClick(it)}
+                        />
+                      )}
+
+                      <div
+                        className={`cursor-pointer flex-1 h-[130px] flex flex-col justify-between p-2 ${
+                          it.image_url ? "rounded-r-lg" : "rounded-lg"
+                        }`}
+                        style={{ backgroundColor: translucidToUse }}
+                        onClick={() => handleItemClick(it)}
+                      >
+                        <div className="flex items-center gap-2">
+                          {it.image_url ? (
+                            <img
+                              src={it.image_url}
+                              alt={it.name}
+                              className="block sm:hidden w-[72px] h-[72px] object-cover rounded-lg"
+                              style={{ flexShrink: 0 }}
+                            />
+                          ) : null}
+                          <div>
+                            <div className="text-xl line-clamp-1" style={{ color: foregroundToUse }}>
+                              {it.name}
+                            </div>
+
+                            <div
+                              className="text-sm line-clamp-2"
+                              style={{
+                                color: grayToUse,
+                                wordBreak: "normal",
+                                overflowWrap: "anywhere",
+                              }}
+                            >
+                              {it.description?.replace(/,\s*/g, ", ")}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center justify-between w-full">
-                        <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
-                          {it.price ? Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "-"}
-                        </div>
-                        <div className="px-6 py-2 rounded" style={{ backgroundColor: menu.details_color }}>
-                          <FaShoppingCart style={{ color: getContrastTextColor(menu.details_color) }} />
+                        <div className="flex items-center justify-between w-full">
+                          <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
+                            {it.price
+                              ? Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+                              : "-"}
+                          </div>
+                          <div className="px-6 py-2 rounded" style={{ backgroundColor: menu.details_color }}>
+                            <FaShoppingCart style={{ color: getContrastTextColor(menu.details_color) }} />
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
