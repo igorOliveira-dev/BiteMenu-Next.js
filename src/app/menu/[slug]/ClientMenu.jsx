@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { FaChevronLeft, FaMinus, FaPlus, FaShoppingCart, FaWhatsapp } from "react-icons/fa";
+import { FaChevronLeft, FaMapMarkerAlt, FaMinus, FaPlus, FaShoppingCart, FaWhatsapp } from "react-icons/fa";
 import Image from "next/image";
 import GenericModal from "@/components/GenericModal";
 import { useCartContext } from "@/contexts/CartContext";
@@ -428,6 +428,13 @@ export default function ClientMenu({ menu }) {
               <FaWhatsapp style={{ color: foregroundToUse }} size={28} />
             </div>
           </div>
+
+          {menu.address && (
+            <p className="mt-1 px-4 flex items-center mb-2" style={{ color: grayToUse }}>
+              <FaMapMarkerAlt className="inline mr-2" />
+              {menu.address}
+            </p>
+          )}
 
           <p className="mt-1 px-4" style={{ color: getContrastTextColor(menu.background_color) }}>
             {menu.description}

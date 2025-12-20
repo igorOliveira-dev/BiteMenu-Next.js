@@ -187,6 +187,7 @@ export default function StatesManager({
   keys = [
     "title",
     "description",
+    "address",
     "backgroundColor",
     "titleColor",
     "detailsColor",
@@ -235,6 +236,7 @@ export default function StatesManager({
     const normalized = {
       title: menuFromServer.title ?? "",
       description: menuFromServer.description ?? "",
+      address: menuFromServer.address ?? "",
       backgroundColor: menuFromServer.background_color ?? "#F8F9FA",
       titleColor: menuFromServer.title_color ?? "#007BFF",
       detailsColor: menuFromServer.details_color ?? "#28A745",
@@ -369,6 +371,7 @@ export default function StatesManager({
       const payload = {
         title: localState.title,
         description: localState.description,
+        address: localState.address,
         background_color: localState.backgroundColor,
         title_color: localState.titleColor,
         details_color: localState.detailsColor,
@@ -431,6 +434,7 @@ export default function StatesManager({
         const normalized = {
           title: data.title ?? "",
           description: data.description ?? "",
+          address: data.address ?? "",
           backgroundColor: data.background_color ?? "#F8F9FA",
           titleColor: data.title_color ?? "#007BFF",
           detailsColor: data.details_color ?? "#28A745",
@@ -461,6 +465,7 @@ export default function StatesManager({
         const normalized = {
           title: data.title ?? "",
           description: data.description ?? "",
+          address: data.address ?? "",
           backgroundColor: data.background_color ?? "#F8F9FA",
           titleColor: data.title_color ?? "#007BFF",
           detailsColor: data.details_color ?? "#28A745",
@@ -576,6 +581,7 @@ export default function StatesManager({
                   const displayNameMap = {
                     title: "Título",
                     description: "Descrição",
+                    address: "Endereço",
                     backgroundColor: "Cor de fundo",
                     titleColor: "Cor do título",
                     detailsColor: "Cor dos detalhes",

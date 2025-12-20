@@ -37,6 +37,7 @@ const Dashboard = ({
   // STATES LOCAIS (fallback)
   const [titleLocal, setTitleLocal] = useState("");
   const [descriptionLocal, setDescriptionLocal] = useState("");
+  const [addressLocal, setAddressLocal] = useState("");
 
   const [backgroundColorLocal, setBackgroundColorLocal] = useState("#F8F9FA");
   const [titleColorLocal, setTitleColorLocal] = useState("#007BFF");
@@ -50,6 +51,9 @@ const Dashboard = ({
   const setDescription = usingExternal
     ? (val) => externalSetState((p) => ({ ...p, description: val }))
     : setDescriptionLocal;
+
+  const address = usingExternal ? externalState.address : addressLocal;
+  const setAddress = usingExternal ? (val) => externalSetState((p) => ({ ...p, address: val })) : setAddressLocal;
 
   const backgroundColor = usingExternal ? externalState.backgroundColor : backgroundColorLocal;
   const setBackgroundColor = usingExternal
@@ -195,6 +199,8 @@ const Dashboard = ({
             setTitle={setTitle}
             description={description}
             setDescription={setDescription}
+            address={address}
+            setAddress={setAddress}
             backgroundColor={backgroundColor}
             setBackgroundColor={setBackgroundColor}
             titleColor={titleColor}

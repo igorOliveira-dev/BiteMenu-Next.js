@@ -52,6 +52,7 @@ export default async function MenuPage({ params }) {
       owner_id,
       title,
       description,
+      address,
       banner_url,
       logo_url,
       background_color,

@@ -49,13 +49,15 @@ const ConfigMenu = (props) => {
     setTitle: propSetTitle,
     description: propDescription,
     setDescription: propSetDescription,
+    address: propAddress,
+    setAddress: propSetAddress,
     backgroundColor: propBg,
     setBackgroundColor: propSetBg,
     titleColor: propTitleColor,
     setTitleColor: propSetTitleColor,
     detailsColor: propDetailsColor,
     setDetailsColor: propSetDetailsColor,
-    menuState, // optional [state, setState]
+    menuState,
   } = props;
 
   const customAlert = useAlert();
@@ -86,6 +88,7 @@ const ConfigMenu = (props) => {
     ? (arr) => externalSetState((p) => ({ ...p, selectedPayments: arr }))
     : setSelectedPaymentsLocal;
 
+  // getter taxa de delivery
   const deliveryFee = usingExternal ? externalState?.deliveryFee ?? 0 : deliveryFeeLocal;
 
   const setDeliveryFee = usingExternal ? (v) => externalSetState((p) => ({ ...p, deliveryFee: v })) : setDeliveryFeeLocal;
@@ -124,11 +127,13 @@ const ConfigMenu = (props) => {
   // modais
   const [titleModalOpen, setTitleModalOpen] = useState(false);
   const [descModalOpen, setDescModalOpen] = useState(false);
+  const [addressModalOpen, setAddressModalOpen] = useState(false);
   const [slugModalOpen, setSlugModalOpen] = useState(false);
 
   // temps
   const [tempTitle, setTempTitle] = useState(propTitle ?? "");
   const [tempDescription, setTempDescription] = useState(propDescription ?? "");
+  const [tempAddress, setTempAddress] = useState(propAddress ?? "");
   const [tempSlug, setTempSlug] = useState(slug ?? "");
 
   useEffect(() => {
@@ -144,6 +149,12 @@ const ConfigMenu = (props) => {
           propSetDescription(menu.description);
         }
         setTempDescription(menu.description);
+      }
+      if (menu.address) {
+        if (!usingExternal && typeof propSetAddress === "function") {
+          propSetAddress(menu.address);
+        }
+        setTempAddress(menu.address);
       }
       if (menu.slug) {
         if (!usingExternal) setSlugLocal(menu.slug);
@@ -162,7 +173,8 @@ const ConfigMenu = (props) => {
   useEffect(() => {
     setTempTitle(propTitle);
     setTempDescription(propDescription);
-  }, [propTitle, propDescription]);
+    setTempAddress(propAddress);
+  }, [propTitle, propDescription, propAddress]);
 
   const [paletteIndex, setPaletteIndex] = useState(0);
   const colorFields = [
@@ -283,6 +295,22 @@ const ConfigMenu = (props) => {
               <div onClick={() => setDescModalOpen(true)} className="flex w-full">
                 <span className="bg-translucid p-2 rounded-lg w-full">
                   {propDescription ? propDescription : <span className="color-gray">Insira a descrição</span>}
+                </span>
+                <button className="border border-2 border-gray-500 p-2 bg-translucid-50 rounded-lg ml-2 opacity-75 hover:opacity-100 cursor-pointer">
+                  <FaPen className="font-xl text-white opacity-75" />
+                </button>
+              </div>
+            </div>
+            <hr className="border-1 border-translucid mt-2 mb-4 max-w-full" />
+          </div>
+
+          {/* Address */}
+          <div>
+            <div className="flex sm:items-center max-w-full min-h-[46px] flex-col sm:flex-row">
+              <p className="font-semibold mr-2 whitespace-nowrap">Endereço:</p>
+              <div onClick={() => setAddressModalOpen(true)} className="flex w-full">
+                <span className="bg-translucid p-2 rounded-lg w-full">
+                  {propAddress ? propAddress : <span className="color-gray">Insira o endereço</span>}
                 </span>
                 <button className="border border-2 border-gray-500 p-2 bg-translucid-50 rounded-lg ml-2 opacity-75 hover:opacity-100 cursor-pointer">
                   <FaPen className="font-xl text-white opacity-75" />
@@ -591,6 +619,55 @@ const ConfigMenu = (props) => {
                 else if (typeof propSetDescription === "function") propSetDescription(finalDesc);
 
                 setDescModalOpen(false);
+              }}
+              className="cursor-pointer px-4 py-2 bg-green-600 rounded hover:bg-green-500 transition text-white"
+            >
+              Salvar
+            </button>
+          </div>
+        </GenericModal>
+      )}
+
+      {addressModalOpen && (
+        <GenericModal onClose={() => setAddressModalOpen(false)}>
+          <div className="flex items-center gap-4 mb-4">
+            <FaChevronLeft className="cursor-pointer" onClick={() => setAddressModalOpen(false)} />
+            <h3 className="font-bold">Alterar endereço</h3>
+          </div>
+
+          <textarea
+            placeholder="Novo endereço"
+            value={tempAddress || ""}
+            onChange={(e) => {
+              // limita imediatamente a 255 caracteres
+              const v = e.target.value.slice(0, 255);
+              setTempAddress(v);
+            }}
+            maxLength={255}
+            rows={4}
+            className="w-full p-2 rounded border-2 border-translucid bg-translucid mb-4"
+          />
+
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => {
+                setTempAddress(propAddress);
+                setAddressModalOpen(false);
+              }}
+              className="cursor-pointer px-4 py-2 bg-gray-600 rounded hover:bg-gray-500 transition text-white"
+            >
+              Cancelar
+            </button>
+
+            <button
+              onClick={() => {
+                // garantir que nunca salve mais de 200 chars
+                const finalAddress = (tempAddress || "").slice(0, 200);
+
+                if (usingExternal) externalSetState((p) => ({ ...p, address: finalAddress }));
+                else if (typeof propSetAddress === "function") propSetAddress(finalAddress);
+
+                setAddressModalOpen(false);
               }}
               className="cursor-pointer px-4 py-2 bg-green-600 rounded hover:bg-green-500 transition text-white"
             >
