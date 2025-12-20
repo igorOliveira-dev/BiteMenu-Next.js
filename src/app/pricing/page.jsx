@@ -72,7 +72,7 @@ const page = () => {
             <div className="w-full flex flex-col gap-2">
               <p className="text-4xl font-bold">
                 {plan.price}
-                <span className="text-base color-gray">/mes</span>
+                <span className="text-base color-gray">/mês</span>
               </p>
               <button onClick={() => planClick(plan.id)} className="cta-button w-full text-center">
                 Selecionar
