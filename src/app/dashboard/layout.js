@@ -60,6 +60,21 @@ export default function DashboardLayout({ children }) {
     }
   }, [ownerPlan]);
 
+  // Registrar último acesso ao menu
+  useEffect(() => {
+    const registerLastAccess = async () => {
+      if (!user || checkingMenu) return;
+
+      try {
+        await supabase.from("menus").update({ last_access_at: new Date().toISOString() }).eq("owner_id", user.id);
+      } catch (err) {
+        console.error("Erro ao registrar último acesso:", err);
+      }
+    };
+
+    registerLastAccess();
+  }, [user, checkingMenu]);
+
   if (loading || checkingMenu) {
     return (
       <div className="flex items-center justify-center min-h-screen">
