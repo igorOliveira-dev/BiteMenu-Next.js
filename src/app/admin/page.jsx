@@ -10,8 +10,13 @@ const Admin = () => {
   const [fullMenus, setFullMenus] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showOnlyPaid, setShowOnlyPaid] = useState(false);
-  const [search, setSearch] = useState(""); // 🔍 pesquisa por nome
+  const [search, setSearch] = useState("");
   const [avgPerWeekday, setAvgPerWeekday] = useState(null);
+  const [sortByLastAccess, setSortByLastAccess] = useState(false);
+  const [onlyLast7Days, setOnlyLast7Days] = useState(false);
+
+  const PAGE_SIZE = 15;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   useEffect(() => {
     const fetchOwnerProfiles = async () => {
@@ -90,10 +95,38 @@ const Admin = () => {
     setAvgPerWeekday(averages);
   }, [fullMenus]);
 
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [showOnlyPaid, search, sortByLastAccess, onlyLast7Days]);
+
   if (loading || menusLoading) return <Loading />;
 
-  // 🔹 Filtragem combinada
+  // 🔹 Filtragem e ordenação combinadas (lista completa)
   let visibleMenus = [...fullMenus];
+
+  // somente com stripe
+  if (showOnlyPaid) {
+    visibleMenus = visibleMenus.filter((m) => m.stripe_costumer_id != null);
+  }
+
+  // pesquisa por nome
+  if (search.trim() !== "") {
+    const s = search.toLowerCase();
+    visibleMenus = visibleMenus.filter((m) => m.title.toLowerCase().includes(s));
+  }
+
+  // 🕒 somente acessados nos últimos 7 dias
+  if (onlyLast7Days) {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    visibleMenus = visibleMenus.filter((m) => m.last_access_at && new Date(m.last_access_at) >= sevenDaysAgo);
+  }
+
+  // 🔁 ordenar por último acesso
+  if (sortByLastAccess) {
+    visibleMenus.sort((a, b) => new Date(b.last_access_at || 0) - new Date(a.last_access_at || 0));
+  }
 
   if (showOnlyPaid) {
     visibleMenus = visibleMenus.filter((m) => m.stripe_costumer_id != null);
@@ -103,6 +136,9 @@ const Admin = () => {
     const s = search.toLowerCase();
     visibleMenus = visibleMenus.filter((m) => m.title.toLowerCase().includes(s));
   }
+
+  const paginatedMenus = visibleMenus.slice(0, visibleCount);
+  const hasMore = visibleCount < visibleMenus.length;
 
   return (
     <div className="p-4">
@@ -128,6 +164,28 @@ const Admin = () => {
             className="toggle toggle-primary"
           />
         </label>
+
+        {/* Ordenar por último acesso */}
+        <label className="flex items-center gap-2 text-sm text-gray-300">
+          Ordenar por último acesso
+          <input
+            type="checkbox"
+            checked={sortByLastAccess}
+            onChange={(e) => setSortByLastAccess(e.target.checked)}
+            className="toggle toggle-primary"
+          />
+        </label>
+
+        {/* Últimos 7 dias */}
+        <label className="flex items-center gap-2 text-sm text-gray-300">
+          Apenas acessados nos últimos 7 dias
+          <input
+            type="checkbox"
+            checked={onlyLast7Days}
+            onChange={(e) => setOnlyLast7Days(e.target.checked)}
+            className="toggle toggle-primary"
+          />
+        </label>
       </div>
 
       <p className="my-28 text-3xl xs:text-5xl sm:text-7xl lg:text-9xl font-bold text-center">
@@ -150,12 +208,12 @@ const Admin = () => {
         </div>
       )}
 
-      {visibleMenus.length === 0 ? (
+      {paginatedMenus.length === 0 ? (
         <p className="text-[var(--gray)]">Nenhum cardápio encontrado.</p>
       ) : (
         <ul className="space-y-2">
           <h3>Lista de registros:</h3>
-          {visibleMenus.map((menu) => (
+          {paginatedMenus.map((menu) => (
             <li
               key={menu.id}
               className={`p-4 bg-translucid border-2 ${
@@ -182,6 +240,23 @@ const Admin = () => {
               </p>
 
               <p className="text-xs text-gray-400">
+                último acesso:{" "}
+                {menu.last_access_at ? (
+                  <span className="font-mono">
+                    {new Date(menu.last_access_at).toLocaleString("pt-BR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                ) : (
+                  <span className="italic text-gray-500">sem dados</span>
+                )}
+              </p>
+
+              <p className="text-xs text-gray-400">
                 slug: <span className="font-mono">{menu.slug}</span>
               </p>
 
@@ -200,6 +275,16 @@ const Admin = () => {
             </li>
           ))}
         </ul>
+      )}
+      {hasMore && (
+        <div className="flex justify-center mt-6">
+          <button
+            onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+            className="px-6 py-2 rounded-lg border border-translucid bg-translucid hover:opacity-80 transition"
+          >
+            Ver mais
+          </button>
+        </div>
       )}
     </div>
   );
