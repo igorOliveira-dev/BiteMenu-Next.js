@@ -74,7 +74,7 @@ export default function OrdersFilter({ onChange, initial = {} }) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Pesquisar: nome, itens..."
-              className="border border-2 border-translucid rounded px-3 py-1 text-sm pr-9 w-70"
+              className="border border-2 border-translucid rounded px-3 py-1 text-sm pr-9 w-70 outline-none"
             />
             <FaSearch className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400" />
           </div>

@@ -185,7 +185,11 @@ export default function Home() {
         </div>
       </section>
 
-      <BlogSection />
+      <div id="blog" className="pt-8">
+        <div className="bg-translucid py-12 px-4 sm:px-8">
+          <BlogSection />
+        </div>
+      </div>
 
       <footer className="bg-low-gray p-6 border-t border-gray-300 dark:border-gray-700">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">

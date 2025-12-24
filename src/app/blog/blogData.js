@@ -1,3 +1,5 @@
+// Main image deve ter dimensões 1920x1080 de preferência
+
 export const blogPosts = [
   {
     id: 1,
