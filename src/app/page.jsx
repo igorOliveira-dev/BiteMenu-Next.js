@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { FaCheck, FaChevronLeft, FaChevronRight, FaWhatsapp } from "react-icons/fa";
 
 import { planClick } from "./utils/planClick";
+import BlogSection from "./blog/BlogSection";
 
 export default function Home() {
   const { user, loading } = useUser();
@@ -183,6 +184,8 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      <BlogSection />
 
       <footer className="bg-low-gray p-6 border-t border-gray-300 dark:border-gray-700">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
