@@ -147,6 +147,20 @@ h3 {
   background-color: var(--dark-gray-90);
 }
 
+.bg-degraded {
+  background: linear-gradient(
+    120deg,
+    var(--background),
+    var(--background),
+    var(--background),
+    var(--background),
+    var(--background),
+    #ff000030,
+    #ff000060,
+    #ff000080
+  );
+}
+
 .custom-gray-button {
   border: 1px solid var(--translucid);
   cursor: pointer;

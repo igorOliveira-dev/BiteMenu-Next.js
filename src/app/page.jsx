@@ -132,7 +132,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="px-4 py-6 sd:py-20 bg-translucid">
+      <section className="px-4 py-6 sd:py-20 bg-degraded border-t-4 border-b-4 border-translucid">
         <div className="mb-12 sm:mb-0 flex items-center flex-col-reverse sm:flex-row justify-center gap-6 sm:gap-24">
           <div className="w-[184px] h-[228px] xs:w-[292px] xs:h-[365px] sm:w-[194px] sm:h-[243px] md:w-[292px] md:h-[365px] lg:w-[324px] lg:h-[405px] relative">
             <Image src={crieerecebawhatsapp} fill alt="Crie seu cardápio e receba pedidos pelo WhatsApp" />
