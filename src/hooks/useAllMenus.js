@@ -15,7 +15,7 @@ export default function useAllMenus() {
     const fetchMenus = async () => {
       setLoading(true);
 
-      const query = supabase.from("menus").select("*");
+      const query = supabase.from("menus_with_items_count").select("*");
 
       const { data, error } = await query;
 
