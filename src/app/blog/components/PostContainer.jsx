@@ -25,11 +25,11 @@ const PostContainer = ({ title, date, mainImageUrl, children }) => {
           height={50}
           width={50}
           alt="Bite Menu"
-          onClick={() => (window.location.href = "/#blog")}
+          onClick={() => (window.location.href = "https://www.bitemenu.com.br/")}
           className="block xs:hidden"
         />
         <div className="flex">
-          <Link className="cta-button small" href="register">
+          <Link className="cta-button small" href="https://www.bitemenu.com.br/register">
             Criar cardápio!
           </Link>
           <ThemeToggle />
