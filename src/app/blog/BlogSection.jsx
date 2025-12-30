@@ -31,19 +31,23 @@ const BlogSection = () => {
         className="input w-full bg-translucid border-2 border-translucid p-2 rounded my-6"
       />
 
-      <div className="flex gap-4 items-center justify-center flex-wrap">
-        {postsToShow.map((post) => (
-          <a
-            href={`/blog/posts/${post.slug}`}
-            key={post.id}
-            className="mb-2 bg-translucid p-4 rounded-lg w-full sm:max-w-md h-[220px] sm:h-[240px] border-2 border-[var(--translucid)]"
-          >
-            <Image src={post.mainImage} alt={post.title} width={100} height={100} className="rounded-lg" />
-            <h3 className="text-[var(--gray)] font-bold mt-4 line-clamp-2">{post.title}</h3>
-            <p className="text-gray-600">{post.date}</p>
-          </a>
-        ))}
-      </div>
+      {filteredPosts.length === 0 ? (
+        <p className="text-center text-gray-600">Nenhum artigo encontrado.</p>
+      ) : (
+        <div className="flex gap-4 items-center justify-center flex-wrap">
+          {postsToShow.map((post) => (
+            <a
+              href={`/blog/posts/${post.slug}`}
+              key={post.id}
+              className="mb-2 bg-translucid hover:opacity-80 hover:scale-[1.01] transition-all p-4 rounded-lg sm:max-w-md h-auto border-2 border-[var(--translucid)]"
+            >
+              <Image src={post.mainImage} alt={post.title} width={300} height={168.75} className="rounded-lg" />
+              <h3 className="text-[var(--gray)] font-bold mt-4 line-clamp-2 h-[48px] sm:h-[60px]">{post.title}</h3>
+              <p className="text-gray-600">{post.date}</p>
+            </a>
+          ))}
+        </div>
+      )}
     </section>
   );
 };
