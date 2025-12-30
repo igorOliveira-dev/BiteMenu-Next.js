@@ -158,6 +158,7 @@ const page = () => {
             dados de pagamento. O Bite Menu <strong>não armazena nem tem acesso</strong> a informações sensíveis como número
             de cartão, código de segurança (CVV) ou data de validade.
           </p>
+          <p>Ao contratar um plano pago, o valor informado será cobrado uma vez por mês até o cancelamento.</p>
           <p>As informações que podemos receber do Stripe incluem:</p>
           <ul className="list-disc ml-6">
             <li>Identificador da transação;</li>
