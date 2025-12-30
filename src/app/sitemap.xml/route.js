@@ -10,6 +10,9 @@ export async function GET() {
     { url: "https://bitemenu.com.br/pricing", lastmod: "2025-10-29" },
     { url: "https://bitemenu.com.br/about", lastmod: "2025-10-29" },
     { url: "https://bitemenu.com.br/faqs", lastmod: "2025-10-29" },
+
+    // blog
+    { url: "https://bitemenu.com.br/blog/posts/vale-a-pena-criar-um-cardapio-digital", lastmod: "2025-12-30" },
   ];
 
   // 🌐 Busca todos os menus registrados
