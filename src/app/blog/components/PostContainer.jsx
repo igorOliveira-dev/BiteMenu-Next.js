@@ -29,7 +29,7 @@ const PostContainer = ({ title, date, mainImageUrl, children }) => {
           className="block xs:hidden"
         />
         <div className="flex">
-          <Link className="cta-button small" href="https://www.bitemenu.com.br/register">
+          <Link className="cta-button small" href="https://www.bitemenu.com.br">
             Criar cardápio!
           </Link>
           <ThemeToggle />
