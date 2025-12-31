@@ -235,6 +235,10 @@ const Admin = () => {
                 <span className="font-mono">{menu.owner_role}</span>)
               </p>
 
+              <p className="text-xs text-gray-400">
+                email: <span className="font-semibold text-white">{menu.owner_email}</span>
+              </p>
+
               <a href={`${window.location.origin}/menu/${menu.slug}`} target="_blank" className="underline text-blue-500">
                 acessar
               </a>
