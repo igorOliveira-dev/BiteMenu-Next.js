@@ -23,6 +23,7 @@ const Orders = ({ setSelectedTab }) => {
   const [orderModalOpen, setOrderModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [receiveOrders, setReceiveOrders] = useState(menu?.orders || "all");
+  const [deliveryFeeOnSales, setDeliveryFeeOnSales] = useState(false);
 
   const [enabledOrders, setEnabledOrders] = useState(false);
 
@@ -50,6 +51,12 @@ const Orders = ({ setSelectedTab }) => {
       }
     }
   }, [menu?.orders]);
+
+  useEffect(() => {
+    if (menu?.delivery_fee_on_sales !== undefined) {
+      setDeliveryFeeOnSales(menu.delivery_fee_on_sales);
+    }
+  }, [menu?.delivery_fee_on_sales]);
 
   const fetchOrders = async () => {
     setLoadingOrders(true);
@@ -82,6 +89,19 @@ const Orders = ({ setSelectedTab }) => {
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, is_paid: !current } : o)));
   };
 
+  const handleToggleDeliveryFeeOnSales = async (value) => {
+    setDeliveryFeeOnSales(value);
+
+    const { error } = await supabase.from("menus").update({ delivery_fee_on_sales: value }).eq("id", menu.id);
+
+    if (error) {
+      customAlert("Erro ao atualizar configuração da taxa de entrega.", "error");
+      setDeliveryFeeOnSales(!value); // rollback visual
+    } else {
+      customAlert("Configuração de taxa de entrega atualizada!", "success");
+    }
+  };
+
   const finalizeOrder = async (id) => {
     const ok = await confirm("Quer mesmo finalizar esse pedido?");
     if (!ok) return;
@@ -91,6 +111,10 @@ const Orders = ({ setSelectedTab }) => {
     if (fetchError || !order) {
       return customAlert("Erro ao localizar pedido", "error");
     }
+
+    const deliveryFee = deliveryFeeOnSales && order.service === "delivery" ? menu.delivery_fee : null;
+
+    const saleTotal = order.total + (deliveryFee || 0);
 
     const { error: insertError } = await supabase.from("sales").insert([
       {
@@ -102,7 +126,8 @@ const Orders = ({ setSelectedTab }) => {
         items_list: order.items_list,
         created_at: order.created_at,
         updated_at: new Date().toISOString(),
-        total: order.total,
+        total: saleTotal,
+        delivery_fee: deliveryFee,
       },
     ]);
 
@@ -259,6 +284,20 @@ const Orders = ({ setSelectedTab }) => {
             />
             <span>Não receber pedidos</span>
           </label>
+          <hr className="border-translucid my-2" />
+
+          <p>Taxa de entrega:</p>
+
+          <label className="flex gap-2 items-center">
+            <input
+              type="checkbox"
+              checked={deliveryFeeOnSales}
+              onChange={(e) => handleToggleDeliveryFeeOnSales(e.target.checked)}
+            />
+            <span>Contar taxa de entrega como venda</span>
+          </label>
+
+          <p className="text-xs color-gray">Se ativado, a taxa de entrega será somada ao total das vendas registradas.</p>
         </div>
 
         {enabledOrders === false ? (
@@ -333,7 +372,7 @@ const Orders = ({ setSelectedTab }) => {
                         </div>
                       )}
                       <p className="mt-2 font-semibold text-lg">
-                        Total: R$ {Number(order.total + menu.delivery_fee || 0).toFixed(2)}
+                        Total: R$ {Number(order.total + (order.service === "delivery" ? menu.delivery_fee : 0)).toFixed(2)}
                       </p>
                     </div>
 
