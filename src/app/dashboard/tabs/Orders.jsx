@@ -135,13 +135,16 @@ const Orders = ({ setSelectedTab }) => {
 
   const computeTotal = (order) => {
     if (!order) return 0;
-    const items = order.items_list || [];
-    return items.reduce((acc, it) => {
+
+    const itemsTotal = (order.items_list || []).reduce((acc, it) => {
       const qty = Number(it.qty) || 0;
-      const itemBase = (Number(it.price) || 0) * qty;
+      const base = (Number(it.price) || 0) * qty;
       const adds = (it.additionals || []).reduce((sa, a) => sa + (Number(a.price) || 0), 0) * qty;
-      return acc + itemBase + adds;
+
+      return acc + base + adds;
     }, 0);
+
+    return itemsTotal;
   };
 
   // --- AQUI ESTÁ A FILTRAGEM LOCAL ---
@@ -319,7 +322,19 @@ const Orders = ({ setSelectedTab }) => {
                         ))}
                         {order.items_list?.length > 4 && <li className="text-gray-400">...</li>}
                       </ul>
-                      <p className="mt-2 font-semibold text-lg">Total: R$ {Number(order.total || 0).toFixed(2)}</p>
+                      {order.service === "delivery" && (
+                        <div>
+                          <p className="text-sm color-gray">
+                            <strong>Subtotal:</strong> R$ {Number(order.total || 0).toFixed(2)}
+                          </p>
+                          <p className="text-sm color-gray">
+                            <strong>Taxa de entrega:</strong> R$ {Number(menu.delivery_fee || 0).toFixed(2)}
+                          </p>
+                        </div>
+                      )}
+                      <p className="mt-2 font-semibold text-lg">
+                        Total: R$ {Number(order.total + menu.delivery_fee || 0).toFixed(2)}
+                      </p>
                     </div>
 
                     <div className="mt-2 flex flex-col justify-between items-start xs:items-end">
