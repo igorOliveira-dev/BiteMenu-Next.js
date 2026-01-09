@@ -284,6 +284,7 @@ const Sales = ({ setSelectedTab }) => {
 
         <h3 className="mb-2">Histórico de vendas</h3>
         <div className="space-y-2">
+          {!monthsList || monthsList.length === 0 ? <p className="color-gray">Nenhuma venda encontrada.</p> : null}
           {monthsList.map((group) => {
             const key = group.key;
             const isOpen = expandedMonths[key] ?? false;
