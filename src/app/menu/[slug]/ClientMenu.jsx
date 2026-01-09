@@ -624,8 +624,9 @@ export default function ClientMenu({ menu }) {
             setNote("");
           }}
           bgColor={menu.background_color}
-          maxWidth={"720px"}
+          maxWidth={"580px"}
           margin={"12px"}
+          wfull
         >
           <div className="flex flex-col gap-4 sm:min-w-[460px]">
             <div className="flex flex-row gap-4 mb-2">
@@ -643,11 +644,11 @@ export default function ClientMenu({ menu }) {
                 }`}
               >
                 <div>
-                  <h2 className="text-xl font-bold w-full line-clamp-1" style={{ color: foregroundToUse }}>
+                  <h2 className="text-xl font-bold w-full line-clamp-2" style={{ color: foregroundToUse }}>
                     {selectedItem.name}
                   </h2>
                   <p
-                    className="max-h-[80px] sm:max-h-[98px] overflow-auto text-sm pr-1 scrollbar-none"
+                    className="max-h-[80px] sm:max-h-[98px] overflow-auto text-sm pr-1"
                     style={{
                       color: grayToUse,
                       wordBreak: "normal",
@@ -700,7 +701,7 @@ export default function ClientMenu({ menu }) {
                       Selecione adicionais:
                     </div>
 
-                    <div className="flex flex-wrap gap-3 max-h-[200px] overflow-auto">
+                    <div className="flex flex-wrap gap-3 max-h-[120px] overflow-auto">
                       {(selectedItem.additionals || []).map((a, idx) => {
                         const isSelected = !!selectedAddons[String(idx)];
                         const boxBg = isSelected ? "#16a34a44" : translucidToUse;
