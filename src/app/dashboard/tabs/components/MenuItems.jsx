@@ -714,10 +714,8 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     closeModal();
   };
 
-  const [hidePlusButtons, setHidePlusButtons] = useState(false);
-
   const verifyPlan = (button) => {
-    if (ownerRole === "asdmin" || ownerRole === "plus" || ownerRole === "pro") {
+    if (ownerRole === "admin" || ownerRole === "plus" || ownerRole === "pro") {
       alert("ae carai " + "(" + button + ")");
     } else {
       alert("Desbloqueie essa função com o plano Plus!");
@@ -1117,22 +1115,8 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
               {/* botões plus || pro */}
               {/* <div className="flex h-[40px] items-end mt-4 gap-4 w-full ">
-                <div
-                  className={`w-[100%] h-[40px] bg-translucid border-2 border-[#2030d4] rounded items-center justify-center cursor-pointer hover:opacity-80 transition ${
-                    hidePlusButtons ? "flex" : "hidden"
-                  }`}
-                >
-                  <span
-                    className="text-center text-sm"
-                    onClick={() => (window.location.href = "https://bitemenu.com.br/dashboard/pricing")}
-                  >
-                    Obtenha o Bite Menu Plus ou Pro{" "}
-                  </span>
-                </div>
                 <button
-                  className={`p-2 bg-[#ff000085] rounded flex items-center justify-center gap-2 font-semibold w-[50%] cursor-pointer hover:opacity-80 transition ${
-                    hidePlusButtons ? "hidden" : ""
-                  }`}
+                  className={`p-2 bg-[#ff000085] rounded flex items-center justify-center gap-2 font-semibold w-[50%] cursor-pointer hover:bg-[#ff0000aa] transition`}
                   onClick={() => verifyPlan("promotionalPrice")}
                 >
                   <FaBullhorn />
@@ -1140,9 +1124,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                   <span className="show-on-400px">Promoção</span>
                 </button>
                 <button
-                  className={`p-2 bg-[#ffff0085] rounded flex items-center justify-center gap-2 font-semibold w-[50%] cursor-pointer hover:opacity-80 transition ${
-                    hidePlusButtons ? "hidden" : ""
-                  }`}
+                  className={`p-2 bg-[#ffff0085] rounded flex items-center justify-center gap-2 font-semibold w-[50%] cursor-pointer hover:bg-[#ffff00aa] transition `}
                   onClick={() => verifyPlan("starredItem")}
                 >
                   <FaStar />
