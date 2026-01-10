@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { FaChevronLeft, FaEye, FaEyeSlash, FaMinus, FaPlus, FaShoppingCart } from "react-icons/fa";
+import { FaBullhorn, FaChevronLeft, FaEye, FaEyeSlash, FaMinus, FaPlus, FaShoppingCart, FaStar } from "react-icons/fa";
 import Image from "next/image";
 import GenericModal from "@/components/GenericModal";
 import { useCartContext } from "@/contexts/CartContext";
@@ -671,6 +671,17 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     setModalPayload({ type: null, mode: null, categoryId: null, itemId: null, data: {} });
   };
 
+  const [hidePlusButtons, setHidePlusButtons] = useState(false);
+
+  const verifyPlan = (button) => {
+    if (ownerRole === "adsmin" || ownerRole === "plus" || ownerRole === "pro") {
+      alert("ae carai " + "(" + button + ")");
+    } else {
+      alert("Você descobriu uma função Plus!");
+      setHidePlusButtons(true);
+    }
+  };
+
   const translucidToUse = getContrastTextColor(backgroundColor) === "white" ? "#ffffff15" : "#00000015";
   const grayToUse = getContrastTextColor(backgroundColor) === "white" ? "#cccccc" : "#333333";
   const foregroundToUse = getContrastTextColor(backgroundColor) === "white" ? "#fafafa" : "#171717";
@@ -1060,6 +1071,42 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* botões plus || pro */}
+              <div className="flex h-[40px] items-end mt-4 gap-4 w-full ">
+                <div
+                  className={`w-[100%] h-[40px] bg-translucid border-2 border-[#2030d4] rounded items-center justify-center cursor-pointer hover:opacity-80 transition ${
+                    hidePlusButtons ? "flex" : "hidden"
+                  }`}
+                >
+                  <span
+                    className="text-center text-sm"
+                    onClick={() => (window.location.href = "https://bitemenu.com.br/dashboard/pricing")}
+                  >
+                    Obtenha o Bite Menu Plus ou Pro{" "}
+                  </span>
+                </div>
+                <button
+                  className={`p-2 bg-[#ff000085] rounded flex items-center justify-center gap-2 font-semibold w-[50%] cursor-pointer hover:opacity-80 transition ${
+                    hidePlusButtons ? "hidden" : ""
+                  }`}
+                  onClick={() => verifyPlan("promotionalPrice")}
+                >
+                  <FaBullhorn />
+                  <span className="hide-on-400px">Criar promoção</span>
+                  <span className="show-on-400px">Promoção</span>
+                </button>
+                <button
+                  className={`p-2 bg-[#ffff0085] rounded flex items-center justify-center gap-2 font-semibold w-[50%] cursor-pointer hover:opacity-80 transition ${
+                    hidePlusButtons ? "hidden" : ""
+                  }`}
+                  onClick={() => verifyPlan("starredItem")}
+                >
+                  <FaStar />
+                  <span className="hide-on-400px">Destacar item</span>
+                  <span className="show-on-400px">Destacar</span>
+                </button>
               </div>
             </>
           )}

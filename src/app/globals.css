@@ -253,3 +253,15 @@ input[type="time"]::-webkit-calendar-picker-indicator {
     box-shadow: 0 0 5px rgba(128, 0, 0, 0.6), 0 0 10px rgba(128, 0, 0, 0.4);
   }
 }
+
+.hide-on-400px {
+  @media (max-width: 400px) {
+    display: none;
+  }
+}
+
+.show-on-400px {
+  @media (min-width: 401px) {
+    display: none;
+  }
+}
