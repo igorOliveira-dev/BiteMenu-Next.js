@@ -29,6 +29,8 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   const { menu, loading: menuLoading } = useMenu();
   const [ownerRole, setOwnerRole] = useState(null);
 
+  const closingFromPopState = useRef(false);
+
   const alert = useAlert();
   const confirm = useConfirm();
 
@@ -122,6 +124,49 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   useEffect(() => {
     console.log("Owner role atualizado:", ownerRole);
   }, [ownerRole]);
+
+  useEffect(() => {
+    if (modalOpen) {
+      history.pushState({ modal: true }, "");
+    }
+  }, [modalOpen]);
+
+  // fechar modal com botão voltar do navegador
+  useEffect(() => {
+    const handlePopState = () => {
+      if (modalOpen) {
+        closingFromPopState.current = true;
+        setModalOpen(false);
+        setModalPayload({
+          type: null,
+          mode: null,
+          categoryId: null,
+          itemId: null,
+          data: {},
+        });
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [modalOpen]);
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setModalPayload({
+      type: null,
+      mode: null,
+      categoryId: null,
+      itemId: null,
+      data: {},
+    });
+
+    if (history.state?.modal && !closingFromPopState.current) {
+      history.back();
+    }
+
+    closingFromPopState.current = false;
+  };
 
   // util: encontra o primeiro ancestor rolável (ou retorna window)
   function findScrollParent(el) {
@@ -594,8 +639,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         alert?.("Erro ao salvar ordenação (ver console)", "error");
       } finally {
         // fecha modal e limpa payload
-        setModalOpen(false);
-        setModalPayload({ type: null, mode: null, categoryId: null, itemId: null, data: {} });
+        closeModal();
       }
 
       return; // retorna cedo — restante do handler é para category/item
@@ -667,18 +711,16 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       }
     }
 
-    setModalOpen(false);
-    setModalPayload({ type: null, mode: null, categoryId: null, itemId: null, data: {} });
+    closeModal();
   };
 
   const [hidePlusButtons, setHidePlusButtons] = useState(false);
 
   const verifyPlan = (button) => {
-    if (ownerRole === "adsmin" || ownerRole === "plus" || ownerRole === "pro") {
+    if (ownerRole === "asdmin" || ownerRole === "plus" || ownerRole === "pro") {
       alert("ae carai " + "(" + button + ")");
     } else {
-      alert("Você descobriu uma função Plus!");
-      setHidePlusButtons(true);
+      alert("Desbloqueie essa função com o plano Plus!");
     }
   };
 
@@ -869,7 +911,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
       {/* Modal */}
       {modalOpen && (
-        <GenericModal onClose={() => setModalOpen(false)}>
+        <GenericModal onClose={closeModal}>
           <div className="flex items-center gap-4 mb-4 w-[380px]">
             <h3 className="font-bold">
               {modalPayload.type === "sort"
@@ -1074,7 +1116,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
               </div>
 
               {/* botões plus || pro */}
-              <div className="flex h-[40px] items-end mt-4 gap-4 w-full ">
+              {/* <div className="flex h-[40px] items-end mt-4 gap-4 w-full ">
                 <div
                   className={`w-[100%] h-[40px] bg-translucid border-2 border-[#2030d4] rounded items-center justify-center cursor-pointer hover:opacity-80 transition ${
                     hidePlusButtons ? "flex" : "hidden"
@@ -1107,7 +1149,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                   <span className="hide-on-400px">Destacar item</span>
                   <span className="show-on-400px">Destacar</span>
                 </button>
-              </div>
+              </div> */}
             </>
           )}
 
@@ -1214,7 +1256,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
           )}
 
           <div className="flex justify-end gap-2 mt-4">
-            <button onClick={() => setModalOpen(false)} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded">
+            <button onClick={closeModal} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded">
               Cancelar
             </button>
             <button onClick={handleModalSave} className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded">

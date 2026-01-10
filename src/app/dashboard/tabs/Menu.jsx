@@ -82,6 +82,44 @@ const Menu = (props) => {
     { label: "Cor dos detalhes:", value: detailsColor, setter: setDetailsColor },
   ];
 
+  const anyModalOpen = titleModalOpen || bannerModalOpen || logoModalOpen;
+
+  // o botão de voltar do navegador fecha o modal
+  const closingFromPopState = useRef(false);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (anyModalOpen) {
+        closingFromPopState.current = true;
+        setTitleModalOpen(false);
+        setBannerModalOpen(false);
+        setLogoModalOpen(false);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [anyModalOpen]);
+
+  useEffect(() => {
+    if (anyModalOpen && !history.state?.modal) {
+      history.pushState({ modal: true }, "");
+    }
+  }, [anyModalOpen]);
+
+  // função de fechar modais
+  const closeAllModals = () => {
+    setTitleModalOpen(false);
+    setBannerModalOpen(false);
+    setLogoModalOpen(false);
+
+    if (history.state?.modal && !closingFromPopState.current) {
+      history.back();
+    }
+
+    closingFromPopState.current = false;
+  };
+
   // synchronize temp files when external files change
   useEffect(() => {
     if (usingExternal) {
@@ -196,7 +234,7 @@ const Menu = (props) => {
     if (usingExternal) {
       externalSetState((p) => ({ ...p, bannerFile: tempBannerFile ?? null }));
     }
-    setBannerModalOpen(false);
+    closeAllModals();
   };
   const removeBanner = () => {
     if (usingExternal) externalSetState((p) => ({ ...p, bannerFile: null }));
@@ -206,7 +244,7 @@ const Menu = (props) => {
     if (usingExternal) {
       externalSetState((p) => ({ ...p, logoFile: tempLogoFile ?? null }));
     }
-    setLogoModalOpen(false);
+    closeAllModals();
   };
   const removeLogo = () => {
     if (usingExternal) externalSetState((p) => ({ ...p, logoFile: null }));
@@ -400,9 +438,9 @@ const Menu = (props) => {
 
       {/* MODALS */}
       {titleModalOpen && (
-        <GenericModal onClose={() => setTitleModalOpen(false)}>
+        <GenericModal onClose={closeAllModals}>
           <div className="flex items-center gap-4 mb-4">
-            <FaChevronLeft className="cursor-pointer" onClick={() => setTitleModalOpen(false)} />
+            <FaChevronLeft className="cursor-pointer" onClick={closeAllModals} />
             <h3 className="font-bold">Alterar nome</h3>
           </div>
           <input
@@ -424,7 +462,7 @@ const Menu = (props) => {
             <button
               onClick={() => {
                 setTempTitle(propTitle);
-                setTitleModalOpen(false);
+                closeAllModals();
               }}
               className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded"
             >
@@ -433,7 +471,7 @@ const Menu = (props) => {
             <button
               onClick={() => {
                 setTitle(tempTitle);
-                setTitleModalOpen(false);
+                closeAllModals();
               }}
               className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded"
             >
@@ -444,9 +482,9 @@ const Menu = (props) => {
       )}
 
       {bannerModalOpen && (
-        <GenericModal onClose={() => setBannerModalOpen(false)}>
+        <GenericModal onClose={closeAllModals}>
           <div className="flex items-center gap-4 mb-4">
-            <FaChevronLeft className="cursor-pointer" onClick={() => setBannerModalOpen(false)} />
+            <FaChevronLeft className="cursor-pointer" onClick={closeAllModals} />
             <h3 className="font-bold">Alterar banner</h3>
           </div>
           <label className="text-center flex flex-col items-center justify-center w-full h-30 border-2 border-dashed border-[var(--gray)] rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
@@ -466,10 +504,7 @@ const Menu = (props) => {
             </button>
           )}
           <div className="flex justify-end gap-2 mt-4">
-            <button
-              onClick={() => setBannerModalOpen(false)}
-              className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded"
-            >
+            <button onClick={closeAllModals} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded">
               Cancelar
             </button>
             <button onClick={applyTempBanner} className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded">
@@ -480,9 +515,9 @@ const Menu = (props) => {
       )}
 
       {logoModalOpen && (
-        <GenericModal onClose={() => setLogoModalOpen(false)}>
+        <GenericModal onClose={closeAllModals}>
           <div className="flex items-center gap-4 mb-4">
-            <FaChevronLeft className="cursor-pointer" onClick={() => setLogoModalOpen(false)} />
+            <FaChevronLeft className="cursor-pointer" onClick={closeAllModals} />
             <h3 className="font-bold">Alterar logo</h3>
           </div>
           <label className="text-center flex flex-col items-center justify-center w-30 h-30 border-2 border-dashed border-[var(--gray)] rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
@@ -499,10 +534,7 @@ const Menu = (props) => {
             </button>
           )}
           <div className="flex justify-end gap-2 mt-4">
-            <button
-              onClick={() => setLogoModalOpen(false)}
-              className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded"
-            >
+            <button onClick={closeAllModals} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded">
               Cancelar
             </button>
             <button onClick={applyTempLogo} className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded">

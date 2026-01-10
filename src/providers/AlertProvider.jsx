@@ -69,7 +69,7 @@ export function AlertProvider({ children }) {
               color: getTextColor(a),
             }}
           >
-            <span>{a.message}</span>
+            <span className="text-xs xs:text-sm sm:text-base">{a.message}</span>
 
             <button onClick={() => closeAlert(a.id)} className="cursor-pointer text-xl ml-2">
               <FaTimes />
