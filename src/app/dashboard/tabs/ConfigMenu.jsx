@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { FaPen, FaChevronLeft } from "react-icons/fa";
+import { FaPen, FaChevronLeft, FaLightbulb } from "react-icons/fa";
 import { COLOR_PALETTES } from "@/consts/colorPallets";
 import useMenu from "@/hooks/useMenu";
 import Loading from "@/components/Loading";
@@ -357,8 +357,8 @@ const ConfigMenu = (props) => {
             </div>
 
             <div className="mt-4 flex items-center space-x-3">
-              <button type="button" onClick={suggestRandomPalette} className="custom-gray-button">
-                💡 Sugerir cores
+              <button type="button" onClick={suggestRandomPalette} className="custom-gray-button has-icon">
+                <FaLightbulb /> Sugerir cores
               </button>
             </div>
             <hr className="border-1 border-translucid mt-2 mb-4 max-w-full" />

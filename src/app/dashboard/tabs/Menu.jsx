@@ -2,7 +2,7 @@
 
 import { useAlert } from "@/providers/AlertProvider";
 import useMenu from "@/hooks/useMenu";
-import { FaPen, FaCamera, FaChevronLeft } from "react-icons/fa";
+import { FaPen, FaCamera, FaChevronLeft, FaLightbulb } from "react-icons/fa";
 import { FiSettings } from "react-icons/fi";
 import GenericModal from "@/components/GenericModal";
 import { useEffect, useRef, useState } from "react";
@@ -380,8 +380,8 @@ const Menu = (props) => {
               </div>
 
               <div className="mt-4 flex items-center space-x-3">
-                <button type="button" onClick={suggestRandomPalette} className="custom-gray-button">
-                  💡 Sugerir cores
+                <button type="button" onClick={suggestRandomPalette} className="custom-gray-button has-icon">
+                  <FaLightbulb /> Sugerir cores
                 </button>
               </div>
             </div>

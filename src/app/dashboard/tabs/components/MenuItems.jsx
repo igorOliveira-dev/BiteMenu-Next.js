@@ -695,8 +695,8 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
               style={{
                 backgroundColor: translucidToUse,
                 color: foregroundToUse,
-                border: "1px solid",
-                borderColor: foregroundToUse,
+                border: "2px solid",
+                borderColor: translucidToUse,
               }}
             >
               Ordenar itens
@@ -887,7 +887,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                   setModalPayload((p) => ({ ...p, data: { ...p.data, name: v } }));
                 }}
                 maxLength={20}
-                className="w-full p-2 rounded border bg-translucid mb-2"
+                className="w-full p-2 rounded border border-translucid bg-translucid mb-2"
                 placeholder="Item"
               />
             </label>
@@ -896,81 +896,86 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
           {/* Item */}
           {modalPayload.type === "item" && (
             <>
-              <div className="mb-2">
-                <div className="text-sm color-gray mb-1">Imagem do item:</div>
+              <div className="flex gap-2  sm:gap-4">
+                <div className="mb-2">
+                  <div className="text-sm color-gray mb-1">Imagem do item:</div>
 
-                <label className="text-center flex flex-col items-center justify-center w-30 h-30 border-2 border-dashed border-[var(--gray)] rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
-                  {modalPayload.data.image_url ? (
-                    <img src={modalPayload.data.image_url} alt="Prévia" className="object-cover w-full h-full" />
-                  ) : (
-                    <span className="color-gray m-4 text-sm">Clique aqui para inserir uma imagem</span>
+                  <label className="text-center flex flex-col items-center justify-center w-30 h-30 border-2 border-dashed border-translucid rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
+                    {modalPayload.data.image_url ? (
+                      <img src={modalPayload.data.image_url} alt="Prévia" className="object-cover w-full h-full" />
+                    ) : (
+                      <span className="color-gray m-4 text-sm">Clique aqui para inserir uma imagem</span>
+                    )}
+
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        try {
+                          setUploadingImage(true);
+                          const url = await uploadItemImage(file, menu?.owner_id, modalPayload.data.image_url);
+                          setModalPayload((p) => ({ ...p, data: { ...p.data, image_url: url } }));
+                        } catch (err) {
+                          console.error("upload image error:", err);
+                          alert?.("Erro ao enviar imagem (ver console)", "error");
+                        } finally {
+                          setUploadingImage(false);
+                        }
+                      }}
+                    />
+                  </label>
+
+                  {modalPayload.data.image_url && (
+                    <button
+                      onClick={() => setModalPayload((p) => ({ ...p, data: { ...p.data, image_url: "" } }))}
+                      className="mt-1 text-sm text-red-500 hover:underline"
+                      type="button"
+                    >
+                      Remover imagem
+                    </button>
                   )}
+                </div>
 
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      try {
-                        setUploadingImage(true);
-                        const url = await uploadItemImage(file, menu?.owner_id, modalPayload.data.image_url);
-                        setModalPayload((p) => ({ ...p, data: { ...p.data, image_url: url } }));
-                      } catch (err) {
-                        console.error("upload image error:", err);
-                        alert?.("Erro ao enviar imagem (ver console)", "error");
-                      } finally {
-                        setUploadingImage(false);
-                      }
-                    }}
-                  />
-                </label>
+                <div className="flex flex-col w-full gap-2">
+                  <label className="block mb-2 w-full">
+                    <div className="text-sm color-gray">Nome:</div>
+                    <input
+                      type="text"
+                      value={modalPayload.data.name}
+                      onChange={(e) => {
+                        const v = e.target.value.slice(0, 25);
+                        setModalPayload((p) => ({ ...p, data: { ...p.data, name: v } }));
+                      }}
+                      maxLength={25}
+                      className="w-full p-2 rounded border border-translucid bg-translucid mb-2"
+                    />
+                  </label>
 
-                {modalPayload.data.image_url && (
-                  <button
-                    onClick={() => setModalPayload((p) => ({ ...p, data: { ...p.data, image_url: "" } }))}
-                    className="mt-1 text-sm text-red-500 hover:underline"
-                    type="button"
-                  >
-                    Remover imagem
-                  </button>
-                )}
-              </div>
-
-              <div className="flex gap-2">
-                <label className="block mb-2 w-3/4">
-                  <div className="text-sm color-gray">Nome:</div>
-                  <input
-                    type="text"
-                    value={modalPayload.data.name}
-                    onChange={(e) => {
-                      const v = e.target.value.slice(0, 25);
-                      setModalPayload((p) => ({ ...p, data: { ...p.data, name: v } }));
-                    }}
-                    maxLength={25}
-                    className="w-full p-2 rounded border bg-translucid mb-2"
-                  />
-                </label>
-
-                <label className="block mb-2 w-1/4">
-                  <div className="text-sm color-gray">Preço:</div>
-                  <input
-                    type="text"
-                    value={modalPayload.data.price}
-                    onChange={(e) => {
-                      let value = e.target.value;
-                      value = value.replace(/[^0-9.,]/g, "");
-                      value = value.replace(",", ".");
-                      const parts = value.split(".");
-                      if (parts.length > 2) value = parts[0] + "." + parts.slice(1).join("");
-                      setModalPayload((p) => ({ ...p, data: { ...p.data, price: value } }));
-                    }}
-                    maxLength={10}
-                    className="w-full p-2 rounded border bg-translucid mb-2"
-                    placeholder="00.00"
-                  />
-                </label>
+                  <label className="block mb-2 w-[100px]">
+                    <div className="text-sm color-gray">Preço:</div>
+                    <div className="flex items-center mb-2">
+                      <span className="absolute p-2">R$</span>
+                      <input
+                        type="text"
+                        value={modalPayload.data.price}
+                        onChange={(e) => {
+                          let value = e.target.value;
+                          value = value.replace(/[^0-9.,]/g, "");
+                          value = value.replace(",", ".");
+                          const parts = value.split(".");
+                          if (parts.length > 2) value = parts[0] + "." + parts.slice(1).join("");
+                          setModalPayload((p) => ({ ...p, data: { ...p.data, price: value } }));
+                        }}
+                        maxLength={10}
+                        className="w-full p-2 pl-7.5 rounded border border-translucid bg-translucid"
+                        placeholder="00.00"
+                      />
+                    </div>
+                  </label>
+                </div>
               </div>
 
               <label className="block mb-2">
@@ -978,7 +983,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                 <textarea
                   value={modalPayload.data.description}
                   onChange={(e) => setModalPayload((p) => ({ ...p, data: { ...p.data, description: e.target.value } }))}
-                  className="w-full p-2 rounded border bg-translucid mb-2"
+                  className="w-full p-2 rounded border border-translucid bg-translucid mb-2"
                   placeholder="Escreva a descrição (opcional)"
                 />
               </label>
@@ -1017,7 +1022,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                             return { ...p, data: { ...p.data, additionals: next } };
                           })
                         }
-                        className="flex-1 min-w-0 p-2 rounded border bg-translucid"
+                        className="flex-1 min-w-0 p-2 rounded border border-translucid bg-translucid"
                         placeholder="Nome do adicional"
                       />
 
@@ -1035,7 +1040,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                           });
                         }}
                         maxLength={10}
-                        className="w-16 flex-none p-2 rounded border bg-translucid"
+                        className="w-16 flex-none p-2 rounded border border-translucid bg-translucid"
                         placeholder="0.00"
                       />
 

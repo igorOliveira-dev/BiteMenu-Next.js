@@ -3,7 +3,7 @@
 import Loading from "@/components/Loading";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import React, { useState } from "react";
-import { FaShoppingCart } from "react-icons/fa";
+import { FaLightbulb, FaShoppingCart } from "react-icons/fa";
 import useUser from "@/hooks/useUser";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
@@ -485,7 +485,7 @@ export default function GetStart() {
         {/* 3. Logo do estabelecimento */}
         <div className="mb-4">
           <p className="font-semibold mb-2">3. Tem uma logo ou imagem que represente seu negócio? (ideal quadrada)</p>
-          <label className="text-center flex flex-col items-center justify-center w-36 h-36 border-2 border-dashed border-[var(--gray)] rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
+          <label className="text-center flex flex-col items-center justify-center w-36 h-36 border-2 border-dashed border-translucid rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
             {logoFile ? (
               <img src={URL.createObjectURL(logoFile)} alt="Preview da logo" className="object-contain w-full h-full" />
             ) : (
@@ -510,7 +510,7 @@ export default function GetStart() {
         {/* 4. Banner do estabelecimento */}
         <div className="mb-4">
           <p className="font-semibold mb-2">4. Tem uma imagem grande pro banner? (1640×664)</p>
-          <label className="text-center flex flex-col items-center justify-center w-full h-30 border-2 border-dashed border-[var(--gray)] rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
+          <label className="text-center flex flex-col items-center justify-center w-full h-30 border-2 border-dashed border-translucid rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
             {bannerFile ? (
               <img src={URL.createObjectURL(bannerFile)} alt="Preview do banner" className="object-cover w-full h-full" />
             ) : (
@@ -557,8 +557,8 @@ export default function GetStart() {
 
           {/* Botão de sugerir paleta aleatória */}
           <div className="mt-4 flex justify-begin">
-            <button type="button" onClick={suggestRandomPalette} className="custom-gray-button">
-              💡 Sugerir cores
+            <button type="button" onClick={suggestRandomPalette} className="custom-gray-button has-icon">
+              <FaLightbulb /> Sugerir cores
             </button>
           </div>
         </div>
