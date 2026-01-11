@@ -15,6 +15,8 @@
   --translucid: #00000012;
   --red: #d42020;
   --shadow: #00000070;
+  --theme-red: #ce0000;
+  --theme-yellow: #ed8a00;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -27,6 +29,8 @@
     --translucid: #ffffff10;
     --red: #d41010;
     --shadow: #000000;
+    --theme-red: #ff3535;
+    --theme-yellow: #ffff30;
   }
 }
 
@@ -40,6 +44,8 @@
   --translucid: #00000012;
   --red: #d42020;
   --shadow: #00000070;
+  --theme-red: #ce0000;
+  --theme-yellow: #ed8a00;
 }
 
 [data-theme="dark"] {
@@ -51,6 +57,8 @@
   --translucid: #ffffff10;
   --red: #d41010;
   --shadow: #000000;
+  --theme-red: #ff3535;
+  --theme-yellow: #ffff30;
 }
 
 html {

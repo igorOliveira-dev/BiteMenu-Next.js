@@ -716,11 +716,64 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
   const verifyPlan = (button) => {
     if (ownerRole === "admin" || ownerRole === "plus" || ownerRole === "pro") {
-      alert("ae carai " + "(" + button + ")");
+      if (button === "starredItem") {
+        if (!modalPayload.itemId) {
+          alert?.("Item inválido para destaque", "error");
+          return;
+        }
+
+        const item = categories.flatMap((c) => c.menu_items || []).find((it) => it.id === modalPayload.itemId);
+
+        toggleItemStarred(item.id, item.starred);
+      }
     } else {
-      alert("Desbloqueie essa função com o plano Plus!");
+      alert?.("Desbloqueie essa função com o plano Plus ou Pro!");
     }
   };
+
+  const toggleItemStarred = async (itemId, currentStarred) => {
+    const newStarred = !currentStarred;
+
+    // optimistic update
+    setCategories((prev) =>
+      prev.map((c) => ({
+        ...c,
+        menu_items: c.menu_items.map((it) => (it.id === itemId ? { ...it, starred: newStarred } : it)),
+      }))
+    );
+
+    try {
+      const { data, error } = await supabase
+        .from("menu_items")
+        .update({ starred: newStarred })
+        .eq("id", itemId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setCategories((prev) =>
+        prev.map((c) => ({
+          ...c,
+          menu_items: c.menu_items.map((it) => (it.id === itemId ? { ...it, ...data } : it)),
+        }))
+      );
+
+      alert?.(newStarred ? "Item destacado" : "Destaque removido", "success");
+    } catch (err) {
+      console.error(err);
+      alert?.("Erro ao destacar item", "error");
+    }
+  };
+
+  // verificar se o item do modal é starred
+  const modalItem = useMemo(() => {
+    if (!modalPayload.itemId || !categories) return null;
+
+    return categories.flatMap((c) => c.menu_items || []).find((it) => it.id === modalPayload.itemId);
+  }, [modalPayload.itemId, categories]);
+
+  const isStarred = !!modalItem?.starred;
 
   const translucidToUse = getContrastTextColor(backgroundColor) === "white" ? "#ffffff15" : "#00000015";
   const grayToUse = getContrastTextColor(backgroundColor) === "white" ? "#cccccc" : "#333333";
@@ -1114,24 +1167,30 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
               </div>
 
               {/* botões plus || pro */}
-              {/* <div className="flex h-[40px] items-end mt-4 gap-4 w-full ">
-                <button
-                  className={`p-2 bg-[#ff000085] rounded flex items-center justify-center gap-2 font-semibold w-[50%] cursor-pointer hover:bg-[#ff0000aa] transition`}
+              <div className="flex h-[40px] items-end justify-end mt-4 gap-4 w-full ">
+                {/* <button
+                  className={`p-2 text-[var(--theme-red)] border-2 border-[var(--theme-red)] hover:opacity-80 rounded flex items-center justify-center gap-2 font-semibold w-[50%] cursor-pointer transition`}
                   onClick={() => verifyPlan("promotionalPrice")}
                 >
                   <FaBullhorn />
                   <span className="hide-on-400px">Criar promoção</span>
                   <span className="show-on-400px">Promoção</span>
-                </button>
+                </button> */}
                 <button
-                  className={`p-2 bg-[#ffff0085] rounded flex items-center justify-center gap-2 font-semibold w-[50%] cursor-pointer hover:bg-[#ffff00aa] transition `}
                   onClick={() => verifyPlan("starredItem")}
+                  className="p-2 rounded flex items-center justify-center gap-2 font-semibold w-[50%] cursor-pointer transition"
+                  style={{
+                    backgroundColor: isStarred ? "var(--theme-yellow)" : "transparent",
+                    color: isStarred ? "var(--low-gray)" : "var(--theme-yellow)",
+                    border: "2px solid",
+                    borderColor: "var(--theme-yellow)",
+                  }}
                 >
                   <FaStar />
-                  <span className="hide-on-400px">Destacar item</span>
-                  <span className="show-on-400px">Destacar</span>
+                  <span className="hide-on-400px">{isStarred ? "Item destacado" : "Destacar item"}</span>
+                  <span className="show-on-400px">{isStarred ? "Destacado" : "Destacar"}</span>
                 </button>
-              </div> */}
+              </div>
             </>
           )}
 
@@ -1238,12 +1297,14 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
           )}
 
           <div className="flex justify-end gap-2 mt-4">
-            <button onClick={closeModal} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded">
-              Cancelar
-            </button>
-            <button onClick={handleModalSave} className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded">
-              Salvar
-            </button>
+            <div className="w-[50%] flex gap-2">
+              <button onClick={closeModal} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded w-[50%]">
+                Cancelar
+              </button>
+              <button onClick={handleModalSave} className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded w-[50%]">
+                Salvar
+              </button>
+            </div>
           </div>
         </GenericModal>
       )}

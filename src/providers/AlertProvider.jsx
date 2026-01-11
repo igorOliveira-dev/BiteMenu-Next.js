@@ -43,9 +43,9 @@ export function AlertProvider({ children }) {
 
   const getBackgroundColor = (a) => {
     if (a.backgroundColor) return a.backgroundColor;
-    if (a.type === "error") return "#ff000010";
-    if (a.type === "success") return "#00ff0020";
-    return "var(--translucid)";
+    // if (a.type === "error") return "#ff000005";
+    // if (a.type === "success") return "#00ff0005";
+    return "var(--low-gray)";
   };
 
   const getTextColor = (a) => {
@@ -61,7 +61,7 @@ export function AlertProvider({ children }) {
         {alerts.map((a) => (
           <div
             key={a.id}
-            className={`border border-[var(--background)] m-1 relative max-w-120 px-2 py-3 rounded transform transition-all duration-300 ease-in-out backdrop-blur-md flex items-center justify-between
+            className={`m-1 relative max-w-120 px-2 py-3 rounded transform transition-all duration-300 ease-in-out backdrop-blur-md flex items-center justify-between
               ${a.visible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-5"}
             `}
             style={{
@@ -69,14 +69,14 @@ export function AlertProvider({ children }) {
               color: getTextColor(a),
             }}
           >
-            <span className="text-xs xs:text-sm sm:text-base">{a.message}</span>
+            <span className="text-xs xs:text-sm sm:text-base font-semibold">{a.message}</span>
 
             <button onClick={() => closeAlert(a.id)} className="cursor-pointer text-xl ml-2">
               <FaTimes />
             </button>
 
             <div
-              className="absolute bottom-0 left-0 h-1 bg-white/70"
+              className="absolute bottom-0 left-0 h-1 bg-[var(--foreground)]"
               style={{
                 animation: `progress ${a.duration}ms linear forwards`,
               }}
