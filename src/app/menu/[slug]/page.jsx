@@ -73,7 +73,8 @@ export default async function MenuPage({ params }) {
           price,
           image_url,
           additionals,
-          visible
+          visible,
+          starred
         )
       )
     `

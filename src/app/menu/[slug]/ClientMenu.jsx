@@ -357,6 +357,14 @@ export default function ClientMenu({ menu }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const starredItems = useMemo(() => {
+    return (menu?.categories || [])
+      .flatMap((cat) => cat.menu_items || [])
+      .filter((it) => it.visible && it.starred && it.image_url);
+  }, [menu]);
+
+  const hasStarred = starredItems.length > 0;
+
   const navCategories = orderedCategories.filter((cat) => (cat.menu_items || []).some((it) => it.visible));
 
   return (
@@ -465,19 +473,83 @@ export default function ClientMenu({ menu }) {
               color: foregroundToUse,
             }}
           >
-            {navCategories.map((cat) => (
-              <div key={cat.id}>
+            <>
+              {hasStarred && (
                 <button
-                  className="cursor-pointer p-4"
+                  className="cursor-pointer p-4 font-semibold"
                   onClick={(e) => {
                     e.preventDefault();
-                    scrollToCategoryId(cat.id.slice(0, 5), 40);
+                    scrollToCategoryId("starred-section", 40);
                   }}
                 >
-                  {cat.name}
+                  Destaques
                 </button>
-              </div>
-            ))}
+              )}
+
+              {navCategories.map((cat) => (
+                <div key={cat.id}>
+                  <button
+                    className="cursor-pointer p-4"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      scrollToCategoryId(cat.id.slice(0, 5), 40);
+                    }}
+                  >
+                    {cat.name}
+                  </button>
+                </div>
+              ))}
+            </>
+          </div>
+        )}
+
+        {hasStarred && (
+          <div className="rounded py-3 px-4" id="starred-section">
+            <div className="flex items-center gap-2 mb-2 pt-4">
+              <strong style={{ color: foregroundToUse }}>Destaques</strong>
+            </div>
+
+            <div
+              className="flex gap-3 overflow-x-auto starred-scroll"
+              style={{
+                scrollSnapType: "x mandatory",
+                "--scrollbar-color": menu.details_color,
+              }}
+            >
+              {starredItems.map((it) => (
+                <div
+                  key={it.id}
+                  className="min-w-[65%] max-w-[65%] 
+                     xxs:min-w-[55%] xxs:max-w-[55%] 
+                     xs:min-w-[40%] xs:max-w-[40%] 
+                     sm:min-w-[30%] sm:max-w-[30%] 
+                     lg:min-w-[28%] lg:max-w-[28%] 
+                     xl:min-w-[24%] xl:max-w-[24%] 
+                     snap-start rounded-lg p-2 cursor-pointer mb-2"
+                  style={{ backgroundColor: translucidToUse }}
+                  onClick={() => handleItemClick(it)}
+                >
+                  {it.image_url && (
+                    <img src={it.image_url} alt={it.name} className="w-full aspect-square object-cover rounded-md mb-2" />
+                  )}
+
+                  <div className="text-lg font-semibold" style={{ color: foregroundToUse }}>
+                    {it.name}
+                  </div>
+
+                  <div className="text-sm line-clamp-2 mb-1" style={{ color: grayToUse }}>
+                    {it.description}
+                  </div>
+
+                  <div className="font-bold text-2xl" style={{ color: foregroundToUse }}>
+                    {Number(it.price).toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

@@ -2,7 +2,7 @@
 
 @theme {
   --breakpoint-xs: 30rem;
-  --breakpoint-xxs: 340px;
+  --breakpoint-xxs: 360px;
 }
 
 :root {
@@ -272,4 +272,24 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   @media (min-width: 401px) {
     display: none;
   }
+}
+
+/* Chrome, Edge, Safari */
+.starred-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.starred-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.starred-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-color);
+  border-radius: 999px;
+}
+
+/* Firefox */
+.starred-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-color) transparent;
 }

@@ -718,11 +718,16 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     if (ownerRole === "admin" || ownerRole === "plus" || ownerRole === "pro") {
       if (button === "starredItem") {
         if (!modalPayload.itemId) {
-          alert?.("Item inválido para destaque", "error");
+          alert("Salve o item antes de destacar", "error");
           return;
         }
 
         const item = categories.flatMap((c) => c.menu_items || []).find((it) => it.id === modalPayload.itemId);
+
+        if (!item.image_url) {
+          alert("Você só pode destacar itens com imagem.", "error");
+          return;
+        }
 
         toggleItemStarred(item.id, item.starred);
       }
@@ -759,10 +764,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         }))
       );
 
-      alert?.(newStarred ? "Item destacado" : "Destaque removido", "success");
+      alert?.(newStarred ? "Item destacado no seu menu!" : "Destaque removido", "success");
     } catch (err) {
       console.error(err);
-      alert?.("Erro ao destacar item", "error");
+      alert("Erro ao destacar item", "error");
     }
   };
 
@@ -774,6 +779,13 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   }, [modalPayload.itemId, categories]);
 
   const isStarred = !!modalItem?.starred;
+
+  const starredItems = useMemo(() => {
+    if (!categories) return [];
+    return categories.flatMap((c) => c.menu_items || []).filter((it) => it.starred && it.visible !== false);
+  }, [categories]);
+
+  const hasStarred = starredItems.length > 0 && (ownerRole === "admin" || ownerRole === "plus" || ownerRole === "pro");
 
   const translucidToUse = getContrastTextColor(backgroundColor) === "white" ? "#ffffff15" : "#00000015";
   const grayToUse = getContrastTextColor(backgroundColor) === "white" ? "#cccccc" : "#333333";
@@ -820,13 +832,24 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
           className="flex sticky -top-1 border-y-2 overflow-x-auto whitespace-nowrap scrollbar-none z-50"
           style={{ backgroundColor: backgroundColor, borderColor: translucidToUse, color: foregroundToUse }}
         >
+          {hasStarred && (
+            <button
+              className="cursor-pointer p-4 font-semibold"
+              onClick={() => {
+                scrollToCategoryId("starred-section", 40);
+              }}
+            >
+              Destaques
+            </button>
+          )}
+
           {categories.map((cat) => (
             <div key={cat.id}>
               <button
                 className="cursor-pointer p-4"
                 onClick={(e) => {
                   e.preventDefault();
-                  scrollToCategoryId(cat.id.slice(0, 5), 40);
+                  scrollToCategoryId(cat.id.slice(0, 5), 50);
                 }}
               >
                 {cat.name}
@@ -837,6 +860,56 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       )}
 
       <div className="space-y-4">
+        {hasStarred && (
+          <div className="rounded py-3" id="starred-section">
+            <div className="flex items-center gap-2 mb-2 pt-4">
+              <strong style={{ color: foregroundToUse }}>Destaques</strong>
+            </div>
+
+            <div
+              className="flex gap-3 overflow-x-auto starred-scroll"
+              style={{
+                scrollSnapType: "x mandatory",
+                "--scrollbar-color": detailsColor,
+              }}
+            >
+              {starredItems.map((it) => (
+                <div
+                  key={it.id}
+                  className="min-w-[65%] max-w-[65%] xxs:min-w-[55%] xxs:max-w-[55%] xs:min-w-[40%] xs:max-w-[40%] sm:min-w-[30%] sm:max-w-[30%] lg:min-w-[40%] lg:max-w-[40%] xl:min-w-[30%] xl:max-w-[30%] snap-start rounded-lg p-2 mb-2"
+                  style={{ backgroundColor: translucidToUse }}
+                >
+                  {it.image_url && (
+                    <img src={it.image_url} alt={it.name} className="w-full aspect-square object-cover rounded-md mb-2" />
+                  )}
+
+                  <div className="text-lg font-semibold" style={{ color: foregroundToUse }}>
+                    {it.name}
+                  </div>
+
+                  <div className="text-sm line-clamp-2 mb-1" style={{ color: grayToUse }}>
+                    {it.description}
+                  </div>
+
+                  <div className="font-bold text-2xl" style={{ color: foregroundToUse }}>
+                    {Number(it.price).toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    })}
+                  </div>
+                  <button
+                    onClick={() => toggleItemStarred(it.id, true)}
+                    className="mt-2 py-2 rounded text-sm transition hover:opacity-80 w-full cursor-pointer"
+                    style={{ backgroundColor: detailsColor, color: getContrastTextColor(detailsColor) }}
+                  >
+                    Remover dos destaques
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {categories.map((cat) => (
           <div key={cat.id} className="rounded py-3" id={cat.id.slice(0, 5)}>
             <div className="flex items-center justify-between mb-2">
