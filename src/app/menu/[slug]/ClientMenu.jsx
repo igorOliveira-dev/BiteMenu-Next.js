@@ -533,7 +533,7 @@ export default function ClientMenu({ menu }) {
                     <img src={it.image_url} alt={it.name} className="w-full aspect-square object-cover rounded-md mb-2" />
                   )}
 
-                  <div className="text-lg font-semibold" style={{ color: foregroundToUse }}>
+                  <div className="text-lg font-semibold line-clamp-1" style={{ color: foregroundToUse }}>
                     {it.name}
                   </div>
 
