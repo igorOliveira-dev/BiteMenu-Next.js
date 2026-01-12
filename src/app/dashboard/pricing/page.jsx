@@ -12,7 +12,7 @@ const page = () => {
         {plans.map((plan) => (
           <div
             key={plan.name}
-            className="p-4 px-6 bg-translucid border-2 border-translucid rounded-xl w-64 h-100 flex flex-col gap-6 justify-between"
+            className="p-4 px-6 bg-translucid border-2 border-translucid rounded-xl w-64 flex flex-col gap-6 justify-between"
           >
             <div>
               <h2 className="font-bold mb-2">{plan.name}</h2>
