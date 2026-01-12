@@ -438,7 +438,7 @@ export default function ClientMenu({ menu }) {
           </div>
 
           {menu.address && (
-            <p className="mt-1 px-4 flex items-center mb-2" style={{ color: grayToUse }}>
+            <p className="px-4 flex items-center my-2" style={{ color: grayToUse }}>
               <FaMapMarkerAlt className="inline mr-2" />
               {menu.address}
             </p>
