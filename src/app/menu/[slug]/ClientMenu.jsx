@@ -122,6 +122,7 @@ export default function ClientMenu({ menu }) {
   const cartOpenRef = useRef(cartOpen);
 
   const [establishmentPhone, setEstablishmentPhone] = useState(null);
+  const [ownerRole, setOwnerRole] = useState(null);
 
   const open = isOpenNow(menu.hours);
   const translucidToUse = getContrastTextColor(menu.background_color) === "white" ? "#ffffff15" : "#00000015";
@@ -290,6 +291,28 @@ export default function ClientMenu({ menu }) {
     fetchPhone();
   }, [menu?.owner_id, menu?.owner_phone, menu?.phone]);
 
+  // Busca o cargo do dono do estabelecimento
+  useEffect(() => {
+    const fetchRole = async () => {
+      let role = null;
+
+      if (menu?.owner_id) {
+        const { data, error } = await supabase.from("profiles").select("role").eq("id", menu.owner_id).single();
+
+        if (!error && data?.role) {
+          role = data.role;
+        }
+      }
+
+      // fallback
+      role = role || menu?.owner_role || menu?.role || null;
+
+      setOwnerRole(role || "free");
+    };
+
+    fetchRole();
+  }, [menu?.owner_id, menu?.owner_role, menu?.role]);
+
   useEffect(() => {
     cartOpenRef.current = cartOpen;
   }, [cartOpen]);
@@ -362,6 +385,9 @@ export default function ClientMenu({ menu }) {
       .flatMap((cat) => cat.menu_items || [])
       .filter((it) => it.visible && it.starred && it.image_url);
   }, [menu]);
+
+  const hasPlusPermissions = ownerRole === "plus" || ownerRole === "pro" || ownerRole === "admin";
+  const hasProPermissions = ownerRole === "pro" || ownerRole === "admin";
 
   const hasStarred = starredItems.length > 0;
 
@@ -474,7 +500,7 @@ export default function ClientMenu({ menu }) {
             }}
           >
             <>
-              {hasStarred && (
+              {hasStarred && hasPlusPermissions && (
                 <button
                   className="cursor-pointer p-4 font-semibold"
                   onClick={(e) => {
@@ -503,7 +529,7 @@ export default function ClientMenu({ menu }) {
           </div>
         )}
 
-        {hasStarred && (
+        {hasStarred && hasPlusPermissions && (
           <div className="rounded py-3 px-4" id="starred-section">
             <div className="flex items-center gap-2 mb-2 pt-4">
               <strong style={{ color: foregroundToUse }}>Destaques</strong>
