@@ -879,31 +879,38 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                   className="min-w-[65%] max-w-[65%] xxs:min-w-[55%] xxs:max-w-[55%] xs:min-w-[40%] xs:max-w-[40%] sm:min-w-[30%] sm:max-w-[30%] lg:min-w-[40%] lg:max-w-[40%] xl:min-w-[30%] xl:max-w-[30%] snap-start rounded-lg p-2 mb-2"
                   style={{ backgroundColor: translucidToUse }}
                 >
-                  {it.image_url && (
-                    <img src={it.image_url} alt={it.name} className="w-full aspect-square object-cover rounded-md mb-2" />
-                  )}
-
-                  <div className="text-lg font-semibold line-clamp-1" style={{ color: foregroundToUse }}>
-                    {it.name}
+                  <div className="flex flex-col justify-between h-full">
+                    <div>
+                      {it.image_url && (
+                        <img
+                          src={it.image_url}
+                          alt={it.name}
+                          className="w-full aspect-square object-cover rounded-md mb-2"
+                        />
+                      )}
+                      <div className="text-lg font-semibold line-clamp-1" style={{ color: foregroundToUse }}>
+                        {it.name}
+                      </div>
+                      <div className="text-sm line-clamp-2 mb-1" style={{ color: grayToUse }}>
+                        {it.description}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-bold text-2xl" style={{ color: foregroundToUse }}>
+                        {Number(it.price).toLocaleString("pt-BR", {
+                          style: "currency",
+                          currency: "BRL",
+                        })}
+                      </div>
+                      <button
+                        onClick={() => toggleItemStarred(it.id, true)}
+                        className="mt-2 py-2 rounded text-sm transition hover:opacity-80 w-full cursor-pointer"
+                        style={{ backgroundColor: detailsColor, color: getContrastTextColor(detailsColor) }}
+                      >
+                        Remover dos destaques
+                      </button>
+                    </div>
                   </div>
-
-                  <div className="text-sm line-clamp-2 mb-1" style={{ color: grayToUse }}>
-                    {it.description}
-                  </div>
-
-                  <div className="font-bold text-2xl" style={{ color: foregroundToUse }}>
-                    {Number(it.price).toLocaleString("pt-BR", {
-                      style: "currency",
-                      currency: "BRL",
-                    })}
-                  </div>
-                  <button
-                    onClick={() => toggleItemStarred(it.id, true)}
-                    className="mt-2 py-2 rounded text-sm transition hover:opacity-80 w-full cursor-pointer"
-                    style={{ backgroundColor: detailsColor, color: getContrastTextColor(detailsColor) }}
-                  >
-                    Remover dos destaques
-                  </button>
                 </div>
               ))}
             </div>

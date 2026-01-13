@@ -555,23 +555,29 @@ export default function ClientMenu({ menu }) {
                   style={{ backgroundColor: translucidToUse }}
                   onClick={() => handleItemClick(it)}
                 >
-                  {it.image_url && (
-                    <img src={it.image_url} alt={it.name} className="w-full aspect-square object-cover rounded-md mb-2" />
-                  )}
-
-                  <div className="text-lg font-semibold line-clamp-1" style={{ color: foregroundToUse }}>
-                    {it.name}
-                  </div>
-
-                  <div className="text-sm line-clamp-2 mb-1" style={{ color: grayToUse }}>
-                    {it.description}
-                  </div>
-
-                  <div className="font-bold text-2xl" style={{ color: foregroundToUse }}>
-                    {Number(it.price).toLocaleString("pt-BR", {
-                      style: "currency",
-                      currency: "BRL",
-                    })}
+                  {/* content */}
+                  <div className="flex flex-col justify-between h-full">
+                    <div>
+                      {it.image_url && (
+                        <img
+                          src={it.image_url}
+                          alt={it.name}
+                          className="w-full aspect-square object-cover rounded-md mb-2"
+                        />
+                      )}
+                      <div className="text-lg font-semibold line-clamp-1" style={{ color: foregroundToUse }}>
+                        {it.name}
+                      </div>
+                      <div className="text-sm line-clamp-2 mb-1" style={{ color: grayToUse }}>
+                        {it.description}
+                      </div>
+                    </div>
+                    <div className="font-bold text-2xl" style={{ color: foregroundToUse }}>
+                      {Number(it.price).toLocaleString("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                      })}
+                    </div>
                   </div>
                 </div>
               ))}
