@@ -220,53 +220,51 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
   // CRUD helpers
   const createCategory = async ({ name = "Nova categoria" } = {}) => {
-    if (ownerRole === "free" && categories.length >= 4) {
-      alert?.("Limite de 5 categorias atingido no plano gratuito.", "error");
-      return;
+    const catCount = categories?.length ?? 0;
+
+    if (ownerRole === "free" && catCount >= 4) {
+      alert?.("Limite de 4 categorias atingido no plano gratuito.", "error");
+      return null;
     }
 
-    if (ownerRole === "plus" && categories.length >= 20) {
+    if (ownerRole === "plus" && catCount >= 20) {
       alert?.("Limite de 20 categorias atingido no plano Plus.", "error");
-      return;
+      return null;
     }
 
-    if (ownerRole === "pro" && categories.length >= 100) {
+    if (ownerRole === "pro" && catCount >= 100) {
       alert?.("Limite de 100 categorias atingido no plano Pro.", "error");
-      return;
+      return null;
     }
 
     if (!menu?.id) return null;
+
+    const newPos = (categories?.reduce((max, c) => Math.max(max, c.position ?? -1), -1) ?? -1) + 1;
+
     const tempId = uid();
-    const temp = { id: tempId, name, menu_items: [] };
+    const temp = { id: tempId, name, position: newPos, menu_items: [] };
+
     setCategories((prev = []) => [...prev, temp]);
 
     try {
-      const { data, error } = await supabase.from("categories").insert({ menu_id: menu.id, name }).select().single();
+      const { data, error } = await supabase
+        .from("categories")
+        .insert({ menu_id: menu.id, name, position: newPos })
+        .select()
+        .single();
+
       if (error) throw error;
-      setCategories((prev = []) => prev.map((c) => (c.id === tempId ? { ...data, menu_items: [] } : c)));
+
+      setCategories((prev = []) =>
+        prev.map((c) => (c.id === tempId ? { ...data, menu_items: [], position: data.position ?? newPos } : c))
+      );
+
       alert?.("Categoria criada", "success");
       return data;
     } catch (err) {
       console.error("createCategory error:", err);
       setCategories((prev = []) => prev.filter((c) => c.id !== tempId));
       alert?.("Erro ao criar categoria", "error");
-      return null;
-    }
-  };
-
-  const updateCategory = async (categoryId, patch) => {
-    const before = categories;
-    setCategories((prev = []) => prev.map((c) => (c.id === categoryId ? { ...c, ...patch } : c)));
-    try {
-      const { data, error } = await supabase.from("categories").update(patch).eq("id", categoryId).select().single();
-      if (error) throw error;
-      setCategories((prev = []) => prev.map((c) => (c.id === categoryId ? { ...c, ...data } : c)));
-      alert?.("Categoria atualizada", "success");
-      return data;
-    } catch (err) {
-      console.error("updateCategory error:", err);
-      setCategories(before);
-      alert?.("Erro ao atualizar categoria", "error");
       return null;
     }
   };
@@ -295,61 +293,97 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     categoryId,
     { name = "Novo item", price = "", description = "", additionals = [], image_url = "" } = {}
   ) => {
-    const totalItems = categories.reduce((sum, c) => sum + (c.menu_items?.length || 0), 0);
+    const safeCategories = Array.isArray(categories) ? categories : [];
 
+    const totalItems = safeCategories.reduce((sum, c) => sum + (c.menu_items?.length || 0), 0);
+
+    // limites por plano
     if (ownerRole === "free" && totalItems >= 30) {
       alert?.("Limite de 30 itens atingido no plano gratuito.", "error");
-      return;
+      return null;
     }
 
     if (ownerRole === "plus" && totalItems >= 200) {
       alert?.("Limite de 200 itens atingido no plano Plus.", "error");
-      return;
+      return null;
     }
 
     if (ownerRole === "pro" && totalItems >= 1000) {
       alert?.("Limite de 1000 itens atingido no plano Pro.", "error");
-      return;
+      return null;
     }
 
+    const targetCat = safeCategories.find((c) => c.id === categoryId);
+    if (!targetCat) {
+      alert?.("Categoria não encontrada.", "error");
+      return null;
+    }
+
+    const newPos = (targetCat.menu_items || []).reduce((max, it) => Math.max(max, it.position ?? -1), -1) + 1;
+
     const tempId = uid();
+
+    const tempItem = {
+      id: tempId,
+      category_id: categoryId,
+      name,
+      price,
+      description,
+      additionals,
+      image_url,
+      position: newPos,
+      visible: true,
+      starred: false,
+    };
+
     setCategories((prev = []) =>
-      prev.map((c) =>
-        c.id === categoryId
-          ? {
-              ...c,
-              menu_items: [...(c.menu_items || []), { id: tempId, name, price, description, additionals, image_url }],
-            }
-          : c
+      (Array.isArray(prev) ? prev : []).map((c) =>
+        c.id === categoryId ? { ...c, menu_items: [...(c.menu_items || []), tempItem] } : c
       )
     );
 
     try {
       const { data, error } = await supabase
         .from("menu_items")
-        .insert({ category_id: categoryId, name, price, description, additionals, image_url })
+        .insert({
+          category_id: categoryId,
+          name,
+          price,
+          description,
+          additionals,
+          image_url,
+          position: newPos,
+        })
         .select()
         .single();
+
       if (error) throw error;
+
       setCategories((prev = []) =>
-        prev.map((c) =>
+        (Array.isArray(prev) ? prev : []).map((c) =>
           c.id === categoryId
             ? {
                 ...c,
-                menu_items: (c.menu_items || []).map((it) => (it.id === tempId ? data : it)),
+                menu_items: (c.menu_items || []).map((it) =>
+                  it.id === tempId ? { ...data, position: data.position ?? newPos } : it
+                ),
               }
             : c
         )
       );
+
       alert?.("Item criado", "success");
       return data;
     } catch (err) {
       console.error("createItem error:", err);
+
+      // rollback: remove o item temporário
       setCategories((prev = []) =>
-        prev.map((c) =>
+        (Array.isArray(prev) ? prev : []).map((c) =>
           c.id === categoryId ? { ...c, menu_items: (c.menu_items || []).filter((it) => it.id !== tempId) } : c
         )
       );
+
       alert?.("Erro ao criar item", "error");
       return null;
     }
