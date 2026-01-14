@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import useMenu from "@/hooks/useMenu";
 import { useAlert } from "@/providers/AlertProvider";
 import { supabase } from "@/lib/supabaseClient";
@@ -24,6 +24,27 @@ const Sales = ({ setSelectedTab }) => {
   const [selectedSale, setSelectedSale] = useState(null);
   const [expandedMonths, setExpandedMonths] = useState({});
   const [monthsList, setMonthsList] = useState([]);
+
+  const computeItemsSubtotal = (sale) => {
+    if (!sale) return 0;
+    const items = sale.items_list || [];
+    return items.reduce((acc, it) => {
+      const qty = Number(it.qty) || 0;
+      const base = (Number(it.price) || 0) * qty;
+      const adds = (it.additionals || []).reduce((sa, a) => sa + (Number(a.price) || 0), 0) * qty;
+      return acc + base + adds;
+    }, 0);
+  };
+
+  const computeSaleTotal = (sale) => {
+    if (!sale) return 0;
+    // se já tem total salvo, usa ele
+    if (sale.total != null) return Number(sale.total) || 0;
+
+    // fallback (caso raro): subtotal + delivery_fee se existir
+    const fee = Number(sale.delivery_fee) || 0;
+    return computeItemsSubtotal(sale) + fee;
+  };
 
   useEffect(() => {
     // Remove meses que ficaram vazios
@@ -52,12 +73,13 @@ const Sales = ({ setSelectedTab }) => {
 
   // recalcula os totais dos meses a partir do monthData
   useEffect(() => {
-    const updatedMonths = monthsList.map((m) => {
-      const sales = monthData[m.key] || [];
-      const total = sales.reduce((sum, s) => sum + Number(s.total ?? computeTotal(s)), 0);
-      return { ...m, count: sales.length, total };
-    });
-    setMonthsList(updatedMonths);
+    setMonthsList((prev) =>
+      prev.map((m) => {
+        const sales = monthData[m.key] || [];
+        const total = sales.reduce((sum, s) => sum + computeSaleTotal(s), 0);
+        return { ...m, count: sales.length, total };
+      })
+    );
   }, [monthData]);
 
   const fetchSalesByMonth = async (monthStart, monthEnd, monthKey) => {
@@ -108,24 +130,13 @@ const Sales = ({ setSelectedTab }) => {
     setSaleModalOpen(true);
   };
 
-  const computeTotal = (sale) => {
-    if (!sale) return 0;
-    const items = sale.items_list || [];
-    return items.reduce((acc, it) => {
-      const qty = Number(it.qty) || 0;
-      const itemBase = (Number(it.price) || 0) * qty;
-      const adds = (it.additionals || []).reduce((sa, a) => sa + (Number(a.price) || 0), 0) * qty;
-      return acc + itemBase + adds;
-    }, 0);
-  };
-
   useEffect(() => {
     if (!menu?.id) return;
 
     const fetchMonths = async () => {
       const { data, error } = await supabase
         .from("sales")
-        .select("created_at, items_list")
+        .select("created_at, items_list, total, delivery_fee")
         .eq("menu_id", menu.id)
         .order("created_at", { ascending: false });
 
@@ -141,21 +152,10 @@ const Sales = ({ setSelectedTab }) => {
         const key = d.toLocaleString("pt-BR", { month: "long", year: "numeric" });
         const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
 
-        // calcula total da venda com base nos itens
-        const computeTotal = (s) => {
-          const items = s.items_list || [];
-          return items.reduce((acc, it) => {
-            const qty = Number(it.qty) || 0;
-            const itemBase = (Number(it.price) || 0) * qty;
-            const adds = (it.additionals || []).reduce((sa, a) => sa + (Number(a.price) || 0), 0) * qty;
-            return acc + itemBase + adds;
-          }, 0);
-        };
-
         if (!monthsMap[key]) monthsMap[key] = { key, monthStart: monthStart.getTime(), count: 0, total: 0 };
 
         monthsMap[key].count++;
-        monthsMap[key].total += computeTotal(sale);
+        monthsMap[key].total += computeSaleTotal(sale);
       });
 
       const monthsArray = Object.values(monthsMap);
@@ -164,10 +164,6 @@ const Sales = ({ setSelectedTab }) => {
 
     fetchMonths();
   }, [menu?.id]);
-
-  useEffect(() => {
-    setMonthsList((prev) => prev.filter((m) => monthData[m.key]?.length !== 0 || m.count > 0));
-  }, [monthData]);
 
   const toggleMonth = async (key, monthStart) => {
     setExpandedMonths((prev) => {
@@ -210,8 +206,8 @@ const Sales = ({ setSelectedTab }) => {
       );
     } else if (order?.startsWith("value")) {
       filtered.sort((a, b) => {
-        const totalA = Number(a.total ?? computeTotal(a));
-        const totalB = Number(b.total ?? computeTotal(b));
+        const totalA = computeSaleTotal(a);
+        const totalB = computeSaleTotal(b);
         return order === "value" ? totalA - totalB : totalB - totalA;
       });
     }
@@ -230,7 +226,7 @@ const Sales = ({ setSelectedTab }) => {
       const fetchMonths = async () => {
         const { data, error } = await supabase
           .from("sales")
-          .select("created_at, items_list")
+          .select("created_at, items_list, total, delivery_fee")
           .eq("menu_id", menu.id)
           .order("created_at", { ascending: false });
 
@@ -244,16 +240,8 @@ const Sales = ({ setSelectedTab }) => {
 
           if (!monthsMap[key]) monthsMap[key] = { key, monthStart: monthStart.getTime(), count: 0, total: 0 };
 
-          const items = sale.items_list || [];
-          const total = items.reduce((acc, it) => {
-            const qty = Number(it.qty) || 0;
-            const itemBase = (Number(it.price) || 0) * qty;
-            const adds = (it.additionals || []).reduce((sa, a) => sa + (Number(a.price) || 0), 0) * qty;
-            return acc + itemBase + adds;
-          }, 0);
-
           monthsMap[key].count++;
-          monthsMap[key].total += total;
+          monthsMap[key].total += computeSaleTotal(sale);
         });
 
         setMonthsList(Object.values(monthsMap));
@@ -262,6 +250,10 @@ const Sales = ({ setSelectedTab }) => {
       fetchMonths();
     }
   };
+
+  const modalSubtotal = selectedSale ? computeItemsSubtotal(selectedSale) : 0;
+  const modalFee = Number(selectedSale?.delivery_fee) || 0;
+  const modalTotal = modalSubtotal + modalFee;
 
   if (loading) return <Loading />;
   if (!menu) return <p>Você ainda não criou seu cardápio.</p>;
@@ -289,7 +281,7 @@ const Sales = ({ setSelectedTab }) => {
             const key = group.key;
             const isOpen = expandedMonths[key] ?? false;
             const monthSales = monthData[key] || [];
-            const monthTotal = monthSales.reduce((sum, s) => sum + (Number(s.total) || computeTotal(s)), 0);
+            const monthTotal = monthSales.reduce((sum, s) => sum + computeSaleTotal(s), 0);
 
             return (
               <section key={key} className="border-2 border-translucid rounded-lg overflow-hidden">
@@ -415,9 +407,7 @@ const Sales = ({ setSelectedTab }) => {
                               </ul>
                             )}
 
-                            <p className="mt-2 font-semibold text-lg">
-                              Total: R$ {Number(sale.total || computeTotal(sale)).toFixed(2)}
-                            </p>
+                            <p className="mt-2 font-semibold text-lg">Total: R$ {computeSaleTotal(sale).toFixed(2)}</p>
                           </div>
 
                           <div className="mt-2 flex flex-col justify-between items-start xs:items-end">
@@ -466,7 +456,10 @@ const Sales = ({ setSelectedTab }) => {
               className="space-y-3"
               onSubmit={async (e) => {
                 e.preventDefault();
-                const total = computeTotal(selectedSale);
+                const subtotal = computeItemsSubtotal(selectedSale);
+                const fee = Number(selectedSale.delivery_fee) || 0;
+                const total = subtotal + fee;
+
                 const payload = { ...selectedSale, total, updated_at: new Date().toISOString() };
 
                 const { error } = await supabase.from("sales").update(payload).eq("id", selectedSale.id);
@@ -744,8 +737,10 @@ const Sales = ({ setSelectedTab }) => {
 
               {/* total */}
               <div className="sticky bottom-0 bg-low-gray">
-                <div className="flex justify-between items-center pt-4">
-                  <p className="font-semibold">Total: R$ {computeTotal(selectedSale).toFixed(2)}</p>
+                <div className="flex justify-between sm:items-center flex-col sm:flex-row pt-4">
+                  <p className="text-sm color-gray">Subtotal: R$ {modalSubtotal.toFixed(2)}</p>
+                  {modalFee > 0 && <p className="text-sm color-gray">Taxa de entrega: R$ {modalFee.toFixed(2)}</p>}
+                  <p className="font-semibold">Total: R$ {modalTotal.toFixed(2)}</p>
                 </div>
 
                 <div className="flex gap-2">

@@ -68,7 +68,7 @@ const Orders = ({ setSelectedTab }) => {
 
     if (error) return customAlert("Erro ao carregar pedidos", "error");
 
-    const withTotal = (data || []).map((order) => ({ ...order, total: computeTotal(order) }));
+    const withTotal = (data || []).map((order) => ({ ...order, total: computeSubtotal(order) }));
     setOrders(withTotal);
     setLoadingOrders(false);
   };
@@ -158,18 +158,32 @@ const Orders = ({ setSelectedTab }) => {
     setOrderModalOpen(true);
   };
 
-  const computeTotal = (order) => {
+  const computeSubtotal = (order) => {
     if (!order) return 0;
 
-    const itemsTotal = (order.items_list || []).reduce((acc, it) => {
+    return (order.items_list || []).reduce((acc, it) => {
       const qty = Number(it.qty) || 0;
-      const base = (Number(it.price) || 0) * qty;
-      const adds = (it.additionals || []).reduce((sa, a) => sa + (Number(a.price) || 0), 0) * qty;
+
+      const unit = Number(it.price) || 0;
+      const base = unit * qty;
+
+      const addsUnit = (it.additionals || []).reduce((sa, a) => sa + (Number(a.price) || 0), 0);
+      const adds = addsUnit * qty;
 
       return acc + base + adds;
     }, 0);
+  };
 
-    return itemsTotal;
+  const computeDeliveryFee = (order) => {
+    if (!order) return 0;
+    if (order.service !== "delivery") return 0;
+    return Number(menu?.delivery_fee) || 0;
+  };
+
+  const computeTotalWithDelivery = (order) => {
+    const subtotal = computeSubtotal(order);
+    const delivery = computeDeliveryFee(order);
+    return subtotal + delivery;
   };
 
   // --- AQUI ESTÁ A FILTRAGEM LOCAL ---
@@ -219,7 +233,7 @@ const Orders = ({ setSelectedTab }) => {
     if (filters.sortBy) {
       list.sort((a, b) => {
         // ignoramos sortDir, sempre crescente
-        if (filters.sortBy === "total") return (a.total || 0) - (b.total || 0);
+        if (filters.sortBy === "total") return computeTotalWithDelivery(a) - computeTotalWithDelivery(b);
         if (filters.sortBy === "customer_name") return (a.costumer_name || "").localeCompare(b.costumer_name || "");
         if (filters.sortBy === "created_at") return new Date(a.created_at) - new Date(b.created_at);
         return 0;
@@ -362,18 +376,17 @@ const Orders = ({ setSelectedTab }) => {
                         {order.items_list?.length > 4 && <li className="text-gray-400">...</li>}
                       </ul>
                       {order.service === "delivery" && (
-                        <div>
+                        <>
                           <p className="text-sm color-gray">
-                            <strong>Subtotal:</strong> R$ {Number(order.total || 0).toFixed(2)}
+                            <strong>Subtotal:</strong> R$ {computeSubtotal(order).toFixed(2)}
                           </p>
                           <p className="text-sm color-gray">
-                            <strong>Taxa de entrega:</strong> R$ {Number(menu.delivery_fee || 0).toFixed(2)}
+                            <strong>Taxa de entrega:</strong> R$ {computeDeliveryFee(order).toFixed(2)}
                           </p>
-                        </div>
+                        </>
                       )}
-                      <p className="mt-2 font-semibold text-lg">
-                        Total: R$ {Number(order.total + (order.service === "delivery" ? menu.delivery_fee : 0)).toFixed(2)}
-                      </p>
+
+                      <p className="mt-2 font-semibold text-lg">Total: R$ {computeTotalWithDelivery(order).toFixed(2)}</p>
                     </div>
 
                     <div className="mt-2 flex flex-col justify-between items-start xs:items-end">
@@ -433,14 +446,14 @@ const Orders = ({ setSelectedTab }) => {
               Total pago: R${" "}
               {filteredOrders
                 .filter((o) => o.is_paid)
-                .reduce((sum, o) => sum + (Number(o.total) || 0), 0)
+                .reduce((sum, o) => sum + computeTotalWithDelivery(o), 0)
                 .toFixed(2)}
             </p>
             <p>
               Total pendente: R${" "}
               {filteredOrders
                 .filter((o) => !o.is_paid)
-                .reduce((sum, o) => sum + (Number(o.total) || 0), 0)
+                .reduce((sum, o) => sum + computeTotalWithDelivery(o), 0)
                 .toFixed(2)}
             </p>
           </div>
@@ -461,8 +474,8 @@ const Orders = ({ setSelectedTab }) => {
               className="space-y-3"
               onSubmit={async (e) => {
                 e.preventDefault();
-                const total = computeTotal(selectedOrder);
-                const payload = { ...selectedOrder, total };
+                const subtotal = computeSubtotal(selectedOrder);
+                const payload = { ...selectedOrder, total: subtotal };
                 const { error } = await supabase.from("orders").update(payload).eq("id", selectedOrder.id);
                 if (error) return customAlert("Erro ao atualizar pedido", "error");
                 customAlert("Pedido atualizado com sucesso!", "success");
@@ -740,7 +753,7 @@ const Orders = ({ setSelectedTab }) => {
               {/* total */}
               <div className="sticky bottom-0 bg-low-gray">
                 <div className="flex justify-between items-center pt-4">
-                  <p className="font-semibold">Total: R$ {computeTotal(selectedOrder).toFixed(2)}</p>
+                  <p className="font-semibold">Total: R$ {computeTotalWithDelivery(selectedOrder).toFixed(2)}</p>
                 </div>
 
                 <div className="flex gap-2">
