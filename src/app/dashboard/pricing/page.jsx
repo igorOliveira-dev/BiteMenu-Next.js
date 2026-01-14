@@ -7,7 +7,7 @@ import PlansSection from "@/components/PlansSection";
 
 const page = () => {
   return (
-    <div className="h-[100dvh] flex justify-center items-center pt-20">
+    <div className="flex justify-center items-center pt-20">
       <PlansSection />
     </div>
   );
