@@ -291,7 +291,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   // createItem atualizado para suportar image_url
   const createItem = async (
     categoryId,
-    { name = "Novo item", price = "", description = "", additionals = [], image_url = "" } = {}
+    { name = "Novo item", price = "", promo_price = null, description = "", additionals = [], image_url = "" } = {}
   ) => {
     const safeCategories = Array.isArray(categories) ? categories : [];
 
@@ -846,7 +846,8 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   const grayToUse = getContrastTextColor(backgroundColor) === "white" ? "#cccccc" : "#333333";
   const foregroundToUse = getContrastTextColor(backgroundColor) === "white" ? "#fafafa" : "#171717";
 
-  if (menuLoading || loading || categories === null) return <div className="p-4">Carregando categorias...</div>;
+  if (menuLoading || loading || categories === null || ownerRole === null)
+    return <div className="p-4">Carregando categorias...</div>;
   if (!menu) return <div className="p-4">Você ainda não criou um menu.</div>;
 
   return (
