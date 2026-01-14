@@ -22,7 +22,7 @@ const PaymentMethodModal = ({ open, plan, onClose, onCredit, onPix }) => {
   if (!open) return null;
 
   return (
-    <GenericModal onClose={onClose} wfull maxWidth={"480px"} margin={"6px"}>
+    <GenericModal onClose={onClose} wfull maxWidth={"480px"} margin={"12px"}>
       {/* modal */}
       <div className="rounded-2xl text-[var(--foreground)]">
         <div className="flex items-start justify-between gap-4 w-full">
@@ -45,14 +45,14 @@ const PaymentMethodModal = ({ open, plan, onClose, onCredit, onPix }) => {
         <div className="mt-6 flex flex-col gap-3">
           <button
             onClick={onCredit}
-            className="w-full rounded-xl px-4 py-3 font-semibold cursor-pointer bg-[var(--foreground)] text-[var(--background)] opacity-80 hover:opacity-100 transition"
+            className="w-full rounded-xl py-3 font-semibold cursor-pointer bg-[var(--foreground)] text-[var(--background)] opacity-80 hover:opacity-100 transition"
           >
             Cartão de crédito
           </button>
 
           <button
             onClick={onPix}
-            className="w-full rounded-xl border border-2 border-translucid px-4 py-3 font-semibold hover:opacity-80 transition cursor-pointer"
+            className="w-full rounded-xl border border-2 border-translucid py-3 font-semibold hover:opacity-80 transition cursor-pointer"
           >
             Pix (em breve)
           </button>
