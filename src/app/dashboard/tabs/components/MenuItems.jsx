@@ -328,6 +328,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       category_id: categoryId,
       name,
       price,
+      promo_price,
       description,
       additionals,
       image_url,
@@ -349,6 +350,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
           category_id: categoryId,
           name,
           price,
+          promo_price,
           description,
           additionals,
           image_url,
@@ -562,6 +564,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       data: {
         name: item?.name ?? "Novo item",
         price: item?.price ?? "",
+        promo_price: item?.promo_price ?? "",
         description: item?.description ?? "",
         image_url: item?.image_url ?? "",
         additionals: Array.isArray(item?.additionals) ? item.additionals.map((a) => ({ ...a, id: uid() })) : [],
@@ -700,6 +703,20 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       }
       data.price = priceNum;
 
+      let promoNum = null;
+      if (String(data.promo_price ?? "").trim() !== "") {
+        promoNum = parseFloat(String(data.promo_price).replace(",", "."));
+        if (isNaN(promoNum)) {
+          alert?.("O preço promocional deve ser um número válido.", "error");
+          return;
+        }
+        if (promoNum >= priceNum) {
+          alert?.("O preço promocional precisa ser menor que o preço normal.", "error");
+          return;
+        }
+      }
+      data.promo_price = promoNum;
+
       // === Adicionais validation & normalize ===
       const additionals = Array.isArray(data.additionals) ? data.additionals : [];
       for (let i = 0; i < additionals.length; i++) {
@@ -730,6 +747,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         await createItem(categoryId, {
           name: data.name,
           price: data.price,
+          promo_price: data.promo_price,
           description: data.description,
           additionals: data.additionals,
           image_url: data.image_url ?? "",
@@ -738,6 +756,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         await updateItem(itemId, {
           name: data.name,
           price: data.price,
+          promo_price: data.promo_price,
           description: data.description,
           additionals: data.additionals,
           image_url: data.image_url ?? "",
@@ -766,7 +785,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         toggleItemStarred(item.id, item.starred);
       }
     } else {
-      alert?.("Desbloqueie essa função com o plano Plus ou Pro!");
+      alert?.("Assine o plano Plus ou Pro para destacar itens!");
     }
   };
 
@@ -818,6 +837,8 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     if (!categories) return [];
     return categories.flatMap((c) => c.menu_items || []).filter((it) => it.starred && it.visible !== false);
   }, [categories]);
+
+  const canShowPromoPrice = ownerRole === "admin" || ownerRole === "plus" || ownerRole === "pro";
 
   const hasStarred = starredItems.length > 0 && (ownerRole === "admin" || ownerRole === "plus" || ownerRole === "pro");
 
@@ -930,12 +951,29 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                       </div>
                     </div>
                     <div>
-                      <div className="font-bold text-2xl" style={{ color: foregroundToUse }}>
-                        {Number(it.price).toLocaleString("pt-BR", {
-                          style: "currency",
-                          currency: "BRL",
-                        })}
-                      </div>
+                      {it.promo_price && canShowPromoPrice ? (
+                        <div>
+                          <span className="text-sm line-through" style={{ color: grayToUse }}>
+                            {Number(it.price).toLocaleString("pt-BR", {
+                              style: "currency",
+                              currency: "BRL",
+                            })}
+                          </span>
+                          <div className="font-bold text-2xl" style={{ color: foregroundToUse }}>
+                            {Number(it.promo_price).toLocaleString("pt-BR", {
+                              style: "currency",
+                              currency: "BRL",
+                            })}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="font-bold text-2xl" style={{ color: foregroundToUse }}>
+                          {Number(it.price).toLocaleString("pt-BR", {
+                            style: "currency",
+                            currency: "BRL",
+                          })}
+                        </div>
+                      )}
                       <button
                         onClick={() => toggleItemStarred(it.id, true)}
                         className="mt-2 py-2 rounded text-sm transition hover:opacity-80 w-full cursor-pointer"
@@ -1001,7 +1039,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                     ) : null}
 
                     <div
-                      className={`h-[124px] flex-1 flex flex-col items-start justify-between gap-2 p-2 ${
+                      className={`sm:h-[124px] flex-1 flex flex-col items-start justify-between gap-2 p-2 ${
                         !it.image_url && "rounded-l-lg"
                       }`}
                       style={{ backgroundColor: translucidToUse }}
@@ -1027,11 +1065,25 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                       </div>
 
                       <div className="flex items-center justify-between w-full">
-                        <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
-                          {it.price
-                            ? `${Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`
-                            : "-"}
-                        </div>
+                        {it.promo_price && canShowPromoPrice ? (
+                          <div>
+                            <span className="text-sm line-through" style={{ color: grayToUse }}>
+                              {Number(it.price).toLocaleString("pt-BR", {
+                                style: "currency",
+                                currency: "BRL",
+                              })}
+                            </span>
+                            <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
+                              {Number(it.promo_price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
+                            {it.price
+                              ? `${Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`
+                              : "-"}
+                          </div>
+                        )}
                         <button
                           onClick={() => toggleItemVisibility(it.id, it.visible)}
                           className="cursor-pointer mr-2 px-6 py-2 rounded"
@@ -1172,27 +1224,64 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                     />
                   </label>
 
-                  <label className="block mb-2 w-[100px]">
-                    <div className="text-sm color-gray">Preço:</div>
-                    <div className="flex items-center mb-2">
-                      <span className="absolute p-2">R$</span>
-                      <input
-                        type="text"
-                        value={modalPayload.data.price}
-                        onChange={(e) => {
-                          let value = e.target.value;
-                          value = value.replace(/[^0-9.,]/g, "");
-                          value = value.replace(",", ".");
-                          const parts = value.split(".");
-                          if (parts.length > 2) value = parts[0] + "." + parts.slice(1).join("");
-                          setModalPayload((p) => ({ ...p, data: { ...p.data, price: value } }));
-                        }}
-                        maxLength={10}
-                        className="w-full p-2 pl-7.5 rounded border border-translucid bg-translucid"
-                        placeholder="00.00"
-                      />
-                    </div>
-                  </label>
+                  <div className="flex gap-2">
+                    <label className="block mb-2 w-[100px]">
+                      <div className="text-sm color-gray">Preço:</div>
+                      <div className="flex items-center mb-2">
+                        <span className="absolute p-2">R$</span>
+                        <input
+                          type="text"
+                          value={modalPayload.data.price}
+                          onChange={(e) => {
+                            let value = e.target.value;
+                            value = value.replace(/[^0-9.,]/g, "");
+                            value = value.replace(",", ".");
+                            const parts = value.split(".");
+                            if (parts.length > 2) value = parts[0] + "." + parts.slice(1).join("");
+                            setModalPayload((p) => ({ ...p, data: { ...p.data, price: value } }));
+                          }}
+                          maxLength={10}
+                          className="w-full p-2 pl-7.5 rounded border border-translucid bg-translucid"
+                          placeholder="00.00"
+                        />
+                      </div>
+                    </label>
+                    <label className="block mb-2 w-[100px]">
+                      <div className="text-sm color-gray">Promoção:</div>
+                      <div className="flex items-center mb-2">
+                        <span className="absolute p-2">R$</span>
+                        <input
+                          type="text"
+                          value={canShowPromoPrice ? modalPayload.data.promo_price ?? "" : ""}
+                          onChange={(e) => {
+                            if (!canShowPromoPrice) {
+                              alert("Assine o plano Plus ou Pro para criar promoções!");
+                              return;
+                            }
+
+                            let value = e.target.value;
+                            value = value.replace(/[^0-9.,]/g, "");
+                            value = value.replace(",", ".");
+                            const parts = value.split(".");
+                            if (parts.length > 2) value = parts[0] + "." + parts.slice(1).join("");
+
+                            const num = Number(value);
+                            if (value !== "" && !isNaN(num) && num === 0) {
+                              value = "";
+                            }
+
+                            setModalPayload((p) => ({
+                              ...p,
+                              data: { ...p.data, promo_price: value },
+                            }));
+                          }}
+                          maxLength={10}
+                          className="w-full p-2 pl-7.5 rounded border border-translucid bg-translucid"
+                          placeholder="00.00"
+                        />
+                      </div>
+                    </label>
+                  </div>
                 </div>
               </div>
 

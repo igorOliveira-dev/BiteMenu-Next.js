@@ -9,6 +9,7 @@ import CartDrawer from "./components/CartDrawer";
 import { useAlert } from "@/providers/AlertProvider";
 import MenuFooter from "./components/MenuFooter";
 import { supabase } from "@/lib/supabaseClient";
+import Loading from "@/components/Loading";
 
 // util para contraste de cor
 function getContrastTextColor(hex) {
@@ -188,15 +189,19 @@ export default function ClientMenu({ menu }) {
     });
   };
 
+  const hasPlusPermissions = ownerRole === "plus" || ownerRole === "pro" || ownerRole === "admin";
+
+  const canShowPromoPrice = hasPlusPermissions;
+
   const totalPrice = useMemo(() => {
     if (!selectedItem) return 0;
-    const base = Number(selectedItem.price || 0);
+    const base = Number(selectedItem.promo_price && canShowPromoPrice ? selectedItem.promo_price : selectedItem.price || 0);
     const addonsPerUnit = (selectedItem.additionals || []).reduce((acc, a, idx) => {
       if (selectedAddons[String(idx)]) return acc + Number(a.price || 0);
       return acc;
     }, 0);
     return (base + addonsPerUnit) * quantity;
-  }, [selectedItem, quantity, selectedAddons]);
+  }, [selectedItem, quantity, selectedAddons, canShowPromoPrice]);
 
   const handleAddToCart = async () => {
     if (!selectedItem) return;
@@ -208,7 +213,7 @@ export default function ClientMenu({ menu }) {
       id: selectedItem.id,
       name: selectedItem.name,
       image_url: selectedItem.image_url || null,
-      price: Number(selectedItem.price || 0),
+      price: Number(selectedItem.promo_price && canShowPromoPrice ? selectedItem.promo_price : selectedItem.price || 0),
       qty: Number(quantity || 1),
       additionals: selected,
       note: note || "",
@@ -351,13 +356,14 @@ export default function ClientMenu({ menu }) {
     }
   }, [hoursModalOpen]);
 
+  const cartCount = typeof cart.totalItems === "function" ? cart.totalItems(menu?.id) : 0;
+
   useEffect(() => {
-    const total = cart.totalItems(menu?.id);
-    if (!total) return;
+    if (!cartCount) return;
     setAnimateCart(true);
     const timer = setTimeout(() => setAnimateCart(false), 600);
     return () => clearTimeout(timer);
-  }, [cart.totalItems(menu?.id)]);
+  }, [cartCount]);
 
   useEffect(() => {
     const cartButton = document.getElementById("cart-button-wrapper");
@@ -386,12 +392,17 @@ export default function ClientMenu({ menu }) {
       .filter((it) => it.visible && it.starred && it.image_url);
   }, [menu]);
 
-  const hasPlusPermissions = ownerRole === "plus" || ownerRole === "pro" || ownerRole === "admin";
-  const hasProPermissions = ownerRole === "pro" || ownerRole === "admin";
-
   const hasStarred = starredItems.length > 0;
 
   const navCategories = orderedCategories.filter((cat) => (cat.menu_items || []).some((it) => it.visible));
+
+  if (ownerRole === null) {
+    return (
+      <div className="flex items-center justify-center h-[100dvh] w-[100dvw]">
+        <Loading />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -572,12 +583,29 @@ export default function ClientMenu({ menu }) {
                         {it.description}
                       </div>
                     </div>
-                    <div className="font-bold text-2xl" style={{ color: foregroundToUse }}>
-                      {Number(it.price).toLocaleString("pt-BR", {
-                        style: "currency",
-                        currency: "BRL",
-                      })}
-                    </div>
+                    {it.promo_price && canShowPromoPrice ? (
+                      <div>
+                        <span className="text-xs xs:text-sm line-through" style={{ color: grayToUse }}>
+                          {Number(it.price).toLocaleString("pt-BR", {
+                            style: "currency",
+                            currency: "BRL",
+                          })}
+                        </span>
+                        <div className="font-bold text-xl lg:text-2xl" style={{ color: foregroundToUse }}>
+                          {Number(it.promo_price).toLocaleString("pt-BR", {
+                            style: "currency",
+                            currency: "BRL",
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="font-bold text-2xl" style={{ color: foregroundToUse }}>
+                        {Number(it.price).toLocaleString("pt-BR", {
+                          style: "currency",
+                          currency: "BRL",
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -648,11 +676,25 @@ export default function ClientMenu({ menu }) {
                           </div>
                         </div>
                         <div className="flex items-center justify-between w-full">
-                          <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
-                            {it.price
-                              ? Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
-                              : "-"}
-                          </div>
+                          {it.promo_price && canShowPromoPrice ? (
+                            <div>
+                              <span className="text-sm line-through" style={{ color: grayToUse }}>
+                                {Number(it.price).toLocaleString("pt-BR", {
+                                  style: "currency",
+                                  currency: "BRL",
+                                })}
+                              </span>
+                              <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
+                                {Number(it.promo_price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
+                              {it.price
+                                ? `${Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`
+                                : "-"}
+                            </div>
+                          )}
                           <div className="px-6 py-2 rounded" style={{ backgroundColor: menu.details_color }}>
                             <FaShoppingCart style={{ color: getContrastTextColor(menu.details_color) }} />
                           </div>
@@ -762,9 +804,22 @@ export default function ClientMenu({ menu }) {
                     {selectedItem.description?.replace(/,\s*/g, ", ")}
                   </p>
                 </div>
-                <span className="text-3xl font-semibold" style={{ color: foregroundToUse }}>
-                  {Number(selectedItem.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                </span>
+                {selectedItem.promo_price && canShowPromoPrice ? (
+                  <div className="flex flex-col">
+                    <span className="text-xs font-semibold line-through" style={{ color: grayToUse }}>
+                      {Number(selectedItem.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                    </span>
+                    <span className="text-2xl font-semibold" style={{ color: foregroundToUse }}>
+                      {Number(selectedItem.promo_price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    <span className="text-3xl font-semibold" style={{ color: foregroundToUse }}>
+                      {Number(selectedItem.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
 

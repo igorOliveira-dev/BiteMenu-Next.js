@@ -71,6 +71,7 @@ export default async function MenuPage({ params }) {
           name,
           description,
           price,
+          promo_price,
           image_url,
           additionals,
           visible,
