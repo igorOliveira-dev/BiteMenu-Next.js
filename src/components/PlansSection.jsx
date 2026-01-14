@@ -7,7 +7,7 @@ import { FaCheck } from "react-icons/fa";
 import GenericModal from "./GenericModal";
 import { useAlert } from "@/providers/AlertProvider";
 
-const PaymentMethodModal = ({ open, plan, onClose, onCredit, onPix }) => {
+const PaymentMethodModal = ({ open, plan, onClose, onCredit, onPix, stripeLoading }) => {
   useEffect(() => {
     if (!open) return;
 
@@ -23,7 +23,6 @@ const PaymentMethodModal = ({ open, plan, onClose, onCredit, onPix }) => {
 
   return (
     <GenericModal onClose={onClose} wfull maxWidth={"480px"} margin={"12px"}>
-      {/* modal */}
       <div className="rounded-2xl text-[var(--foreground)]">
         <div className="flex items-start justify-between gap-4 w-full">
           <div>
@@ -34,9 +33,10 @@ const PaymentMethodModal = ({ open, plan, onClose, onCredit, onPix }) => {
           </div>
 
           <button
-            className="rounded-lg px-2 py-1 hover:bg-[var(--translucid)] cursor-pointer"
+            className="rounded-lg px-2 py-1 hover:bg-[var(--translucid)] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             onClick={onClose}
             aria-label="Fechar"
+            disabled={stripeLoading}
           >
             ✕
           </button>
@@ -45,14 +45,16 @@ const PaymentMethodModal = ({ open, plan, onClose, onCredit, onPix }) => {
         <div className="mt-6 flex flex-col gap-3">
           <button
             onClick={onCredit}
-            className="w-full rounded-xl py-3 font-semibold cursor-pointer bg-[var(--foreground)] text-[var(--background)] opacity-80 hover:opacity-100 transition"
+            disabled={stripeLoading}
+            className="w-full rounded-xl py-3 font-semibold bg-[var(--foreground)] text-[var(--background)] opacity-80 hover:opacity-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Cartão de crédito
+            {stripeLoading ? "Processando..." : "Cartão de crédito"}
           </button>
 
           <button
             onClick={onPix}
-            className="w-full rounded-xl border border-2 border-translucid py-3 font-semibold hover:opacity-80 transition cursor-pointer"
+            disabled={stripeLoading}
+            className="w-full rounded-xl border border-2 border-translucid py-3 font-semibold hover:opacity-80 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Pix (em breve)
           </button>
@@ -65,10 +67,11 @@ const PaymentMethodModal = ({ open, plan, onClose, onCredit, onPix }) => {
 const PlansSection = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [stripeLoading, setStripeLoading] = useState(false);
+
   const alert = useAlert();
 
   const openModal = (plan) => {
-    // Se for free, pode ir direto, sem modal (igual seu comportamento atual)
     if (plan.id === "free") {
       planClick("free");
       return;
@@ -79,19 +82,27 @@ const PlansSection = () => {
   };
 
   const closeModal = () => {
+    if (stripeLoading) return; // evita fechar enquanto processa o Stripe
     setModalOpen(false);
     setSelectedPlan(null);
   };
 
   const handleCredit = async () => {
     if (!selectedPlan) return;
-    setModalOpen(false);
-    await planClick(selectedPlan.id); // chama Stripe
+
+    try {
+      setStripeLoading(true);
+      await planClick(selectedPlan.id);
+    } catch (e) {
+      console.error(e);
+      alert("Não foi possível iniciar o pagamento. Tente novamente.");
+    } finally {
+      setStripeLoading(false);
+    }
   };
 
   const handlePix = () => {
     alert("Pix ainda não está disponível. Em breve!");
-    // não faz nada por enquanto
   };
 
   return (
@@ -136,6 +147,7 @@ const PlansSection = () => {
         onClose={closeModal}
         onCredit={handleCredit}
         onPix={handlePix}
+        stripeLoading={stripeLoading}
       />
     </section>
   );
