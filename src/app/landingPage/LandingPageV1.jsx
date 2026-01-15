@@ -56,7 +56,7 @@ export default function LandingPageV1() {
                 Acessar cardápio!
               </Link>
             ) : (
-              <Link className="cta-button small" href="register">
+              <Link className="cta-button small" href="/register">
                 Criar cardápio!
               </Link>
             )}
@@ -80,7 +80,7 @@ export default function LandingPageV1() {
               className="absolute opacity-20 scale-60 lg:scale-80 transform-[translate(30%,0)] lg:transform-[translate(-30%,-10%)]"
             />
             <div className="my-16 sm:my-0">
-              <Link className="cta-button glow-red lg:text-2xl" href="register">
+              <Link className="cta-button glow-red lg:text-2xl" href="/register">
                 Comece gratuitamente!
               </Link>
               <ul className="mt-8 font-semibold">
