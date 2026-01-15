@@ -5,24 +5,17 @@ import logoMark from "../../../public/LogoMarca-sem-fundo.png";
 import logoTip from "../../../public/LogoTipo-sem-fundo.png";
 import ThemeToggle from "@/components/ThemeToggle";
 import menuCelular from "../../../public/bitemenuCelular.png";
-import crieerecebawhatsapp from "../../../public/mockups/crieerecebawhatsapp.png";
-import controlepedidosevendas from "../../../public/mockups/controlepedidosevendas.png";
 import Link from "next/link";
 import useUser from "@/hooks/useUser";
-import Loading from "@/components/Loading";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { FaCheck, FaChevronLeft, FaChevronRight, FaWhatsapp } from "react-icons/fa";
-import { plans } from "@/consts/Plans";
+import { FaCheck, FaClipboardCheck, FaShoppingCart, FaWhatsappSquare } from "react-icons/fa";
 
-import { planClick } from "../utils/planClick";
 import BlogSection from "../blog/BlogSection";
 import PlansSection from "@/components/PlansSection";
 
 export default function LandingPageV1() {
   const { user, loading } = useUser();
   const [dashboardPath, setDashboardPath] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
     if (!loading && user) {
@@ -112,22 +105,33 @@ export default function LandingPageV1() {
         </section>
       </section>
 
-      <section className="px-4 py-6 sd:py-20 bg-degraded-t-speckled">
-        <div className="mb-12 sm:mb-0 flex items-center flex-col-reverse sm:flex-row justify-center gap-6 sm:gap-24 z-2">
-          <div className="w-[184px] h-[228px] xs:w-[292px] xs:h-[365px] sm:w-[194px] sm:h-[243px] md:w-[292px] md:h-[365px] lg:w-[324px] lg:h-[405px] relative">
-            <Image src={crieerecebawhatsapp} fill alt="Crie seu cardápio e receba pedidos pelo WhatsApp" />
+      <section className="py-6 px-2 sd:py-20 bg-degraded-t-speckled w-full">
+        <h1 className="default-h1 text-center">Com tudo que você precisa</h1>
+        <h2 className="default-h2 text-center">para o seu negócio</h2>
+        <div className="flex items-center justify-center w-full mt-8 gap-8 flex-wrap">
+          <div className="p-3 bg-translucid border-b-4 border-[var(--red)] min-w-[300px] sm:min-w-xs max-w-xs flex flex-col items-center text-center rounded-lg shadow-[0_0_10px_var(--shadow)]">
+            <FaWhatsappSquare color="var(--red)" size={100} />
+            <h2 className="default-h2 font-semibold mt-3">Pedidos via WhatsApp</h2>
+            <p className="text-[var(--gray)]">
+              Receba pedidos direto no WhatsApp, sem intermediários e sem confusão. O cliente escolhe, envia e você responde
+              rápido, com tudo organizado desde o primeiro contato.
+            </p>
           </div>
-          <h1 className="text-center sm:text-start font-bold sm:max-w-[40%] text-xl xs:text-3xl">
-            Crie seu cardápio digital e receba pedidos pelo WhatsApp.
-          </h1>
-        </div>
-        <div className="flex items-center flex-col sm:flex-row justify-center sm:gap-24 z-2">
-          <h1 className="text-center sm:text-start font-bold sm:max-w-[40%] text-xl xs:text-3xl">
-            Controle completamente seus pedidos e suas vendas pelo site.
-          </h1>
-
-          <div className="w-[216px] h-[270px] xs:w-[324px] xs:h-[405px] sm:w-[216px] sm:h-[270px] md:w-[324px] md:h-[405px] lg:w-[360px] lg:h-[450px] relative">
-            <Image src={controlepedidosevendas} fill alt="Controle pedidos e vendas" />
+          <div className="p-3 bg-translucid border-b-4 border-[var(--red)] min-w-[300px] sm:min-w-xs max-w-xs flex flex-col items-center text-center rounded-lg shadow-[0_0_10px_var(--shadow)]">
+            <FaClipboardCheck color="var(--red)" size={100} />
+            <h2 className="default-h2 font-semibold mt-3">Registro de vendas</h2>
+            <p className="text-[var(--gray)]">
+              Acompanhe suas vendas em tempo real e saiba exatamente o que está funcionando. Tenha controle, histórico e
+              clareza para decidir melhor e crescer com segurança.
+            </p>
+          </div>
+          <div className="p-3 bg-translucid border-b-4 border-[var(--red)] min-w-[300px] sm:min-w-xs max-w-xs flex flex-col items-center text-center rounded-lg shadow-[0_0_10px_var(--shadow)]">
+            <FaShoppingCart color="var(--red)" size={100} />
+            <h2 className="default-h2 font-semibold mt-3">Cardápio personalizado</h2>
+            <p className="text-[var(--gray)]">
+              Crie um cardápio com a identidade do seu negócio, fácil de atualizar e simples para o cliente usar. Seu produto
+              apresentado do jeito certo, em qualquer dispositivo.
+            </p>
           </div>
         </div>
       </section>
