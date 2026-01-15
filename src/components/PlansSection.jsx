@@ -113,7 +113,7 @@ const PlansSection = () => {
         {plans.map((plan) => (
           <div
             key={plan.name}
-            className="p-4 px-6 bg-translucid border-2 border-[var(--translucid)] rounded-xl w-64 flex flex-col gap-6 justify-between cursor-pointer hover:border-[var(--red)] transition"
+            className="p-4 px-6 bg-degraded-t-speckled border-2 border-[var(--translucid)] rounded-xl w-64 flex flex-col gap-6 justify-between cursor-pointer hover:border-[var(--red)] transition"
             onClick={() => openModal(plan)}
           >
             <div>
@@ -138,7 +138,7 @@ const PlansSection = () => {
             </div>
 
             <div className="w-full flex flex-col gap-2">
-              <button className="cta-button">Selecionar</button>
+              <button className="cta-button glow-red">Selecionar</button>
             </div>
           </div>
         ))}

@@ -39,16 +39,7 @@ export default function LandingPageV1() {
 
   return (
     <main>
-      {dashboardPath && (
-        <button
-          onClick={() => router.replace("/dashboard")}
-          className="cursor-pointer font-bold p-2 px-4 bg-low-gray border-2 border-translucid rounded-lg z-10 backdrop-blur-sm fixed top-22 right-2 hover:opacity-80 transition"
-        >
-          Acessar meu cardápio
-        </button>
-      )}
-
-      <section className="sm:h-[100dvh] mb-6" id="begin">
+      <section className="sm:h-[100dvh] bg-degraded-b border-b-3 border-red-500/50" id="begin">
         <header className="fixed inset-x-0 flex items-center justify-between p-2 m-2 my-3 bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)] z-10 backdrop-blur-sm">
           <Image
             src={logoMark}
@@ -67,39 +58,62 @@ export default function LandingPageV1() {
             className="block xs:hidden"
           />
           <div className="flex">
-            <Link className="cta-button small" href="register">
-              Criar cardápio!
-            </Link>
+            {dashboardPath ? (
+              <Link className="cta-button small" href="/dashboard">
+                Acessar cardápio!
+              </Link>
+            ) : (
+              <Link className="cta-button small" href="register">
+                Criar cardápio!
+              </Link>
+            )}
             <ThemeToggle />
           </div>
         </header>
-        <div className="p-4 flex items-center justify-center md:justify-around h-full flex-col lg:flex-row">
-          <div className="pt-40 lg:pt-0 text-center lg:text-start max-w-2xl">
-            <h1 className="text-3xl lg:text-5xl font-bold text-[var(--red)]">
-              Crie e gerencie seu cardápio digital de graça!
+        <section className="flex flex-col items-center">
+          <div className="pt-26 flex flex-col items-center max-w-2xl xxs:mx-4">
+            <h1 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-bold text-center">
+              Crie e gerencie seu <br /> <span className="text-[var(--red)]">cardápio digital de graça!</span>
             </h1>
-            <p className="leading-tight mt-3 mb-6 text-lg lg:text-xl">
-              Com Bite Menu você constrói a presença online do seu estabelecimento em poucos minutos!
+            <p className="leading-tight mt-3 mb-6 text-sm xs:text-base sm:text-lg text-center">
+              Receba pedidos pelo WhatsApp e aumente suas vendas online
             </p>
-            <Link className="cta-button" href="register">
-              Comece grátis!
-            </Link>
           </div>
-          <div className="scale-70 lg:scale-100 transform-[translate(15%,-10%)] lg:transform-none">
-            <Image src={logoTip} alt="Bite Menu" className="absolute opacity-20 -z-[1] transform-[translate(-30%,20%)]" />
+
+          <div className="flex flex-col sm:flex-row items-center justify-center">
             <Image
-              src={menuCelular}
-              alt="Cardápio do Bite Menu no celular"
-              height={462}
-              width={300}
-              className="transform-[translate(0,10%)]"
+              src={logoTip}
+              alt="Bite Menu"
+              className="absolute opacity-20 scale-60 lg:scale-80 transform-[translate(30%,0)] lg:transform-[translate(-30%,-10%)]"
             />
+            <div className="my-16 sm:my-0">
+              <Link className="cta-button glow-red lg:text-2xl" href="register">
+                Comece gratuitamente!
+              </Link>
+              <ul className="mt-8 font-semibold">
+                <li className="flex items-center mt-1 gap-2 border-b border-translucid sm:text-xl">
+                  <FaCheck color="var(--red)" />
+                  Cardápio digital fácil e rápido
+                </li>
+                <li className="flex items-center mt-1 gap-2 border-b border-translucid sm:text-xl">
+                  <FaCheck color="var(--red)" />
+                  Pedidos pelo WhatsApp
+                </li>
+                <li className="flex items-center mt-1 gap-2 border-b border-translucid sm:text-xl">
+                  <FaCheck color="var(--red)" />
+                  Controle de pedidos e vendas
+                </li>
+              </ul>
+            </div>
+            <div className="h-[370px] w-[240px] lg:h-[462px] lg:w-[300px] lg:scale-100 ml-8 lg:ml-[15dvw] z-1 right-2 hidden sm:block">
+              <Image src={menuCelular} alt="Cardápio do Bite Menu no celular" />
+            </div>
           </div>
-        </div>
+        </section>
       </section>
 
-      <section className="px-4 py-6 sd:py-20 bg-degraded border-t-4 border-b-4 border-translucid">
-        <div className="mb-12 sm:mb-0 flex items-center flex-col-reverse sm:flex-row justify-center gap-6 sm:gap-24">
+      <section className="px-4 py-6 sd:py-20 bg-degraded-t-speckled">
+        <div className="mb-12 sm:mb-0 flex items-center flex-col-reverse sm:flex-row justify-center gap-6 sm:gap-24 z-2">
           <div className="w-[184px] h-[228px] xs:w-[292px] xs:h-[365px] sm:w-[194px] sm:h-[243px] md:w-[292px] md:h-[365px] lg:w-[324px] lg:h-[405px] relative">
             <Image src={crieerecebawhatsapp} fill alt="Crie seu cardápio e receba pedidos pelo WhatsApp" />
           </div>
@@ -107,7 +121,7 @@ export default function LandingPageV1() {
             Crie seu cardápio digital e receba pedidos pelo WhatsApp.
           </h1>
         </div>
-        <div className="flex items-center flex-col sm:flex-row justify-center sm:gap-24">
+        <div className="flex items-center flex-col sm:flex-row justify-center sm:gap-24 z-2">
           <h1 className="text-center sm:text-start font-bold sm:max-w-[40%] text-xl xs:text-3xl">
             Controle completamente seus pedidos e suas vendas pelo site.
           </h1>

@@ -155,18 +155,57 @@ h3 {
   background-color: var(--dark-gray-90);
 }
 
-.bg-degraded {
+.bg-degraded-b {
   background: linear-gradient(
-    120deg,
+    to bottom,
     var(--background),
     var(--background),
     var(--background),
     var(--background),
     var(--background),
     #ff000030,
-    #ff000060,
-    #ff000080
+    #ff000060
   );
+}
+
+.bg-speckled {
+  background-image: radial-gradient(var(--medium-gray) 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+
+.bg-degraded-t-speckled {
+  background-image: radial-gradient(var(--translucid) 1px, transparent 1px),
+    linear-gradient(
+      to top,
+      var(--background),
+      var(--background),
+      var(--background),
+      var(--background),
+      var(--background),
+      #ff000030,
+      #ff000060
+    );
+
+  background-size: 8px 8px, cover;
+  background-position: 0 0, center;
+}
+
+.bg-degraded-b-speckled {
+  background-image: radial-gradient(var(--translucid) 1px, transparent 1px),
+    linear-gradient(
+      to bottom,
+      var(--background),
+      var(--background),
+      var(--background),
+      var(--background),
+      var(--background),
+      #ff000030,
+      #ff000060,
+      #ff000080
+    );
+
+  background-size: 8px 8px, cover;
+  background-position: 0 0, center;
 }
 
 .custom-gray-button {
@@ -208,6 +247,9 @@ h3 {
   &.has-icon {
     display: flex;
     align-items: center;
+  }
+  &.glow-red {
+    box-shadow: 0 0 8px rgba(255, 0, 0, 0.6), 0 0 16px rgba(255, 0, 0, 0.4), 0 0 32px rgba(255, 0, 0, 0.25);
   }
 }
 
