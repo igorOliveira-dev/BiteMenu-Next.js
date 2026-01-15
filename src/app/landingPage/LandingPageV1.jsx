@@ -78,7 +78,7 @@ export default function LandingPageV1() {
               <Image
                 src={logoTip}
                 alt="Bite Menu"
-                className="absolute opacity-20 scale-60 lg:scale-80 transform-[translate(50%,-30%)] lg:transform-[translate(50%,-40%)] z-0"
+                className="absolute opacity-20 scale-80 transform-[translate(50%,-30%)] lg:transform-[translate(50%,-40%)] z-0"
               />
 
               <Link href="register" className="relative z-10 cta-button glow-red lg:text-2xl">
