@@ -113,29 +113,32 @@ const PlansSection = () => {
         {plans.map((plan) => (
           <div
             key={plan.name}
-            className="p-4 px-6 bg-translucid border-2 border-translucid rounded-xl w-64 flex flex-col gap-6 justify-between"
+            className="p-4 px-6 bg-translucid border-2 border-[var(--translucid)] rounded-xl w-64 flex flex-col gap-6 justify-between cursor-pointer hover:border-[var(--red)] transition"
+            onClick={() => openModal(plan)}
           >
             <div>
-              <h2 className="font-bold mb-2">{plan.name}</h2>
+              <h2 className="font-bold mb-2 text-center">{plan.name}</h2>
+              <hr className="border-translucid mb-4" />
+              <p className="text-4xl font-bold text-center mb-4">
+                <span className="text-base color-gray mr-1">R$</span>
+                {plan.price}
+                <span className="text-base color-gray">/mês</span>
+              </p>
               <ul className="mt-2">
                 {plan.features.map((feature, index) => (
-                  <li key={index} className="flex items-center gap-2 mb-1">
-                    <FaCheck className="text-green-500" />
-                    {feature}
-                  </li>
+                  <div key={index}>
+                    <li className="flex items-center gap-2 mt-1">
+                      <FaCheck className="text-[var(--red)]" />
+                      {feature}
+                    </li>
+                    <hr className="border border-translucid" />
+                  </div>
                 ))}
               </ul>
             </div>
 
             <div className="w-full flex flex-col gap-2">
-              <p className="text-4xl font-bold">
-                {plan.price}
-                <span className="text-base color-gray">/mês</span>
-              </p>
-
-              <button onClick={() => openModal(plan)} className="cta-button">
-                Selecionar
-              </button>
+              <button className="cta-button">Selecionar</button>
             </div>
           </div>
         ))}

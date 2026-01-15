@@ -2,7 +2,7 @@ export const plans = [
   {
     name: "Free",
     features: ["Cardápio digital", "30 Itens", "5 Categorias", "Controle de pedidos", "Controle de vendas"],
-    price: "R$00,00",
+    price: "00,00",
     id: "free",
   },
   {
@@ -16,7 +16,7 @@ export const plans = [
       "Controle de vendas",
       "Dashboard de vendas",
     ],
-    price: "R$15,90",
+    price: "15,90",
     id: "plus",
   },
   {
@@ -31,7 +31,7 @@ export const plans = [
       "Dashboard de vendas",
       "Prioridade de suporte",
     ],
-    price: "R$27,90",
+    price: "27,90",
     id: "pro",
   },
 ];
