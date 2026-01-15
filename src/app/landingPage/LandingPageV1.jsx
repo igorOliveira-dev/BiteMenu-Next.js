@@ -56,7 +56,7 @@ export default function LandingPageV1() {
                 Acessar cardápio!
               </Link>
             ) : (
-              <Link className="cta-button small" href="/register">
+              <Link className="cta-button small" href="register">
                 Criar cardápio!
               </Link>
             )}
@@ -74,13 +74,14 @@ export default function LandingPageV1() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-center">
-            <Image
-              src={logoTip}
-              alt="Bite Menu"
-              className="absolute opacity-20 scale-60 lg:scale-80 transform-[translate(30%,0)] lg:transform-[translate(-30%,-10%)]"
-            />
-            <div className="my-16 sm:my-0">
-              <Link className="cta-button glow-red lg:text-2xl" href="/register">
+            <div className="relative my-16 sm:my-0">
+              <Image
+                src={logoTip}
+                alt="Bite Menu"
+                className="absolute opacity-20 scale-60 lg:scale-80 transform-[translate(50%,-30%)] lg:transform-[translate(50%,-40%)] z-0"
+              />
+
+              <Link href="register" className="relative z-10 cta-button glow-red lg:text-2xl">
                 Comece gratuitamente!
               </Link>
               <ul className="mt-8 font-semibold">
