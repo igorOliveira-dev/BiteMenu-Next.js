@@ -33,7 +33,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   const [planModalOpen, setPlanModalOpen] = useState(false);
   const [planModalFeature, setPlanModalFeature] = useState(null);
 
-  const closingFromPopState = useRef(false);
+  const closingCrudFromPop = useRef(false);
+  const closingPlanFromPop = useRef(false);
+  const ignoreNextPop = useRef(false);
 
   const alert = useAlert();
   const confirm = useConfirm();
@@ -76,11 +78,11 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       setLoading(true);
       try {
         const selectStr = `
-          id,
-          name,
-          position,
-          menu_items (*)
-        `;
+            id,
+            name,
+            position,
+            menu_items (*)
+          `;
 
         const { data, error } = await supabase
           .from("categories")
@@ -140,41 +142,63 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     }
   }, [modalOpen]);
 
+  useEffect(() => {
+    if (planModalOpen) {
+      history.pushState({ planModal: true }, "");
+    }
+  }, [planModalOpen]);
+
   // fechar modal com botão voltar do navegador
   useEffect(() => {
     const handlePopState = () => {
+      if (ignoreNextPop.current) {
+        ignoreNextPop.current = false;
+        return;
+      }
+
+      if (planModalOpen) {
+        closingPlanFromPop.current = true;
+        setPlanModalOpen(false);
+        setPlanModalFeature(null);
+        queueMicrotask(() => (closingPlanFromPop.current = false));
+        return;
+      }
+
       if (modalOpen) {
-        closingFromPopState.current = true;
+        closingCrudFromPop.current = true;
         setModalOpen(false);
-        setModalPayload({
-          type: null,
-          mode: null,
-          categoryId: null,
-          itemId: null,
-          data: {},
-        });
+        setModalPayload({ type: null, mode: null, categoryId: null, itemId: null, data: {} });
+        queueMicrotask(() => (closingCrudFromPop.current = false));
+        return;
       }
     };
 
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [modalOpen]);
+  }, [modalOpen, planModalOpen]);
 
-  const closeModal = () => {
-    setModalOpen(false);
-    setModalPayload({
-      type: null,
-      mode: null,
-      categoryId: null,
-      itemId: null,
-      data: {},
-    });
+  const closePlanModal = () => {
+    setPlanModalOpen(false);
+    setPlanModalFeature(null);
 
-    if (history.state?.modal && !closingFromPopState.current) {
+    if (history.state?.planModal && !closingPlanFromPop.current) {
+      ignoreNextPop.current = true; // <- chave do rolê
       history.back();
     }
 
-    closingFromPopState.current = false;
+    closingPlanFromPop.current = false;
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setModalPayload({ type: null, mode: null, categoryId: null, itemId: null, data: {} });
+
+    if (history.state?.modal && !closingCrudFromPop.current) {
+      ignoreNextPop.current = true;
+      history.back();
+    }
+
+    closingCrudFromPop.current = false;
   };
 
   // util: encontra o primeiro ancestor rolável (ou retorna window)
@@ -812,6 +836,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       toggleItemStarred(item.id, item.starred);
     } else {
       alert?.("Assine o plano Plus ou Pro para destacar itens!");
+      if (!planModalOpen) {
+        setPlanModalFeature("highlight_items");
+        setPlanModalOpen(true);
+      }
     }
   };
 
@@ -1280,9 +1308,11 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                           value={canShowPromoPrice ? modalPayload.data.promo_price ?? "" : ""}
                           onChange={(e) => {
                             if (!canShowPromoPrice) {
-                              alert("Assine o plano Plus ou Pro para criar promoções!");
-                              // setPlanModalFeature("promo_price");
-                              // setPlanModalOpen(true);
+                              if (!planModalOpen) {
+                                alert("Assine o plano Plus ou Pro para criar promoções!");
+                                setPlanModalFeature("promo_price");
+                                setPlanModalOpen(true);
+                              }
                               return;
                             }
 
@@ -1532,18 +1562,30 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       )}
       {planModalOpen && planModalFeature && (
         <UpdatePlanModal
-          onClose={() => setPlanModalOpen(false)}
+          onClose={closePlanModal}
           title={`${
             planModalFeature === "promo_price"
               ? "Preços promocionais"
               : planModalFeature === "highlight_items"
               ? "Itens em destaque"
               : ""
-          } são vantagens exclusicas do plano Plus`}
-          text="Ative o plano Plus ou Pro para criar preços promocionais e vender mais."
-          image="/images/upgrade.png"
+          } são vantagens exclusivas do Plus`}
+          text={
+            planModalFeature === "promo_price"
+              ? "Crie preços promocionais que chamam atenção e incentivam a decisão de compra no seu menu."
+              : planModalFeature === "highlight_items"
+              ? "Destaque os itens mais estratégicos do seu menu e guie o olhar dos clientes para o que mais vende."
+              : ""
+          }
+          image={
+            planModalFeature === "promo_price"
+              ? "https://rfgkalwtrxbiqrqwxmxf.supabase.co/storage/v1/object/sign/utilImages/promo_price.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xOTdiYmQzMC01Njg2LTQzNTQtOWE2ZS1iOTA4YjlmNGRhYjIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ1dGlsSW1hZ2VzL3Byb21vX3ByaWNlLnBuZyIsImlhdCI6MTc2ODU3MDk3NiwiZXhwIjo4MDc1NzcwOTc2fQ.LDuJ92gP47FRUDqCT2Jikc9SISU2IyNdhAetQ8KlU3U"
+              : planModalFeature === "highlight_items"
+              ? "https://rfgkalwtrxbiqrqwxmxf.supabase.co/storage/v1/object/sign/utilImages/starred_items.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xOTdiYmQzMC01Njg2LTQzNTQtOWE2ZS1iOTA4YjlmNGRhYjIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ1dGlsSW1hZ2VzL3N0YXJyZWRfaXRlbXMucG5nIiwiaWF0IjoxNzY4NTcxMTY5LCJleHAiOjgwNzU3NzExNjl9.v7wkyYJZ8fMn1b34AdPUEzBvz1_AtBtHQeI_tq5s1n8"
+              : null
+          }
           onCta={() => {
-            window.location.href = "/dashboard/plans";
+            window.location.href = "/pricing";
           }}
         />
       )}
