@@ -11,6 +11,7 @@ import { FaPen, FaTrash, FaChevronRight, FaChevronUp, FaChevronDown } from "reac
 import { useAlert } from "@/providers/AlertProvider";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import { uploadItemImage } from "@/lib/uploadImage";
+import UpdatePlanModal from "./UpdatePlanModal";
 
 function getContrastTextColor(hex) {
   const cleanHex = (hex || "").replace("#", "");
@@ -28,6 +29,8 @@ const uid = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.r
 export default function MenuItems({ backgroundColor, detailsColor, changedFields }) {
   const { menu, loading: menuLoading } = useMenu();
   const [ownerRole, setOwnerRole] = useState(null);
+
+  const [planModalOpen, setPlanModalOpen] = useState(false);
 
   const closingFromPopState = useRef(false);
 
@@ -1246,10 +1249,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                   </label>
 
                   <div className="flex gap-2">
-                    <label className="block mb-2 w-[100px]">
+                    <label className="block mb-2 w-[75px] xs:w-[100px]">
                       <div className="text-sm color-gray">Preço:</div>
                       <div className="flex items-center mb-2">
-                        <span className="absolute p-2">R$</span>
+                        <span className="absolute text-sm p-1 xs:text-base xs:p-2">R$</span>
                         <input
                           type="text"
                           value={modalPayload.data.price}
@@ -1262,21 +1265,22 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                             setModalPayload((p) => ({ ...p, data: { ...p.data, price: value } }));
                           }}
                           maxLength={10}
-                          className="w-full p-2 pl-7.5 rounded border border-translucid bg-translucid"
+                          className="w-full p-2 pl-6 xs:pl-7.5 rounded border border-translucid bg-translucid"
                           placeholder="00.00"
                         />
                       </div>
                     </label>
-                    <label className="block mb-2 w-[100px]">
+                    <label className="block mb-2 w-[75px] xs:w-[100px]">
                       <div className="text-sm color-gray">Promoção:</div>
                       <div className="flex items-center mb-2">
-                        <span className="absolute p-2">R$</span>
+                        <span className="absolute text-sm p-1 xs:text-base xs:p-2">R$</span>
                         <input
                           type="text"
                           value={canShowPromoPrice ? modalPayload.data.promo_price ?? "" : ""}
                           onChange={(e) => {
                             if (!canShowPromoPrice) {
                               alert("Assine o plano Plus ou Pro para criar promoções!");
+                              // setPlanModalOpen(true);
                               return;
                             }
 
@@ -1297,7 +1301,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                             }));
                           }}
                           maxLength={10}
-                          className="w-full p-2 pl-7.5 rounded border border-translucid bg-translucid"
+                          className="w-full p-2 pl-6 xs:pl-7.5 rounded border border-translucid bg-translucid"
                           placeholder="00.00"
                         />
                       </div>
@@ -1523,6 +1527,17 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
             </div>
           </div>
         </GenericModal>
+      )}
+      {planModalOpen && (
+        <UpdatePlanModal
+          onClose={() => setPlanModalOpen(false)}
+          title="Promoções são do Plus/Pro"
+          text="Ative o plano Plus ou Pro para criar preços promocionais e vender mais."
+          image="/images/upgrade.png"
+          onCta={() => {
+            window.location.href = "/dashboard/plans";
+          }}
+        />
       )}
     </div>
   );
