@@ -228,12 +228,12 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     }
 
     if (ownerRole === "plus" && catCount >= 10) {
-      alert?.("Limite de 20 categorias atingido no plano Plus.", "error");
+      alert?.("Limite de 10 categorias atingido no plano Plus.", "error");
       return null;
     }
 
     if (ownerRole === "pro" && catCount >= 50) {
-      alert?.("Limite de 100 categorias atingido no plano Pro.", "error");
+      alert?.("Limite de 50 categorias atingido no plano Pro.", "error");
       return null;
     }
 
@@ -299,17 +299,17 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
     // limites por plano
     if (ownerRole === "free" && totalItems >= 20) {
-      alert?.("Limite de 30 itens atingido no plano gratuito.", "error");
+      alert?.("Limite de 20 itens atingido no plano gratuito.", "error");
       return null;
     }
 
     if (ownerRole === "plus" && totalItems >= 50) {
-      alert?.("Limite de 200 itens atingido no plano Plus.", "error");
+      alert?.("Limite de 50 itens atingido no plano Plus.", "error");
       return null;
     }
 
     if (ownerRole === "pro" && totalItems >= 200) {
-      alert?.("Limite de 1000 itens atingido no plano Pro.", "error");
+      alert?.("Limite de 200 itens atingido no plano Pro.", "error");
       return null;
     }
 
