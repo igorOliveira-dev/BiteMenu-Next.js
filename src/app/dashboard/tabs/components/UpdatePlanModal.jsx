@@ -12,7 +12,7 @@ const UpdatePlanModal = ({
   return (
     <GenericModal onClose={onClose} zIndex={160} maxWidth="480px">
       <div>
-        <div className="font-bold text-lg mb-2">{title}</div>
+        <div className="font-bold text-lg mb-2 text-center">{title}</div>
 
         {image ? <img src={image} alt="" className="w-full h-40 object-cover rounded-lg mb-3" /> : null}
 

@@ -31,6 +31,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   const [ownerRole, setOwnerRole] = useState(null);
 
   const [planModalOpen, setPlanModalOpen] = useState(false);
+  const [planModalFeature, setPlanModalFeature] = useState(null);
 
   const closingFromPopState = useRef(false);
 
@@ -1280,6 +1281,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                           onChange={(e) => {
                             if (!canShowPromoPrice) {
                               alert("Assine o plano Plus ou Pro para criar promoções!");
+                              // setPlanModalFeature("promo_price");
                               // setPlanModalOpen(true);
                               return;
                             }
@@ -1528,10 +1530,16 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
           </div>
         </GenericModal>
       )}
-      {planModalOpen && (
+      {planModalOpen && planModalFeature && (
         <UpdatePlanModal
           onClose={() => setPlanModalOpen(false)}
-          title="Promoções são do Plus/Pro"
+          title={`${
+            planModalFeature === "promo_price"
+              ? "Preços promocionais"
+              : planModalFeature === "highlight_items"
+              ? "Itens em destaque"
+              : ""
+          } são vantagens exclusicas do plano Plus`}
           text="Ative o plano Plus ou Pro para criar preços promocionais e vender mais."
           image="/images/upgrade.png"
           onCta={() => {

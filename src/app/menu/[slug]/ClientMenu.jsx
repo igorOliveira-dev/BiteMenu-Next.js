@@ -643,9 +643,7 @@ export default function ClientMenu({ menu }) {
                       )}
 
                       <div
-                        className={`cursor-pointer flex-1 h-[130px] flex flex-col justify-between p-2 ${
-                          it.image_url ? "rounded-r-lg" : "rounded-lg"
-                        }`}
+                        className={`cursor-pointer flex-1 h-auto sm:h-[130px] flex flex-col justify-between p-2 rounded-lg`}
                         style={{ backgroundColor: translucidToUse }}
                         onClick={() => handleItemClick(it)}
                       >
