@@ -37,6 +37,11 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState(null);
 
+  const hasPlusPermissions = ownerRole === "admin" || ownerRole === "plus" || ownerRole === "pro";
+
+  const canShowPromoPrice = hasPlusPermissions;
+  const canHighlightItems = hasPlusPermissions;
+
   // modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [modalPayload, setModalPayload] = useState({
@@ -735,6 +740,25 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       data.additionals = additionals;
     }
 
+    const updateCategory = async (categoryId, patch) => {
+      const before = categories;
+      setCategories((prev = []) => prev.map((c) => (c.id === categoryId ? { ...c, ...patch } : c)));
+
+      try {
+        const { data, error } = await supabase.from("categories").update(patch).eq("id", categoryId).select().single();
+        if (error) throw error;
+
+        setCategories((prev = []) => prev.map((c) => (c.id === categoryId ? { ...c, ...data } : c)));
+        alert?.("Categoria atualizada", "success");
+        return data;
+      } catch (err) {
+        console.error("updateCategory error:", err);
+        setCategories(before);
+        alert?.("Erro ao atualizar categoria", "error");
+        return null;
+      }
+    };
+
     if (t === "category") {
       if (mode === "create") {
         await createCategory({ name: data.name });
@@ -767,23 +791,21 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     closeModal();
   };
 
-  const verifyPlan = (button) => {
-    if (ownerRole === "admin" || ownerRole === "plus" || ownerRole === "pro") {
-      if (button === "starredItem") {
-        if (!modalPayload.itemId) {
-          alert("Salve o item antes de destacar", "error");
-          return;
-        }
-
-        const item = categories.flatMap((c) => c.menu_items || []).find((it) => it.id === modalPayload.itemId);
-
-        if (!item.image_url) {
-          alert("Você só pode destacar itens com imagem.", "error");
-          return;
-        }
-
-        toggleItemStarred(item.id, item.starred);
+  const highlightItem = () => {
+    if (canHighlightItems) {
+      if (!modalPayload.itemId) {
+        alert("Salve o item antes de destacar", "error");
+        return;
       }
+
+      const item = categories.flatMap((c) => c.menu_items || []).find((it) => it.id === modalPayload.itemId);
+
+      if (!item.image_url) {
+        alert("Você só pode destacar itens com imagem.", "error");
+        return;
+      }
+
+      toggleItemStarred(item.id, item.starred);
     } else {
       alert?.("Assine o plano Plus ou Pro para destacar itens!");
     }
@@ -838,9 +860,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     return categories.flatMap((c) => c.menu_items || []).filter((it) => it.starred && it.visible !== false);
   }, [categories]);
 
-  const canShowPromoPrice = ownerRole === "admin" || ownerRole === "plus" || ownerRole === "pro";
-
-  const hasStarred = starredItems.length > 0 && (ownerRole === "admin" || ownerRole === "plus" || ownerRole === "pro");
+  const hasStarred = starredItems.length > 0 && canHighlightItems;
 
   const translucidToUse = getContrastTextColor(backgroundColor) === "white" ? "#ffffff15" : "#00000015";
   const grayToUse = getContrastTextColor(backgroundColor) === "white" ? "#cccccc" : "#333333";
@@ -1372,16 +1392,8 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
               {/* botões plus || pro */}
               <div className="flex h-[40px] items-end justify-end mt-4 gap-4 w-full ">
-                {/* <button
-                  className={`p-2 text-[var(--theme-red)] border-2 border-[var(--theme-red)] hover:opacity-80 rounded flex items-center justify-center gap-2 font-semibold w-[50%] cursor-pointer transition`}
-                  onClick={() => verifyPlan("promotionalPrice")}
-                >
-                  <FaBullhorn />
-                  <span className="hide-on-400px">Criar promoção</span>
-                  <span className="show-on-400px">Promoção</span>
-                </button> */}
                 <button
-                  onClick={() => verifyPlan("starredItem")}
+                  onClick={() => highlightItem()}
                   className="p-2 rounded flex items-center justify-center gap-2 font-semibold w-[50%] cursor-pointer transition"
                   style={{
                     backgroundColor: isStarred ? "var(--theme-yellow)" : "transparent",
