@@ -89,12 +89,16 @@ html::-webkit-scrollbar-thumb {
   scrollbar-width: none; /* Firefox */
 }
 
+html,
+body {
+  max-width: 100dvw;
+  overflow-x: hidden;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
-  max-width: 100dvw;
-  overflow-x: hidden;
   transition: 0.4s;
 }
 
@@ -168,13 +172,27 @@ h3 {
   );
 }
 
+.bg-degraded-l {
+  background: linear-gradient(
+    to left,
+    var(--background),
+    var(--background),
+    var(--background),
+    var(--background),
+    var(--background),
+    #ff000030,
+    #ff000060
+  );
+}
+
 .bg-speckled {
   background-image: radial-gradient(var(--medium-gray) 1px, transparent 1px);
   background-size: 8px 8px;
 }
 
 .bg-degraded-t-speckled {
-  background-image: radial-gradient(var(--translucid) 1px, transparent 1px),
+  background-image:
+    radial-gradient(var(--translucid) 1px, transparent 1px),
     linear-gradient(
       to top,
       var(--background),
@@ -186,12 +204,39 @@ h3 {
       #ff000060
     );
 
-  background-size: 8px 8px, cover;
-  background-position: 0 0, center;
+  background-size:
+    8px 8px,
+    cover;
+  background-position:
+    0 0,
+    center;
+}
+
+.bg-degraded-l-speckled {
+  background-image:
+    radial-gradient(var(--translucid) 1px, transparent 1px),
+    linear-gradient(
+      to left,
+      var(--background),
+      var(--background),
+      var(--background),
+      var(--background),
+      var(--background),
+      #ff000030,
+      #ff000060
+    );
+
+  background-size:
+    8px 8px,
+    cover;
+  background-position:
+    0 0,
+    center;
 }
 
 .bg-degraded-b-speckled {
-  background-image: radial-gradient(var(--translucid) 1px, transparent 1px),
+  background-image:
+    radial-gradient(var(--translucid) 1px, transparent 1px),
     linear-gradient(
       to bottom,
       var(--background),
@@ -204,8 +249,12 @@ h3 {
       #ff000080
     );
 
-  background-size: 8px 8px, cover;
-  background-position: 0 0, center;
+  background-size:
+    8px 8px,
+    cover;
+  background-position:
+    0 0,
+    center;
 }
 
 .custom-gray-button {
@@ -249,8 +298,25 @@ h3 {
     align-items: center;
   }
   &.glow-red {
-    box-shadow: 0 0 8px rgba(255, 0, 0, 0.6), 0 0 16px rgba(255, 0, 0, 0.4), 0 0 32px rgba(255, 0, 0, 0.25);
+    box-shadow:
+      0 0 8px rgba(255, 0, 0, 0.6),
+      0 0 16px rgba(255, 0, 0, 0.4),
+      0 0 32px rgba(255, 0, 0, 0.25);
   }
+}
+
+.glow-red {
+  box-shadow:
+    0 0 8px rgba(255, 0, 0, 0.6),
+    0 0 16px rgba(255, 0, 0, 0.4),
+    0 0 32px rgba(255, 0, 0, 0.25);
+}
+
+.glow-black {
+  box-shadow:
+    0 0 8px rgba(0, 0, 0, 0.6),
+    0 0 16px rgba(0, 0, 0, 0.4),
+    0 0 32px rgba(0, 0, 0, 0.25);
 }
 
 .react-tel-input .selected-flag,
@@ -294,13 +360,19 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 
 @keyframes planBtnAnim {
   0% {
-    box-shadow: 0 0 5px rgba(128, 0, 0, 0.6), 0 0 10px rgba(128, 0, 0, 0.4);
+    box-shadow:
+      0 0 5px rgba(128, 0, 0, 0.6),
+      0 0 10px rgba(128, 0, 0, 0.4);
   }
   50% {
-    box-shadow: 0 0 15px rgba(128, 0, 0, 0.9), 0 0 25px rgba(128, 0, 0, 0.7);
+    box-shadow:
+      0 0 15px rgba(128, 0, 0, 0.9),
+      0 0 25px rgba(128, 0, 0, 0.7);
   }
   100% {
-    box-shadow: 0 0 5px rgba(128, 0, 0, 0.6), 0 0 10px rgba(128, 0, 0, 0.4);
+    box-shadow:
+      0 0 5px rgba(128, 0, 0, 0.6),
+      0 0 10px rgba(128, 0, 0, 0.4);
   }
 }
 

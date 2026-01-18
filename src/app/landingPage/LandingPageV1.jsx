@@ -137,6 +137,29 @@ export default function LandingPageV1() {
         </div>
       </section>
 
+      {/* <section className="py-6 bg-translucid">
+        <h1 className="default-h1 text-center">Como criar seu o cardápio digital</h1>
+        <div className="flex gap-4 w-full flex-wrap sm:flex-nowrap justify-center mt-8">
+          <div className="min-w-[300px] w-[95%] sm:w-[50%] bg-degraded-l-speckled flex flex-col border border-[var(--red)] rounded-xl p-4 gap-4">
+            <div className="font-bold bg-[var(--red)] text-xl rounded-full glow-black w-10 h-10 flex items-center justify-center">
+              1
+            </div>
+            <p>
+              Clique no botão "Criar cardápio" no cabeçalho desse site e crie a sua conta com nome, email, senha e telefone.
+            </p>
+          </div>
+          <div className="min-w-[300px] sm:w-[50%] bg-degraded-l-speckled flex flex-col border border-[var(--red)] rounded-xl p-4 gap-4">
+            <div className="font-bold bg-[var(--red)] text-xl rounded-full glow-black w-10 h-10 flex items-center justify-center">
+              2
+            </div>
+            <p>
+              Responda as perguntas iniciais na tela de criação de cardápio, como nome do estabelecimento, imagens e cores do
+              cardápio. Em seguida, clique no botão "Criar meu cardápio!".
+            </p>
+          </div>
+        </div>
+      </section> */}
+
       <PlansSection />
 
       {/* <div id="blog" className="pt-8">
