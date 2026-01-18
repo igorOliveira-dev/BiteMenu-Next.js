@@ -13,10 +13,11 @@
   --dark-gray-90: #22222290;
   --medium-gray: #aaa;
   --translucid: #00000012;
-  --red: #d42020;
+  --red: #ad1a1a;
   --shadow: #00000070;
   --theme-red: #ce0000;
   --theme-yellow: #ed8a00;
+  --glow-bg: 0 0 8px rgba(255, 255, 255, 0.6), 0 0 16px rgba(255, 255, 255, 0.4), 0 0 32px rgba(255, 255, 255, 0.25);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -31,6 +32,7 @@
     --shadow: #000000;
     --theme-red: #ff3535;
     --theme-yellow: #ffff30;
+    --glow-bg: 0 0 8px rgba(0, 0, 0, 0.6), 0 0 16px rgba(0, 0, 0, 0.4), 0 0 32px rgba(0, 0, 0, 0.25);
   }
 }
 
@@ -42,10 +44,11 @@
   --dark-gray-90: #22222290;
   --medium-gray: #aaa;
   --translucid: #00000012;
-  --red: #d42020;
+  --red: #ad1a1a;
   --shadow: #00000070;
   --theme-red: #ce0000;
   --theme-yellow: #ed8a00;
+  --glow-bg: 0 0 8px rgba(255, 255, 255, 0.6), 0 0 16px rgba(255, 255, 255, 0.4), 0 0 32px rgba(255, 255, 255, 0.25);
 }
 
 [data-theme="dark"] {
@@ -59,6 +62,7 @@
   --shadow: #000000;
   --theme-red: #ff3535;
   --theme-yellow: #ffff30;
+  --glow-bg: 0 0 8px rgba(0, 0, 0, 0.6), 0 0 16px rgba(0, 0, 0, 0.4), 0 0 32px rgba(0, 0, 0, 0.25);
 }
 
 html {
@@ -89,8 +93,7 @@ html::-webkit-scrollbar-thumb {
   scrollbar-width: none; /* Firefox */
 }
 
-html,
-body {
+.hide-overflow {
   max-width: 100dvw;
   overflow-x: hidden;
 }
@@ -99,6 +102,8 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  max-width: 100dvw;
+  overflow-x: hidden;
   transition: 0.4s;
 }
 
@@ -312,11 +317,8 @@ h3 {
     0 0 32px rgba(255, 0, 0, 0.25);
 }
 
-.glow-black {
-  box-shadow:
-    0 0 8px rgba(0, 0, 0, 0.6),
-    0 0 16px rgba(0, 0, 0, 0.4),
-    0 0 32px rgba(0, 0, 0, 0.25);
+.glow-bg {
+  box-shadow: var(--glow-bg);
 }
 
 .react-tel-input .selected-flag,

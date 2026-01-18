@@ -31,7 +31,7 @@ export default function LandingPageV1() {
   };
 
   return (
-    <main>
+    <main className="hide-overflow">
       <section className="sm:h-[100dvh] bg-degraded-b border-b-3 border-red-500/50" id="begin">
         <header className="fixed inset-x-0 flex items-center justify-between p-2 m-2 my-3 bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)] z-10 backdrop-blur-sm">
           <Image
@@ -137,11 +137,12 @@ export default function LandingPageV1() {
         </div>
       </section>
 
-      {/* <section className="py-6 bg-translucid">
+      {/* <section className="py-6 px-2 sm:px-4 bg-translucid">
         <h1 className="default-h1 text-center">Como criar seu o cardápio digital</h1>
+        <h2 className="default-h2 text-center text-gray font-thin">(Demora menos de 5 minutos)</h2>
         <div className="flex gap-4 w-full flex-wrap sm:flex-nowrap justify-center mt-8">
-          <div className="min-w-[300px] w-[95%] sm:w-[50%] bg-degraded-l-speckled flex flex-col border border-[var(--red)] rounded-xl p-4 gap-4">
-            <div className="font-bold bg-[var(--red)] text-xl rounded-full glow-black w-10 h-10 flex items-center justify-center">
+          <div className="min-w-[300px] w-[100%] sm:w-[50%] bg-degraded-l-speckled flex flex-col border border-[var(--red)] rounded-xl p-4 gap-4">
+            <div className="font-bold bg-[var(--red)] text-xl rounded-full glow-bg text-white w-10 h-10 flex items-center justify-center">
               1
             </div>
             <p>
@@ -149,7 +150,7 @@ export default function LandingPageV1() {
             </p>
           </div>
           <div className="min-w-[300px] sm:w-[50%] bg-degraded-l-speckled flex flex-col border border-[var(--red)] rounded-xl p-4 gap-4">
-            <div className="font-bold bg-[var(--red)] text-xl rounded-full glow-black w-10 h-10 flex items-center justify-center">
+            <div className="font-bold bg-[var(--red)] text-xl rounded-full glow-bg text-white w-10 h-10 flex items-center justify-center">
               2
             </div>
             <p>
