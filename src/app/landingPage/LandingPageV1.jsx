@@ -137,7 +137,7 @@ export default function LandingPageV1() {
         </div>
       </section>
 
-      {/* <section className="py-6 px-2 sm:px-4 bg-translucid">
+      <section className="py-6 px-2 sm:px-4 bg-translucid">
         <h1 className="default-h1 text-center">Como criar seu o cardápio digital</h1>
         <h2 className="default-h2 text-center text-gray font-thin">(Demora menos de 5 minutos)</h2>
         <div className="flex gap-4 w-full flex-wrap sm:flex-nowrap justify-center mt-8">
@@ -159,7 +159,7 @@ export default function LandingPageV1() {
             </p>
           </div>
         </div>
-      </section> */}
+      </section>
 
       <PlansSection />
 
