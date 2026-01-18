@@ -17,13 +17,17 @@ const Sales = ({ setSelectedTab }) => {
 
   const [refreshSummary, setRefreshSummary] = useState(0);
 
-  const [monthData, setMonthData] = useState({}); // Dados por mês
-  const [loadingSales, setLoadingSales] = useState(false);
+  const [monthData, setMonthData] = useState({});
   const [filters, setFilters] = useState({});
   const [saleModalOpen, setSaleModalOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState(null);
   const [expandedMonths, setExpandedMonths] = useState({});
   const [monthsList, setMonthsList] = useState([]);
+
+  const PAGE_SIZE = 20;
+
+  // controla paginação por mês
+  const [monthPager, setMonthPager] = useState({});
 
   const computeItemsSubtotal = (sale) => {
     if (!sale) return 0;
@@ -63,7 +67,8 @@ const Sales = ({ setSelectedTab }) => {
           const key = d.toLocaleString("pt-BR", { month: "long", year: "numeric" });
           const end = new Date(monthStart);
           end.setMonth(end.getMonth() + 1);
-          fetchSalesByMonth(monthStart, end, key);
+          fetchSalesByMonth(monthStart, end, key, { page: 0, append: false });
+          refreshMonthSummary(monthStart, end, key);
         }
       })
       .subscribe();
@@ -71,20 +76,16 @@ const Sales = ({ setSelectedTab }) => {
     return () => supabase.removeChannel(channel);
   }, [menu?.id]);
 
-  // recalcula os totais dos meses a partir do monthData
-  useEffect(() => {
-    setMonthsList((prev) =>
-      prev.map((m) => {
-        const sales = monthData[m.key] || [];
-        const total = sales.reduce((sum, s) => sum + computeSaleTotal(s), 0);
-        return { ...m, count: sales.length, total };
-      })
-    );
-  }, [monthData]);
-
-  const fetchSalesByMonth = async (monthStart, monthEnd, monthKey) => {
+  const fetchSalesByMonth = async (monthStart, monthEnd, monthKey, { page = 0, append = false } = {}) => {
     if (!menu?.id) return;
-    setLoadingSales(true);
+
+    setMonthPager((prev) => ({
+      ...prev,
+      [monthKey]: { ...(prev[monthKey] || {}), loading: true },
+    }));
+
+    const from = page * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
 
     const { data, error } = await supabase
       .from("sales")
@@ -92,16 +93,51 @@ const Sales = ({ setSelectedTab }) => {
       .eq("menu_id", menu.id)
       .gte("created_at", monthStart.toISOString())
       .lt("created_at", monthEnd.toISOString())
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false }) // ajuda a estabilizar a ordem
+      .range(from, to);
 
     if (error) {
       console.error(error);
       customAlert("Erro ao carregar vendas do mês", "error");
-    } else {
-      setMonthData((prev) => ({ ...prev, [monthKey]: data }));
+      setMonthPager((prev) => ({
+        ...prev,
+        [monthKey]: { ...(prev[monthKey] || {}), loading: false },
+      }));
+      return;
     }
 
-    setLoadingSales(false);
+    setMonthData((prev) => ({
+      ...prev,
+      [monthKey]: append
+        ? Array.from(new Map([...(prev[monthKey] || []), ...(data || [])].map((s) => [s.id, s])).values())
+        : data || [],
+    }));
+
+    const hasMore = (data?.length || 0) === PAGE_SIZE;
+
+    setMonthPager((prev) => ({
+      ...prev,
+      [monthKey]: { page, hasMore, loading: false },
+    }));
+  };
+
+  const refreshMonthSummary = async (monthStart, monthEnd, monthKey) => {
+    if (!menu?.id) return;
+
+    const { data, error } = await supabase
+      .from("sales")
+      .select("total, delivery_fee, items_list")
+      .eq("menu_id", menu.id)
+      .gte("created_at", monthStart.toISOString())
+      .lt("created_at", monthEnd.toISOString());
+
+    if (error) return;
+
+    const count = data.length;
+    const total = data.reduce((sum, s) => sum + computeSaleTotal(s), 0);
+
+    setMonthsList((prev) => prev.map((m) => (m.key === monthKey ? { ...m, count, total } : m)));
   };
 
   const deleteSale = async (id) => {
@@ -121,7 +157,8 @@ const Sales = ({ setSelectedTab }) => {
       const end = new Date(start);
       end.setMonth(end.getMonth() + 1);
 
-      fetchSalesByMonth(start, end, monthKey);
+      fetchSalesByMonth(start, end, monthKey, { page: 0, append: false });
+      refreshMonthSummary(start, end, monthKey);
     }
   };
 
@@ -168,12 +205,24 @@ const Sales = ({ setSelectedTab }) => {
   const toggleMonth = async (key, monthStart) => {
     setExpandedMonths((prev) => {
       const next = { ...prev, [key]: !prev[key] };
+
+      // quando está abrindo o mês pela primeira vez
       if (!prev[key] && !monthData[key]) {
+        // inicializa o pager do mês
+        setMonthPager((p) => ({
+          ...p,
+          [key]: p[key] || { page: 0, hasMore: true, loading: false },
+        }));
+
         const start = new Date(monthStart);
         const end = new Date(start);
         end.setMonth(start.getMonth() + 1);
-        fetchSalesByMonth(start, end, key);
+
+        // carrega as primeiras 20 vendas
+        fetchSalesByMonth(start, end, key, { page: 0, append: false });
+        refreshMonthSummary(start, end, key);
       }
+
       return next;
     });
   };
@@ -202,7 +251,7 @@ const Sales = ({ setSelectedTab }) => {
     const order = filters[key]?.order;
     if (order?.startsWith("date")) {
       filtered.sort((a, b) =>
-        order === "date" ? new Date(a.created_at) - new Date(b.created_at) : new Date(b.created_at) - new Date(a.created_at)
+        order === "date" ? new Date(a.created_at) - new Date(b.created_at) : new Date(b.created_at) - new Date(a.created_at),
       );
     } else if (order?.startsWith("value")) {
       filtered.sort((a, b) => {
@@ -220,6 +269,7 @@ const Sales = ({ setSelectedTab }) => {
     setFilters({});
     setExpandedMonths({});
     setMonthsList([]);
+    setMonthPager({});
 
     // Opcional: refazer a lista de meses
     if (menu?.id) {
@@ -266,7 +316,7 @@ const Sales = ({ setSelectedTab }) => {
           <FaSyncAlt
             className="cursor-pointer opacity-80 hover:opacity-100 transition"
             onClick={() => {
-              resetSales(), setRefreshSummary((prev) => prev + 1);
+              (resetSales(), setRefreshSummary((prev) => prev + 1));
             }}
           />
         </div>
@@ -292,12 +342,10 @@ const Sales = ({ setSelectedTab }) => {
                 >
                   <div>
                     <h3 className="xs:font-semibold text-lg capitalize">{key}</h3>
-                    <p className="text-sm color-gray text-start flex gap-2 items-center">
-                      {group.count ?? monthSales.length} venda(s)
-                    </p>
+                    <p className="text-sm color-gray text-start flex gap-2 items-center">{group.count} venda(s)</p>
                   </div>
                   <div className="text-right flex items-center gap-1 xs:gap-4">
-                    <p className="font-semibold">R$ {(group.total ?? monthTotal).toFixed(2)}</p>
+                    <p className="font-semibold">R$ {Number(group.total || 0).toFixed(2)}</p>
                     {isOpen ? <FaChevronDown /> : <FaChevronRight />}
                   </div>
                 </button>
@@ -351,9 +399,9 @@ const Sales = ({ setSelectedTab }) => {
                       })}
                     </div>
 
-                    {loadingSales && <Loading />}
+                    {monthPager[key]?.loading && <Loading />}
 
-                    {getFilteredSales(key).length === 0 && !loadingSales ? (
+                    {getFilteredSales(key).length === 0 && !monthPager[key]?.loading ? (
                       <p className="text-center color-gray">Nenhuma venda neste mês.</p>
                     ) : (
                       getFilteredSales(key).map((sale) => (
@@ -372,24 +420,24 @@ const Sales = ({ setSelectedTab }) => {
                                 {sale.payment_method === "pix"
                                   ? "Pix"
                                   : sale.payment_method === "debit"
-                                  ? "Débito"
-                                  : sale.payment_method === "credit"
-                                  ? "Crédito"
-                                  : sale.payment_method === "cash"
-                                  ? "Dinheiro"
-                                  : "Não informado"}
+                                    ? "Débito"
+                                    : sale.payment_method === "credit"
+                                      ? "Crédito"
+                                      : sale.payment_method === "cash"
+                                        ? "Dinheiro"
+                                        : "Não informado"}
                               </span>
                               <span className="line-clamp-1">
                                 <strong>Serviço:</strong>{" "}
                                 {sale.service === "delivery"
                                   ? "Entrega"
                                   : sale.service === "pickup"
-                                  ? "Retirada"
-                                  : sale.service === "dinein"
-                                  ? "No local"
-                                  : sale.service === "faceToFace"
-                                  ? "Atendimento presencial"
-                                  : "Não informado"}
+                                    ? "Retirada"
+                                    : sale.service === "dinein"
+                                      ? "No local"
+                                      : sale.service === "faceToFace"
+                                        ? "Atendimento presencial"
+                                        : "Não informado"}
                               </span>
                               <span className="text-sm color-gray">
                                 <strong>Telefone:</strong> {sale.costumer_phone}
@@ -434,6 +482,27 @@ const Sales = ({ setSelectedTab }) => {
                         </div>
                       ))
                     )}
+                    {(() => {
+                      const pager = monthPager[key] || { page: 0, hasMore: false, loading: false };
+                      if (!pager.hasMore) return null;
+
+                      return (
+                        <button
+                          type="button"
+                          disabled={pager.loading}
+                          className="w-full cursor-pointer px-3 py-2 rounded-lg bg-translucid border-2 border-translucid hover:opacity-80 transition"
+                          onClick={() => {
+                            const start = new Date(group.monthStart);
+                            const end = new Date(start);
+                            end.setMonth(start.getMonth() + 1);
+
+                            fetchSalesByMonth(start, end, key, { page: (pager.page || 0) + 1, append: true });
+                          }}
+                        >
+                          {pager.loading ? "Carregando..." : "Carregar mais"}
+                        </button>
+                      );
+                    })()}
                   </div>
                 )}
               </section>
@@ -474,6 +543,14 @@ const Sales = ({ setSelectedTab }) => {
                   }
                   return updated;
                 });
+
+                const d = new Date(payload.created_at);
+                const start = new Date(d.getFullYear(), d.getMonth(), 1);
+                const end = new Date(start);
+                end.setMonth(end.getMonth() + 1);
+                const key = d.toLocaleString("pt-BR", { month: "long", year: "numeric" });
+
+                refreshMonthSummary(start, end, key);
 
                 customAlert("Venda atualizada com sucesso!", "success");
                 setSaleModalOpen(false);
