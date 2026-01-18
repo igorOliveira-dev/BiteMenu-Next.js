@@ -140,8 +140,9 @@ export default function LandingPageV1() {
       <section className="py-6 px-2 sm:px-4 bg-translucid">
         <h1 className="default-h1 text-center">Como criar seu o cardápio digital</h1>
         <h2 className="default-h2 text-center text-gray font-thin">(Demora menos de 5 minutos)</h2>
-        <div className="flex gap-4 w-full flex-wrap sm:flex-nowrap justify-center mt-8">
-          <div className="min-w-[300px] w-[100%] sm:w-[50%] bg-degraded-l-speckled flex flex-col border border-[var(--red)] rounded-xl p-4 gap-4">
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full mt-8">
+          <div className="bg-degraded-l-speckled flex flex-col border border-[var(--red)] rounded-xl p-4 gap-4">
             <div className="font-bold bg-[var(--red)] text-xl rounded-full glow-bg text-white w-10 h-10 flex items-center justify-center">
               1
             </div>
@@ -149,13 +150,33 @@ export default function LandingPageV1() {
               Clique no botão "Criar cardápio" no cabeçalho desse site e crie a sua conta com nome, email, senha e telefone.
             </p>
           </div>
-          <div className="min-w-[300px] sm:w-[50%] bg-degraded-l-speckled flex flex-col border border-[var(--red)] rounded-xl p-4 gap-4">
+
+          <div className="bg-degraded-l-speckled flex flex-col border border-[var(--red)] rounded-xl p-4 gap-4">
             <div className="font-bold bg-[var(--red)] text-xl rounded-full glow-bg text-white w-10 h-10 flex items-center justify-center">
               2
             </div>
             <p>
               Responda as perguntas iniciais na tela de criação de cardápio, como nome do estabelecimento, imagens e cores do
-              cardápio. Em seguida, clique no botão "Criar meu cardápio!".
+              cardápio.
+            </p>
+          </div>
+
+          <div className="bg-degraded-l-speckled flex flex-col border border-[var(--red)] rounded-xl p-4 gap-4">
+            <div className="font-bold bg-[var(--red)] text-xl rounded-full glow-bg text-white w-10 h-10 flex items-center justify-center">
+              3
+            </div>
+            <p>
+              Agora seu cardápio está criado, use o botão "+ categoria" para criar categorias de produtos e use o botão "+
+              item" para adicionar produtos dentro de cada categoria.
+            </p>
+          </div>
+          <div className="bg-degraded-l-speckled flex flex-col border border-[var(--red)] rounded-xl p-4 gap-4">
+            <div className="font-bold bg-[var(--red)] text-xl rounded-full glow-bg text-white w-10 h-10 flex items-center justify-center">
+              4
+            </div>
+            <p>
+              Pronto! Agora você pode compartilhar o link do seu cardápio digital clicando no botão "Copiar link" (para ver
+              esse botão no celular, abra o menu no canto inferior direito da tela).
             </p>
           </div>
         </div>
