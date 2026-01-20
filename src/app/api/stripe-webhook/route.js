@@ -64,6 +64,59 @@ export async function POST(req) {
         break;
       }
 
+      // quando pagamento é bem-sucedido
+      case "invoice.paid":
+      case "invoice.payment_succeeded":
+      case "invoice_payment.paid": {
+        const invoice = event.data.object;
+        const customerId = invoice.customer;
+        const subscriptionId = invoice.subscription;
+
+        if (!customerId || !subscriptionId) {
+          console.log("[Webhook] paid sem customer/subscription; ignorando");
+          break;
+        }
+
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+          expand: ["items.data.price"],
+        });
+
+        const priceId = subscription.items?.data?.[0]?.price?.id;
+        if (!priceId) throw new Error("Não consegui obter priceId da assinatura");
+
+        const { data: planData, error: planErr } = await supabase
+          .from("plans")
+          .select("role")
+          .eq("stripe_price_id", priceId)
+          .maybeSingle();
+
+        if (planErr) throw planErr;
+        if (!planData) throw new Error("Plano não encontrado para esse priceId");
+
+        const { data: profile, error: profErr } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("stripe_customer_id", customerId)
+          .maybeSingle();
+
+        if (profErr) throw profErr;
+        if (!profile) throw new Error("Usuário não encontrado para esse customer");
+
+        const { error: upErr } = await supabase
+          .from("profiles")
+          .update({
+            role: planData.role,
+            stripe_subscription_id: subscriptionId,
+            stripe_price_id: priceId,
+          })
+          .eq("id", profile.id);
+
+        if (upErr) throw upErr;
+
+        console.log("[Webhook] Pagou de novo; role restaurado para:", planData.role);
+        break;
+      }
+
       // Opcional: quando pagamento falha
       case "invoice.payment_failed": {
         const invoice = event.data.object;
