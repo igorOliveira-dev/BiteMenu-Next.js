@@ -65,7 +65,7 @@ const faqs = [
           painel de planos
         </a>{" "}
         e escolher o plano desejado. Se você estiver usando outro plano e quiser trocar, primeiro cancele o plano atual e
-        depois faça a troca de plano .Você pode cancelar quando quiser — sua conta volta automaticamente ao plano gratuito e
+        depois faça a troca de plano. Você pode cancelar quando quiser — sua conta volta automaticamente ao plano gratuito e
         seus dados permanecem salvos.
       </>
     ),
@@ -126,7 +126,7 @@ const page = () => {
           ))}
         </div>
 
-        <p className="text-sm color-gray mt-6 text-center">Última atualização: 29/10/2025</p>
+        <p className="text-sm color-gray mt-6 text-center">Última atualização: 20/01/2025</p>
       </div>
     </div>
   );
