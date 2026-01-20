@@ -289,24 +289,6 @@ export default function StatesManager({
     window.history.pushState({ selectedTab }, "", window.location.pathname);
   }, [selectedTab]);
 
-  useEffect(() => {
-    const handlePopState = () => {
-      setTabHistory((prev) => {
-        if (prev.length < 2) return prev; // nada pra voltar
-        const newHistory = [...prev];
-        newHistory.pop(); // remove a tab atual
-        const previousTab = newHistory[newHistory.length - 1];
-
-        isPoppingRef.current = true;
-        setSelectedTab(previousTab);
-        return newHistory;
-      });
-    };
-
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
-
   const revertField = (key) => {
     if (!serverState) return;
     setLocalState((prev) => ({ ...prev, [key]: serverState[key] }));
