@@ -349,6 +349,11 @@ export default function StatesManager({
       return;
     }
 
+    if (localState.title === "") {
+      customAlert?.("O título não pode ficar vazio.", "error");
+      return;
+    }
+
     const ok = await confirm("Quer mesmo salvar todas as alterações?");
     if (!ok) {
       console.log("[submit] usuário cancelou");
@@ -423,7 +428,7 @@ export default function StatesManager({
           if (error?.message?.toLowerCase()?.includes("row-level")) {
             customAlert?.(
               "Atualização bloqueada por políticas de segurança do banco (RLS). Verifique se o usuário é o owner do menu.",
-              "error"
+              "error",
             );
           } else {
             customAlert?.("Erro ao atualizar menu. Veja o console para detalhes.", "error");
@@ -544,7 +549,7 @@ export default function StatesManager({
           </div>
         </div>
       </div>,
-      document.body
+      document.body,
     );
   };
 
