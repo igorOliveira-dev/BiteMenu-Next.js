@@ -2,7 +2,7 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
-import { FaChevronLeft, FaTimes, FaWhatsapp } from "react-icons/fa";
+import { FaChevronLeft, FaCopy, FaTimes, FaWhatsapp } from "react-icons/fa";
 import { useCartContext } from "@/contexts/CartContext";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import PhoneInput from "react-phone-input-2";
@@ -56,6 +56,10 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
   const [costumerName, setCostumerName] = useState("");
   const [costumerAddress, setCostumerAddress] = useState("");
   const [costumerPhone, setCostumerPhone] = useState("");
+
+  const [showWhatsappButtonOnPixStage, setShowWhatsappButtonOnPixStage] = useState(false);
+
+  const [finalValue, setFinalValue] = useState(0);
 
   const serviceOptions = [
     { id: "delivery", label: `Entrega ${menu.delivery_fee > 0 ? `(R$ ${menu.delivery_fee.toFixed(2)})` : ""}` },
@@ -307,7 +311,12 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
     }
 
     whatsappConfirmation();
-    setPurchaseStage("whatsapp");
+
+    if (selectedPayment === "pix" && menu.pix_key !== null) {
+      setPurchaseStage("sendPix");
+    } else {
+      setPurchaseStage("whatsapp");
+    }
   };
 
   const whatsappConfirmation = () => {
@@ -319,8 +328,12 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
       })
       .join("\n\n");
 
+    const deliveryFee = selectedService === "delivery" ? Number(menu?.delivery_fee) || 0 : 0;
+
     const subtotal = cart.totalPrice(menu?.id) || 0;
-    const total = subtotal + menu.delivery_fee;
+    const total = subtotal + deliveryFee;
+
+    setFinalValue(total);
 
     const customerInfo = `
 👤 Nome: ${costumerName}
@@ -524,9 +537,11 @@ ${customerInfo}`;
                     ? "Como deseja realizar o pedido?"
                     : purchaseStage === "costumerInfos"
                       ? "Confirmar compra"
-                      : purchaseStage === "whatsapp"
-                        ? "Confirmação no whatsapp"
-                        : null}
+                      : purchaseStage === "sendPix"
+                        ? "Envio do PIX"
+                        : purchaseStage === "whatsapp"
+                          ? "Confirmação no whatsapp"
+                          : null}
                 </h3>
                 {purchaseStage === "costumerInfos" && (
                   <p style={{ color: grayToUse }} className="text-sm">
@@ -643,6 +658,45 @@ ${customerInfo}`;
                 >
                   Confirmar
                 </button>
+              </div>
+            ) : purchaseStage === "sendPix" ? (
+              <div>
+                <p style={{ color: grayToUse }} className="text-center text-sm">
+                  Chave PIX:
+                </p>
+                <div
+                  className="cursor-pointer rounded-lg text-sm p-2 flex items-center justify-center gap-2 text-center hover:opacity-80 transition mt-1"
+                  style={{ backgroundColor: translucidToUse }}
+                  onClick={() =>
+                    navigator.clipboard
+                      .writeText(menu.pix_key)
+                      .then(() => {
+                        customAlert("Chave PIX copiada!");
+                        setShowWhatsappButtonOnPixStage(true);
+                      })
+                      .catch(() => customAlert("Erro ao copiar link", "error"))
+                  }
+                >
+                  <FaCopy />
+                  {menu.pix_key}
+                </div>
+                <p className="text-center mt-2">
+                  Valor final: <strong>R${finalValue.toFixed(2)}</strong>
+                </p>
+                <p className="text-center p-2" style={{ color: grayToUse }}>
+                  Após fazer o PIX, envie o comprovante pelo WhatsApp!
+                </p>
+                {showWhatsappButtonOnPixStage && (
+                  <a href={whatsappURL || "#"} rel="noopener noreferrer">
+                    <span
+                      className="cursor-pointer py-2 px-4 rounded font-bold text-white flex items-center justify-center gap-2 mt-2"
+                      style={{ backgroundColor: menu.details_color }}
+                    >
+                      <FaWhatsapp />
+                      Enviar confirmação
+                    </span>
+                  </a>
+                )}
               </div>
             ) : purchaseStage === "whatsapp" ? (
               <div>

@@ -197,6 +197,7 @@ export default function StatesManager({
     "selectedServices",
     "selectedPayments",
     "deliveryFee",
+    "pixKey",
     "hours",
   ],
   onSave,
@@ -582,6 +583,7 @@ export default function StatesManager({
                     selectedServices: "Serviços selecionados",
                     selectedPayments: "Formas de pagamento",
                     deliveryFee: "Taxa de entrega",
+                    pixKey: "Chave PIX",
                     hours: "Horário",
                   };
 

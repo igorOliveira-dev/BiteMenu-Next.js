@@ -62,6 +62,7 @@ export default async function MenuPage({ params }) {
       services,
       payments,
       delivery_fee,
+      pix_key,
       orders,
       categories (
         id,
@@ -78,7 +79,7 @@ export default async function MenuPage({ params }) {
           starred
         )
       )
-    `
+    `,
     )
     .eq("slug", slug)
     .order("position", { foreignTable: "categories", ascending: true })

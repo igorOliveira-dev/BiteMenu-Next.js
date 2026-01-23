@@ -396,8 +396,8 @@ const ConfigMenu = (props) => {
               ))}
             </div>
             <div className="mt-4">
-              <label className="flex items-center">
-                <span>Taxa de entrega (R$):</span>
+              <label className="flex items-center w-[300px] gap-2">
+                <span className="whitespace-nowrap">Taxa de entrega (R$):</span>
                 <input
                   type="number"
                   min="0"
@@ -410,25 +410,11 @@ const ConfigMenu = (props) => {
                     setDeliveryFee(value);
                   }}
                   placeholder="0.00"
-                  className="p-1 ml-2 rounded border-2 border-translucid bg-translucid w-24"
+                  className="p-1 rounded border-2 border-translucid bg-translucid flex-1 min-w-0"
                 />
               </label>
             </div>
-            {/* <div className="mt-4">
-              <label className="flex items-center">
-                <span>Chave PIX:</span>
-                <input
-                  type="text"
-                  value={pixKey || ""}
-                  onChange={(e) => {
-                    let value = e.target.value;
-                    setPixKey(value);
-                  }}
-                  placeholder="Sem chave pix"
-                  className="p-1 ml-2 rounded border-2 border-translucid bg-translucid"
-                />
-              </label>
-            </div> */}
+
             <hr className="border-1 border-translucid mt-2 mb-4 max-w-full" />
           </div>
 
@@ -458,6 +444,20 @@ const ConfigMenu = (props) => {
                 </label>
               ))}
             </div>
+            {selectedPayments?.includes("pix") && (
+              <div className="mt-4">
+                <label className="flex items-center w-[300px] gap-2">
+                  <span className="whitespace-nowrap">Chave PIX:</span>
+                  <input
+                    type="text"
+                    value={pixKey || ""}
+                    onChange={(e) => setPixKey(e.target.value)}
+                    placeholder="Sem chave pix"
+                    className="p-1 rounded border-2 border-translucid bg-translucid flex-1 min-w-0"
+                  />
+                </label>
+              </div>
+            )}
             <hr className="border-1 border-translucid mt-2 mb-4 max-w-full" />
           </div>
 
