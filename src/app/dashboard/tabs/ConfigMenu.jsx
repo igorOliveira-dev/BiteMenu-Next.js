@@ -372,7 +372,7 @@ const ConfigMenu = (props) => {
           {/* Services */}
           <div className="mb-4">
             <p className="font-semibold mb-2">Serviços disponíveis:</p>
-            <div className="grid grid-cols-2 gap-4 max-w-160">
+            <div className="grid grid-cols-1 xs:grid-cols-2 gap-y-4 max-w-160">
               {serviceOptions.map((opt) => (
                 <label key={opt.id} className="flex items-center space-x-2 cursor-pointer">
                   <input
