@@ -37,7 +37,7 @@ const Admin = () => {
 
       const { data: profiles, error } = await supabase
         .from("profiles")
-        .select("id, display_name, role, email, stripe_customer_id")
+        .select("id, display_name, role, email, phone, stripe_customer_id")
         .in("id", ownerIds);
 
       if (error) {
@@ -54,6 +54,7 @@ const Admin = () => {
           owner_name: ownerProfile?.display_name || "Sem nome",
           owner_email: ownerProfile?.email || "Sem e-mail",
           owner_role: ownerProfile?.role || "desconhecido",
+          owner_phone: ownerProfile?.phone || "Sem telefone",
           stripe_costumer_id: ownerProfile?.stripe_customer_id || null,
         };
       });
@@ -207,8 +208,8 @@ const Admin = () => {
                 menu.owner_role === "admin"
                   ? "border-red-500"
                   : menu.owner_role === "plus" || menu.owner_role === "pro"
-                  ? "border-blue-500"
-                  : "border-translucid"
+                    ? "border-blue-500"
+                    : "border-translucid"
               } rounded-lg flex flex-col gap-2`}
             >
               <div className="flex items-center gap-2">
@@ -241,6 +242,10 @@ const Admin = () => {
 
               <a href={`${window.location.origin}/menu/${menu.slug}`} target="_blank" className="underline text-blue-500">
                 acessar
+              </a>
+
+              <a href={`https://wa.me/${menu.owner_phone}`} target="_blank" className="underline text-blue-500">
+                whatsapp
               </a>
             </li>
           ))}
