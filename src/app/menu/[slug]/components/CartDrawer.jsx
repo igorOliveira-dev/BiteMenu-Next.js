@@ -247,8 +247,8 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
       ? "translate-x-0"
       : "translate-x-full"
     : isVisible
-    ? "translate-y-0"
-    : "translate-y-full";
+      ? "translate-y-0"
+      : "translate-y-full";
 
   const backdropClasses = `absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
     isVisible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
@@ -261,8 +261,8 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
     ...(dragOffset > 0 && draggingRef.current
       ? { transform: `translateY(${dragOffset}px)`, transition: "none" }
       : dragOffset > 0
-      ? { transform: `translateY(0px)`, transition: `transform ${DURATION}ms ease-in-out` }
-      : {}),
+        ? { transform: `translateY(0px)`, transition: `transform ${DURATION}ms ease-in-out` }
+        : {}),
   };
 
   const resetPurchase = () => {
@@ -523,10 +523,10 @@ ${customerInfo}`;
                   {purchaseStage === "services"
                     ? "Como deseja realizar o pedido?"
                     : purchaseStage === "costumerInfos"
-                    ? "Confirmar compra"
-                    : purchaseStage === "whatsapp"
-                    ? "Confirmação no whatsapp"
-                    : null}
+                      ? "Confirmar compra"
+                      : purchaseStage === "whatsapp"
+                        ? "Confirmação no whatsapp"
+                        : null}
                 </h3>
                 {purchaseStage === "costumerInfos" && (
                   <p style={{ color: grayToUse }} className="text-sm">
@@ -534,12 +534,12 @@ ${customerInfo}`;
                     {selectedService === "delivery"
                       ? "entrega"
                       : selectedService === "pickup"
-                      ? "retirada"
-                      : selectedService === "dinein"
-                      ? "Comer no local"
-                      : selectedService === "faceToFace"
-                      ? "Atendimento presencial"
-                      : null}
+                        ? "retirada"
+                        : selectedService === "dinein"
+                          ? "Comer no local"
+                          : selectedService === "faceToFace"
+                            ? "Atendimento presencial"
+                            : null}
                     )
                   </p>
                 )}
@@ -664,6 +664,6 @@ ${customerInfo}`;
         </div>
       )}
     </div>,
-    document.body
+    document.body,
   );
 }

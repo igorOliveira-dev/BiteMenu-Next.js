@@ -246,6 +246,7 @@ export default function StatesManager({
       selectedServices: menuFromServer.services ?? [],
       selectedPayments: menuFromServer.payments ?? [],
       deliveryFee: menuFromServer.delivery_fee ?? 0,
+      pixKey: menuFromServer.pix_key ?? null,
       hours: menuFromServer.hours ?? null,
     };
     setServerState(normalized);
@@ -366,6 +367,7 @@ export default function StatesManager({
         services: localState.selectedServices,
         payments: localState.selectedPayments,
         delivery_fee: parseFloat(localState.deliveryFee) || 0,
+        pix_key: localState.pixKey || null,
         hours: localState.hours,
       };
 
@@ -431,6 +433,7 @@ export default function StatesManager({
           selectedServices: data.services ?? [],
           selectedPayments: data.payments ?? [],
           deliveryFee: data.delivery_fee ?? 0,
+          pixKey: data.pix_key ?? null,
           hours: data.hours ?? null,
         };
 
@@ -462,6 +465,7 @@ export default function StatesManager({
           selectedServices: data.services ?? [],
           selectedPayments: data.payments ?? [],
           deliveryFee: data.delivery_fee ?? 0,
+          pixKey: data.pix_key ?? null,
           hours: data.hours ?? null,
         };
 
@@ -493,14 +497,14 @@ export default function StatesManager({
 
     return createPortal(
       <div
-        className={`fixed bottom-22 right-2 lg:bottom-6 w-[340px] z-100
+        className={`fixed bottom-22 right-2 lg:bottom-6 xs:w-[340px] z-100
         ${selectedTab === "menu" ? "lg:left-[50%] lg:transform lg:-translate-x-1/2" : ""}
         ${selectedTab === "configMenu" ? "right-4" : ""}
         ${selectedTab === "menu" || selectedTab === "configMenu" ? "" : "hidden"}
         `}
       >
         <div
-          className="bg-translucid backdrop-blur-[15px] p-4 rounded-lg shadow-lg w-[340px]"
+          className="bg-translucid backdrop-blur-[15px] p-4 rounded-lg shadow-lg xs:w-[340px]"
           style={{
             backgroundColor: contrastColor === "white" ? "#ffffff30" : "#00000030",
             color: contrastColor === "white" ? "#fafafa" : "#171717",

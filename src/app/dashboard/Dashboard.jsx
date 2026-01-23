@@ -97,7 +97,7 @@ const Dashboard = ({
           <button
             className={`cursor-pointer w-full px-2 p-4 sm:px-4 hover-bg-translucid ${
               selectedTab === "menu" ? "bg-translucid" : ""
-            } transition-colors font-semibold border-b-2 border-[var(--translucid)] text-nowrap`}
+            } transition-colors font-semibold border-b-2 border-[var(--translucid)] text-nowrap text-sm xs:text-base`}
             onClick={() => setSelectedTab("menu")}
           >
             {changedFields.length > 0 ? "Cardápio *" : "Cardápio"}
@@ -105,7 +105,7 @@ const Dashboard = ({
           <button
             className={`cursor-pointer w-full px-2 p-4 sm:px-4 hover-bg-translucid ${
               selectedTab === "orders" ? "bg-translucid" : ""
-            } transition-colors font-semibold border-b-2 border-[var(--translucid)]`}
+            } transition-colors font-semibold border-b-2 border-[var(--translucid)] text-sm xs:text-base`}
             onClick={() => setSelectedTab("orders")}
           >
             Pedidos
@@ -113,7 +113,7 @@ const Dashboard = ({
           <button
             className={`cursor-pointer w-full px-2 p-4 sm:px-4 hover-bg-translucid ${
               selectedTab === "sales" ? "bg-translucid" : ""
-            } transition-colors font-semibold border-b-2 border-[var(--translucid)]`}
+            } transition-colors font-semibold border-b-2 border-[var(--translucid)] text-sm xs:text-base`}
             onClick={() => setSelectedTab("sales")}
           >
             Vendas

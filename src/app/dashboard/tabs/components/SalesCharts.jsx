@@ -18,7 +18,7 @@ export default function SalesCharts({ sales = [] }) {
     delivery: "Entrega",
     pickup: "Retirada",
     dinein: "Comer no local",
-    faceToFace: "Presencial",
+    faceToFace: "Atendimento pesencial",
   };
 
   const paymentCounts = useMemo(() => {

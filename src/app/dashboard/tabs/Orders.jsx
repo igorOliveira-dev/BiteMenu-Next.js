@@ -215,7 +215,7 @@ const Orders = ({ setSelectedTab }) => {
           o.costumer_name?.toLowerCase().includes(term) ||
           o.costumer_phone?.toLowerCase().includes(term) ||
           o.items_list?.some((it) => it.name.toLowerCase().includes(term)) ||
-          o.id?.toString().includes(term)
+          o.id?.toString().includes(term),
       );
     }
 
@@ -339,24 +339,24 @@ const Orders = ({ setSelectedTab }) => {
                           {order.payment_method === "pix"
                             ? "Pix"
                             : order.payment_method === "debit"
-                            ? "Débito"
-                            : order.payment_method === "credit"
-                            ? "Crédito"
-                            : order.payment_method === "cash"
-                            ? "Dinheiro"
-                            : "Não informado"}
+                              ? "Débito"
+                              : order.payment_method === "credit"
+                                ? "Crédito"
+                                : order.payment_method === "cash"
+                                  ? "Dinheiro"
+                                  : "Não informado"}
                         </span>
                         <span className="line-clamp-1">
                           <strong>Serviço:</strong>{" "}
                           {order.service === "delivery"
                             ? "Entrega"
                             : order.service === "pickup"
-                            ? "Retirada"
-                            : order.service === "dinein"
-                            ? "No local"
-                            : order.service === "faceToFace"
-                            ? "Atendimento presencial"
-                            : "Não informado"}
+                              ? "Retirada"
+                              : order.service === "dinein"
+                                ? "No local"
+                                : order.service === "faceToFace"
+                                  ? "Atendimento presencial"
+                                  : "Não informado"}
                         </span>
                         <span className="text-sm color-gray">
                           <strong>Telefone:</strong> {order.costumer_phone}

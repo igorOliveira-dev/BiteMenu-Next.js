@@ -51,7 +51,7 @@ export default function OrdersFilter({ onChange, initial = {} }) {
     delivery: "Entrega",
     pickup: "Retirada",
     dinein: "Comer no local",
-    faceToFace: "Presencial",
+    faceToFace: "Atendimento presencial",
   };
 
   const sortedByLabels = {

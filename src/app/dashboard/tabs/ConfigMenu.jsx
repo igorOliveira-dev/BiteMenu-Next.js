@@ -72,26 +72,30 @@ const ConfigMenu = (props) => {
   const [selectedServicesLocal, setSelectedServicesLocal] = useState(menu?.services ?? []);
   const [selectedPaymentsLocal, setSelectedPaymentsLocal] = useState(menu?.payments ?? []);
   const [deliveryFeeLocal, setDeliveryFeeLocal] = useState(menu?.delivery_fee ?? 0);
+  const [pixKeyLocal, setPixKeyLocal] = useState(menu?.pix_key ?? null);
   const [hoursLocal, setHoursLocal] = useState(() => normalizeHours(menu?.hours));
 
   // getters/setters unificados (slug / services / payments)
   const slug = usingExternal ? externalState?.slug : slugLocal;
   const setSlug = usingExternal ? (v) => externalSetState((p) => ({ ...p, slug: v })) : setSlugLocal;
 
-  const selectedServices = usingExternal ? externalState?.selectedServices ?? [] : selectedServicesLocal ?? [];
+  const selectedServices = usingExternal ? (externalState?.selectedServices ?? []) : (selectedServicesLocal ?? []);
   const setSelectedServices = usingExternal
     ? (arr) => externalSetState((p) => ({ ...p, selectedServices: arr }))
     : setSelectedServicesLocal;
 
-  const selectedPayments = usingExternal ? externalState?.selectedPayments ?? [] : selectedPaymentsLocal ?? [];
+  const selectedPayments = usingExternal ? (externalState?.selectedPayments ?? []) : (selectedPaymentsLocal ?? []);
   const setSelectedPayments = usingExternal
     ? (arr) => externalSetState((p) => ({ ...p, selectedPayments: arr }))
     : setSelectedPaymentsLocal;
 
   // getter taxa de delivery
-  const deliveryFee = usingExternal ? externalState?.deliveryFee ?? 0 : deliveryFeeLocal;
-
+  const deliveryFee = usingExternal ? (externalState?.deliveryFee ?? 0) : deliveryFeeLocal;
   const setDeliveryFee = usingExternal ? (v) => externalSetState((p) => ({ ...p, deliveryFee: v })) : setDeliveryFeeLocal;
+
+  // getter pix key
+  const pixKey = usingExternal ? (externalState?.pixKey ?? null) : pixKeyLocal;
+  const setPixKey = usingExternal ? (v) => externalSetState((p) => ({ ...p, pixKey: v })) : setPixKeyLocal;
 
   // hours: para renderizar sempre usamos a versão normalizada
   const hours = normalizeHours(usingExternal ? externalState?.hours : hoursLocal);
@@ -163,6 +167,7 @@ const ConfigMenu = (props) => {
       if (menu.services && !usingExternal) setSelectedServices(menu.services);
       if (menu.payments && !usingExternal) setSelectedPayments(menu.payments);
       if (menu.delivery_fee && !usingExternal) setDeliveryFee(menu.delivery_fee);
+      if (menu.pix_key && !usingExternal) setPixKey(menu.pix_key);
       if (menu.background_color && !usingExternal && typeof propSetBg === "function") propSetBg(menu.background_color);
       if (menu.title_color && !usingExternal && typeof propSetTitleColor === "function") propSetTitleColor(menu.title_color);
       if (menu.hours && !usingExternal) safeSetHours(menu.hours);
@@ -382,7 +387,7 @@ const ConfigMenu = (props) => {
                     }}
                   />
                   <span
-                    className="relative after:content-['✓'] after:absolute after:text-white after:text-sm after:font-bold after:top-[3px] after:left-[-25px] peer-checked:after:opacity-100 after:opacity-0 transition-opacity duration-150"
+                    className="relative after:content-['✓'] after:absolute after:text-white after:text-sm after:font-bold after:top-[3px] after:left-[-25px] peer-checked:after:opacity-100 after:opacity-0 transition-opacity duration-150 text-sm"
                     style={{ color: "var(--gray)" }}
                   >
                     {opt.label}
@@ -391,8 +396,8 @@ const ConfigMenu = (props) => {
               ))}
             </div>
             <div className="mt-4">
-              <label>
-                <span>Taxa de entrega (R$)</span>
+              <label className="flex items-center">
+                <span>Taxa de entrega (R$):</span>
                 <input
                   type="number"
                   min="0"
@@ -409,6 +414,21 @@ const ConfigMenu = (props) => {
                 />
               </label>
             </div>
+            {/* <div className="mt-4">
+              <label className="flex items-center">
+                <span>Chave PIX:</span>
+                <input
+                  type="text"
+                  value={pixKey || ""}
+                  onChange={(e) => {
+                    let value = e.target.value;
+                    setPixKey(value);
+                  }}
+                  placeholder="Sem chave pix"
+                  className="p-1 ml-2 rounded border-2 border-translucid bg-translucid"
+                />
+              </label>
+            </div> */}
             <hr className="border-1 border-translucid mt-2 mb-4 max-w-full" />
           </div>
 
