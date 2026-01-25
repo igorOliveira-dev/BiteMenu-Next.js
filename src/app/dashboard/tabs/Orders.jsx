@@ -61,6 +61,11 @@ const Orders = ({ setSelectedTab }) => {
     }
   }, [menu?.delivery_fee_on_sales]);
 
+  const matchesItem = (order, term) => {
+    const t = term.toLowerCase();
+    return (order.items_list || []).some((it) => (it.name || "").toLowerCase().includes(t));
+  };
+
   const resetAndFetch = async () => {
     setOrders([]);
     setPage(0);
@@ -101,7 +106,6 @@ const Orders = ({ setSelectedTab }) => {
     if (error) {
       loadingRef.current = false;
       setLoadingOrders(false);
-      return customAlert("Erro ao carregar pedidos", "error");
     }
 
     setTotalCount(count || 0);
@@ -151,8 +155,6 @@ const Orders = ({ setSelectedTab }) => {
       // se for número, tenta bater com id também
       const maybeId = Number(term);
       const ors = [`costumer_name.ilike.%${term}%`, `costumer_phone.ilike.%${term}%`];
-
-      if (!Number.isNaN(maybeId)) ors.push(`id.eq.${maybeId}`);
 
       q = q.or(ors.join(","));
     }
