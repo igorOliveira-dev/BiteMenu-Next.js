@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FaFilter, FaTimes, FaSearch } from "react-icons/fa";
 import useMenu from "@/hooks/useMenu";
 
@@ -14,7 +14,6 @@ export default function OrdersFilter({ onChange, initial = {} }) {
   const [deliveryType, setDeliveryType] = useState(initial.deliveryType ?? "all");
   const [payment, setPayment] = useState(initial.payment ?? "all");
   const [search, setSearch] = useState(initial.search ?? "");
-  const [sortBy, setSortBy] = useState(initial.sortBy ?? "");
 
   // a ordem é sempre crescente
   const sortDir = "asc";
@@ -26,18 +25,16 @@ export default function OrdersFilter({ onChange, initial = {} }) {
       deliveryType,
       payment,
       search: search.trim(),
-      sortBy: sortBy === "" ? "created_at" : sortBy,
       sortDir,
     };
     onChange?.(filters);
-  }, [isPaid, deliveryType, payment, search, sortBy, sortDir, onChange]);
+  }, [isPaid, deliveryType, payment, search, sortDir, onChange]);
 
   const clearAll = () => {
     setIsPaid("all");
     setDeliveryType("all");
     setPayment("all");
     setSearch("");
-    setSortBy("");
   };
 
   const paymentLabels = {
@@ -54,11 +51,23 @@ export default function OrdersFilter({ onChange, initial = {} }) {
     faceToFace: "Atendimento presencial",
   };
 
-  const sortedByLabels = {
-    created_at: "Data de criação",
-    total: "Valor total",
-    customer_name: "Cliente (A→Z)",
-  };
+  const lastSentRef = useRef("");
+
+  useEffect(() => {
+    const filters = {
+      isPaid: isPaid === "all" ? "all" : isPaid === "true",
+      deliveryType,
+      payment,
+      search: search.trim(),
+      sortDir: "asc",
+    };
+
+    const key = JSON.stringify(filters);
+    if (key === lastSentRef.current) return;
+
+    lastSentRef.current = key;
+    onChange?.(filters);
+  }, [isPaid, deliveryType, payment, search, onChange]);
 
   return (
     <div className="my-4 rounded-md shadow-sm">
@@ -125,25 +134,6 @@ export default function OrdersFilter({ onChange, initial = {} }) {
             </option>
           </select>
 
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="border border-2 border-translucid rounded px-2 py-1 text-sm color-gray"
-          >
-            <option className="text-black" value="" disabled hidden>
-              Ordenar por...
-            </option>
-            <option className="text-black" value="created_at">
-              Data de criação
-            </option>
-            <option className="text-black" value="total">
-              Valor total
-            </option>
-            <option className="text-black" value="customer_name">
-              Cliente (A→Z)
-            </option>
-          </select>
-
           <button
             onClick={clearAll}
             className="text-sm px-2 py-1 border border-2 border-translucid color-gray rounded flex items-center gap-1"
@@ -169,9 +159,6 @@ export default function OrdersFilter({ onChange, initial = {} }) {
           </span>
         )}
         {search && <span className="px-2 py-1 rounded text-sm color-gray">Busca: {search}</span>}
-        {sortBy && (
-          <span className="px-2 py-1 rounded text-sm color-gray">Ordenado por: {sortedByLabels[sortBy] ?? sortBy}</span>
-        )}
       </div>
     </div>
   );

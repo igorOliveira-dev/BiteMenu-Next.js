@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import useMenu from "@/hooks/useMenu";
 import { useAlert } from "@/providers/AlertProvider";
 import { supabase } from "@/lib/supabaseClient";
@@ -17,6 +17,11 @@ const Orders = ({ setSelectedTab }) => {
 
   const [showConfig, setShowConfig] = useState(false);
 
+  const PAGE_SIZE = 10;
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
+
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [filters, setFilters] = useState({});
@@ -29,17 +34,15 @@ const Orders = ({ setSelectedTab }) => {
 
   useEffect(() => {
     if (!menu?.id) return;
-    fetchOrders();
-
-    const channel = supabase
-      .channel("orders-changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload) => {
-        if (payload.new?.menu_id === menu.id) fetchOrders();
-      })
-      .subscribe();
-
-    return () => supabase.removeChannel(channel);
+    resetAndFetch();
   }, [menu?.id]);
+
+  const filtersKey = useMemo(() => JSON.stringify(filters), [filters]);
+
+  useEffect(() => {
+    if (!menu?.id) return;
+    resetAndFetch();
+  }, [menu?.id, filtersKey]);
 
   useEffect(() => {
     if (menu?.orders) {
@@ -58,19 +61,103 @@ const Orders = ({ setSelectedTab }) => {
     }
   }, [menu?.delivery_fee_on_sales]);
 
-  const fetchOrders = async () => {
-    setLoadingOrders(true);
-    const { data, error } = await supabase
-      .from("orders")
-      .select("*")
-      .eq("menu_id", menu.id)
-      .order("created_at", { ascending: false });
+  const resetAndFetch = async () => {
+    setOrders([]);
+    setPage(0);
+    setHasMore(true);
+    loadingRef.current = false;
+    await fetchMore(true);
+  };
 
-    if (error) return customAlert("Erro ao carregar pedidos", "error");
+  const hasMoreRef = useRef(true);
 
-    const withTotal = (data || []).map((order) => ({ ...order, total: computeSubtotal(order) }));
-    setOrders(withTotal);
+  useEffect(() => {
+    hasMoreRef.current = hasMore;
+  }, [hasMore]);
+
+  const pageRef = useRef(0);
+  const loadingRef = useRef(false);
+
+  useEffect(() => {
+    pageRef.current = page;
+  }, [page]);
+
+  const fetchMore = async (isReset = false) => {
+    if (!menu?.id) return;
+    if (!hasMoreRef.current && !isReset) return;
+    if (loadingRef.current) return;
+
+    loadingRef.current = true;
+    // setLoadingOrders(true);
+
+    const nextPage = isReset ? 1 : pageRef.current + 1;
+    const from = (nextPage - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+
+    const q = buildOrdersQuery(filters).range(from, to);
+
+    const { data, error, count } = await q;
+
+    if (error) {
+      loadingRef.current = false;
+      setLoadingOrders(false);
+      return customAlert("Erro ao carregar pedidos", "error");
+    }
+
+    setTotalCount(count || 0);
+
+    const withTotal = (data || []).map((order) => ({
+      ...order,
+      total: computeSubtotal(order),
+    }));
+
+    setOrders((prev) => {
+      const seen = new Set(prev.map((o) => o.id));
+      return [...prev, ...withTotal.filter((o) => !seen.has(o.id))];
+    });
+
+    setPage(nextPage);
+    setHasMore((withTotal?.length || 0) === PAGE_SIZE);
+
+    loadingRef.current = false;
     setLoadingOrders(false);
+  };
+
+  const buildOrdersQuery = (filters) => {
+    let q = supabase.from("orders").select("*", { count: "exact" }).eq("menu_id", menu.id);
+
+    // isPaid
+    if (filters.isPaid === true) q = q.eq("is_paid", true);
+    if (filters.isPaid === false) q = q.eq("is_paid", false);
+
+    // deliveryType (service)
+    if (filters.deliveryType && filters.deliveryType !== "all") {
+      q = q.eq("service", filters.deliveryType);
+    }
+
+    // payment
+    if (filters.payment && filters.payment !== "all") {
+      q = q.eq("payment_method", filters.payment);
+    }
+
+    // datas (created_at)
+    if (filters.dateFrom) q = q.gte("created_at", new Date(filters.dateFrom).toISOString());
+    if (filters.dateTo) q = q.lte("created_at", new Date(filters.dateTo).toISOString());
+
+    // busca (nome/telefone/id) — itens_list é um caso à parte (já falo abaixo)
+    if (filters.search && filters.search.trim() !== "") {
+      const term = filters.search.trim();
+
+      // se for número, tenta bater com id também
+      const maybeId = Number(term);
+      const ors = [`costumer_name.ilike.%${term}%`, `costumer_phone.ilike.%${term}%`];
+
+      if (!Number.isNaN(maybeId)) ors.push(`id.eq.${maybeId}`);
+
+      q = q.or(ors.join(","));
+    }
+
+    return q;
   };
 
   const handleChangeOrders = async (value) => {
@@ -142,7 +229,7 @@ const Orders = ({ setSelectedTab }) => {
     }
 
     customAlert("Pedido finalizado e registrado como venda!", "success");
-    fetchOrders();
+    resetAndFetch();
   };
 
   const deleteOrder = async (id) => {
@@ -150,7 +237,7 @@ const Orders = ({ setSelectedTab }) => {
     if (!ok) return;
     const { error } = await supabase.from("orders").delete().eq("id", id);
     if (error) return customAlert("Erro ao excluir pedido", "error");
-    fetchOrders();
+    resetAndFetch();
   };
 
   const openOrderModal = (order) => {
@@ -186,64 +273,6 @@ const Orders = ({ setSelectedTab }) => {
     return subtotal + delivery;
   };
 
-  // --- AQUI ESTÁ A FILTRAGEM LOCAL ---
-  const filteredOrders = useMemo(() => {
-    let list = [...orders];
-
-    // FILTRO isPaid
-    if (filters.isPaid === true) {
-      list = list.filter((o) => o.is_paid === true);
-    } else if (filters.isPaid === false) {
-      list = list.filter((o) => o.is_paid === false);
-    }
-
-    // FILTRO deliveryType
-    if (filters.deliveryType && filters.deliveryType !== "all") {
-      list = list.filter((o) => o.service === filters.deliveryType);
-    }
-
-    // FILTRO payment
-    if (filters.payment && filters.payment !== "all") {
-      list = list.filter((o) => o.payment_method === filters.payment);
-    }
-
-    // FILTRO de busca
-    if (filters.search && filters.search.trim() !== "") {
-      const term = filters.search.toLowerCase();
-      list = list.filter(
-        (o) =>
-          o.costumer_name?.toLowerCase().includes(term) ||
-          o.costumer_phone?.toLowerCase().includes(term) ||
-          o.items_list?.some((it) => it.name.toLowerCase().includes(term)) ||
-          o.id?.toString().includes(term),
-      );
-    }
-
-    // FILTRO de datas
-    if (filters.dateFrom) {
-      const from = new Date(filters.dateFrom);
-      list = list.filter((o) => new Date(o.created_at) >= from);
-    }
-    if (filters.dateTo) {
-      const to = new Date(filters.dateTo);
-      list = list.filter((o) => new Date(o.created_at) <= to);
-    }
-
-    // ORDENAÇÃO sempre crescente
-    if (filters.sortBy) {
-      list.sort((a, b) => {
-        // ignoramos sortDir, sempre crescente
-        if (filters.sortBy === "total") return computeTotalWithDelivery(a) - computeTotalWithDelivery(b);
-        if (filters.sortBy === "customer_name") return (a.costumer_name || "").localeCompare(b.costumer_name || "");
-        if (filters.sortBy === "created_at") return new Date(a.created_at) - new Date(b.created_at);
-        return 0;
-      });
-    }
-
-    return list;
-  }, [orders, filters]);
-  // --- FIM DA FILTRAGEM LOCAL ---
-
   if (loading || loadingOrders) return <Loading />;
   if (!menu) return <p>Você ainda não criou seu cardápio.</p>;
 
@@ -252,7 +281,7 @@ const Orders = ({ setSelectedTab }) => {
       <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[812px] min-h-[calc(100dvh-110px)] rounded-lg overflow-y-auto">
         <div className="flex items-center gap-4 mb-2">
           <h2 className="text-2xl font-bold">Pedidos recebidos</h2>
-          <FaSyncAlt className="cursor-pointer opacity-80 hover:opacity-100 transition" onClick={() => fetchOrders()} />
+          <FaSyncAlt className="cursor-pointer opacity-80 hover:opacity-100 transition" onClick={() => resetAndFetch()} />
         </div>
 
         <button onClick={() => setShowConfig(!showConfig)} className="cursor-pointer flex items-center gap-2 color-gray z-2">
@@ -319,11 +348,11 @@ const Orders = ({ setSelectedTab }) => {
         ) : (
           <div>
             <OrdersFilter onChange={setFilters} />
-            {filteredOrders.length === 0 ? (
+            {orders.length === 0 ? (
               <p className="text-center color-gray p-6">Nenhum pedido encontrado com esses filtros.</p>
             ) : (
               <div className="space-y-4">
-                {filteredOrders.map((order) => (
+                {orders.map((order) => (
                   <div
                     key={order.id}
                     className="p-4 rounded-lg shadow-sm bg-translucid border-2 border-translucid flex flex-col xs:flex-row justify-between"
@@ -429,6 +458,17 @@ const Orders = ({ setSelectedTab }) => {
                     </div>
                   </div>
                 ))}
+                <div className="flex justify-center py-4">
+                  {hasMore ? (
+                    <button
+                      onClick={() => fetchMore()}
+                      disabled={loadingOrders}
+                      className="px-4 py-2 rounded-lg border-2 border-translucid bg-translucid hover:opacity-80 transition cursor-pointer"
+                    >
+                      {loadingOrders ? "Carregando..." : "Carregar mais"}
+                    </button>
+                  ) : null}
+                </div>
               </div>
             )}
           </div>
@@ -441,17 +481,17 @@ const Orders = ({ setSelectedTab }) => {
         <aside className="hidden p-2 m-2 fixed right-0 rounded-lg bg-translucid border-2 border-translucid w-[calc(30dvw-36px)] shadow-[0_0_10px_var(--shadow)] lg:flex flex-col h-[calc(100dvh-110px)] justify-between">
           <div className="p-4">
             <h3 className="font-bold mb-2">Resumo</h3>
-            <p>Total de pedidos: {filteredOrders.length}</p>
+            <p>Total de pedidos: {totalCount}</p>
             <p>
               Total pago: R${" "}
-              {filteredOrders
+              {orders
                 .filter((o) => o.is_paid)
                 .reduce((sum, o) => sum + computeTotalWithDelivery(o), 0)
                 .toFixed(2)}
             </p>
             <p>
               Total pendente: R${" "}
-              {filteredOrders
+              {orders
                 .filter((o) => !o.is_paid)
                 .reduce((sum, o) => sum + computeTotalWithDelivery(o), 0)
                 .toFixed(2)}
@@ -480,7 +520,7 @@ const Orders = ({ setSelectedTab }) => {
                 if (error) return customAlert("Erro ao atualizar pedido", "error");
                 customAlert("Pedido atualizado com sucesso!", "success");
                 setOrderModalOpen(false);
-                fetchOrders();
+                resetAndFetch();
               }}
             >
               <div className="flex flex-col gap-3">
@@ -767,7 +807,7 @@ const Orders = ({ setSelectedTab }) => {
                     type="button"
                     onClick={() => {
                       // opcional: desfazer mudanças recarregando do servidor
-                      fetchOrders();
+                      resetAndFetch();
                       setOrderModalOpen(false);
                     }}
                     className="w-32 py-2 rounded-lg mt-3 border"

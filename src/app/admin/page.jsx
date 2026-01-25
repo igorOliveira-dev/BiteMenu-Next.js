@@ -111,7 +111,7 @@ const Admin = () => {
     visibleMenus = visibleMenus.filter((m) => m.last_access_at && new Date(m.last_access_at) >= sevenDaysAgo);
   }
 
-  // ⭐ ORDENAR POR QUANTIDADE DE ITENS (PRIORIDADE MÁXIMA)
+  // ORDENAR POR QUANTIDADE DE ITENS (PRIORIDADE MÁXIMA)
   if (sortByItemsCount) {
     visibleMenus.sort((a, b) => {
       const diff = (b.items_count || 0) - (a.items_count || 0);
