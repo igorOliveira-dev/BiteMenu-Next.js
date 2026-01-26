@@ -2,20 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { FaChevronLeft } from "react-icons/fa";
+import { FaBolt, FaChevronLeft } from "react-icons/fa";
 import Loading from "@/components/Loading";
 import { useConfirm } from "@/providers/ConfirmProvider";
-
-const PlanoFree = () => {
-  return (
-    <div>
-      <p className="mb-4">Você está no plano Free!</p>
-      <a href="/dashboard/pricing" className="cta-button">
-        <FaBolt /> Melhorar plano
-      </a>
-    </div>
-  );
-};
 
 export default function PlanDetails({ setSelectedTab }) {
   const [subscription, setSubscription] = useState(null);
@@ -86,31 +75,51 @@ export default function PlanDetails({ setSelectedTab }) {
         <div onClick={() => setSelectedTab("account")}>
           <FaChevronLeft className="cursor-pointer" />
         </div>
-        <h2 className="xs:font-semibold">Detalhes do Plano</h2>
+        <h2 className="xs:font-semibold" onClick={() => setSubscription(null)}>
+          Detalhes do Plano
+        </h2>
       </div>
 
       {subscription ? (
         <>
-          <div className=" flex flex-col my-4">
-            <p>Plano:</p>
-            <p className="capitalize text-4xl font-extrabold">{subscription.plan_name}</p>
-            <p className="text-sm color-gray">
-              {subscription.plan_price && `R$ ${Number(subscription.plan_price).toFixed(2).replace(".", ",")}/mes`}
-            </p>
+          <div className="flex flex-col xs:flex-row gap-4 max-w-[1024px]">
+            <div className="flex flex-col justify-center p-4 bg-translucid border-2 border-[var(--translucid)] rounded-lg text-center w-full">
+              <p className="text-sm color-gray">Plano atual:</p>
+              <p className="capitalize default-h1 mb-2">{subscription.plan_name}</p>
+              {subscription.plan_name === "Free" ? (
+                <div className="flex flex-col items-center">
+                  <p className="color-gray text-sm sm:text-base">Sem dados de cobrança</p>
+                  <a href="/dashboard/pricing" className="cta-button has-icon small mt-2">
+                    <FaBolt /> Melhorar plano!
+                  </a>
+                </div>
+              ) : (
+                <p className="text-sm color-gray">
+                  {subscription.plan_price && `R$ ${Number(subscription.plan_price).toFixed(2).replace(".", ",")}/mês`}
+                </p>
+              )}
+            </div>
+
+            {subscription.current_period_end ? (
+              <div className="flex flex-col justify-center p-4 bg-translucid border-2 border-[var(--translucid)] rounded-lg text-center w-full">
+                <p className="color-gray text-sm sm:text-base">Próxima cobrança:</p>
+                <p className="default-h1 mb-2">{formatDate(subscription.current_period_end)}</p>
+              </div>
+            ) : null}
           </div>
 
-          {subscription.current_period_end ? (
-            <p className="color-gray text-sm sm:text-base">
-              Próxima cobrança: {formatDate(subscription.current_period_end)}
-            </p>
-          ) : (
-            <p className="color-gray text-sm sm:text-base">Sem data de cobrança disponível</p>
-          )}
-
           {subscription.card_info && (
-            <p className="text-sm color-gray mt-2">
-              💳 {subscription.card_info.brand.toUpperCase()} **** **** **** {subscription.card_info.last4} <br />
-            </p>
+            <div className="mt-4 p-4 flex items-center justify-between flex-col xs:flex-row bg-translucid border-2 border-[var(--translucid)] rounded-lg w-full max-w-[1024px]">
+              <div>
+                <p className="text-sm color-gray text-center">Forma de pagamento:</p>
+                <p className="p-2 my-2 bg-translucid rounded-lg text-center">
+                  {subscription.card_info.brand.toUpperCase()} **** **** **** {subscription.card_info.last4} <br />
+                </p>
+              </div>
+              <p className="font-semibold text-lg">
+                {subscription.plan_price && `R$ ${Number(subscription.plan_price).toFixed(2).replace(".", ",")}/mês`}
+              </p>
+            </div>
           )}
 
           {subscription.id && (
@@ -119,22 +128,22 @@ export default function PlanDetails({ setSelectedTab }) {
                 const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 
                 const ok = await confirm(
-                  `Tem certeza que quer cancelar o plano? Se confirmar, você perderá os benefícios do Bite Menu ${capitalize(
-                    subscription.plan_name
-                  )} imediatamente`
+                  `Tem certeza que quer cancelar o plano? Se quiser mesmo cancelar, clique em "confirmar" e você perderá os benefícios do Bite Menu ${capitalize(
+                    subscription.plan_name,
+                  )} imediatamente, se quiser continuar com o plano, clique em "cancelar".`,
                 );
                 if (!ok) return;
 
                 cancelSubscription(subscription.id);
               }}
-              className="underline mt-2 cursor-pointer text-red-500 hover:text-red-600 py-1 transition"
+              className="mt-4 text-white cursor-pointer bg-red-600/70 hover:bg-red-600/90 border-2 border-[var(--translucid)] rounded-lg p-2 transition"
             >
               Cancelar Plano
             </button>
           )}
         </>
       ) : (
-        <PlanoFree />
+        <Loading />
       )}
     </div>
   );
