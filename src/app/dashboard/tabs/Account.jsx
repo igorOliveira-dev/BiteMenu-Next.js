@@ -172,7 +172,7 @@ const Account = ({ setSelectedTab }) => {
 
           {/* sair */}
           <button
-            className="underline mt-2 cursor-pointer text-red-500 hover:text-red-600 py-1 transition"
+            className="mt-4 text-white cursor-pointer bg-red-600/70 hover:bg-red-600/90 border-2 border-[var(--translucid)] rounded-lg p-2 transition"
             onClick={handleLogout}
           >
             Sair da conta
@@ -186,7 +186,7 @@ const Account = ({ setSelectedTab }) => {
         )}
       </div>
       {nameModalOpen && (
-        <GenericModal onClose={() => setNameModalOpen(false)}>
+        <GenericModal onClose={() => setNameModalOpen(false)} maxWidth={"420px"} wfull>
           <div className="flex items-center gap-4 mb-4">
             <FaChevronLeft className="cursor-pointer" onClick={() => setNameModalOpen(false)} />
             <h3 className="font-bold">Alterar nome</h3>

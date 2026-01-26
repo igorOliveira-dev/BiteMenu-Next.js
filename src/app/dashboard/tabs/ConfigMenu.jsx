@@ -549,7 +549,7 @@ const ConfigMenu = (props) => {
 
       {/* MODALS */}
       {titleModalOpen && (
-        <GenericModal onClose={() => setTitleModalOpen(false)}>
+        <GenericModal onClose={() => setTitleModalOpen(false)} wfull maxWidth={"420px"}>
           <div className="flex items-center gap-4 mb-4">
             <FaChevronLeft className="cursor-pointer" onClick={() => setTitleModalOpen(false)} />
             <h3 className="font-bold">Alterar nome</h3>
@@ -595,7 +595,7 @@ const ConfigMenu = (props) => {
       )}
 
       {descModalOpen && (
-        <GenericModal onClose={() => setDescModalOpen(false)}>
+        <GenericModal onClose={() => setDescModalOpen(false)} wfull maxWidth={"420px"}>
           <div className="flex items-center gap-4 mb-4">
             <FaChevronLeft className="cursor-pointer" onClick={() => setDescModalOpen(false)} />
             <h3 className="font-bold">Alterar descrição</h3>
@@ -649,7 +649,7 @@ const ConfigMenu = (props) => {
       )}
 
       {addressModalOpen && (
-        <GenericModal onClose={() => setAddressModalOpen(false)}>
+        <GenericModal onClose={() => setAddressModalOpen(false)} wfull maxWidth={"420px"}>
           <div className="flex items-center gap-4 mb-4">
             <FaChevronLeft className="cursor-pointer" onClick={() => setAddressModalOpen(false)} />
             <h3 className="font-bold">Alterar endereço</h3>
@@ -698,7 +698,7 @@ const ConfigMenu = (props) => {
       )}
 
       {slugModalOpen && (
-        <GenericModal onClose={() => setSlugModalOpen(false)}>
+        <GenericModal onClose={() => setSlugModalOpen(false)} wfull maxWidth={"420px"}>
           <div className="flex items-center gap-4 mb-4">
             <FaChevronLeft className="cursor-pointer" onClick={() => setSlugModalOpen(false)} />
             <h3 className="font-bold">Alterar slug</h3>

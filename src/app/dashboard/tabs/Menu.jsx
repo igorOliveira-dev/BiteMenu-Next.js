@@ -438,7 +438,7 @@ const Menu = (props) => {
 
       {/* MODALS */}
       {titleModalOpen && (
-        <GenericModal onClose={closeAllModals}>
+        <GenericModal onClose={closeAllModals} wfull maxWidth={"420px"}>
           <div className="flex items-center gap-4 mb-4">
             <FaChevronLeft className="cursor-pointer" onClick={closeAllModals} />
             <h3 className="font-bold">Alterar nome</h3>
@@ -482,7 +482,7 @@ const Menu = (props) => {
       )}
 
       {bannerModalOpen && (
-        <GenericModal onClose={closeAllModals}>
+        <GenericModal onClose={closeAllModals} wfull maxWidth={"420px"}>
           <div className="flex items-center gap-4 mb-4">
             <FaChevronLeft className="cursor-pointer" onClick={closeAllModals} />
             <h3 className="font-bold">Alterar banner</h3>
@@ -515,7 +515,7 @@ const Menu = (props) => {
       )}
 
       {logoModalOpen && (
-        <GenericModal onClose={closeAllModals}>
+        <GenericModal onClose={closeAllModals} wfull maxWidth={"420px"}>
           <div className="flex items-center gap-4 mb-4">
             <FaChevronLeft className="cursor-pointer" onClick={closeAllModals} />
             <h3 className="font-bold">Alterar logo</h3>

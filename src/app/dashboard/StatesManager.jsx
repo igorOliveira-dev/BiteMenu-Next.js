@@ -498,39 +498,31 @@ export default function StatesManager({
 
     return createPortal(
       <div
-        className={`fixed bottom-22 right-2 lg:bottom-6 xs:w-[340px] z-100
+        className={`fixed bottom-22 right-4 lg:bottom-6 xs:w-[340px] z-100
         ${selectedTab === "menu" ? "lg:left-[50%] lg:transform lg:-translate-x-1/2" : ""}
         ${selectedTab === "configMenu" ? "right-4" : ""}
         ${selectedTab === "menu" || selectedTab === "configMenu" ? "" : "hidden"}
         `}
       >
-        <div
-          className="bg-translucid backdrop-blur-[15px] p-4 rounded-lg shadow-lg xs:w-[340px]"
-          style={{
-            backgroundColor: contrastColor === "white" ? "#ffffff30" : "#00000030",
-            color: contrastColor === "white" ? "#fafafa" : "#171717",
-          }}
-        >
+        <div className="bg-[var(--low-gray)] border-2 border-translucid text-[var(--foreground)] p-4 rounded-lg shadow-lg xs:w-[340px]">
           <div className="flex justify-between items-center">
             <strong>Alterações não salvas</strong>
             <span className="text-sm">{changedFields.length}</span>
           </div>
 
-          <button
-            className="mb-2 underline cursor-pointer"
-            style={{
-              color: contrastColor === "white" ? "#ccc" : "#171717",
-            }}
-            onClick={() => setShowChanges(true)}
-          >
+          <button className="mb-2 underline cursor-pointer color-gray" onClick={() => setShowChanges(true)}>
             Ver alterações
           </button>
 
           <div className="flex justify-end gap-2">
-            <button onClick={revertAll} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded">
+            <button onClick={revertAll} className="cursor-pointer px-4 py-2 bg-[var(--translucid)] hover:opacity-80 rounded">
               Descartar tudo
             </button>
-            <button onClick={saveAll} className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded" disabled={saving}>
+            <button
+              onClick={saveAll}
+              className="cursor-pointer px-4 py-2 bg-green-600 hover:opacity-80 text-white rounded"
+              disabled={saving}
+            >
               {saving ? "Salvando..." : "Salvar tudo"}
             </button>
           </div>
