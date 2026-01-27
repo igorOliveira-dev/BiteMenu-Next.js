@@ -224,7 +224,7 @@ const Dashboard = ({
 
       {/* Modal central ao clicar no hamburger */}
       {isOpen && (
-        <GenericModal onClose={() => setIsOpen(false)} wfull maxWidth={"420px"}>
+        <GenericModal onClose={() => setIsOpen(false)} wfull maxWidth={"420px"} py={"24px"}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4 mb-4">
               <FaChevronLeft className="cursor-pointer" onClick={() => setIsOpen(false)} />

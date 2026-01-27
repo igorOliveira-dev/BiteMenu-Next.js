@@ -1,6 +1,6 @@
 import React from "react";
 
-const GenericModal = ({ children, onClose, bgColor, maxWidth, margin, wfull, zIndex }) => {
+const GenericModal = ({ children, onClose, bgColor, maxWidth, margin, wfull, zIndex, py }) => {
   return (
     <div className="fixed inset-0 bg-dark-gray-90 backdrop-blur-sm flex items-center justify-center z-150" onClick={onClose}>
       <div
@@ -10,6 +10,7 @@ const GenericModal = ({ children, onClose, bgColor, maxWidth, margin, wfull, zIn
           maxWidth: maxWidth ? maxWidth : null,
           margin: margin ? margin : null,
           zIndex: zIndex ? zIndex : 150,
+          paddingBlock: py ? py : null,
         }}
         onClick={(e) => e.stopPropagation()}
       >

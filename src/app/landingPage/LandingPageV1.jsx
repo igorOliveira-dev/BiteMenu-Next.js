@@ -34,7 +34,7 @@ export default function LandingPageV1() {
   return (
     <main className="hide-overflow">
       <section className="sm:h-[100dvh] bg-degraded-b border-b-3 border-red-500/50" id="begin">
-        <header className="fixed inset-x-0 flex items-center justify-between p-2 m-2 my-3 bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)] z-10 backdrop-blur-sm">
+        <header className="fixed inset-x-0 flex items-center justify-between p-2 m-2 my-3 bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)] z-50 backdrop-blur-sm">
           <Image
             src={logoMark}
             height={50}
@@ -107,7 +107,7 @@ export default function LandingPageV1() {
         </section>
       </section>
 
-      <section className="py-6 px-2 sd:py-20 bg-degraded-t-speckled w-full">
+      <section className="py-6 px-2 xs:py-12 bg-degraded-t-speckled w-full">
         <h1 className="default-h1 text-center">Com tudo que você precisa</h1>
         <h2 className="default-h2 text-center">para o seu negócio</h2>
         <div className="flex items-center justify-center w-full mt-8 gap-8 flex-wrap">
@@ -138,7 +138,7 @@ export default function LandingPageV1() {
         </div>
       </section>
 
-      <section className="sm:py-10 py-6 px-2 xs:px-6 sm:px-8 border-t-2 border-[var(--translucid)] flex flex-col-reverse xs:flex-row items-center justify-between md:justify-center gap-4 md:gap-12 text-center xs:text-left">
+      <section className="py-16 px-2 xs:px-6 sm:px-8 border-b-2 border-t-2 border-[var(--translucid)] flex flex-col-reverse xs:flex-row items-center justify-between md:justify-center gap-4 md:gap-12 text-center xs:text-left bg-speckled">
         <div className="mt-4 xs:mt-0">
           <Image src={menuCelularFrontal} height={300} width={200} />
         </div>
