@@ -120,70 +120,76 @@ const Account = ({ setSelectedTab }) => {
           <h2 className="ml-2 xs:font-semibold">Conta</h2>
         </div>
 
-        <div className="px-2">
-          <div className="flex items-center gap-2">
-            <p className="text-2xl font-bold">{name}</p>
-            <div onClick={() => setNameModalOpen(true)} className="cursor-pointer px-2">
-              <FaPen />
-            </div>
-          </div>
-
-          {/* email */}
-          <p className="color-gray">{profile?.email}</p>
-
-          {/* plano */}
-          <div className="mt-4">
-            <p className="font-semibold">Plano:</p>
-            <div className="bg-translucid p-2 min-w-[120px] w-max rounded">
-              <p className="color-gray capitalize">{profile?.role}</p>
-            </div>
-            <p className="text-sm color-gray mt-1 underline cursor-pointer" onClick={() => setSelectedTab("planDetails")}>
-              Detalhes do plano
-            </p>
-          </div>
-
-          {/* Telefone */}
-          <div className="mt-4">
-            <label className="block font-semibold mb-1">Telefone:</label>
-            <div className="flex gap-2 items-center">
-              <div className="flex-shrink">
-                <PhoneInput
-                  country="br"
-                  value={phone}
-                  onChange={(value) => setPhone(value)}
-                  inputProps={{ required: true }}
-                  inputClass="!w-[220px] !px-3 !py-2 !bg-[var(--translucid)] !border !border-[var(--low-gray)] !rounded !focus:outline-none !focus:ring-2 !focus:ring-blue-400 !pl-14"
-                  buttonClass="!border-r !border-[var(--low-gray)] !bg-[transparent] !rounded-l !hover:bg-[var(--low-gray)]"
-                  containerClass="!flex !items-center"
-                />
+        <div className="bg-translucid border-2 border-[var(--translucid)] rounded-lg p-4 max-w-[720px]">
+          <div className="px-2 ">
+            <div className="border-b-2 border-[var(--translucid)] pb-4">
+              <div className="flex items-center gap-2">
+                <p className="default-h1 font-bold line-clamp-1">{name}</p>
+                <div onClick={() => setNameModalOpen(true)} className="cursor-pointer px-2">
+                  <FaPen />
+                </div>
               </div>
-              {phone !== originalPhone && (
-                <button
-                  onClick={handleSavePhone}
-                  disabled={saving}
-                  className="cursor-pointer px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-                >
-                  {saving ? "Salvando..." : "Salvar"}
-                </button>
-              )}
+
+              {/* email */}
+              <p className="color-gray">{profile?.email}</p>
             </div>
-            <p className="text-sm color-gray pt-1">Este é o número em que você receberá os pedidos.</p>
+
+            <div className="flex gap-4 border-b-2 border-[var(--translucid)] xs:items-center pb-4 mt-4 flex-col xs:flex-row">
+              {/* plano */}
+              <div className="mt-4 min-w-[170px] xs:text-center flex flex-col xs:items-center xs:border-r-2 xs:pr-4 border-r-0 pr-0 border-b-2 xs:border-b-0 pb-4 xs:pb-0 border-[var(--translucid)]">
+                <p className="color-gray text-sm">Plano atual:</p>
+                <p className="capitalize default-h1">{profile?.role}</p>
+                <p
+                  className="text-sm mt-1 bg-translucid cursor-pointer p-2 rounded-lg border-2 border-translucid max-w-[180px] text-center hover:opacity-80 transition"
+                  onClick={() => setSelectedTab("planDetails")}
+                >
+                  Detalhes do plano
+                </p>
+              </div>
+
+              {/* Telefone */}
+              <div className="mt-4">
+                <label className="block text-sm color-gray mb-1">Telefone:</label>
+                <div className="flex gap-2 items-center">
+                  <div className="flex-shrink">
+                    <PhoneInput
+                      country="br"
+                      value={phone}
+                      onChange={(value) => setPhone(value)}
+                      inputProps={{ required: true }}
+                      inputClass="!w-[220px] !px-3 !py-2 !bg-[var(--translucid)] !border !border-[var(--low-gray)] !rounded !focus:outline-none !focus:ring-2 !focus:ring-blue-400 !pl-14"
+                      buttonClass="!border-r !border-[var(--low-gray)] !bg-[transparent] !rounded-l !hover:bg-[var(--low-gray)]"
+                      containerClass="!flex !items-center"
+                    />
+                  </div>
+                  {phone !== originalPhone && (
+                    <button
+                      onClick={handleSavePhone}
+                      disabled={saving}
+                      className="cursor-pointer px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                    >
+                      {saving ? "Salvando..." : "Salvar"}
+                    </button>
+                  )}
+                </div>
+                <p className="text-sm color-gray pt-1">Este é o número em que você receberá os pedidos.</p>
+              </div>
+            </div>
+
+            {/* sair */}
+            <button
+              className="mt-4 text-white cursor-pointer bg-red-600/70 hover:bg-red-600/90 border-2 border-[var(--translucid)] rounded-lg p-2 transition"
+              onClick={handleLogout}
+            >
+              Sair da conta
+            </button>
+            {profile?.role === "admin" && (
+              <a href="/admin" className="ml-2 underline color-gray">
+                Admin page
+              </a>
+            )}
           </div>
-
-          {/* sair */}
-          <button
-            className="mt-4 text-white cursor-pointer bg-red-600/70 hover:bg-red-600/90 border-2 border-[var(--translucid)] rounded-lg p-2 transition"
-            onClick={handleLogout}
-          >
-            Sair da conta
-          </button>
         </div>
-
-        {profile?.role === "admin" && (
-          <a href="/admin" className="ml-2 underline color-gray">
-            Admin page
-          </a>
-        )}
       </div>
       {nameModalOpen && (
         <GenericModal onClose={() => setNameModalOpen(false)} maxWidth={"420px"} wfull>
