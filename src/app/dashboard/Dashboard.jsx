@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SalesDashboard from "./tabs/SalesDashboard";
 import PlanDetails from "./tabs/PlanDetails";
+import GenericModal from "@/components/GenericModal";
 
 const Dashboard = ({
   menuState: externalMenuState,
@@ -223,66 +224,57 @@ const Dashboard = ({
 
       {/* Modal central ao clicar no hamburger */}
       {isOpen && (
-        <div
-          className="fixed lg:hidden top-0 left-0 right-0 bg-black/50 backdrop-blur-sm z-150 flex justify-center items-center transition-opacity duration-300"
-          style={{ height: "calc(100dvh - 72px)" }}
-          onClick={() => setIsOpen(false)}
-        >
-          <div
-            className="bg-low-gray rounded-lg w-[90vw] p-6 shadow-lg relative animate-fade-in"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 mb-4">
-                <FaChevronLeft className="cursor-pointer" onClick={() => setIsOpen(false)} />
-                <h3 className="font-bold">Compartilhe seu cardápio!</h3>
-              </div>
+        <GenericModal onClose={() => setIsOpen(false)} wfull maxWidth={"420px"}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4 mb-4">
+              <FaChevronLeft className="cursor-pointer" onClick={() => setIsOpen(false)} />
+              <h3 className="font-bold">Compartilhe seu cardápio!</h3>
             </div>
-
-            <div className="grid sm:grid-cols-2 gap-2 max-w-[calc(100%-40px)] mb-6">
-              <button
-                onClick={copyLink}
-                className="cursor-pointer mt-2 p-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
-              >
-                Copiar link
-              </button>
-              <button
-                onClick={accessMenu}
-                className="cursor-pointer mt-2 p-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition"
-              >
-                Acessar cardápio
-              </button>
-            </div>
-
-            <ul className="flex flex-col">
-              <li>
-                <button
-                  className="w-full text-left px-2 py-2 hover:bg-white/10 rounded"
-                  onClick={() => {
-                    setSelectedTab("account");
-                    setIsOpen(false);
-                  }}
-                >
-                  Conta
-                </button>
-              </li>
-              <li>
-                <button className="w-full flex text-left px-2 py-2 hover:bg-white/10 rounded">
-                  <Link href="support" className="flex-1">
-                    Suporte
-                  </Link>
-                </button>
-              </li>
-              <li>
-                <button className="w-full flex text-left px-2 py-2 hover:bg-white/10 rounded">
-                  <Link href="politica-de-privacidade" className="flex-1">
-                    Política de privacidade
-                  </Link>
-                </button>
-              </li>
-            </ul>
           </div>
-        </div>
+
+          <div className="grid xxs:grid-cols-2 gap-2 mb-6">
+            <button
+              onClick={copyLink}
+              className="cursor-pointer mt-2 p-2 bg-blue-600/80 text-white font-semibold rounded-lg hover:bg-blue-700/80 border-2 border-[var(--translucid)] transition"
+            >
+              Copiar link
+            </button>
+            <button
+              onClick={accessMenu}
+              className="cursor-pointer mt-2 p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border-2 border-[var(--translucid)] transition"
+            >
+              Acessar cardápio
+            </button>
+          </div>
+
+          <ul className="flex flex-col">
+            <li>
+              <button
+                className="w-full text-left px-2 py-2 hover:bg-[var(--translucid)] border-b-2 border-[var(--translucid)] rounded"
+                onClick={() => {
+                  setSelectedTab("account");
+                  setIsOpen(false);
+                }}
+              >
+                Conta
+              </button>
+            </li>
+            <li>
+              <button className="w-full flex text-left px-2 py-2 hover:bg-[var(--translucid)] border-b-2 border-[var(--translucid)] rounded">
+                <Link href="support" className="flex-1">
+                  Suporte
+                </Link>
+              </button>
+            </li>
+            <li>
+              <button className="w-full flex text-left px-2 py-2 hover:bg-[var(--translucid)] border-b-2 border-[var(--translucid)] rounded">
+                <Link href="politica-de-privacidade" className="flex-1">
+                  Política de privacidade
+                </Link>
+              </button>
+            </li>
+          </ul>
+        </GenericModal>
       )}
     </div>
   );

@@ -384,13 +384,13 @@ const Menu = (props) => {
               <h3>Compartilhe seu cardápio!</h3>
               <button
                 onClick={copyLink}
-                className="cursor-pointer w-full max-w-[320px] mt-2 p-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
+                className="cursor-pointer w-full max-w-[320px] mt-2 p-2 bg-blue-600/80 text-white font-semibold rounded-lg hover:bg-blue-700/80 border-2 border-[var(--translucid)] transition"
               >
                 Copiar link
               </button>
               <button
                 onClick={accessMenu}
-                className="cursor-pointer w-full max-w-[320px] mt-2 p-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition"
+                className="cursor-pointer w-full max-w-[320px] mt-2 p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border-2 border-[var(--translucid)] transition"
               >
                 Acessar cardápio
               </button>
