@@ -162,7 +162,7 @@ export default function ClientMenu({ menu }) {
         const filteredItems = (cat.menu_items || []).filter(
           (it) =>
             it.visible &&
-            (it.name.toLowerCase().includes(lower) || (it.description && it.description.toLowerCase().includes(lower)))
+            (it.name.toLowerCase().includes(lower) || (it.description && it.description.toLowerCase().includes(lower))),
         );
         return { ...cat, menu_items: filteredItems };
       })
@@ -647,7 +647,7 @@ export default function ClientMenu({ menu }) {
                         style={{ backgroundColor: translucidToUse }}
                         onClick={() => handleItemClick(it)}
                       >
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-start gap-2">
                           {it.image_url ? (
                             <img
                               src={it.image_url}
