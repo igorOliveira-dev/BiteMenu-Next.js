@@ -289,7 +289,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       if (error) throw error;
 
       setCategories((prev = []) =>
-        prev.map((c) => (c.id === tempId ? { ...data, menu_items: [], position: data.position ?? newPos } : c))
+        prev.map((c) => (c.id === tempId ? { ...data, menu_items: [], position: data.position ?? newPos } : c)),
       );
 
       alert?.("Categoria criada", "success");
@@ -324,7 +324,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   // createItem atualizado para suportar image_url
   const createItem = async (
     categoryId,
-    { name = "Novo item", price = "", promo_price = null, description = "", additionals = [], image_url = "" } = {}
+    { name = "Novo item", price = "", promo_price = null, description = "", additionals = [], image_url = "" } = {},
   ) => {
     const safeCategories = Array.isArray(categories) ? categories : [];
 
@@ -372,8 +372,8 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
     setCategories((prev = []) =>
       (Array.isArray(prev) ? prev : []).map((c) =>
-        c.id === categoryId ? { ...c, menu_items: [...(c.menu_items || []), tempItem] } : c
-      )
+        c.id === categoryId ? { ...c, menu_items: [...(c.menu_items || []), tempItem] } : c,
+      ),
     );
 
     try {
@@ -400,11 +400,11 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
             ? {
                 ...c,
                 menu_items: (c.menu_items || []).map((it) =>
-                  it.id === tempId ? { ...data, position: data.position ?? newPos } : it
+                  it.id === tempId ? { ...data, position: data.position ?? newPos } : it,
                 ),
               }
-            : c
-        )
+            : c,
+        ),
       );
 
       alert?.("Item criado", "success");
@@ -415,8 +415,8 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       // rollback: remove o item temporário
       setCategories((prev = []) =>
         (Array.isArray(prev) ? prev : []).map((c) =>
-          c.id === categoryId ? { ...c, menu_items: (c.menu_items || []).filter((it) => it.id !== tempId) } : c
-        )
+          c.id === categoryId ? { ...c, menu_items: (c.menu_items || []).filter((it) => it.id !== tempId) } : c,
+        ),
       );
 
       alert?.("Erro ao criar item", "error");
@@ -430,7 +430,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       prev.map((c) => ({
         ...c,
         menu_items: (c.menu_items || []).map((it) => (it.id === itemId ? { ...it, ...patch } : it)),
-      }))
+      })),
     );
     try {
       const { data, error } = await supabase.from("menu_items").update(patch).eq("id", itemId).select().single();
@@ -439,7 +439,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         prev.map((c) => ({
           ...c,
           menu_items: (c.menu_items || []).map((it) => (it.id === itemId ? { ...it, ...data } : it)),
-        }))
+        })),
       );
       alert?.("Item atualizado", "success");
       return data;
@@ -459,8 +459,8 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
     setCategories((prev = []) =>
       prev.map((c) =>
-        c.id === categoryId ? { ...c, menu_items: (c.menu_items || []).filter((it) => it.id !== itemId) } : c
-      )
+        c.id === categoryId ? { ...c, menu_items: (c.menu_items || []).filter((it) => it.id !== itemId) } : c,
+      ),
     );
 
     try {
@@ -498,7 +498,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       prev.map((c) => ({
         ...c,
         menu_items: (c.menu_items || []).map((it) => (it.id === itemId ? { ...it, visible: newVisible } : it)),
-      }))
+      })),
     );
 
     try {
@@ -516,7 +516,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         prev.map((c) => ({
           ...c,
           menu_items: (c.menu_items || []).map((it) => (it.id === itemId ? { ...it, ...data } : it)),
-        }))
+        })),
       );
 
       alert?.(newVisible ? "Item visível no menu" : "Item ocultado", "success");
@@ -529,7 +529,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         prev.map((c) => ({
           ...c,
           menu_items: (c.menu_items || []).map((it) => (it.id === itemId ? { ...it, visible: currentVisible } : it)),
-        }))
+        })),
       );
     }
   };
@@ -851,7 +851,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       prev.map((c) => ({
         ...c,
         menu_items: c.menu_items.map((it) => (it.id === itemId ? { ...it, starred: newStarred } : it)),
-      }))
+      })),
     );
 
     try {
@@ -868,7 +868,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         prev.map((c) => ({
           ...c,
           menu_items: c.menu_items.map((it) => (it.id === itemId ? { ...it, ...data } : it)),
-        }))
+        })),
       );
 
       alert?.(newStarred ? "Item destacado no seu menu!" : "Destaque removido", "success");
@@ -908,7 +908,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         <div className="flex gap-2">
           <button
             onClick={() => openCategoryModal("create")}
-            className="cursor-pointer px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded"
+            className="cursor-pointer px-3 py-1 bg-blue-600/80 border-2 border-[var(--translucid)] hover:bg-blue-700/80 text-white rounded"
           >
             + Categoria
           </button>
@@ -1055,7 +1055,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                   <FaPen />
                 </button>
                 <div className="flex items-center flex-wrap gap-x-2">
-                  <strong style={{ color: foregroundToUse }}>{cat.name}</strong>
+                  <strong style={{ color: foregroundToUse }} className="line-clamp-1">
+                    {cat.name}
+                  </strong>
                   <span className="text-sm" style={{ color: grayToUse }}>
                     ({cat.menu_items?.length ?? 0} itens)
                   </span>
@@ -1065,9 +1067,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => openItemModal("create", cat.id)}
-                  className="min-w-[32px] cursor-pointer px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded"
+                  className="min-w-[32px] cursor-pointer px-2 py-1 bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white rounded"
                 >
-                  + <span className="hidden sm:inline">Item</span>
+                  + <span className="hidden xs:inline">Item</span>
                 </button>
                 <button
                   onClick={() => deleteCategory(cat.id)}
@@ -1187,14 +1189,14 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
               {modalPayload.type === "sort"
                 ? "Ordenar itens"
                 : modalPayload.type === "category"
-                ? modalPayload.mode === "create"
-                  ? "Criar categoria"
-                  : "Editar categoria"
-                : modalPayload.type === "item"
-                ? modalPayload.mode === "create"
-                  ? "Criar item"
-                  : "Editar item"
-                : ""}
+                  ? modalPayload.mode === "create"
+                    ? "Criar categoria"
+                    : "Editar categoria"
+                  : modalPayload.type === "item"
+                    ? modalPayload.mode === "create"
+                      ? "Criar item"
+                      : "Editar item"
+                    : ""}
             </h3>
           </div>
 
@@ -1305,7 +1307,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                         <span className="absolute text-sm p-1 xs:text-base xs:p-2">R$</span>
                         <input
                           type="text"
-                          value={canShowPromoPrice ? modalPayload.data.promo_price ?? "" : ""}
+                          value={canShowPromoPrice ? (modalPayload.data.promo_price ?? "") : ""}
                           onChange={(e) => {
                             if (!canShowPromoPrice) {
                               if (!planModalOpen) {
@@ -1366,7 +1368,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                         },
                       }))
                     }
-                    className="cursor-pointer px-2 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white transition"
+                    className="cursor-pointer px-2 py-1 rounded bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white transition"
                     type="button"
                   >
                     + Adicional
@@ -1549,7 +1551,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
           )}
 
           <div className="flex justify-end gap-2 mt-4">
-            <div className="w-[50%] flex gap-2">
+            <div className="w-[70%] xs:w-[50%] flex gap-2">
               <button onClick={closeModal} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded w-[50%]">
                 Cancelar
               </button>
@@ -1567,25 +1569,25 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
             planModalFeature === "promo_price"
               ? "Preços promocionais"
               : planModalFeature === "highlight_items"
-              ? "Itens em destaque"
-              : ""
+                ? "Itens em destaque"
+                : ""
           } são vantagens exclusivas do Plus`}
           text={
             planModalFeature === "promo_price"
               ? "Crie preços promocionais que chamam atenção e incentivam a decisão de compra no seu menu."
               : planModalFeature === "highlight_items"
-              ? "Destaque os itens mais estratégicos do seu menu e guie o olhar dos clientes para o que mais vende."
-              : ""
+                ? "Destaque os itens mais estratégicos do seu menu e guie o olhar dos clientes para o que mais vende."
+                : ""
           }
           image={
             planModalFeature === "promo_price"
               ? "https://rfgkalwtrxbiqrqwxmxf.supabase.co/storage/v1/object/sign/utilImages/promo_price.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xOTdiYmQzMC01Njg2LTQzNTQtOWE2ZS1iOTA4YjlmNGRhYjIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ1dGlsSW1hZ2VzL3Byb21vX3ByaWNlLnBuZyIsImlhdCI6MTc2ODU3MDk3NiwiZXhwIjo4MDc1NzcwOTc2fQ.LDuJ92gP47FRUDqCT2Jikc9SISU2IyNdhAetQ8KlU3U"
               : planModalFeature === "highlight_items"
-              ? "https://rfgkalwtrxbiqrqwxmxf.supabase.co/storage/v1/object/sign/utilImages/starred_items.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xOTdiYmQzMC01Njg2LTQzNTQtOWE2ZS1iOTA4YjlmNGRhYjIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ1dGlsSW1hZ2VzL3N0YXJyZWRfaXRlbXMucG5nIiwiaWF0IjoxNzY4NTcxMTY5LCJleHAiOjgwNzU3NzExNjl9.v7wkyYJZ8fMn1b34AdPUEzBvz1_AtBtHQeI_tq5s1n8"
-              : null
+                ? "https://rfgkalwtrxbiqrqwxmxf.supabase.co/storage/v1/object/sign/utilImages/starred_items.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xOTdiYmQzMC01Njg2LTQzNTQtOWE2ZS1iOTA4YjlmNGRhYjIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ1dGlsSW1hZ2VzL3N0YXJyZWRfaXRlbXMucG5nIiwiaWF0IjoxNzY4NTcxMTY5LCJleHAiOjgwNzU3NzExNjl9.v7wkyYJZ8fMn1b34AdPUEzBvz1_AtBtHQeI_tq5s1n8"
+                : null
           }
           onCta={() => {
-            window.location.href = "/pricing";
+            window.location.href = "/dashboard/pricing";
           }}
         />
       )}
