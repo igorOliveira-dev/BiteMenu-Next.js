@@ -312,7 +312,7 @@ const Sales = ({ setSelectedTab }) => {
     <div className="px-4 sm:px-2 lg:grid">
       <div className="md:m-auto lg:m-2 lg:w-[calc(80dvw-256px)] max-w-[1024px] min-h-[calc(100dvh-110px)] rounded-lg overflow-y-auto">
         <div className="flex items-center gap-4 mb-2">
-          <h2 className="font-bold">Vendas</h2>
+          <h2 className="default-h2 font-semibold">Vendas</h2>
           <FaSyncAlt
             className="cursor-pointer opacity-80 hover:opacity-100 transition"
             onClick={() => {

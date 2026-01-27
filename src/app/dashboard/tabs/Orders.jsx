@@ -282,7 +282,7 @@ const Orders = ({ setSelectedTab }) => {
     <div className="px-4 sm:px-2 lg:grid">
       <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[812px] min-h-[calc(100dvh-110px)] rounded-lg overflow-y-auto">
         <div className="flex items-center gap-4 mb-2">
-          <h2 className="text-2xl font-bold">Pedidos recebidos</h2>
+          <h2 className="font-semibold">Pedidos recebidos</h2>
           <FaSyncAlt className="cursor-pointer opacity-80 hover:opacity-100 transition" onClick={() => resetAndFetch()} />
         </div>
 

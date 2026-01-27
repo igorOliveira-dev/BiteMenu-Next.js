@@ -5,6 +5,7 @@ import logoMark from "../../../public/LogoMarca-sem-fundo.png";
 import logoTip from "../../../public/LogoTipo-sem-fundo.png";
 import ThemeToggle from "@/components/ThemeToggle";
 import menuCelular from "../../../public/bitemenuCelular.png";
+import menuCelularFrontal from "../../../public/bitemenuCelular-frontal.png";
 import Link from "next/link";
 import useUser from "@/hooks/useUser";
 import { useEffect, useState } from "react";
@@ -134,6 +135,18 @@ export default function LandingPageV1() {
               apresentado do jeito certo, em qualquer dispositivo.
             </p>
           </div>
+        </div>
+      </section>
+
+      <section className="sm:py-10 py-6 px-2 xs:px-6 sm:px-8 border-t-2 border-[var(--translucid)] flex flex-col-reverse xs:flex-row items-center justify-between md:justify-center gap-4 md:gap-12 text-center xs:text-left">
+        <div className="mt-4 xs:mt-0">
+          <Image src={menuCelularFrontal} height={300} width={200} />
+        </div>
+        <div className="mx-2">
+          <h2 className="default-h2 font-semibold mb-4">Teste agora um cardápio do Bite Menu!</h2>
+          <a href="https://www.bitemenu.com.br/menu/bite-menu" target="_blank" className="cta-button">
+            Veja o cardápio de exemplo
+          </a>
         </div>
       </section>
 
