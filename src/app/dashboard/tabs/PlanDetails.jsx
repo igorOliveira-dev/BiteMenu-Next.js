@@ -27,7 +27,7 @@ export default function PlanDetails({ setSelectedTab }) {
       // 2️⃣ Pegar profile com stripe_subscription_id
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("stripe_subscription_id, stripe_price_id")
+        .select("stripe_subscription_id, stripe_price_id, role")
         .eq("id", user.id)
         .single();
 
@@ -39,7 +39,7 @@ export default function PlanDetails({ setSelectedTab }) {
 
       // Se não houver subscription, usuário está no plano free
       if (!profile?.stripe_subscription_id) {
-        setSubscription({ plan_name: "Free", status: "active", current_period_end: null });
+        setSubscription({ plan_name: profile.role, status: "active", current_period_end: null, noCard: true });
         setLoading(false);
         return;
       }
@@ -86,12 +86,14 @@ export default function PlanDetails({ setSelectedTab }) {
             <div className="flex flex-col justify-center p-4 bg-translucid border-2 border-[var(--translucid)] rounded-lg text-center w-full">
               <p className="text-sm color-gray">Plano atual:</p>
               <p className="capitalize default-h1 mb-2">{subscription.plan_name}</p>
-              {subscription.plan_name === "Free" ? (
+              {subscription.noCard ? (
                 <div className="flex flex-col items-center">
                   <p className="color-gray text-sm sm:text-base">Sem dados de cobrança</p>
-                  <a href="/dashboard/pricing" className="cta-button has-icon small mt-2">
-                    <FaBolt /> Melhorar plano!
-                  </a>
+                  {subscription.plan_name !== "pro" && (
+                    <a href="/dashboard/pricing" className="cta-button has-icon small mt-2">
+                      <FaBolt /> Melhorar plano!
+                    </a>
+                  )}
                 </div>
               ) : (
                 <p className="text-sm color-gray">

@@ -37,7 +37,7 @@ export async function POST(req) {
     }
 
     // 🔹 NOVO TRECHO: impedir compra se já tiver assinatura ativa
-    if (profile?.stripe_subscription_id) {
+    if (profile?.stripe_subscription_id || profile?.role !== "free") {
       return new Response(
         JSON.stringify({
           error: "Você já possui um plano ativo. Cancele o atual antes de assinar outro.",
@@ -46,7 +46,7 @@ export async function POST(req) {
         {
           status: 400,
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
