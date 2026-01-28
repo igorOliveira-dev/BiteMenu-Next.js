@@ -5,10 +5,11 @@ import useMenu from "@/hooks/useMenu";
 import { FaPen, FaCamera, FaChevronLeft, FaLightbulb } from "react-icons/fa";
 import { FiSettings } from "react-icons/fi";
 import GenericModal from "@/components/GenericModal";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Loading from "@/components/Loading";
 import { COLOR_PALETTES } from "@/consts/colorPallets";
 import MenuItems from "./components/MenuItems";
+import QrCodeModal from "./components/QrCodeModal";
 
 function getContrastTextColor(hex) {
   const cleanHex = (hex || "").replace("#", "");
@@ -74,6 +75,8 @@ const Menu = (props) => {
   const [bannerModalOpen, setBannerModalOpen] = useState(false);
   const [logoModalOpen, setLogoModalOpen] = useState(false);
 
+  const [showQrCode, setShowQrCode] = useState(false);
+
   // palette index
   const [paletteIndex, setPaletteIndex] = useState(0);
   const colorFields = [
@@ -81,6 +84,12 @@ const Menu = (props) => {
     { label: "Cor do título:", value: titleColor, setter: setTitleColor },
     { label: "Cor dos detalhes:", value: detailsColor, setter: setDetailsColor },
   ];
+
+  const [slug, setSlug] = useState("");
+
+  useEffect(() => {
+    if (menu?.slug) setSlug(menu.slug);
+  }, [menu?.slug]);
 
   const anyModalOpen = titleModalOpen || bannerModalOpen || logoModalOpen;
 
@@ -106,6 +115,13 @@ const Menu = (props) => {
       history.pushState({ modal: true }, "");
     }
   }, [anyModalOpen]);
+
+  const shareUrl = useMemo(() => {
+    if (typeof window === "undefined") return "";
+    const s = menu?.slug || slug;
+    if (!s) return "";
+    return `${window.location.origin}/menu/${s}`;
+  }, [menu?.slug, slug]);
 
   // função de fechar modais
   const closeAllModals = () => {
@@ -383,16 +399,10 @@ const Menu = (props) => {
             <div>
               <h3>Compartilhe seu cardápio!</h3>
               <button
-                onClick={copyLink}
-                className="cursor-pointer w-full max-w-[320px] mt-2 p-2 bg-blue-600/80 text-white font-semibold rounded-lg hover:bg-blue-700/80 border-2 border-[var(--translucid)] transition"
-              >
-                Copiar link
-              </button>
-              <button
-                onClick={accessMenu}
+                onClick={() => shareUrl && setShowQrCode(true)}
                 className="cursor-pointer w-full max-w-[320px] mt-2 p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border-2 border-[var(--translucid)] transition"
               >
-                Acessar cardápio
+                Opções de compartilhamento
               </button>
             </div>
 
@@ -543,6 +553,13 @@ const Menu = (props) => {
           </div>
         </GenericModal>
       )}
+      <QrCodeModal
+        isOpen={showQrCode}
+        onClose={() => setShowQrCode(false)}
+        url={shareUrl}
+        filename={`qrcode-${menu?.slug || slug || "menu"}`}
+        onToast={(msg, type) => customAlert(msg, type === "error" ? "error" : undefined)}
+      />
     </>
   );
 };

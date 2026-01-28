@@ -1,19 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import useMenu from "@/hooks/useMenu";
 import Menu from "./tabs/Menu";
 import Orders from "./tabs/Orders";
 import Sales from "./tabs/Sales";
 import { useAlert } from "@/providers/AlertProvider";
 import ConfigMenu from "./tabs/ConfigMenu";
-import { FaChevronLeft } from "react-icons/fa";
+import { FaChevronLeft, FaQrcode } from "react-icons/fa";
 import Account from "./tabs/Account";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SalesDashboard from "./tabs/SalesDashboard";
 import PlanDetails from "./tabs/PlanDetails";
 import GenericModal from "@/components/GenericModal";
+import QrCodeModal from "./tabs/components/QrCodeModal";
 
 const Dashboard = ({
   menuState: externalMenuState,
@@ -44,6 +45,8 @@ const Dashboard = ({
   const [titleColorLocal, setTitleColorLocal] = useState("#007BFF");
   const [detailsColorLocal, setDetailsColorLocal] = useState("#28A745");
 
+  const [showQrCode, setShowQrCode] = useState(false);
+
   // helpers para usar state unificado (se externo, usar externalState, senao usar locais)
   const title = usingExternal ? externalState.title : titleLocal;
   const setTitle = usingExternal ? (val) => externalSetState((p) => ({ ...p, title: val })) : setTitleLocal;
@@ -69,6 +72,12 @@ const Dashboard = ({
     ? (val) => externalSetState((p) => ({ ...p, detailsColor: val }))
     : setDetailsColorLocal;
 
+  const [slug, setSlug] = useState("");
+
+  useEffect(() => {
+    if (menu?.slug) setSlug(menu.slug);
+  }, [menu?.slug]);
+
   const handleMenuSelect = (tab) => {
     setSelectedTab(tab);
     setIsOpen(false);
@@ -84,6 +93,13 @@ const Dashboard = ({
       .then(() => customAlert("Link copiado!"))
       .catch(() => customAlert("Erro ao copiar link", "error"));
   };
+
+  const shareUrl = useMemo(() => {
+    if (typeof window === "undefined") return "";
+    const s = menu?.slug || slug;
+    if (!s) return "";
+    return `${window.location.origin}/menu/${s}`;
+  }, [menu?.slug, slug]);
 
   const accessMenu = () => {
     if (!menu) return customAlert("Menu não carregado ainda", "error");
@@ -232,18 +248,12 @@ const Dashboard = ({
             </div>
           </div>
 
-          <div className="grid xxs:grid-cols-2 gap-2 mb-6">
+          <div className="grid gap-2 mb-6">
             <button
-              onClick={copyLink}
-              className="cursor-pointer mt-2 p-2 bg-blue-600/80 text-white font-semibold rounded-lg hover:bg-blue-700/80 border-2 border-[var(--translucid)] transition"
+              onClick={() => shareUrl && setShowQrCode(true)}
+              className="disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer mt-2 p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border-2 border-[var(--translucid)] transition"
             >
-              Copiar link
-            </button>
-            <button
-              onClick={accessMenu}
-              className="cursor-pointer mt-2 p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border-2 border-[var(--translucid)] transition"
-            >
-              Acessar cardápio
+              Opções de compartilhamento
             </button>
           </div>
 
@@ -276,6 +286,14 @@ const Dashboard = ({
           </ul>
         </GenericModal>
       )}
+
+      <QrCodeModal
+        isOpen={showQrCode}
+        onClose={() => setShowQrCode(false)}
+        url={shareUrl}
+        filename={`qrcode-${menu?.slug || slug || "menu"}`}
+        onToast={(msg, type) => customAlert(msg, type === "error" ? "error" : undefined)}
+      />
     </div>
   );
 };
