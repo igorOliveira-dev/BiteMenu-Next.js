@@ -17,6 +17,7 @@ const Admin = () => {
   const [sortByLastAccess, setSortByLastAccess] = useState(false);
   const [sortByItemsCount, setSortByItemsCount] = useState(false);
   const [onlyLast7Days, setOnlyLast7Days] = useState(false);
+  const [showOnlyPlusPro, setShowOnlyPlusPro] = useState(false);
 
   const PAGE_SIZE = 15;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -88,7 +89,7 @@ const Admin = () => {
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [showOnlyPaid, search, sortByLastAccess, sortByItemsCount, onlyLast7Days]);
+  }, [showOnlyPaid, search, sortByLastAccess, sortByItemsCount, onlyLast7Days, showOnlyPlusPro]);
 
   if (loading || menusLoading) return <Loading />;
 
@@ -127,6 +128,10 @@ const Admin = () => {
     visibleMenus.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   }
 
+  if (showOnlyPlusPro) {
+    visibleMenus = visibleMenus.filter((m) => ["plus", "pro"].includes(m.owner_role));
+  }
+
   const paginatedMenus = visibleMenus.slice(0, visibleCount);
   const hasMore = visibleCount < visibleMenus.length;
 
@@ -144,51 +149,63 @@ const Admin = () => {
           className="px-3 py-1 w-full rounded bg-translucid border border-translucid text-sm max-w-lg"
         />
 
-        <label className="flex items-center gap-2 text-sm text-gray-300">
-          Somente com stripe
-          <input
-            type="checkbox"
-            checked={showOnlyPaid}
-            onChange={(e) => setShowOnlyPaid(e.target.checked)}
-            className="toggle toggle-primary"
-          />
-        </label>
+        <div className="flex gap-4 flex-wrap justify-center">
+          <label className="flex items-center gap-2 text-sm text-gray-300">
+            Apenas Plus/Pro
+            <input
+              type="checkbox"
+              checked={showOnlyPlusPro}
+              onChange={(e) => setShowOnlyPlusPro(e.target.checked)}
+              className="toggle toggle-primary"
+            />
+          </label>
 
-        <label className="flex items-center gap-2 text-sm text-gray-300">
-          Ordenar por quantidade de itens
-          <input
-            type="checkbox"
-            checked={sortByItemsCount}
-            onChange={(e) => {
-              setSortByItemsCount(e.target.checked);
-              if (e.target.checked) setSortByLastAccess(false);
-            }}
-            className="toggle toggle-primary"
-          />
-        </label>
+          <label className="flex items-center gap-2 text-sm text-gray-300">
+            Somente com stripe
+            <input
+              type="checkbox"
+              checked={showOnlyPaid}
+              onChange={(e) => setShowOnlyPaid(e.target.checked)}
+              className="toggle toggle-primary"
+            />
+          </label>
 
-        <label className="flex items-center gap-2 text-sm text-gray-300">
-          Ordenar por último acesso
-          <input
-            type="checkbox"
-            checked={sortByLastAccess}
-            onChange={(e) => {
-              setSortByLastAccess(e.target.checked);
-              if (e.target.checked) setSortByItemsCount(false);
-            }}
-            className="toggle toggle-primary"
-          />
-        </label>
+          <label className="flex items-center gap-2 text-sm text-gray-300">
+            Ordenar por quantidade de itens
+            <input
+              type="checkbox"
+              checked={sortByItemsCount}
+              onChange={(e) => {
+                setSortByItemsCount(e.target.checked);
+                if (e.target.checked) setSortByLastAccess(false);
+              }}
+              className="toggle toggle-primary"
+            />
+          </label>
 
-        <label className="flex items-center gap-2 text-sm text-gray-300">
-          Apenas acessados nos últimos 7 dias
-          <input
-            type="checkbox"
-            checked={onlyLast7Days}
-            onChange={(e) => setOnlyLast7Days(e.target.checked)}
-            className="toggle toggle-primary"
-          />
-        </label>
+          <label className="flex items-center gap-2 text-sm text-gray-300">
+            Ordenar por último acesso
+            <input
+              type="checkbox"
+              checked={sortByLastAccess}
+              onChange={(e) => {
+                setSortByLastAccess(e.target.checked);
+                if (e.target.checked) setSortByItemsCount(false);
+              }}
+              className="toggle toggle-primary"
+            />
+          </label>
+
+          <label className="flex items-center gap-2 text-sm text-gray-300">
+            Apenas acessados nos últimos 7 dias
+            <input
+              type="checkbox"
+              checked={onlyLast7Days}
+              onChange={(e) => setOnlyLast7Days(e.target.checked)}
+              className="toggle toggle-primary"
+            />
+          </label>
+        </div>
       </div>
 
       <p className="my-28 text-3xl xs:text-5xl sm:text-7xl lg:text-9xl font-bold text-center">
