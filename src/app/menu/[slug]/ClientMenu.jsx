@@ -205,6 +205,15 @@ export default function ClientMenu({ menu }) {
 
   const handleAddToCart = async () => {
     if (!selectedItem) return;
+
+    if (totalPrice === 0) {
+      alert("O preço final do produto não pode ser R$0,00", "info", {
+        backgroundColor: `${menu.details_color}90`,
+        textColor: getContrastTextColor(menu.details_color),
+      });
+      return;
+    }
+
     const selected = (selectedItem.additionals || [])
       .map((a, idx) => (selectedAddons[String(idx)] ? { name: a.name, price: Number(a.price) } : null))
       .filter(Boolean);
@@ -690,7 +699,7 @@ export default function ClientMenu({ menu }) {
                             <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
                               {it.price
                                 ? `${Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`
-                                : "-"}
+                                : null}
                             </div>
                           )}
                           <div className="px-6 py-2 rounded" style={{ backgroundColor: menu.details_color }}>
@@ -817,9 +826,11 @@ export default function ClientMenu({ menu }) {
                   </div>
                 ) : (
                   <>
-                    <span className="text-3xl font-semibold" style={{ color: foregroundToUse }}>
-                      {Number(selectedItem.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                    </span>
+                    {selectedItem.price ? (
+                      <span className="text-3xl font-semibold" style={{ color: foregroundToUse }}>
+                        {Number(selectedItem.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                      </span>
+                    ) : null}
                   </>
                 )}
               </div>
