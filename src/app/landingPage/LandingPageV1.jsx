@@ -140,7 +140,7 @@ export default function LandingPageV1() {
 
       <section className="py-16 px-2 xs:px-6 sm:px-8 border-b-2 border-t-2 border-[var(--translucid)] flex flex-col-reverse xs:flex-row items-center justify-between md:justify-center gap-4 md:gap-12 text-center xs:text-left bg-speckled">
         <div className="mt-4 xs:mt-0">
-          <Image src={menuCelularFrontal} height={300} width={200} />
+          <Image src={menuCelularFrontal} alt="imagem de um menu do Bite Menu" height={300} width={200} />
         </div>
         <div className="mx-2">
           <h2 className="default-h2 font-semibold mb-4">Teste agora um cardápio do Bite Menu!</h2>
