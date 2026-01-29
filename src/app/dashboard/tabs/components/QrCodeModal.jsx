@@ -92,8 +92,10 @@ export default function QrCodeModal({
 
   return (
     <GenericModal zIndex={zIndex} onClose={onClose} wfull maxWidth={"420px"} py={"24px"}>
-      <div className="flex items-center gap-4 mb-4">
-        <FaChevronLeft />
+      <div className="flex items-center gap-2 mb-4">
+        <div className="cursor-pointer p-2" onClick={onClose}>
+          <FaChevronLeft />
+        </div>
         <h3 className="font-bold text-center">QR Code do seu cardápio</h3>
       </div>
 
