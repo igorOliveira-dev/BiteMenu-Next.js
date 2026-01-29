@@ -512,15 +512,8 @@ const Sales = ({ setSelectedTab }) => {
       </div>
 
       {saleModalOpen && selectedSale && (
-        <GenericModal onClose={() => setSaleModalOpen(false)}>
+        <GenericModal title="Detalhes da venda" onClose={() => setSaleModalOpen(false)}>
           <div className="max-h-[90vh] sm:max-h-[80vh] w-[min(900px,90vw)] overflow-y-auto scrollbar-none space-y-4">
-            <div className="flex items-center gap-4 mb-2 sticky top-0 bg-low-gray pb-2">
-              <div onClick={() => setSaleModalOpen(false)}>
-                <FaChevronLeft className="cursor-pointer" />
-              </div>
-              <h2 className="text-xl font-bold">Detalhes da venda</h2>
-            </div>
-
             <form
               className="space-y-3"
               onSubmit={async (e) => {
@@ -832,7 +825,7 @@ const Sales = ({ setSelectedTab }) => {
                     onClick={() => {
                       setSaleModalOpen(false);
                     }}
-                    className="w-32 py-2 rounded-lg mt-3 border"
+                    className="w-32 py-2 rounded-lg mt-3 border-2 bg-translucid border-translucid hover:opacity-80 transition cursor-pointer"
                   >
                     Cancelar
                   </button>

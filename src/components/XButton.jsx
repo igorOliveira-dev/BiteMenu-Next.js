@@ -1,11 +1,12 @@
 import React from "react";
 
-const XButton = (ariaLabel, disabled) => {
+const XButton = ({ ariaLabel, disabled, hoverColor }) => {
   return (
     <button
-      className="rounded-lg px-2 py-1 hover:bg-[var(--translucid)] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-      aria-label={ariaLabel ? ariaLabel : null}
-      disabled={disabled ? disabled : false}
+      className="rounded-lg px-2 py-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[var(--x-hover)]"
+      style={{ "--x-hover": hoverColor ?? "var(--translucid)" }}
+      aria-label={ariaLabel || undefined}
+      disabled={disabled}
     >
       ✕
     </button>

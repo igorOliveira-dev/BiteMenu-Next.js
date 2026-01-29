@@ -192,11 +192,7 @@ const Account = ({ setSelectedTab }) => {
         </div>
       </div>
       {nameModalOpen && (
-        <GenericModal onClose={() => setNameModalOpen(false)} maxWidth={"420px"} wfull>
-          <div className="flex items-center gap-4 mb-4">
-            <FaChevronLeft className="cursor-pointer" onClick={() => setNameModalOpen(false)} />
-            <h3 className="font-bold">Alterar nome</h3>
-          </div>
+        <GenericModal title="Alterar nome" onClose={() => setNameModalOpen(false)} maxWidth={"420px"} wfull>
           <input
             type="text"
             placeholder="Novo nome"

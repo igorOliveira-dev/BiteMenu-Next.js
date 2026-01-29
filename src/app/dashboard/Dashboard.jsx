@@ -240,14 +240,7 @@ const Dashboard = ({
 
       {/* Modal central ao clicar no hamburger */}
       {isOpen && (
-        <GenericModal onClose={() => setIsOpen(false)} wfull maxWidth={"420px"} py={"24px"}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 mb-4">
-              <FaChevronLeft className="cursor-pointer" onClick={() => setIsOpen(false)} />
-              <h3 className="font-bold">Compartilhe seu cardápio!</h3>
-            </div>
-          </div>
-
+        <GenericModal title="Compartilhe seu cardápio" onClose={() => setIsOpen(false)} wfull maxWidth={"420px"} py={"24px"}>
           <div className="grid gap-2 mb-6">
             <button
               onClick={() => shareUrl && setShowQrCode(true)}

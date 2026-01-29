@@ -448,11 +448,7 @@ const Menu = (props) => {
 
       {/* MODALS */}
       {titleModalOpen && (
-        <GenericModal onClose={closeAllModals} wfull maxWidth={"420px"}>
-          <div className="flex items-center gap-4 mb-4">
-            <FaChevronLeft className="cursor-pointer" onClick={closeAllModals} />
-            <h3 className="font-bold">Alterar nome</h3>
-          </div>
+        <GenericModal title="Alterar nome" onClose={closeAllModals} wfull maxWidth={"420px"}>
           <input
             type="text"
             placeholder="Novo título"
@@ -492,11 +488,7 @@ const Menu = (props) => {
       )}
 
       {bannerModalOpen && (
-        <GenericModal onClose={closeAllModals} wfull maxWidth={"420px"}>
-          <div className="flex items-center gap-4 mb-4">
-            <FaChevronLeft className="cursor-pointer" onClick={closeAllModals} />
-            <h3 className="font-bold">Alterar banner</h3>
-          </div>
+        <GenericModal title="Alterar banner" onClose={closeAllModals} wfull maxWidth={"420px"}>
           <label className="text-center flex flex-col items-center justify-center w-full h-30 border-2 border-dashed border-[var(--gray)] rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
             {tempBannerPreview ? (
               <img src={tempBannerPreview} alt="Preview temporário" className="object-cover w-full h-full" />
@@ -525,11 +517,7 @@ const Menu = (props) => {
       )}
 
       {logoModalOpen && (
-        <GenericModal onClose={closeAllModals} wfull maxWidth={"420px"}>
-          <div className="flex items-center gap-4 mb-4">
-            <FaChevronLeft className="cursor-pointer" onClick={closeAllModals} />
-            <h3 className="font-bold">Alterar logo</h3>
-          </div>
+        <GenericModal title="Alterar logo" onClose={closeAllModals} wfull maxWidth={"420px"}>
           <label className="text-center flex flex-col items-center justify-center w-30 h-30 border-2 border-dashed border-[var(--gray)] rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
             {tempLogoPreview ? (
               <img src={tempLogoPreview} alt="Preview temporário" className="object-cover w-full h-full" />

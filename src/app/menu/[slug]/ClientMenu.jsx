@@ -733,11 +733,15 @@ export default function ClientMenu({ menu }) {
 
       {/* Modal Horários */}
       {hoursModalOpen && (
-        <GenericModal bgColor={menu.background_color} onClose={closeHoursModal}>
-          <div className="cursor-pointer flex items-center gap-4 mb-4" style={{ color: foregroundToUse }}>
-            <FaChevronLeft onClick={closeHoursModal} />
-            <h3 className="font-semibold">Horários de funcionamento:</h3>
-          </div>
+        <GenericModal
+          title="Horários de funcionamento:"
+          titleColor={foregroundToUse}
+          hoverXButtonColor={translucidToUse}
+          wfull
+          maxWidth={"480px"}
+          bgColor={menu.background_color}
+          onClose={closeHoursModal}
+        >
           <div className="space-y-2" style={{ color: foregroundToUse }}>
             {formatHours(menu.hours).map(({ day, hours }, idx) => {
               const dayKey = Object.keys(dayNames)[idx];
@@ -767,6 +771,9 @@ export default function ClientMenu({ menu }) {
             setSelectedAddons({});
             setNote("");
           }}
+          title={selectedItem.name}
+          titleColor={foregroundToUse}
+          hoverXButtonColor={translucidToUse}
           bgColor={menu.background_color}
           maxWidth={"580px"}
           margin={"12px"}
@@ -788,11 +795,8 @@ export default function ClientMenu({ menu }) {
                 }`}
               >
                 <div>
-                  <h2 className="text-xl font-bold w-full line-clamp-2" style={{ color: foregroundToUse }}>
-                    {selectedItem.name}
-                  </h2>
                   <p
-                    className="max-h-[80px] sm:max-h-[98px] overflow-auto text-sm pr-1"
+                    className="min-h-[64px] max-h-[64px] sm:min-h-[80px] sm:max-h-[80px] overflow-auto text-sm pr-1"
                     style={{
                       color: grayToUse,
                       wordBreak: "normal",

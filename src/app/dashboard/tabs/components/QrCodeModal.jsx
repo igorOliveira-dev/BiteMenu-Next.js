@@ -91,14 +91,7 @@ export default function QrCodeModal({
   if (!isOpen) return null;
 
   return (
-    <GenericModal zIndex={zIndex} onClose={onClose} wfull maxWidth={"420px"} py={"24px"}>
-      <div className="flex items-center gap-2 mb-4">
-        <div className="cursor-pointer p-2" onClick={onClose}>
-          <FaChevronLeft />
-        </div>
-        <h3 className="font-bold text-center">QR Code do seu cardápio</h3>
-      </div>
-
+    <GenericModal title="QR Code do seu cardápio" zIndex={zIndex} onClose={onClose} wfull maxWidth={"480px"} py={"24px"}>
       {!canShow ? (
         <p className="text-sm opacity-80">Carregando link do cardápio…</p>
       ) : (

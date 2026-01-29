@@ -23,20 +23,11 @@ const PaymentMethodModal = ({ open, plan, onClose, onCredit, onPix, stripeLoadin
   if (!open) return null;
 
   return (
-    <GenericModal onClose={onClose} wfull maxWidth={"480px"} margin={"12px"}>
+    <GenericModal title="Escolha o pagamento" onClose={onClose} wfull maxWidth={"480px"} margin={"12px"}>
       <div className="rounded-2xl text-[var(--foreground)]">
-        <div className="flex items-start justify-between gap-4 w-full">
-          <div>
-            <h3 className="text-xl font-bold">Escolha o pagamento</h3>
-            <p className="mt-1 text-sm">
-              Plano: <span className="font-semibold">{plan?.name}</span>
-            </p>
-          </div>
-
-          <div onClick={onClose}>
-            <XButton ariaLabel="Fechar" disabled={stripeLoading} />
-          </div>
-        </div>
+        <p className="mt-1 text-sm">
+          Plano: <span className="font-semibold">{plan?.name}</span>
+        </p>
 
         <div className="mt-6 flex flex-col gap-3">
           <button

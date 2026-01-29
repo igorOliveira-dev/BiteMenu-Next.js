@@ -1183,23 +1183,24 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
       {/* Modal */}
       {modalOpen && (
-        <GenericModal onClose={closeModal}>
-          <div className="flex items-center gap-4 mb-4 w-[380px]">
-            <h3 className="font-bold">
-              {modalPayload.type === "sort"
-                ? "Ordenar itens"
-                : modalPayload.type === "category"
+        <GenericModal
+          wfull
+          maxWidth={"480px"}
+          title={
+            modalPayload.type === "sort"
+              ? "Ordenar itens"
+              : modalPayload.type === "category"
+                ? modalPayload.mode === "create"
+                  ? "Criar categoria"
+                  : "Editar categoria"
+                : modalPayload.type === "item"
                   ? modalPayload.mode === "create"
-                    ? "Criar categoria"
-                    : "Editar categoria"
-                  : modalPayload.type === "item"
-                    ? modalPayload.mode === "create"
-                      ? "Criar item"
-                      : "Editar item"
-                    : ""}
-            </h3>
-          </div>
-
+                    ? "Criar item"
+                    : "Editar item"
+                  : ""
+          }
+          onClose={closeModal}
+        >
           {/* Categoria */}
           {modalPayload.type === "category" && (
             <label className="block mb-2">
