@@ -122,7 +122,7 @@ h3 {
 
 @media (width < 620px) {
   .default-h1 {
-    font-size: 28px;
+    font-size: 24px;
   }
   h2 {
     font-size: 22px;

@@ -423,14 +423,13 @@ export default function GetStart() {
   }
 
   return (
-    <form className="flex flex-col items-center p-4" onSubmit={handleSubmit}>
+    <form className="flex flex-col items-center p-1 xs:p-4" onSubmit={handleSubmit}>
       {/* Container do form */}
-      <div className="max-w-[700px] w-full rounded-lg mt-6 p-6 space-y-6 bg-translucid shadow-[0_0_40px_var(--shadow)]">
+      <div className="max-w-[700px] w-full rounded-lg mt-6 p-2 py-4 xs:p-6 space-y-6 bg-translucid shadow-[0_0_40px_var(--shadow)]">
         {/* Cabeçalho */}
         <div className="max-w-[700px] text-center">
-          <h1 className="text-3xl font-bold mb-2">Bora montar seu cardápio digital?</h1>
-          <h3>Responda rapidinho aqui embaixo pra gente deixar tudo do seu jeito.</h3>
-          <p className="color-gray">Fica tranquilo: nenhuma pergunta é obrigatória e você pode mudar tudo depois.</p>
+          <h1 className="default-h1 mb-2">Responda as perguntas para montar seu cardápio digital!</h1>
+          <p className="color-gray">Nenhuma pergunta é obrigatória e você pode mudar tudo depois.</p>
         </div>
         {/* 1. Nome */}
         <div>
@@ -454,7 +453,7 @@ export default function GetStart() {
         {/* 2. Serviços */}
         <div>
           <p className="font-semibold mb-2">2. O que você oferece pro cliente? (Pode marcar mais de uma)</p>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-1 xs:gap-4">
             {serviceOptions.map((opt) => (
               <label key={opt.id} className="flex items-center space-x-2 cursor-pointer">
                 <input
@@ -470,7 +469,7 @@ export default function GetStart() {
                 />
 
                 <span
-                  className="relative after:content-['✓'] after:absolute after:text-white after:text-sm after:font-bold after:top-[3px] after:left-[-25px] peer-checked:after:opacity-100 after:opacity-0 transition-opacity duration-150"
+                  className="relative after:content-['✓'] after:absolute after:text-white after:text-sm after:font-bold after:top-[3px] after:left-[-25px] peer-checked:after:opacity-100 after:opacity-0 transition-opacity duration-150 text-sm xs:text-base"
                   style={{
                     color: "var(--gray)",
                   }}
@@ -626,21 +625,18 @@ export default function GetStart() {
                     </span>
                   )}
                 </div>
-                <h2
-                  className="ml-3 text-2xl font-bold transition-colors duration-500 ease-in-out"
-                  style={{ color: titleColor }}
-                >
+                <h3 className="ml-2 font-bold transition-colors duration-500 ease-in-out" style={{ color: titleColor }}>
                   {establishmentName || "Meu Estabelecimento"}
-                </h2>
+                </h3>
               </div>
 
               {/* Pratos de exemplo */}
-              <h3
+              <p
                 className="font-bold mb-2 transition-colors duration-500 ease-in-out"
                 style={{ color: getContrastTextColor(backgroundColor) }}
               >
                 Lanches:
-              </h3>
+              </p>
 
               {[
                 {
