@@ -794,7 +794,7 @@ export default function ClientMenu({ menu }) {
                   selectedItem.image_url ? "w-[calc(100%-120px)]" : "w-[100%]"
                 }`}
               >
-                <div>
+                {selectedItem.description && (
                   <p
                     className="min-h-[64px] max-h-[64px] sm:min-h-[80px] sm:max-h-[80px] overflow-auto text-sm pr-1"
                     style={{
@@ -805,7 +805,7 @@ export default function ClientMenu({ menu }) {
                   >
                     {selectedItem.description?.replace(/,\s*/g, ", ")}
                   </p>
-                </div>
+                )}
                 {selectedItem.promo_price && canShowPromoPrice ? (
                   <div className="flex flex-col">
                     <span className="text-xs font-semibold line-through" style={{ color: grayToUse }}>
