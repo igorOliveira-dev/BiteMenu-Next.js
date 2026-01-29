@@ -6,6 +6,7 @@ import { plans } from "@/consts/Plans";
 import { FaCheck } from "react-icons/fa";
 import GenericModal from "./GenericModal";
 import { useAlert } from "@/providers/AlertProvider";
+import XButton from "./XButton";
 
 const PaymentMethodModal = ({ open, plan, onClose, onCredit, onPix, stripeLoading }) => {
   useEffect(() => {
@@ -32,21 +33,16 @@ const PaymentMethodModal = ({ open, plan, onClose, onCredit, onPix, stripeLoadin
             </p>
           </div>
 
-          <button
-            className="rounded-lg px-2 py-1 hover:bg-[var(--translucid)] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-            onClick={onClose}
-            aria-label="Fechar"
-            disabled={stripeLoading}
-          >
-            ✕
-          </button>
+          <div onClick={onClose}>
+            <XButton ariaLabel="Fechar" disabled={stripeLoading} />
+          </div>
         </div>
 
         <div className="mt-6 flex flex-col gap-3">
           <button
             onClick={onCredit}
             disabled={stripeLoading}
-            className="w-full rounded-xl py-3 font-semibold bg-[var(--foreground)] text-[var(--background)] opacity-80 hover:opacity-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full rounded-xl py-3 font-semibold bg-[var(--foreground)] text-[var(--background)] opacity-80 hover:opacity-100 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {stripeLoading ? "Processando..." : "Cartão de crédito"}
           </button>
