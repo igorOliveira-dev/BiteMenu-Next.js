@@ -1658,6 +1658,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
       {modalOpen && additionalsCfgOpen && modalPayload.type === "item" && (
         <GenericModal
+          backdropDontClose
           wfull
           maxWidth={"420px"}
           title="Configurar adicionais"
