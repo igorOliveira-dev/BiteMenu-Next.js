@@ -206,14 +206,6 @@ export default function ClientMenu({ menu }) {
   const handleAddToCart = async () => {
     if (!selectedItem) return;
 
-    if (totalPrice === 0) {
-      alert("O preço final do produto não pode ser R$0,00", "info", {
-        backgroundColor: `${menu.details_color}90`,
-        textColor: getContrastTextColor(menu.details_color),
-      });
-      return;
-    }
-
     const selected = (selectedItem.additionals || [])
       .map((a, idx) => (selectedAddons[String(idx)] ? { name: a.name, price: Number(a.price) } : null))
       .filter(Boolean);
