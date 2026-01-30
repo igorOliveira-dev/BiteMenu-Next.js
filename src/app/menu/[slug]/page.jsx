@@ -76,7 +76,9 @@ export default async function MenuPage({ params }) {
           image_url,
           additionals,
           visible,
-          starred
+          starred,
+          mandatory_additional,
+          additionals_limit
         )
       )
     `,

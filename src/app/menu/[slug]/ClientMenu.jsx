@@ -180,8 +180,26 @@ export default function ClientMenu({ menu }) {
   };
 
   const toggleAddon = (idx) => {
+    if (!selectedItem) return;
+
+    const key = String(idx);
+    const limit = Number(selectedItem.additionals_limit ?? 0);
+
+    // calcula contagem atual fora do setter (estado atual)
+    const currentCount = Object.values(selectedAddons).filter(Boolean).length;
+    const isSelected = !!selectedAddons[key];
+
+    // se vai selecionar e tem limite, bloqueia antes
+    if (!isSelected && limit > 0 && currentCount >= limit) {
+      alert?.(`Você pode escolher no máximo ${limit} adicional${limit === 1 ? "" : "is"}.`, "error", {
+        backgroundColor: `${menu.details_color}90`,
+        textColor: getContrastTextColor(menu.details_color),
+      });
+      return;
+    }
+
+    // update puro (sem side effects)
     setSelectedAddons((prev) => {
-      const key = String(idx);
       const next = { ...prev };
       if (next[key]) delete next[key];
       else next[key] = true;
@@ -203,8 +221,33 @@ export default function ClientMenu({ menu }) {
     return (base + addonsPerUnit) * quantity;
   }, [selectedItem, quantity, selectedAddons, canShowPromoPrice]);
 
+  const selectedAddonsCount = useMemo(() => {
+    return Object.values(selectedAddons).filter(Boolean).length;
+  }, [selectedAddons]);
+
   const handleAddToCart = async () => {
     if (!selectedItem) return;
+
+    const selectedCount = Object.values(selectedAddons).filter(Boolean).length;
+
+    const mandatory = !!selectedItem.mandatory_additional;
+    const limit = Number(selectedItem.additionals_limit ?? 0);
+
+    if (mandatory && selectedCount < 1) {
+      alert?.("Escolha pelo menos 1 adicional para continuar.", "error", {
+        backgroundColor: `${menu.details_color}90`,
+        textColor: getContrastTextColor(menu.details_color),
+      });
+      return;
+    }
+
+    if (limit > 0 && selectedCount > limit) {
+      alert?.(`Você pode escolher no máximo ${limit} adicional${limit === 1 ? "" : "is"}.`, "error", {
+        backgroundColor: `${menu.details_color}90`,
+        textColor: getContrastTextColor(menu.details_color),
+      });
+      return;
+    }
 
     const selected = (selectedItem.additionals || [])
       .map((a, idx) => (selectedAddons[String(idx)] ? { name: a.name, price: Number(a.price) } : null))
