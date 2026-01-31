@@ -5,7 +5,7 @@ import useMenu from "@/hooks/useMenu";
 import { useAlert } from "@/providers/AlertProvider";
 import { supabase } from "@/lib/supabaseClient";
 import Loading from "@/components/Loading";
-import { FaCheck, FaTrash, FaMoneyBill, FaChevronLeft, FaChevronDown, FaSyncAlt } from "react-icons/fa";
+import { FaCheck, FaTrash, FaMoneyBill, FaChevronDown, FaSyncAlt } from "react-icons/fa";
 import GenericModal from "@/components/GenericModal";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import OrdersFilter from "./components/OrdersFilter";
@@ -31,6 +31,18 @@ const Orders = ({ setSelectedTab }) => {
   const [deliveryFeeOnSales, setDeliveryFeeOnSales] = useState(false);
 
   const [enabledOrders, setEnabledOrders] = useState(false);
+
+  // ✅ Resumo (melhorado e desacoplado da paginação)
+  const [summaryLoading, setSummaryLoading] = useState(true);
+  const [summary, setSummary] = useState({
+    count: 0,
+    paidCount: 0,
+    pendingCount: 0,
+    paidTotal: 0,
+    pendingTotal: 0,
+    avgTicket: 0,
+    lastUpdatedAt: null,
+  });
 
   useEffect(() => {
     if (!menu?.id) return;
@@ -61,28 +73,23 @@ const Orders = ({ setSelectedTab }) => {
     }
   }, [menu?.delivery_fee_on_sales]);
 
-  const matchesItem = (order, term) => {
-    const t = term.toLowerCase();
-    return (order.items_list || []).some((it) => (it.name || "").toLowerCase().includes(t));
-  };
-
   const resetAndFetch = async () => {
     setOrders([]);
     setPage(0);
     setHasMore(true);
     loadingRef.current = false;
     await fetchMore(true);
+    // 🔥 atualiza o resumo junto
+    await fetchSummary();
   };
 
   const hasMoreRef = useRef(true);
-
   useEffect(() => {
     hasMoreRef.current = hasMore;
   }, [hasMore]);
 
   const pageRef = useRef(0);
   const loadingRef = useRef(false);
-
   useEffect(() => {
     pageRef.current = page;
   }, [page]);
@@ -93,19 +100,18 @@ const Orders = ({ setSelectedTab }) => {
     if (loadingRef.current) return;
 
     loadingRef.current = true;
-    // setLoadingOrders(true);
 
     const nextPage = isReset ? 1 : pageRef.current + 1;
     const from = (nextPage - 1) * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
     const q = buildOrdersQuery(filters).range(from, to);
-
     const { data, error, count } = await q;
 
     if (error) {
       loadingRef.current = false;
       setLoadingOrders(false);
+      return;
     }
 
     setTotalCount(count || 0);
@@ -148,19 +154,118 @@ const Orders = ({ setSelectedTab }) => {
     if (filters.dateFrom) q = q.gte("created_at", new Date(filters.dateFrom).toISOString());
     if (filters.dateTo) q = q.lte("created_at", new Date(filters.dateTo).toISOString());
 
-    // busca (nome/telefone/id) — itens_list é um caso à parte (já falo abaixo)
+    // busca (nome/telefone)
     if (filters.search && filters.search.trim() !== "") {
       const term = filters.search.trim();
-
-      // se for número, tenta bater com id também
-      const maybeId = Number(term);
       const ors = [`costumer_name.ilike.%${term}%`, `costumer_phone.ilike.%${term}%`];
-
       q = q.or(ors.join(","));
     }
 
     return q;
   };
+
+  // ✅ Query enxuta só pro resumo (sem range e sem puxar colunas desnecessárias)
+  const buildSummaryQuery = (filters) => {
+    let q = supabase
+      .from("orders")
+      .select("id,is_paid,service,items_list,updated_at", { count: "exact" })
+      .eq("menu_id", menu.id)
+      .order("updated_at", { ascending: false });
+
+    if (filters.isPaid === true) q = q.eq("is_paid", true);
+    if (filters.isPaid === false) q = q.eq("is_paid", false);
+
+    if (filters.deliveryType && filters.deliveryType !== "all") {
+      q = q.eq("service", filters.deliveryType);
+    }
+
+    if (filters.payment && filters.payment !== "all") {
+      q = q.eq("payment_method", filters.payment);
+    }
+
+    if (filters.dateFrom) q = q.gte("created_at", new Date(filters.dateFrom).toISOString());
+    if (filters.dateTo) q = q.lte("created_at", new Date(filters.dateTo).toISOString());
+
+    if (filters.search && filters.search.trim() !== "") {
+      const term = filters.search.trim();
+      const ors = [`costumer_name.ilike.%${term}%`, `costumer_phone.ilike.%${term}%`];
+      q = q.or(ors.join(","));
+    }
+
+    return q;
+  };
+
+  // ✅ Busca resumo real (não depende da página atual)
+  const fetchSummary = async () => {
+    if (!menu?.id) return;
+    setSummaryLoading(true);
+
+    const PAGE = 1000; // paginação grande só pro resumo
+    let all = [];
+    let from = 0;
+
+    try {
+      while (true) {
+        const to = from + PAGE - 1;
+        const { data, error, count } = await buildSummaryQuery(filters).range(from, to);
+
+        if (error) throw error;
+
+        // count é total real (com filtros)
+        if (typeof count === "number") setTotalCount(count);
+
+        const chunk = data || [];
+        all = all.concat(chunk);
+
+        if (chunk.length < PAGE) break;
+        from += PAGE;
+      }
+
+      // Computa valores
+      let paidTotal = 0;
+      let pendingTotal = 0;
+      let paidCount = 0;
+      let pendingCount = 0;
+
+      for (const o of all) {
+        const total = computeTotalWithDelivery(o);
+        if (o.is_paid) {
+          paidTotal += total;
+          paidCount += 1;
+        } else {
+          pendingTotal += total;
+          pendingCount += 1;
+        }
+      }
+
+      const count = all.length;
+      const avgTicket = count > 0 ? (paidTotal + pendingTotal) / count : 0;
+      const lastUpdatedAt = all[0]?.updated_at || null;
+
+      setSummary({
+        count,
+        paidCount,
+        pendingCount,
+        paidTotal,
+        pendingTotal,
+        avgTicket,
+        lastUpdatedAt,
+      });
+    } catch (err) {
+      console.error(err);
+      // se der ruim, não quebra a tela
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
+  // Atualiza resumo quando filtros mudam (sem precisar resetar lista toda)
+  useEffect(() => {
+    if (!menu?.id) return;
+    if (!enabledOrders) return;
+    fetchSummary();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [menu?.id, filtersKey, enabledOrders]);
 
   const handleChangeOrders = async (value) => {
     setReceiveOrders(value);
@@ -175,7 +280,11 @@ const Orders = ({ setSelectedTab }) => {
   const togglePaid = async (id, current) => {
     const { error } = await supabase.from("orders").update({ is_paid: !current }).eq("id", id);
     if (error) return customAlert("Erro ao atualizar pagamento", "error");
+
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, is_paid: !current } : o)));
+
+    // atualiza resumo “na hora”, sem depender de reset
+    fetchSummary();
   };
 
   const handleToggleDeliveryFeeOnSales = async (value) => {
@@ -185,7 +294,7 @@ const Orders = ({ setSelectedTab }) => {
 
     if (error) {
       customAlert("Erro ao atualizar configuração da taxa de entrega.", "error");
-      setDeliveryFeeOnSales(!value); // rollback visual
+      setDeliveryFeeOnSales(!value);
     } else {
       customAlert("Configuração de taxa de entrega atualizada!", "success");
     }
@@ -196,13 +305,11 @@ const Orders = ({ setSelectedTab }) => {
     if (!ok) return;
 
     const { data: order, error: fetchError } = await supabase.from("orders").select("*").eq("id", id).single();
-
     if (fetchError || !order) {
       return customAlert("Erro ao localizar pedido", "error");
     }
 
     const deliveryFee = deliveryFeeOnSales && order.service === "delivery" ? menu.delivery_fee : null;
-
     const saleTotal = order.total + (deliveryFee || 0);
 
     const { error: insertError } = await supabase.from("sales").insert([
@@ -237,8 +344,10 @@ const Orders = ({ setSelectedTab }) => {
   const deleteOrder = async (id) => {
     const ok = await confirm("Quer mesmo excluir esse pedido?");
     if (!ok) return;
+
     const { error } = await supabase.from("orders").delete().eq("id", id);
     if (error) return customAlert("Erro ao excluir pedido", "error");
+
     resetAndFetch();
   };
 
@@ -252,7 +361,6 @@ const Orders = ({ setSelectedTab }) => {
 
     return (order.items_list || []).reduce((acc, it) => {
       const qty = Number(it.qty) || 0;
-
       const unit = Number(it.price) || 0;
       const base = unit * qty;
 
@@ -277,6 +385,8 @@ const Orders = ({ setSelectedTab }) => {
 
   if (loading || loadingOrders) return <Loading />;
   if (!menu) return <p>Você ainda não criou seu cardápio.</p>;
+
+  const paidPct = summary.count > 0 ? Math.round((summary.paidCount / summary.count) * 100) : 0;
 
   return (
     <div className="px-4 sm:px-2 lg:grid">
@@ -350,6 +460,7 @@ const Orders = ({ setSelectedTab }) => {
         ) : (
           <div>
             <OrdersFilter onChange={setFilters} />
+
             {orders.length === 0 ? (
               <p className="text-center color-gray p-6">Nenhum pedido encontrado com esses filtros.</p>
             ) : (
@@ -364,6 +475,7 @@ const Orders = ({ setSelectedTab }) => {
                       <span className="text-sm color-gray xs:hidden">
                         {new Date(order.updated_at).toLocaleString("pt-BR")}
                       </span>
+
                       <p className="text-sm color-gray">
                         <span className="line-clamp-1">
                           <strong>Método:</strong>{" "}
@@ -393,11 +505,13 @@ const Orders = ({ setSelectedTab }) => {
                           <strong>Telefone:</strong> {order.costumer_phone}
                         </span>
                       </p>
+
                       {order.address && (
                         <p className="text-sm color-gray line-clamp-1">
                           <strong>Endereço:</strong> {order.address}
                         </p>
                       )}
+
                       <ul className="mt-2 text-sm">
                         {order.items_list?.slice(0, 4).map((item, i) => (
                           <li key={i} className="line-clamp-1">
@@ -406,6 +520,7 @@ const Orders = ({ setSelectedTab }) => {
                         ))}
                         {order.items_list?.length > 4 && <li className="text-gray-400">...</li>}
                       </ul>
+
                       {order.service === "delivery" && (
                         <>
                           <p className="text-sm color-gray">
@@ -424,6 +539,7 @@ const Orders = ({ setSelectedTab }) => {
                       <span className="text-sm color-gray hidden xs:block">
                         {new Date(order.updated_at).toLocaleString("pt-BR")}
                       </span>
+
                       <div className="grid grid-rows-2 w-full xs:flex xs:flex-col gap-2">
                         <div className="grid grid-cols-2 xs:flex xs:flex-col gap-2">
                           <button
@@ -442,6 +558,7 @@ const Orders = ({ setSelectedTab }) => {
                             {order.is_paid ? "Pago" : "Marcar como pago"}
                           </button>
                         </div>
+
                         <div className="grid grid-cols-2 gap-2">
                           <button
                             onClick={() => finalizeOrder(order.id)}
@@ -460,6 +577,7 @@ const Orders = ({ setSelectedTab }) => {
                     </div>
                   </div>
                 ))}
+
                 <div className="flex justify-center py-4">
                   {hasMore ? (
                     <button
@@ -477,27 +595,75 @@ const Orders = ({ setSelectedTab }) => {
         )}
       </div>
 
-      {/* Sidebar */}
-
+      {/* Sidebar (Resumo melhorado) */}
       {enabledOrders ? (
         <aside className="hidden p-2 m-2 fixed right-0 rounded-lg bg-translucid border-2 border-translucid w-[calc(30dvw-36px)] shadow-[0_0_10px_var(--shadow)] lg:flex flex-col h-[calc(100dvh-110px)] justify-between">
           <div className="p-4">
-            <h3 className="font-bold mb-2">Resumo</h3>
-            <p>Total de pedidos: {totalCount}</p>
-            <p>
-              Total pago: R${" "}
-              {orders
-                .filter((o) => o.is_paid)
-                .reduce((sum, o) => sum + computeTotalWithDelivery(o), 0)
-                .toFixed(2)}
-            </p>
-            <p>
-              Total pendente: R${" "}
-              {orders
-                .filter((o) => !o.is_paid)
-                .reduce((sum, o) => sum + computeTotalWithDelivery(o), 0)
-                .toFixed(2)}
-            </p>
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <div>
+                <h3 className="font-bold leading-tight">Resumo</h3>
+                <p className="text-xs color-gray">FILTROS ATUAIS</p>
+              </div>
+
+              <button
+                type="button"
+                className="cursor-pointer px-2 py-2 opacity-80 hover:opacity-100 transition"
+                onClick={() => fetchSummary()}
+                title="Atualizar resumo"
+              >
+                <FaSyncAlt className={`${summaryLoading ? "animate-spin" : ""}`} />
+              </button>
+            </div>
+
+            {summaryLoading ? (
+              <div className="space-y-2">
+                <div className="h-5 w-36 bg-translucid rounded" />
+                <div className="h-10 w-full bg-translucid rounded" />
+                <div className="h-10 w-full bg-translucid rounded" />
+                <div className="h-4 w-28 bg-translucid rounded" />
+              </div>
+            ) : (
+              <>
+                <div className="mb-3">
+                  <p className="text-xs color-gray">Pedidos encontrados</p>
+                  <p className="text-3xl font-bold">{summary.count}</p>
+
+                  {summary.lastUpdatedAt ? (
+                    <p className="text-xs color-gray mt-1">
+                      Última atualização: {new Date(summary.lastUpdatedAt).toLocaleString("pt-BR")}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="mb-3">
+                  <div className="flex items-center justify-between text-xs color-gray mb-1">
+                    <span>Pagos ({summary.paidCount})</span>
+                    <span>{paidPct}%</span>
+                  </div>
+                  <div className="w-full h-2 rounded bg-translucid overflow-hidden">
+                    <div className="h-full bg-green-600" style={{ width: `${paidPct}%` }} />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2">
+                  <div className="p-3 rounded-lg border-2 border-translucid bg-translucid">
+                    <p className="text-xs color-gray">Total pago</p>
+                    <p className="text-xl font-semibold text-green-600">R$ {summary.paidTotal.toFixed(2)}</p>
+                  </div>
+
+                  <div className="p-3 rounded-lg border-2 border-translucid bg-translucid">
+                    <p className="text-xs color-gray">Total pendente</p>
+                    <p className="text-xl font-semibold text-yellow-500">R$ {summary.pendingTotal.toFixed(2)}</p>
+                    <p className="text-xs color-gray mt-1">Pendentes: {summary.pendingCount}</p>
+                  </div>
+
+                  <div className="p-3 rounded-lg border-2 border-translucid bg-translucid">
+                    <p className="text-xs color-gray">Ticket médio</p>
+                    <p className="text-lg font-semibold">R$ {summary.avgTicket.toFixed(2)}</p>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </aside>
       ) : null}
@@ -714,6 +880,7 @@ const Orders = ({ setSelectedTab }) => {
                           + Adicional
                         </button>
                       </div>
+
                       {(item.additionals || []).map((add, ai) => (
                         <div key={ai} className="flex gap-2 items-center mb-2">
                           <input
