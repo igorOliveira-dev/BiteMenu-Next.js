@@ -1232,7 +1232,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                     <button
                       title="Editar item"
                       onClick={() => openItemModal("edit", cat.id, it)}
-                      className="flex-1 flex items-center justify-center cursor-pointer p-2 rounded-tr-lg"
+                      className="flex-1 flex items-center justify-center cursor-pointer p-2 rounded-tr-lg hover:opacity-80 transition"
                       style={{
                         color: foregroundToUse,
                         backgroundColor: getContrastTextColor(backgroundColor) === "white" ? "#ffffff25" : "#00000025",
