@@ -237,7 +237,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
   return (
     <div className="px-4 sm:px-2 lg:grid">
-      <div className="md:m-auto lg:m-2 lg:w-[calc(80dvw-256px)] max-w-[1024px] min-h-[calc(100dvh-110px)] rounded-lg overflow-y-auto scrollbar-none">
+      <div className="md:m-auto lg:m-2 lg:w-[calc(90dvw-256px)] max-w-[1024px] min-h-[calc(100dvh-110px)] rounded-lg overflow-y-auto scrollbar-none">
         {/* Cabeçalho */}
         <div className="flex items-center gap-2 mb-4">
           <div className="cursor-pointer" onClick={() => setSelectedTab("sales")}>
@@ -325,7 +325,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
             </div>
           )}
         </div>
-        <div className="mt-6">
+        <div className="my-6">
           <SalesCharts sales={rawSales} />
         </div>
       </div>

@@ -70,14 +70,14 @@ export default function SalesCharts({ sales = [] }) {
   };
 
   return (
-    <div className="flex flex-wrap lg:justify-center gap-12 p-6 bg-translucid border border-translucid rounded-lg">
+    <div className="grid md:grid-cols-2 lg:justify-center gap-4">
       {filteredPayments.length === 0 && <p className="color-gray text-center">Nenhuma venda no período selecionado.</p>}
 
       {filteredPayments.length > 0 && (
-        <div className="xxs:min-w-[300px] xxs:mx-auto lg:mx-0">
+        <div className="xxs:min-w-[300px] xxs:mx-auto lg:mx-0 bg-translucid border border-translucid rounded-lg w-full p-4">
           <h3 className="font-semibold color-gray lg:text-center mb-6">Métodos de Pagamento</h3>
           <div className="flex items-center">
-            <div className="w-26 h-26 xs:w-32 xs:h-32 lg:w-42 lg:h-42">
+            <div className="w-26 h-26 xs:w-32 xs:h-32 lg:w-36 lg:h-36">
               <Doughnut data={paymentData} options={options} />
             </div>
             <div className="mt-2 ml-4 flex flex-col gap-1">
@@ -98,10 +98,10 @@ export default function SalesCharts({ sales = [] }) {
       )}
 
       {filteredServices.length > 0 && (
-        <div className="xxs:min-w-[300px] xxs:mx-auto lg:mx-0">
+        <div className="xxs:min-w-[300px] xxs:mx-auto lg:mx-0 bg-translucid border border-translucid rounded-lg w-full p-4">
           <h3 className="font-semibold color-gray lg:text-center mb-6">Tipos de Serviço</h3>
           <div className="flex items-center">
-            <div className="w-26 h-26 xs:w-32 xs:h-32 lg:w-42 lg:h-42">
+            <div className="w-26 h-26 xs:w-32 xs:h-32 lg:w-36 lg:h-36">
               <Doughnut data={serviceData} options={options} />
             </div>
             <div className="mt-2 ml-4 flex flex-col gap-1">
