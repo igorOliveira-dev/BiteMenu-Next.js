@@ -471,62 +471,65 @@ const ConfigMenu = (props) => {
                 const [openTime, closeTime] = typeof value === "string" ? value.split("-") : ["", ""];
 
                 return (
-                  <div key={day} className="flex items-center space-x-2">
-                    <label className="w-10">{dayLabels[day]}</label>
+                  <div key={day}>
+                    <label className="w-10">{dayLabels[day]}:</label>
 
-                    <input
-                      type="time"
-                      value={openTime || ""}
-                      disabled={isClosed}
-                      onChange={(e) => {
-                        const newOpen = e.target.value;
-                        safeSetHours((prev) => {
-                          const base = { ...prev };
-                          const currentClose = typeof base[day] === "string" ? base[day].split("-")[1] : "23:59";
-                          base[day] = `${newOpen}-${currentClose || "23:59"}`;
-                          return base;
-                        });
-                      }}
-                      className="border rounded p-1 cursor-pointer"
-                    />
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="time"
+                        value={openTime || ""}
+                        disabled={isClosed}
+                        onChange={(e) => {
+                          const newOpen = e.target.value;
+                          safeSetHours((prev) => {
+                            const base = { ...prev };
+                            const currentClose = typeof base[day] === "string" ? base[day].split("-")[1] : "23:59";
+                            base[day] = `${newOpen}-${currentClose || "23:59"}`;
+                            return base;
+                          });
+                        }}
+                        className="border rounded p-1 cursor-pointer w-[78px] xxs:w-[90px] text-sm xxs:text-base"
+                      />
 
-                    <span>-</span>
+                      <span className="hidden xs:block">-</span>
 
-                    <input
-                      type="time"
-                      value={closeTime || ""}
-                      disabled={isClosed}
-                      onChange={(e) => {
-                        const newClose = e.target.value;
-                        safeSetHours((prev) => {
-                          const base = { ...prev };
-                          const currentOpen = typeof base[day] === "string" ? base[day].split("-")[0] : "00:00";
-                          base[day] = `${currentOpen || "00:00"}-${newClose}`;
-                          return base;
-                        });
-                      }}
-                      className="border rounded p-1 text-foreground cursor-pointer"
-                    />
+                      <input
+                        type="time"
+                        value={closeTime || ""}
+                        disabled={isClosed}
+                        onChange={(e) => {
+                          const newClose = e.target.value;
+                          safeSetHours((prev) => {
+                            const base = { ...prev };
+                            const currentOpen = typeof base[day] === "string" ? base[day].split("-")[0] : "00:00";
+                            base[day] = `${currentOpen || "00:00"}-${newClose}`;
+                            return base;
+                          });
+                        }}
+                        className="border rounded p-1 text-foreground cursor-pointer w-[78px] xxs:w-[90px] text-sm xxs:text-base"
+                      />
 
-                    <label className="ml-2 flex items-center space-x-1 cursor-pointer">
-                      <span className="switch">
-                        <input
-                          type="checkbox"
-                          checked={isClosed}
-                          onChange={(e) => {
-                            const checked = e.target.checked;
-                            safeSetHours((prev) => {
-                              const base = { ...prev };
-                              base[day] = checked ? null : typeof base[day] === "string" ? base[day] : DEFAULT_HOURS[day];
-                              return base;
-                            });
-                          }}
-                        />
-                        <span className="slider"></span>
-                      </span>
+                      <label className="ml-2 flex items-center space-x-1 cursor-pointer">
+                        <span className="switch">
+                          <input
+                            type="checkbox"
+                            checked={isClosed}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              safeSetHours((prev) => {
+                                const base = { ...prev };
+                                base[day] = checked ? null : typeof base[day] === "string" ? base[day] : DEFAULT_HOURS[day];
+                                return base;
+                              });
+                            }}
+                          />
+                          <span className="slider"></span>
+                        </span>
 
-                      <span>Fechado</span>
-                    </label>
+                        <span>Fechado</span>
+                      </label>
+                    </div>
+                    <hr className="border-1 mt-2 border-[var(--translucid)]" />
                   </div>
                 );
               })}
