@@ -407,48 +407,64 @@ const Orders = ({ setSelectedTab }) => {
         >
           <p>Receber pedidos:</p>
 
-          <label className="flex gap-2 items-center">
-            <input
-              type="radio"
-              name="orders"
-              value="site_whatsapp"
-              checked={receiveOrders === "site_whatsapp"}
-              onChange={() => handleChangeOrders("site_whatsapp")}
-            />
+          <label className="flex items-center gap-3 cursor-pointer mb-2">
+            <span className="switch">
+              <input
+                type="radio"
+                name="orders"
+                value="site_whatsapp"
+                checked={receiveOrders === "site_whatsapp"}
+                onChange={() => handleChangeOrders("site_whatsapp")}
+              />
+              <span className="slider" />
+            </span>
+
             <span>No site e no WhatsApp</span>
           </label>
 
-          <label className="flex gap-2 items-center">
-            <input
-              type="radio"
-              name="orders"
-              value="whatsapp"
-              checked={receiveOrders === "whatsapp"}
-              onChange={() => handleChangeOrders("whatsapp")}
-            />
+          <label className="flex items-center gap-3 cursor-pointer mb-2">
+            <span className="switch">
+              <input
+                type="radio"
+                name="orders"
+                value="whatsapp"
+                checked={receiveOrders === "whatsapp"}
+                onChange={() => handleChangeOrders("whatsapp")}
+              />
+              <span className="slider" />
+            </span>
+
             <span>Apenas no WhatsApp</span>
           </label>
 
-          <label className="flex gap-2 items-center">
-            <input
-              type="radio"
-              name="orders"
-              value="none"
-              checked={receiveOrders === "none"}
-              onChange={() => handleChangeOrders("none")}
-            />
+          <label className="flex items-center gap-3 cursor-pointer mb-2">
+            <span className="switch">
+              <input
+                type="radio"
+                name="orders"
+                value="none"
+                checked={receiveOrders === "none"}
+                onChange={() => handleChangeOrders("none")}
+              />
+              <span className="slider" />
+            </span>
+
             <span>Não receber pedidos</span>
           </label>
+
           <hr className="border-translucid my-2" />
 
           <p>Taxa de entrega:</p>
 
-          <label className="flex gap-2 items-center">
-            <input
-              type="checkbox"
-              checked={deliveryFeeOnSales}
-              onChange={(e) => handleToggleDeliveryFeeOnSales(e.target.checked)}
-            />
+          <label className="flex gap-2 items-center mt-1">
+            <span className="switch">
+              <input
+                type="checkbox"
+                checked={deliveryFeeOnSales}
+                onChange={(e) => handleToggleDeliveryFeeOnSales(e.target.checked)}
+              />
+              <span className="slider"></span>
+            </span>
             <span>Contar taxa de entrega como venda</span>
           </label>
 

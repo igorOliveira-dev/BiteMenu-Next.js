@@ -509,18 +509,22 @@ const ConfigMenu = (props) => {
                     />
 
                     <label className="ml-2 flex items-center space-x-1 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={isClosed}
-                        onChange={(e) => {
-                          const checked = e.target.checked;
-                          safeSetHours((prev) => {
-                            const base = { ...prev };
-                            base[day] = checked ? null : typeof base[day] === "string" ? base[day] : DEFAULT_HOURS[day];
-                            return base;
-                          });
-                        }}
-                      />
+                      <span className="switch">
+                        <input
+                          type="checkbox"
+                          checked={isClosed}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            safeSetHours((prev) => {
+                              const base = { ...prev };
+                              base[day] = checked ? null : typeof base[day] === "string" ? base[day] : DEFAULT_HOURS[day];
+                              return base;
+                            });
+                          }}
+                        />
+                        <span className="slider"></span>
+                      </span>
+
                       <span>Fechado</span>
                     </label>
                   </div>

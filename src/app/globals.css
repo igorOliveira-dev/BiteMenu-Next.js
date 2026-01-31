@@ -13,6 +13,7 @@
   --dark-gray-90: #22222290;
   --medium-gray: #aaa;
   --translucid: #00000012;
+  --high-translucid: #00000032;
   --red: #d41010;
   --shadow: #00000070;
   --theme-red: #ce0000;
@@ -28,6 +29,7 @@
     --low-gray: #222;
     --medium-gray: #111;
     --translucid: #ffffff10;
+    --high-translucid: #ffffff32;
     --red: #d41010;
     --shadow: #000000;
     --theme-red: #ff3535;
@@ -44,6 +46,7 @@
   --dark-gray-90: #22222290;
   --medium-gray: #aaa;
   --translucid: #00000012;
+  --high-translucid: #00000032;
   --red: #d41010;
   --shadow: #00000070;
   --theme-red: #ce0000;
@@ -58,6 +61,7 @@
   --low-gray: #222;
   --medium-gray: #111;
   --translucid: #ffffff10;
+  --high-translucid: #ffffff32;
   --red: #d41010;
   --shadow: #000000;
   --theme-red: #ff3535;
@@ -405,4 +409,57 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 .starred-scroll {
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-color) transparent;
+}
+
+/* Container do switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 24px;
+}
+
+/* Esconde o checkbox original */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* Trilho do botão */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: var(--high-translucid);
+  transition: 0.3s;
+  border-radius: 999px;
+}
+
+/* Bolinha */
+.slider::before {
+  content: "";
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  top: 3px;
+  background-color: var(--foreground);
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+/* Estado ON */
+.switch input:checked + .slider {
+  background-color: #de4a4a; /* verde bonito */
+}
+
+/* Move a bolinha */
+.switch input:checked + .slider::before {
+  transform: translateX(24px);
+}
+
+/* Opcional: foco acessível */
+.switch input:focus + .slider {
+  box-shadow: 0 0 0 3px rgba(222, 74, 74, 0.4);
 }

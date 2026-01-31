@@ -1679,16 +1679,20 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         >
           <div className="space-y-4">
             <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={!!modalPayload.data.mandatory_additional}
-                onChange={(e) =>
-                  setModalPayload((p) => ({
-                    ...p,
-                    data: { ...p.data, mandatory_additional: e.target.checked },
-                  }))
-                }
-              />
+              <span className="switch">
+                <input
+                  type="checkbox"
+                  checked={!!modalPayload.data.mandatory_additional}
+                  onChange={(e) =>
+                    setModalPayload((p) => ({
+                      ...p,
+                      data: { ...p.data, mandatory_additional: e.target.checked },
+                    }))
+                  }
+                />
+                <span className="slider"></span>
+              </span>
+
               <span>Obrigar o cliente a escolher adicionais</span>
             </label>
 
