@@ -1,16 +1,16 @@
 "use client";
 
-import ReturnLandingPage from "@/components/ReturnLandingPage";
+import Return from "@/components/Return";
 import React from "react";
 
 const page = () => {
   return (
     <div className="flex flex-col items-center">
-      <div className="max-w-3xl flex flex-col gap-6 p-4">
-        <div className="flex items-center gap-4">
-          <ReturnLandingPage />
-          <h1 className="default-h1">Sobre o Bite Menu</h1>
-        </div>
+      <div className="fixed bg-translucid rounded-lg backdrop-blur-sm top-2 left-2 ">
+        <Return />
+      </div>
+      <div className="max-w-3xl flex flex-col gap-6 p-4 pt-12">
+        <h1 className="default-h1">Sobre o Bite Menu</h1>
 
         <section>
           <p>

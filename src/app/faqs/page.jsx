@@ -1,6 +1,6 @@
 "use client";
 
-import ReturnLandingPage from "@/components/ReturnLandingPage";
+import Return from "@/components/Return";
 import React, { useState } from "react";
 
 const faqs = [
@@ -93,11 +93,11 @@ const page = () => {
 
   return (
     <div className="flex flex-col items-center">
-      <div className="max-w-3xl flex flex-col gap-4 p-4 w-full">
-        <div className="flex items-center gap-4">
-          <ReturnLandingPage />
-          <h1 className="default-h1">Perguntas Frequentes (FAQ)</h1>
-        </div>
+      <div className="fixed bg-translucid rounded-lg backdrop-blur-sm top-2 left-2">
+        <Return />
+      </div>
+      <div className="max-w-3xl flex flex-col gap-4 p-4 w-full pt-12">
+        <h1 className="default-h1">Perguntas Frequentes (FAQ)</h1>
 
         <div className="divide-y divide-gray-200">
           {faqs.map((faq, index) => (
