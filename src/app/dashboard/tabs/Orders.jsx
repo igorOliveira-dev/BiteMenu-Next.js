@@ -8,7 +8,7 @@ import Loading from "@/components/Loading";
 import { FaCheck, FaTrash, FaMoneyBill, FaChevronDown, FaSyncAlt } from "react-icons/fa";
 import GenericModal from "@/components/GenericModal";
 import { useConfirm } from "@/providers/ConfirmProvider";
-import OrdersFilter from "./components/OrdersFilter";
+import OrdersFilter from "./components/orders/OrdersFilter";
 
 const Orders = ({ setSelectedTab }) => {
   const { menu, loading } = useMenu();

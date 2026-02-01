@@ -8,8 +8,8 @@ import GenericModal from "@/components/GenericModal";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Loading from "@/components/Loading";
 import { COLOR_PALETTES } from "@/consts/colorPallets";
-import MenuItems from "./components/MenuItems";
-import QrCodeModal from "./components/QrCodeModal";
+import MenuItems from "./components/menu/MenuItems";
+import QrCodeModal from "./components/menu/QrCodeModal";
 
 function getContrastTextColor(hex) {
   const cleanHex = (hex || "").replace("#", "");

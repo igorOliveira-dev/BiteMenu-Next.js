@@ -8,7 +8,7 @@ import Loading from "@/components/Loading";
 import { FaTrash, FaChevronLeft, FaChevronDown, FaChevronRight, FaChevronUp, FaSyncAlt } from "react-icons/fa";
 import GenericModal from "@/components/GenericModal";
 import { useConfirm } from "@/providers/ConfirmProvider";
-import SalesSummary from "./components/SalesSummary";
+import SalesSummary from "./components/sales/SalesSummary";
 
 const Sales = ({ setSelectedTab }) => {
   const { menu, loading } = useMenu();

@@ -8,7 +8,7 @@ import useMenu from "@/hooks/useMenu";
 import { supabase } from "@/lib/supabaseClient";
 import Loading from "@/components/Loading";
 import { useAlert } from "@/providers/AlertProvider";
-import SalesCharts from "./components/SalesCharts";
+import SalesCharts from "./components/sales/SalesCharts";
 
 ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend);
 

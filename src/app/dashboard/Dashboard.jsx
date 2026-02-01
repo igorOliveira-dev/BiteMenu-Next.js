@@ -14,7 +14,7 @@ import Link from "next/link";
 import SalesDashboard from "./tabs/SalesDashboard";
 import PlanDetails from "./tabs/PlanDetails";
 import GenericModal from "@/components/GenericModal";
-import QrCodeModal from "./tabs/components/QrCodeModal";
+import QrCodeModal from "./tabs/components/menu/QrCodeModal";
 
 const Dashboard = ({
   menuState: externalMenuState,

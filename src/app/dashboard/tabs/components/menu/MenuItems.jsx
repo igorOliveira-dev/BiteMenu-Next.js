@@ -21,7 +21,7 @@ import { FaPen, FaTrash, FaChevronRight, FaChevronUp, FaChevronDown } from "reac
 import { useAlert } from "@/providers/AlertProvider";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import { uploadItemImage } from "@/lib/uploadImage";
-import UpdatePlanModal from "./UpdatePlanModal";
+import UpdatePlanModal from "../UpdatePlanModal";
 
 function getContrastTextColor(hex) {
   const cleanHex = (hex || "").replace("#", "");
