@@ -618,6 +618,7 @@ export default function ClientMenu({ menu }) {
                           src={it.image_url}
                           alt={it.name}
                           className="w-full aspect-square object-cover rounded-md mb-2"
+                          loading="lazy"
                         />
                       )}
                       <div className="text-lg font-semibold line-clamp-1" style={{ color: foregroundToUse }}>
@@ -683,6 +684,7 @@ export default function ClientMenu({ menu }) {
                           alt={it.name}
                           className="hidden sm:block w-[130px] h-[130px] object-cover rounded-l-lg"
                           onClick={() => handleItemClick(it)}
+                          loading="lazy"
                         />
                       )}
 
@@ -698,6 +700,7 @@ export default function ClientMenu({ menu }) {
                               alt={it.name}
                               className="block sm:hidden w-[72px] h-[72px] object-cover rounded-lg"
                               style={{ flexShrink: 0 }}
+                              loading="lazy"
                             />
                           ) : null}
                           <div>
