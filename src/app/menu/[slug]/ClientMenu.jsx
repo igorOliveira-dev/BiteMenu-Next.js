@@ -698,7 +698,7 @@ export default function ClientMenu({ menu }) {
                       )}
 
                       <div
-                        className={`cursor-pointer flex-1 h-auto min-h-[116px] sm:h-[130px] flex flex-col justify-between p-2 rounded-lg`}
+                        className={`cursor-pointer flex-1 h-auto min-h-[116px] sm:h-[130px] flex flex-col justify-between px-2 p-1 ${it.image_url ? "rounded-lg sm:rounded-tr-lg sm:rounded-br-lg sm:rounded-tl-none sm:rounded-bl-none" : "rounded-lg"}`}
                         style={{ backgroundColor: translucidToUse }}
                         onClick={() => handleItemClick(it)}
                       >
@@ -720,7 +720,7 @@ export default function ClientMenu({ menu }) {
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between w-full">
+                        <div className="flex items-end justify-between w-full">
                           {it.promo_price && canShowPromoPrice ? (
                             <div>
                               <span className="text-sm line-through" style={{ color: grayToUse }}>
@@ -740,7 +740,7 @@ export default function ClientMenu({ menu }) {
                                 : null}
                             </div>
                           )}
-                          <div className="px-6 py-2 rounded" style={{ backgroundColor: menu.details_color }}>
+                          <div className="px-6 py-2 mb-1 rounded" style={{ backgroundColor: menu.details_color }}>
                             <FaShoppingCart style={{ color: getContrastTextColor(menu.details_color) }} />
                           </div>
                         </div>
