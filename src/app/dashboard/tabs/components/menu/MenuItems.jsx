@@ -1067,6 +1067,8 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                         <img
                           src={it.image_url}
                           alt={it.name}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full aspect-square object-cover rounded-md mb-2"
                         />
                       )}
@@ -1158,30 +1160,22 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
               {(cat.menu_items || []).map((it) => (
                 <div key={it.id} className={`flex items-stretch justify-between ${it.visible ? "" : "opacity-50"}`}>
                   <div className="flex items-stretch flex-1">
-                    {it.image_url ? (
-                      <img
-                        src={it.image_url}
-                        alt={it.name}
-                        className="hidden sm:block w-[124px] h-[124px] object-cover rounded-l-lg"
-                        style={{ flexShrink: 0 }}
-                      />
-                    ) : null}
-
                     <div
-                      className={`sm:h-[124px] flex-1 flex flex-col items-start justify-between gap-2 p-2 ${
-                        !it.image_url && "rounded-l-lg"
-                      }`}
+                      className="min-h-[110px] flex-1 flex flex-col rounded-l-lg items-start justify-between p-2"
                       style={{ backgroundColor: translucidToUse }}
                     >
                       <div className="flex items-center gap-2">
-                        {it.image_url ? (
+                        {it.image_url && (
                           <img
                             src={it.image_url}
                             alt={it.name}
-                            className="block sm:hidden w-[68px] h-[68px] object-cover rounded-lg"
+                            loading="lazy"
+                            decoding="async"
+                            className="w-[54px] h-[54px] object-cover rounded-lg sm:rounded-l-lg"
                             style={{ flexShrink: 0 }}
                           />
-                        ) : null}
+                        )}
+
                         <div>
                           <div className="text-xl line-clamp-1" style={{ color: foregroundToUse }}>
                             {it.name}
@@ -1302,7 +1296,13 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
                   <label className="text-center flex flex-col items-center justify-center w-30 h-30 border-2 border-dashed border-translucid rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
                     {modalPayload.data.image_url ? (
-                      <img src={modalPayload.data.image_url} alt="Prévia" className="object-cover w-full h-full" />
+                      <img
+                        src={modalPayload.data.image_url}
+                        alt="Prévia"
+                        className="object-cover w-full h-full"
+                        loading="lazy"
+                        decoding="async"
+                      />
                     ) : (
                       <span className="color-gray m-4 text-sm">Clique aqui para inserir uma imagem</span>
                     )}
