@@ -702,7 +702,7 @@ export default function ClientMenu({ menu }) {
                         onClick={() => handleItemClick(it)}
                       >
                         <div className="flex items-start gap-2">
-                          <div className="pl-20 sm:pl-0 mb-2 sm:mb-0 h-[72px] sm:h-auto">
+                          <div className={`${it.image_url ? "pl-20 sm:pl-0" : null} mb-2 sm:mb-0 h-[72px] sm:h-auto`}>
                             <div className="text-xl line-clamp-1" style={{ color: foregroundToUse }}>
                               {it.name}
                             </div>
