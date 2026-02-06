@@ -619,6 +619,7 @@ export default function ClientMenu({ menu }) {
                           alt={it.name}
                           className="w-full aspect-square object-cover rounded-md mb-2"
                           loading="lazy"
+                          decoding="async"
                         />
                       )}
                       <div className="text-lg font-semibold line-clamp-1" style={{ color: foregroundToUse }}>
@@ -831,6 +832,8 @@ export default function ClientMenu({ menu }) {
                 <img
                   src={selectedItem.image_url}
                   alt={selectedItem.name}
+                  loading="lazy"
+                  decoding="async"
                   className="block h-26 w-26 sm:h-30 sm:w-30 object-cover rounded-lg"
                   style={{ flexShrink: 0 }}
                 />
