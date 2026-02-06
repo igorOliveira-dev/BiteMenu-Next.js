@@ -475,7 +475,7 @@ export default function ClientMenu({ menu }) {
               fill
               className="object-cover"
               priority
-              unoptimized
+              quality={60}
             />
           </div>
         )}
@@ -547,7 +547,7 @@ export default function ClientMenu({ menu }) {
 
         {navCategories.length > 0 && (
           <div
-            className="flex sticky -top-1 border-y-2 overflow-x-auto whitespace-nowrap scrollbar-none"
+            className="flex sticky -top-1 border-y-2 overflow-x-auto whitespace-nowrap scrollbar-none z-10"
             style={{
               backgroundColor: menu.background_color,
               borderColor: translucidToUse,
@@ -682,9 +682,17 @@ export default function ClientMenu({ menu }) {
                         <img
                           src={it.image_url}
                           alt={it.name}
-                          className="hidden sm:block w-[130px] h-[130px] object-cover rounded-l-lg"
-                          onClick={() => handleItemClick(it)}
                           loading="lazy"
+                          decoding="async"
+                          onClick={() => handleItemClick(it)}
+                          className="
+                            w-[72px] h-[72px]
+                            sm:w-[130px] sm:h-[130px]
+                            object-cover rounded-l-lg
+                            sm:relative sm:m-0 m-2 absolute
+
+                          "
+                          style={{ flexShrink: 0 }}
                         />
                       )}
 
@@ -694,16 +702,7 @@ export default function ClientMenu({ menu }) {
                         onClick={() => handleItemClick(it)}
                       >
                         <div className="flex items-start gap-2">
-                          {it.image_url ? (
-                            <img
-                              src={it.image_url}
-                              alt={it.name}
-                              className="block sm:hidden w-[72px] h-[72px] object-cover rounded-lg"
-                              style={{ flexShrink: 0 }}
-                              loading="lazy"
-                            />
-                          ) : null}
-                          <div>
+                          <div className="pl-20 sm:pl-0 mb-2 sm:mb-0 h-[72px] sm:h-auto">
                             <div className="text-xl line-clamp-1" style={{ color: foregroundToUse }}>
                               {it.name}
                             </div>
