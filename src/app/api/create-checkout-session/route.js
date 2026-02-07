@@ -18,7 +18,7 @@ export async function POST(req) {
     // 🔹 Buscar perfil do usuário
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("stripe_customer_id, stripe_subscription_id")
+      .select("stripe_customer_id, stripe_subscription_id, role")
       .eq("id", userId)
       .maybeSingle();
 
