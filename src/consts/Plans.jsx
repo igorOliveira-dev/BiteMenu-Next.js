@@ -16,7 +16,7 @@ export const plans = [
       "Dashboard de vendas",
       "Maior personalização",
     ],
-    price: "15,90",
+    price: "24,90",
     id: "plus",
   },
   {
@@ -31,7 +31,7 @@ export const plans = [
       "Maior personalização",
       "Prioridade de suporte",
     ],
-    price: "27,90",
+    price: "44,90",
     id: "pro",
   },
 ];
