@@ -22,6 +22,7 @@ import { useAlert } from "@/providers/AlertProvider";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import { uploadItemImage } from "@/lib/uploadImage";
 import UpdatePlanModal from "../UpdatePlanModal";
+import { fileToWebp } from "@/app/utils/imageToWebp";
 
 function getContrastTextColor(hex) {
   const cleanHex = (hex || "").replace("#", "");
@@ -1314,15 +1315,21 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
+
                         try {
                           setUploadingImage(true);
-                          const url = await uploadItemImage(file, menu?.owner_id, modalPayload.data.image_url);
+
+                          const webpFile = await fileToWebp(file, { quality: 0.82, maxSize: 1600 });
+
+                          const url = await uploadItemImage(webpFile, menu?.owner_id, modalPayload.data.image_url);
+
                           setModalPayload((p) => ({ ...p, data: { ...p.data, image_url: url } }));
                         } catch (err) {
                           console.error("upload image error:", err);
                           alert?.("Erro ao enviar imagem (ver console)", "error");
                         } finally {
                           setUploadingImage(false);
+                          e.currentTarget.value = "";
                         }
                       }}
                     />
