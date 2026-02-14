@@ -10,6 +10,8 @@ import Loading from "@/components/Loading";
 import { COLOR_PALETTES } from "@/consts/colorPallets";
 import MenuItems from "./components/menu/MenuItems";
 import QrCodeModal from "./components/menu/QrCodeModal";
+import { uploadItemImage } from "@/lib/uploadImage";
+import { fileToWebp } from "@/app/utils/imageToWebp";
 
 function getContrastTextColor(hex) {
   const cleanHex = (hex || "").replace("#", "");
@@ -58,6 +60,9 @@ const Menu = (props) => {
   const { menu, loading } = useMenu();
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
   const customAlert = useAlert();
+
+  const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   // banner/logo values live in externalState.bannerFile / logoFile when usingExternal
   const bannerFile = usingExternal ? externalState.bannerFile : null;
@@ -246,22 +251,75 @@ const Menu = (props) => {
   };
 
   // apply temp files to central state
-  const applyTempBanner = () => {
-    if (usingExternal) {
-      externalSetState((p) => ({ ...p, bannerFile: tempBannerFile ?? null }));
+  const applyTempBanner = async () => {
+    if (!usingExternal) return closeAllModals();
+
+    try {
+      setUploadingBanner(true);
+
+      // remover (só zera)
+      if (!tempBannerFile) {
+        externalSetState((p) => ({ ...p, bannerFile: null }));
+        closeAllModals();
+        return;
+      }
+
+      const userId = menu?.owner_id;
+      const oldUrl = typeof bannerFile === "string" ? bannerFile : null;
+
+      // ✅ converte / redimensiona / recomprime
+      const webp = await fileToWebp(tempBannerFile, {
+        quality: 0.82,
+        maxSize: 2000, // banner pode aguentar mais
+        force: true, // garante redução mesmo se já vier webp gigante
+      });
+
+      const publicUrl = await uploadItemImage(webp, userId, oldUrl);
+
+      externalSetState((p) => ({ ...p, bannerFile: publicUrl }));
+      closeAllModals();
+    } catch (err) {
+      console.error(err);
+      customAlert("Erro ao enviar banner", "error");
+    } finally {
+      setUploadingBanner(false);
     }
-    closeAllModals();
-  };
-  const removeBanner = () => {
-    if (usingExternal) externalSetState((p) => ({ ...p, bannerFile: null }));
   };
 
-  const applyTempLogo = () => {
-    if (usingExternal) {
-      externalSetState((p) => ({ ...p, logoFile: tempLogoFile ?? null }));
+  const applyTempLogo = async () => {
+    if (!usingExternal) return closeAllModals();
+
+    try {
+      setUploadingLogo(true);
+
+      if (!tempLogoFile) {
+        externalSetState((p) => ({ ...p, logoFile: null }));
+        closeAllModals();
+        return;
+      }
+
+      const userId = menu?.owner_id;
+      const oldUrl = typeof logoFile === "string" ? logoFile : null;
+
+      // ✅ logo: normalmente menor, mas qualidade um tiquinho maior pra não “lavar” detalhes
+      const webp = await fileToWebp(tempLogoFile, {
+        quality: 0.9,
+        maxSize: 512, // logo exibida a ~80px; 512 é sobra saudável
+        force: true,
+      });
+
+      const publicUrl = await uploadItemImage(webp, userId, oldUrl);
+
+      externalSetState((p) => ({ ...p, logoFile: publicUrl }));
+      closeAllModals();
+    } catch (err) {
+      console.error(err);
+      customAlert("Erro ao enviar logo", "error");
+    } finally {
+      setUploadingLogo(false);
     }
-    closeAllModals();
   };
+
   const removeLogo = () => {
     if (usingExternal) externalSetState((p) => ({ ...p, logoFile: null }));
   };
@@ -509,8 +567,12 @@ const Menu = (props) => {
             <button onClick={closeAllModals} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded">
               Cancelar
             </button>
-            <button onClick={applyTempBanner} className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded">
-              Salvar
+            <button
+              onClick={applyTempBanner}
+              disabled={uploadingBanner}
+              className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded disabled:opacity-60"
+            >
+              {uploadingBanner ? "Enviando..." : "Salvar"}
             </button>
           </div>
         </GenericModal>
@@ -535,8 +597,12 @@ const Menu = (props) => {
             <button onClick={closeAllModals} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded">
               Cancelar
             </button>
-            <button onClick={applyTempLogo} className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded">
-              Salvar
+            <button
+              onClick={applyTempLogo}
+              disabled={uploadingLogo}
+              className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded disabled:opacity-60"
+            >
+              {uploadingLogo ? "Enviando..." : "Salvar"}
             </button>
           </div>
         </GenericModal>
