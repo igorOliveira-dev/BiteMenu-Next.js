@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
-import { Doughnut } from "react-chartjs-2";
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+import { Doughnut, Bar } from "react-chartjs-2";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from "chart.js";
 
-ChartJS.register(ArcElement, Tooltip, Legend);
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
 export default function SalesCharts({ sales = [] }) {
   const paymentLabels = {
@@ -21,6 +21,9 @@ export default function SalesCharts({ sales = [] }) {
     faceToFace: "Atendimento presencial",
   };
 
+  /** -------------------------
+   * Donuts (contagem simples)
+   * ------------------------ */
   const paymentCounts = useMemo(() => {
     return Object.keys(paymentLabels).reduce((acc, key) => {
       acc[key] = sales.filter((s) => s.payment_method === key).length;
@@ -60,12 +63,89 @@ export default function SalesCharts({ sales = [] }) {
     ],
   };
 
-  const options = {
+  const doughnutOptions = {
     plugins: { legend: { display: false }, tooltip: { enabled: true } },
     cutout: "62%",
     maintainAspectRatio: false,
   };
 
+  /** -----------------------------------------
+   * Top 5 Produtos — Barras horizontais (qty)
+   *  - NÃO separa por delivery/pickup/etc
+   *  - cresce na horizontal
+   * ---------------------------------------- */
+  const topProducts = useMemo(() => {
+    const productQty = {}; // product -> total qty
+
+    sales.forEach((sale) => {
+      const items = sale?.items_list || [];
+      items.forEach((item) => {
+        const name = item?.name || item?.title || item?.product_name || "Produto";
+        const qty = Number(item?.qty ?? item?.quantity ?? 0) || 0;
+        if (!qty) return;
+
+        productQty[name] = (productQty[name] || 0) + qty;
+      });
+    });
+
+    return Object.entries(productQty)
+      .map(([product, qty]) => ({ product, qty }))
+      .sort((a, b) => b.qty - a.qty)
+      .slice(0, 5);
+  }, [sales]);
+
+  const topProductsBarData = useMemo(() => {
+    if (!topProducts.length) return null;
+
+    return {
+      labels: topProducts.map((p) => p.product),
+      datasets: [
+        {
+          label: "Quantidade vendida",
+          data: topProducts.map((p) => p.qty),
+          backgroundColor: "#4f46e5",
+          borderColor: "#463ede",
+          borderWidth: 1,
+          barThickness: 28,
+        },
+      ],
+    };
+  }, [topProducts]);
+
+  const topProductsBarOptions = {
+    indexAxis: "y", // <- deixa horizontal
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => `Qtd: ${ctx.parsed.x}`,
+        },
+      },
+    },
+    scales: {
+      x: {
+        beginAtZero: true,
+        ticks: { precision: 0 },
+        grid: { color: "rgba(255,255,255,0.06)" },
+      },
+      y: {
+        grid: { display: false },
+        ticks: {
+          // evita label gigante zoar layout
+          callback: function (value) {
+            const label = this.getLabelForValue(value);
+            return label.length > 22 ? label.slice(0, 22) + "…" : label;
+          },
+        },
+      },
+    },
+  };
+
+  /** -------------------------
+   * Card genérico
+   * ------------------------ */
   const ChartCard = ({ title, data, items, labelsMap }) => {
     return (
       <div className="bg-translucid border border-translucid rounded-lg p-4 sm:p-5">
@@ -73,7 +153,7 @@ export default function SalesCharts({ sales = [] }) {
 
         <div className="grid grid-cols-1 xxs:grid-cols-[160px_1fr] gap-4 items-center">
           <div className="h-[160px] w-[160px] mx-auto sm:mx-0">
-            <Doughnut data={data} options={options} />
+            <Doughnut data={data} options={doughnutOptions} />
           </div>
 
           <div className="flex flex-col gap-2">
@@ -95,7 +175,7 @@ export default function SalesCharts({ sales = [] }) {
     );
   };
 
-  if (filteredPayments.length === 0 && filteredServices.length === 0) {
+  if (filteredPayments.length === 0 && filteredServices.length === 0 && !topProductsBarData) {
     return <p className="color-gray text-center">Nenhuma venda no período selecionado.</p>;
   }
 
@@ -107,6 +187,16 @@ export default function SalesCharts({ sales = [] }) {
 
       {filteredServices.length > 0 && (
         <ChartCard title="Tipos de Serviço" data={serviceData} items={filteredServices} labelsMap={serviceLabels} />
+      )}
+
+      {topProductsBarData && (
+        <div className="bg-translucid border border-translucid rounded-lg p-4 sm:p-5 lg:col-span-2">
+          <h3 className="font-semibold color-gray mb-4">Top 5 produtos mais vendidos</h3>
+
+          <div className="h-[320px] sm:h-[380px]">
+            <Bar data={topProductsBarData} options={topProductsBarOptions} />
+          </div>
+        </div>
       )}
     </div>
   );
