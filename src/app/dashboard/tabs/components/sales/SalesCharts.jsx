@@ -18,7 +18,7 @@ export default function SalesCharts({ sales = [] }) {
     delivery: "Entrega",
     pickup: "Retirada",
     dinein: "Comer no local",
-    faceToFace: "Atendimento pesencial",
+    faceToFace: "Atendimento presencial",
   };
 
   const paymentCounts = useMemo(() => {
@@ -61,64 +61,52 @@ export default function SalesCharts({ sales = [] }) {
   };
 
   const options = {
-    plugins: {
-      legend: { display: false },
-      tooltip: { enabled: true },
-    },
-    cutout: "60%",
+    plugins: { legend: { display: false }, tooltip: { enabled: true } },
+    cutout: "62%",
     maintainAspectRatio: false,
   };
 
-  return (
-    <div className="grid md:grid-cols-2 lg:justify-center gap-4">
-      {filteredPayments.length === 0 && <p className="color-gray text-center">Nenhuma venda no período selecionado.</p>}
+  const ChartCard = ({ title, data, items, labelsMap }) => {
+    return (
+      <div className="bg-translucid border border-translucid rounded-lg p-4 sm:p-5">
+        <h3 className="font-semibold color-gray mb-4">{title}</h3>
 
-      {filteredPayments.length > 0 && (
-        <div className="xxs:min-w-[300px] xxs:mx-auto lg:mx-0 bg-translucid border border-translucid rounded-lg w-full p-4 py-6 flex flex-col items-center md:items-start">
-          <h3 className="font-semibold color-gray lg:text-center mb-6">Métodos de Pagamento</h3>
-          <div className="flex items-center">
-            <div className="w-26 h-26 xs:w-32 xs:h-32 lg:w-36 lg:h-36">
-              <Doughnut data={paymentData} options={options} />
-            </div>
-            <div className="mt-2 ml-4 flex flex-col gap-1">
-              {filteredPayments.map(([key, count], index) => (
-                <div key={key} className="flex items-center gap-2 text-sm">
+        <div className="grid grid-cols-1 xxs:grid-cols-[160px_1fr] gap-4 items-center">
+          <div className="h-[160px] w-[160px] mx-auto sm:mx-0">
+            <Doughnut data={data} options={options} />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            {items.map(([key, count], index) => (
+              <div key={key} className="flex items-center gap-3 text-sm">
+                <div className="flex items-center gap-2">
                   <span
                     className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: paymentData.datasets[0].backgroundColor[index] }}
+                    style={{ backgroundColor: data.datasets[0].backgroundColor[index] }}
                   />
-                  <span>
-                    {paymentLabels[key]} ({count})
-                  </span>
+                  <span className="color-gray">{labelsMap[key]}</span>
                 </div>
-              ))}
-            </div>
+                <span className="font-semibold">{count}</span>
+              </div>
+            ))}
           </div>
         </div>
+      </div>
+    );
+  };
+
+  if (filteredPayments.length === 0 && filteredServices.length === 0) {
+    return <p className="color-gray text-center">Nenhuma venda no período selecionado.</p>;
+  }
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      {filteredPayments.length > 0 && (
+        <ChartCard title="Métodos de Pagamento" data={paymentData} items={filteredPayments} labelsMap={paymentLabels} />
       )}
 
       {filteredServices.length > 0 && (
-        <div className="xxs:min-w-[300px] xxs:mx-auto lg:mx-0 bg-translucid border border-translucid rounded-lg w-full p-4 py-6 flex flex-col items-center md:items-start">
-          <h3 className="font-semibold color-gray lg:text-center mb-6">Tipos de Serviço</h3>
-          <div className="flex items-center">
-            <div className="w-26 h-26 xs:w-32 xs:h-32 lg:w-36 lg:h-36">
-              <Doughnut data={serviceData} options={options} />
-            </div>
-            <div className="mt-2 ml-4 flex flex-col gap-1">
-              {filteredServices.map(([key, count], index) => (
-                <div key={key} className="flex items-center gap-2 text-sm">
-                  <span
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: serviceData.datasets[0].backgroundColor[index] }}
-                  />
-                  <span>
-                    {serviceLabels[key]} ({count})
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <ChartCard title="Tipos de Serviço" data={serviceData} items={filteredServices} labelsMap={serviceLabels} />
       )}
     </div>
   );

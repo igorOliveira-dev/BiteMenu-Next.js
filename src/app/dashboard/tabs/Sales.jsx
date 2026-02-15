@@ -628,14 +628,6 @@ const Sales = ({ setSelectedTab }) => {
                 {(selectedSale.items_list || []).map((item, i) => (
                   <div key={i} className="p-3 border border-2 border-translucid rounded-lg space-y-2">
                     <div className="flex gap-2">
-                      {item.image_url ? (
-                        <img
-                          src={item.image_url}
-                          alt={item.name}
-                          className="w-[50px] h-[50px] xs:w-[130px] xs:h-[130px] mt-3 xs:m-0 object-cover rounded-lg"
-                          style={{ flexShrink: 0 }}
-                        />
-                      ) : null}
                       <div className="w-full">
                         <label className="text-sm color-gray">Nome:</label>
                         <div className="flex items-center gap-3 mb-2">
