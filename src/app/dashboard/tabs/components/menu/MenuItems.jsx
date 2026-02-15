@@ -1319,14 +1319,25 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                         try {
                           setUploadingImage(true);
 
-                          const webpFile = await fileToWebp(file, { quality: 0.82, maxSize: 1600, force: true });
+                          const webpFile = await fileToWebp(file, {
+                            maxBytes: 400 * 1024,
+                            maxDimension: 1600,
+                            minDimension: 720,
+                            startQuality: 0.82,
+                            minQuality: 0.45,
+                          });
 
                           const url = await uploadItemImage(webpFile, menu?.owner_id, modalPayload.data.image_url);
 
                           setModalPayload((p) => ({ ...p, data: { ...p.data, image_url: url } }));
                         } catch (err) {
                           console.error("upload image error:", err);
-                          alert?.("Erro ao enviar imagem (ver console)", "error");
+                          const msg = String(err?.message || "");
+                          if (msg.includes("Não foi possível comprimir")) {
+                            alert?.("Essa imagem é pesada demais. Tente recortar ou escolher outra.", "error");
+                          } else {
+                            alert?.("Erro ao enviar imagem (ver console)", "error");
+                          }
                         } finally {
                           setUploadingImage(false);
                           e.currentTarget.value = "";
