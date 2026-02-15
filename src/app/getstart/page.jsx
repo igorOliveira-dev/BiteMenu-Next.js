@@ -8,6 +8,8 @@ import useUser from "@/hooks/useUser";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import { COLOR_PALETTES } from "@/consts/colorPallets";
+import { fileToWebp } from "@/app/utils/imageToWebp";
+import { useAlert } from "@/providers/AlertProvider";
 
 // ---- CONFIG ----
 const BUCKET = "menus";
@@ -15,9 +17,13 @@ const USE_TIMEOUTS = true; // ativado por segurança/debug;
 // -----------------
 
 const getExt = (file) => {
-  if (!file || !file.name) return "";
-  const parts = file.name.split(".");
-  return parts.length > 1 ? `.${parts.pop()}` : "";
+  if (!file) return "";
+  if (file.type === "image/webp") return ".webp";
+  if (file.name) {
+    const parts = file.name.split(".");
+    return parts.length > 1 ? `.${parts.pop()}` : "";
+  }
+  return "";
 };
 
 // util: timeout wrapper
@@ -125,6 +131,7 @@ export default function GetStart() {
   const { user, loading } = useUser();
   const router = useRouter();
   const confirm = useConfirm();
+  const alert = useAlert();
 
   // índice da paleta atual
   const [paletteIndex, setPaletteIndex] = useState(0);
@@ -255,11 +262,13 @@ export default function GetStart() {
 
       console.log("[submit] slug inicial:", slug);
 
-      const MAX_BYTES = 3 * 1024 * 1024; // 3MB
+      const MAX_BYTES = 8 * 1024 * 1024; // 3MB
       if (logoFile && logoFile.size > MAX_BYTES) {
+        alert("Logo muito grande (máx 8MB). Reduza o arquivo e tente de novo.");
         throw new Error("Logo muito grande (máx 3MB). Reduza o arquivo e tente de novo.");
       }
       if (bannerFile && bannerFile.size > 4 * MAX_BYTES) {
+        alert("Banner muito grande (máx 32MB). Reduza o arquivo e tente de novo.");
         throw new Error("Banner muito grande (máx 12MB). Reduza o arquivo e tente de novo.");
       }
 
@@ -281,10 +290,17 @@ export default function GetStart() {
 
       if (logoFile) {
         try {
-          console.time("logoUpload");
-          const p = uploadFileToStorage(logoFile, user.id, slug, "logo");
+          console.time("logoConvert+Upload");
+
+          // converte / redimensiona / recomprime
+          const webpLogoRaw = await fileToWebp(logoFile, { quality: 0.9, maxSize: 512, force: true });
+          const webpLogo =
+            webpLogoRaw instanceof File ? webpLogoRaw : new File([webpLogoRaw], "logo.webp", { type: "image/webp" });
+
+          const p = uploadFileToStorage(webpLogo, user.id, slug, "logo");
           const result = USE_TIMEOUTS ? await withTimeout(p, 30000, "logo upload") : await p;
-          console.timeEnd("logoUpload");
+
+          console.timeEnd("logoConvert+Upload");
           logo_url = result ?? null;
           console.log("[submit] logo upload result:", logo_url);
         } catch (errLogo) {
@@ -295,10 +311,17 @@ export default function GetStart() {
 
       if (bannerFile) {
         try {
-          console.time("bannerUpload");
-          const p2 = uploadFileToStorage(bannerFile, user.id, slug, "banner");
+          console.time("bannerConvert+Upload");
+
+          // converte / redimensiona / recomprime
+          const webpBannerRaw = await fileToWebp(bannerFile, { quality: 0.82, maxSize: 2000, force: true });
+          const webpBanner =
+            webpBannerRaw instanceof File ? webpBannerRaw : new File([webpBannerRaw], "banner.webp", { type: "image/webp" });
+
+          const p2 = uploadFileToStorage(webpBanner, user.id, slug, "banner");
           const result2 = USE_TIMEOUTS ? await withTimeout(p2, 45000, "banner upload") : await p2;
-          console.timeEnd("bannerUpload");
+
+          console.timeEnd("bannerConvert+Upload");
           banner_url = result2 ?? null;
           console.log("[submit] banner upload result:", banner_url);
         } catch (errBanner) {
