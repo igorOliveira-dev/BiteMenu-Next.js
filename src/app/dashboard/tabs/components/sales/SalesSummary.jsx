@@ -80,7 +80,7 @@ const SalesSummary = ({ setSelectedTab, refreshSignal }) => {
 
   if (loading || loadingSales) return <Loading />;
 
-  if (ownerRole === "free") {
+  if (ownerRole === "free" || ownerRole === "plus") {
     return (
       <div className="mb-6 h-40 lg:w-[calc(80dvw-256px)] max-w-[1024px] rounded-lg bg-translucid border-2 border-translucid flex flex-col justify-center items-center">
         <h4 className="color-gray mb-2 text-center mx-2">Seu plano não tem acesso ao dashboard de vendas</h4>

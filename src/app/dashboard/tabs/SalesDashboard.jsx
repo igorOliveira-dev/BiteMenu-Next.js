@@ -283,7 +283,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
   if (loading || ownerRole === null || loadingSales) return <Loading />;
 
-  if (ownerRole === "free") {
+  if (ownerRole === "free" || ownerRole === "plus") {
     return (
       <div className="p-4">
         <p className="font-bold">Você não tem permissão para acessar essa área</p>

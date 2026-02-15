@@ -13,7 +13,6 @@ export const plans = [
       "10 Categorias",
       "Controle de pedidos",
       "Controle de vendas",
-      "Dashboard de vendas",
       "Maior personalização",
     ],
     price: "24,90",
