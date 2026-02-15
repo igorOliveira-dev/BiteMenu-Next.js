@@ -440,6 +440,13 @@ export default function ClientMenu({ menu }) {
 
   const navCategories = orderedCategories.filter((cat) => (cat.menu_items || []).some((it) => it.visible));
 
+  const totalVisibleItems = useMemo(() => {
+    return (filteredCategories || []).reduce((sum, cat) => {
+      const count = (cat.menu_items || []).filter((it) => it.visible).length;
+      return sum + count;
+    }, 0);
+  }, [filteredCategories]);
+
   if (ownerRole === null) {
     return (
       <div className="flex items-center justify-center h-[100dvh] w-[100dvw]">
@@ -584,7 +591,7 @@ export default function ClientMenu({ menu }) {
           </div>
         )}
 
-        {hasStarred && hasPlusPermissions && (
+        {hasStarred && hasPlusPermissions && searchTerm === "" && (
           <div className="rounded py-3 px-4" id="starred-section">
             <div className="flex items-center gap-2 mb-2 pt-4">
               <strong style={{ color: foregroundToUse }}>Destaques</strong>
@@ -656,6 +663,12 @@ export default function ClientMenu({ menu }) {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {totalVisibleItems === 0 && (
+          <div className="text-center py-8">
+            <p style={{ color: grayToUse }}>Nenhum item encontrado.</p>
           </div>
         )}
 
