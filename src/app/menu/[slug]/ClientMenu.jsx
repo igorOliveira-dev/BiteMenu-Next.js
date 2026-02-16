@@ -665,78 +665,55 @@ export default function ClientMenu({ menu }) {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {visibleItems.map((it) => (
-                    <div key={it.id} className="flex items-stretch justify-between">
-                      {isSafeImageUrl(it.image_url) && (
-                        <div
-                          className="
-                            relative
-                            w-[72px] h-[72px]
-                            sm:w-[130px] sm:h-[130px]
-                            overflow-hidden
-                            rounded-l-lg
-                            sm:relative sm:m-0 m-2 absolute
-                          "
-                          style={{ flexShrink: 0 }}
-                          onClick={() => handleItemClick(it)}
-                        >
-                          <Image
-                            src={it.image_url}
-                            alt={it.name}
-                            fill
-                            className="object-cover"
-                            quality={55}
-                            sizes="(max-width: 640px) 72px, 130px"
-                          />
-                        </div>
-                      )}
-
+                    <div key={it.id} className="flex items-stretch">
                       <div
-                        className={`cursor-pointer flex-1 h-auto min-h-[116px] sm:h-[130px] flex flex-col justify-between px-2 p-1 ${
-                          it.image_url
-                            ? "rounded-lg sm:rounded-tr-lg sm:rounded-br-lg sm:rounded-tl-none sm:rounded-bl-none"
-                            : "rounded-lg"
-                        }`}
+                        className="flex-1 min-h-[72px] sm:min-h-[130px] rounded-lg p-2 flex flex-col justify-between cursor-pointer"
                         style={{ backgroundColor: translucidToUse }}
                         onClick={() => handleItemClick(it)}
                       >
-                        <div className="flex items-start gap-2">
-                          <div className={`${it.image_url ? "pl-20 sm:pl-0" : ""} mb-2 sm:mb-0 h-[72px] sm:h-auto`}>
+                        <div className="flex gap-2">
+                          {isSafeImageUrl(it.image_url) && (
+                            <div
+                              className="relative w-[72px] h-[72px] shrink-0 overflow-hidden rounded-lg"
+                              onClick={() => handleItemClick(it)}
+                            >
+                              <Image
+                                src={it.image_url}
+                                alt={it.name}
+                                fill
+                                className="object-cover"
+                                quality={55}
+                                sizes="(max-width: 640px) 72px, 130px"
+                              />
+                            </div>
+                          )}
+                          <div>
                             <div className="text-xl line-clamp-1" style={{ color: foregroundToUse }}>
                               {it.name}
                             </div>
 
                             <div
                               className="text-sm line-clamp-2"
-                              style={{
-                                color: grayToUse,
-                                wordBreak: "normal",
-                                overflowWrap: "anywhere",
-                              }}
+                              style={{ color: grayToUse, wordBreak: "normal", overflowWrap: "anywhere" }}
                             >
                               {it.description?.replace(/,\s*/g, ", ")}
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex items-end justify-between w-full">
-                          {it.promo_price && canShowPromoPrice ? (
-                            <div>
-                              <span className="text-sm line-through" style={{ color: grayToUse }}>
-                                {Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                              </span>
-                              <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
-                                {Number(it.promo_price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
-                              {it.price
-                                ? Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
-                                : null}
-                            </div>
-                          )}
+                        <div className="flex items-end justify-between mt-2">
+                          {/* preço */}
+                          <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
+                            {Number(it.promo_price && canShowPromoPrice ? it.promo_price : it.price).toLocaleString(
+                              "pt-BR",
+                              {
+                                style: "currency",
+                                currency: "BRL",
+                              },
+                            )}
+                          </div>
 
-                          <div className="px-6 py-2 mb-1 rounded" style={{ backgroundColor: menu.details_color }}>
+                          <div className="px-6 py-2 rounded" style={{ backgroundColor: menu.details_color }}>
                             <FaShoppingCart style={{ color: getContrastTextColor(menu.details_color) }} />
                           </div>
                         </div>
