@@ -2,7 +2,7 @@
 
 import Loading from "@/components/Loading";
 import { useConfirm } from "@/providers/ConfirmProvider";
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FaLightbulb, FaShoppingCart } from "react-icons/fa";
 import useUser from "@/hooks/useUser";
 import { supabase } from "@/lib/supabaseClient";
@@ -13,102 +13,8 @@ import { useAlert } from "@/providers/AlertProvider";
 
 // ---- CONFIG ----
 const BUCKET = "menus";
-const USE_TIMEOUTS = true; // ativado por segurança/debug;
+const USE_TIMEOUTS = true;
 // -----------------
-
-const getExt = (file) => {
-  if (!file) return "";
-  if (file.type === "image/webp") return ".webp";
-  if (file.name) {
-    const parts = file.name.split(".");
-    return parts.length > 1 ? `.${parts.pop()}` : "";
-  }
-  return "";
-};
-
-// util: timeout wrapper
-const withTimeout = (promise, ms, name = "operation") =>
-  Promise.race([
-    promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error(`${name} timed out after ${ms}ms`)), ms)),
-  ]);
-
-/**
- * Faz upload do file para o storage do Supabase.
- * Tenta obter publicUrl; se não existir (bucket privado), tenta createSignedUrl (1h).
- * Lança erro com mensagem legível em caso de falha.
- */
-const uploadFileToStorage = async (file, userId, slug, filename) => {
-  if (!file) return null;
-
-  const ext = getExt(file);
-  const path = `${userId}/${slug}/${filename}${ext}`;
-
-  try {
-    console.log("[upload] iniciando upload", {
-      path,
-      bucket: BUCKET,
-      fileName: file.name,
-      fileType: file.type,
-      fileSize: file.size,
-      ts: new Date().toISOString(),
-    });
-
-    const uploadRes = await supabase.storage.from(BUCKET).upload(path, file, { upsert: true });
-
-    // alguns SDKs retornam { data, error }, outros retornam Response-like — normalize:
-    const uploadError = uploadRes?.error ?? (uploadRes && uploadRes.status >= 400 ? uploadRes : null);
-    if (uploadError) {
-      console.error("[upload] upload error object:", uploadError);
-      throw new Error(uploadError?.message ?? JSON.stringify(uploadError));
-    }
-
-    console.log("[upload] upload concluído (raw response):", uploadRes);
-
-    // tenta public url (apenas funciona se bucket for público)
-    try {
-      const publicRes = await supabase.storage.from(BUCKET).getPublicUrl(path);
-      if (publicRes?.error) {
-        console.warn("[upload] getPublicUrl retornou erro:", publicRes.error);
-      }
-      const publicUrl = publicRes?.data?.publicUrl ?? null;
-      if (publicUrl) {
-        console.log("[upload] publicUrl obtida:", publicUrl);
-        return publicUrl;
-      }
-    } catch (publicErr) {
-      console.warn("[upload] exceção em getPublicUrl:", publicErr);
-    }
-
-    // se não há publicUrl, tenta criar signed url (válida por 1 hora)
-    try {
-      console.log("[upload] publicUrl não disponível. Tentando createSignedUrl (1 hora)...");
-      const signedRes = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 60);
-      if (signedRes?.error) {
-        console.warn("[upload] createSignedUrl retornou erro:", signedRes.error);
-        throw new Error(signedRes.error?.message ?? JSON.stringify(signedRes.error));
-      }
-      const signedUrl = signedRes?.data?.signedUrl ?? null;
-      if (signedUrl) {
-        console.log("[upload] signedUrl obtida:", signedUrl);
-        return signedUrl;
-      }
-    } catch (signedErr) {
-      console.warn("[upload] exceção em createSignedUrl:", signedErr);
-      // propagate so caller knows
-      throw signedErr;
-    }
-
-    console.warn("[upload] upload ok, mas não obtivemos nem publicUrl nem signedUrl:", {
-      uploadRes,
-    });
-    return null;
-  } catch (err) {
-    console.error("[upload] exceção em uploadFileToStorage:", err);
-    throw err;
-  }
-};
-// ---- fim helpers ----
 
 const DEFAULT_BACKGROUND = COLOR_PALETTES[0].bg;
 const DEFAULT_TITLE = COLOR_PALETTES[0].title;
@@ -121,55 +27,160 @@ const serviceOptions = [
   { id: "faceToFace", label: "Atendimento presencial" },
 ];
 
+const getExt = (file) => {
+  if (!file) return "";
+  if (file.type === "image/webp") return ".webp";
+  if (file.name) {
+    const parts = file.name.split(".");
+    return parts.length > 1 ? `.${parts.pop()}` : "";
+  }
+  return "";
+};
+
+const withTimeout = (promise, ms, name = "operation") =>
+  Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(`${name} timed out after ${ms}ms`)), ms)),
+  ]);
+
+/**
+ * Upload para Supabase Storage (upsert) e retorna publicUrl (bucket público) ou signedUrl (bucket privado)
+ */
+const uploadFileToStorage = async (file, userId, slug, filename) => {
+  if (!file) return null;
+
+  const ext = getExt(file);
+  const path = `${userId}/${slug}/${filename}${ext}`;
+
+  const uploadRes = await supabase.storage.from(BUCKET).upload(path, file, { upsert: true });
+
+  const uploadError = uploadRes?.error ?? (uploadRes && uploadRes.status >= 400 ? uploadRes : null);
+  if (uploadError) {
+    throw new Error(uploadError?.message ?? JSON.stringify(uploadError));
+  }
+
+  // tenta public url (bucket público)
+  try {
+    const publicRes = await supabase.storage.from(BUCKET).getPublicUrl(path);
+    const publicUrl = publicRes?.data?.publicUrl ?? null;
+    if (publicUrl) return publicUrl;
+  } catch {
+    // ignore
+  }
+
+  // bucket privado -> signed url 1h
+  const signedRes = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 60);
+  if (signedRes?.error) {
+    throw new Error(signedRes.error?.message ?? JSON.stringify(signedRes.error));
+  }
+  return signedRes?.data?.signedUrl ?? null;
+};
+
+function getContrastTextColor(hex) {
+  const cleanHex = (hex || DEFAULT_BACKGROUND).replace("#", "");
+  const r = parseInt(cleanHex.substring(0, 2), 16);
+  const g = parseInt(cleanHex.substring(2, 4), 16);
+  const b = parseInt(cleanHex.substring(4, 6), 16);
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 128 ? "black" : "white";
+}
+
+function slugify(value) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-");
+}
+
 export default function GetStart() {
   // estados gerais
   const [establishmentName, setEstablishmentName] = useState("");
   const [selectedServices, setSelectedServices] = useState(["delivery", "pickup", "dinein"]);
+
   const [logoFile, setLogoFile] = useState(null);
   const [bannerFile, setBannerFile] = useState(null);
+
+  // ✅ previews estáveis (evita criar ObjectURL infinitas)
+  const [logoPreview, setLogoPreview] = useState(null);
+  const [bannerPreview, setBannerPreview] = useState(null);
+
+  const logoInputRef = useRef(null);
+  const bannerInputRef = useRef(null);
+
   const [creatingMenu, setCreatingMenu] = useState(false);
   const { user, loading } = useUser();
   const router = useRouter();
   const confirm = useConfirm();
   const alert = useAlert();
 
-  // índice da paleta atual
+  // paleta e cores
   const [paletteIndex, setPaletteIndex] = useState(0);
-
-  // estados de cor já iniciados com valores da paleta
   const [backgroundColor, setBackgroundColor] = useState(DEFAULT_BACKGROUND);
   const [titleColor, setTitleColor] = useState(DEFAULT_TITLE);
   const [detailsColor, setDetailsColor] = useState(DEFAULT_DETAILS);
 
+  // ✅ gera/revoga preview do logo
+  useEffect(() => {
+    if (!logoFile) {
+      setLogoPreview((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+      return;
+    }
+    const url = URL.createObjectURL(logoFile);
+    setLogoPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return url;
+    });
+    return () => URL.revokeObjectURL(url);
+  }, [logoFile]);
+
+  // ✅ gera/revoga preview do banner
+  useEffect(() => {
+    if (!bannerFile) {
+      setBannerPreview((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+      return;
+    }
+    const url = URL.createObjectURL(bannerFile);
+    setBannerPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return url;
+    });
+    return () => URL.revokeObjectURL(url);
+  }, [bannerFile]);
+
   // alterna checkbox de serviços
   const toggleService = (id) => {
     setSelectedServices((prev) => {
-      if (prev.length === 1 && prev.includes(id)) {
-        return prev;
-      }
+      if (prev.length === 1 && prev.includes(id)) return prev;
       return prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id];
     });
   };
 
   // handlers de upload
   const handleLogoChange = (e) => {
-    if (e.target.files?.length) setLogoFile(e.target.files[0]);
-    e.target.value = ""; // reset do input para permitir selecionar o mesmo arquivo depois
+    const file = e.target.files?.[0];
+    if (file) setLogoFile(file);
+    e.target.value = ""; // permite selecionar o mesmo arquivo depois
   };
+
   const handleBannerChange = (e) => {
-    if (e.target.files?.length) setBannerFile(e.target.files[0]);
+    const file = e.target.files?.[0];
+    if (file) setBannerFile(file);
     e.target.value = "";
   };
 
-  // reset pro default da paleta atual
   const clearColor = (setter, defaultValue) => setter(defaultValue);
 
-  // sugere uma paleta aleatória diferente da atual
   const suggestRandomPalette = () => {
     let next = Math.floor(Math.random() * COLOR_PALETTES.length);
-    while (next === paletteIndex) {
-      next = Math.floor(Math.random() * COLOR_PALETTES.length);
-    }
+    while (next === paletteIndex) next = Math.floor(Math.random() * COLOR_PALETTES.length);
     setPaletteIndex(next);
     const { bg, title, details } = COLOR_PALETTES[next];
     setBackgroundColor(bg);
@@ -177,26 +188,14 @@ export default function GetStart() {
     setDetailsColor(details);
   };
 
-  const colorFields = [
-    {
-      label: "Cor do fundo:",
-      value: backgroundColor,
-      setter: setBackgroundColor,
-      defaultValue: DEFAULT_BACKGROUND,
-    },
-    {
-      label: "Cor do título:",
-      value: titleColor,
-      setter: setTitleColor,
-      defaultValue: DEFAULT_TITLE,
-    },
-    {
-      label: "Cor dos detalhes:",
-      value: detailsColor,
-      setter: setDetailsColor,
-      defaultValue: DEFAULT_DETAILS,
-    },
-  ];
+  const colorFields = useMemo(
+    () => [
+      { label: "Cor do fundo:", value: backgroundColor, setter: setBackgroundColor, defaultValue: DEFAULT_BACKGROUND },
+      { label: "Cor do título:", value: titleColor, setter: setTitleColor, defaultValue: DEFAULT_TITLE },
+      { label: "Cor dos detalhes:", value: detailsColor, setter: setDetailsColor, defaultValue: DEFAULT_DETAILS },
+    ],
+    [backgroundColor, titleColor, detailsColor],
+  );
 
   const noneIcon = (
     <svg
@@ -212,24 +211,6 @@ export default function GetStart() {
     </svg>
   );
 
-  function getContrastTextColor(hex) {
-    const cleanHex = (hex || DEFAULT_BACKGROUND).replace("#", "");
-    const r = parseInt(cleanHex.substring(0, 2), 16);
-    const g = parseInt(cleanHex.substring(2, 4), 16);
-    const b = parseInt(cleanHex.substring(4, 6), 16);
-    const yiq = (r * 299 + g * 587 + b * 114) / 1000;
-    return yiq >= 128 ? "black" : "white";
-  }
-
-  function slugify(value) {
-    return value
-      .toLowerCase()
-      .normalize("NFD") // separa letra + acento
-      .replace(/[\u0300-\u036f]/g, "") // remove os acentos
-      .replace(/[^a-z0-9-]/g, "") // remove tudo que NÃO seja letra, número ou hífen
-      .replace(/-+/g, "-"); // evita múltiplos hífens seguidos
-  }
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -238,19 +219,14 @@ export default function GetStart() {
     );
   }
 
-  // handleSubmit
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("[submit] iniciado");
 
     const ok = await confirm("Quer mesmo criar o cardápio com essas informações?");
-    if (!ok) {
-      console.log("[submit] usuário cancelou");
-      return;
-    }
+    if (!ok) return;
 
     if (!user) {
-      alert("Você precisa estar logado para criar o cardápio.");
+      alert("Você precisa estar logado para criar o cardápio.", "error");
       return;
     }
 
@@ -260,178 +236,107 @@ export default function GetStart() {
       const base = establishmentName?.trim() || "meu-estabelecimento";
       let slug = slugify(base);
 
-      console.log("[submit] slug inicial:", slug);
-
-      const MAX_BYTES = 8 * 1024 * 1024; // 3MB
+      const MAX_BYTES = 8 * 1024 * 1024; // 8MB
       if (logoFile && logoFile.size > MAX_BYTES) {
-        alert("Logo muito grande (máx 8MB). Reduza o arquivo e tente de novo.");
-        throw new Error("Logo muito grande (máx 3MB). Reduza o arquivo e tente de novo.");
+        alert("Logo muito grande (máx 8MB). Reduza o arquivo e tente de novo.", "error");
+        throw new Error("Logo muito grande (máx 8MB).");
       }
       if (bannerFile && bannerFile.size > 4 * MAX_BYTES) {
-        alert("Banner muito grande (máx 32MB). Reduza o arquivo e tente de novo.");
-        throw new Error("Banner muito grande (máx 12MB). Reduza o arquivo e tente de novo.");
+        alert("Banner muito grande (máx 32MB). Reduza o arquivo e tente de novo.", "error");
+        throw new Error("Banner muito grande (máx 32MB).");
       }
 
-      // checagens antes do upload
-      console.log("[submit] checagens antes de upload:", {
-        userId: user.id,
-        hasLogo: !!logoFile,
-        hasBanner: !!bannerFile,
-        ts: new Date().toISOString(),
-      });
-      if (!user.id) {
-        throw new Error("user.id indefinido — usuário pode não estar autenticado corretamente.");
-      }
+      if (!user.id) throw new Error("user.id indefinido — usuário pode não estar autenticado corretamente.");
 
-      // Faz uploads SEQUENCIAIS (isolamos problemas)
-      console.log("[submit] iniciando uploads sequenciais (isolando)", new Date().toISOString());
       let logo_url = null;
       let banner_url = null;
 
       if (logoFile) {
-        try {
-          console.time("logoConvert+Upload");
+        console.time("logoConvert+Upload");
+        const webpLogoRaw = await fileToWebp(logoFile, { quality: 0.9, maxSize: 512, force: true });
+        const webpLogo =
+          webpLogoRaw instanceof File ? webpLogoRaw : new File([webpLogoRaw], "logo.webp", { type: "image/webp" });
 
-          // converte / redimensiona / recomprime
-          const webpLogoRaw = await fileToWebp(logoFile, { quality: 0.9, maxSize: 512, force: true });
-          const webpLogo =
-            webpLogoRaw instanceof File ? webpLogoRaw : new File([webpLogoRaw], "logo.webp", { type: "image/webp" });
-
-          const p = uploadFileToStorage(webpLogo, user.id, slug, "logo");
-          const result = USE_TIMEOUTS ? await withTimeout(p, 30000, "logo upload") : await p;
-
-          console.timeEnd("logoConvert+Upload");
-          logo_url = result ?? null;
-          console.log("[submit] logo upload result:", logo_url);
-        } catch (errLogo) {
-          console.error("[submit] logo upload failed:", errLogo);
-          throw new Error("Falha no upload do logo: " + (errLogo?.message ?? JSON.stringify(errLogo)));
-        }
+        const p = uploadFileToStorage(webpLogo, user.id, slug, "logo");
+        logo_url = (USE_TIMEOUTS ? await withTimeout(p, 30000, "logo upload") : await p) ?? null;
+        console.timeEnd("logoConvert+Upload");
       }
 
       if (bannerFile) {
-        try {
-          console.time("bannerConvert+Upload");
+        console.time("bannerConvert+Upload");
+        const webpBannerRaw = await fileToWebp(bannerFile, { quality: 0.82, maxSize: 2000, force: true });
+        const webpBanner =
+          webpBannerRaw instanceof File ? webpBannerRaw : new File([webpBannerRaw], "banner.webp", { type: "image/webp" });
 
-          // converte / redimensiona / recomprime
-          const webpBannerRaw = await fileToWebp(bannerFile, { quality: 0.82, maxSize: 2000, force: true });
-          const webpBanner =
-            webpBannerRaw instanceof File ? webpBannerRaw : new File([webpBannerRaw], "banner.webp", { type: "image/webp" });
-
-          const p2 = uploadFileToStorage(webpBanner, user.id, slug, "banner");
-          const result2 = USE_TIMEOUTS ? await withTimeout(p2, 45000, "banner upload") : await p2;
-
-          console.timeEnd("bannerConvert+Upload");
-          banner_url = result2 ?? null;
-          console.log("[submit] banner upload result:", banner_url);
-        } catch (errBanner) {
-          console.error("[submit] banner upload failed:", errBanner);
-          throw new Error("Falha no upload do banner: " + (errBanner?.message ?? JSON.stringify(errBanner)));
-        }
+        const p2 = uploadFileToStorage(webpBanner, user.id, slug, "banner");
+        banner_url = (USE_TIMEOUTS ? await withTimeout(p2, 45000, "banner upload") : await p2) ?? null;
+        console.timeEnd("bannerConvert+Upload");
       }
 
-      console.log("[submit] uploads finalizados:", { logo_url, banner_url });
-
-      // prepara insert (garante title não-nulo)
       const safeTitle = establishmentName?.trim() ? establishmentName.trim() : `${slug}`;
-      let insertObj = {
+
+      const insertObj = {
         owner_id: user.id,
         slug,
         title: safeTitle,
         description: null,
         logo_url: logo_url ?? null,
         banner_url: banner_url ?? null,
-        services: selectedServices && selectedServices.length ? selectedServices : null,
+        services: selectedServices?.length ? selectedServices : null,
         background_color: backgroundColor || null,
         title_color: titleColor || null,
         details_color: detailsColor || null,
       };
 
-      console.log("[submit] pronto para inserir (iniciando loop de tentativas):", insertObj);
-
-      // Loop de insert com retries para tratar unique constraint (23505)
       const MAX_INSERT_ATTEMPTS = 5;
       let insertAttempt = 0;
       let finalData = null;
-
-      // baseSlug sem sufixo numérico (usado para incrementar)
       const baseSlug = slug.replace(/-\d+$/, "");
 
       while (insertAttempt < MAX_INSERT_ATTEMPTS) {
         insertAttempt++;
-        try {
-          console.log(`[submit] insert attempt ${insertAttempt} slug=${slug}`);
 
-          // garante que o objeto tem o slug atual
-          insertObj.slug = slug;
+        const insertPromise = supabase.from("menus").insert([insertObj]).select().single();
+        const result = USE_TIMEOUTS ? await withTimeout(insertPromise, 15000, "db insert") : await insertPromise;
 
-          const insertPromise = supabase.from("menus").insert([insertObj]).select().single();
-          const result = USE_TIMEOUTS ? await withTimeout(insertPromise, 15000, "db insert") : await insertPromise;
-          const { data: inserted, error: insertError } = result || {};
+        const inserted = result?.data ?? null;
+        const insertError = result?.error ?? null;
 
-          if (insertError) {
-            console.error("[submit] supabase insert error object:", insertError);
+        if (insertError) {
+          const isDuplicate =
+            insertError.code === "23505" ||
+            (insertError?.message && insertError.message.toLowerCase().includes("duplicate"));
 
-            // trata duplicate key (unique violation)
-            const isDuplicate =
-              insertError.code === "23505" ||
-              (insertError?.message && insertError.message.toLowerCase().includes("duplicate"));
-
-            if (isDuplicate) {
-              console.warn("[submit] duplicate slug detected on insert attempt", insertAttempt, "slug:", slug);
-
-              // se já tem sufixo numérico, incrementa; senão começa com -1
-              const suffixMatch = slug.match(/-(\d+)$/);
-              if (suffixMatch) {
-                const nextNum = parseInt(suffixMatch[1], 10) + 1;
-                slug = `${baseSlug}-${nextNum}`;
-              } else {
-                slug = `${baseSlug}-1`;
-              }
-              insertObj.slug = slug;
-              console.log("[submit] retrying with new slug:", slug);
-              continue; // tenta novamente
+          if (isDuplicate) {
+            const suffixMatch = slug.match(/-(\d+)$/);
+            if (suffixMatch) {
+              const nextNum = parseInt(suffixMatch[1], 10) + 1;
+              slug = `${baseSlug}-${nextNum}`;
+            } else {
+              slug = `${baseSlug}-1`;
             }
-
-            // outro erro de insert -> lança para o catch externo
-            throw insertError;
+            insertObj.slug = slug;
+            continue;
           }
 
-          // sucesso!
-          finalData = inserted ?? result?.data ?? null;
-          console.log("[submit] insert ok:", finalData);
-          break;
-        } catch (err) {
-          console.error(`[submit] insert attempt ${insertAttempt} failed:`, err);
-
-          // se última tentativa, rethrow
-          if (insertAttempt >= MAX_INSERT_ATTEMPTS) {
-            throw err;
-          }
-
-          // fallback: gera slug aleatório curto e tenta de novo
-          const randomSuffix = Math.random().toString(36).substring(2, 6);
-          slug = `${baseSlug}-${randomSuffix}`;
-          insertObj.slug = slug;
-          console.log(`[submit] fallback new slug for next attempt: ${slug}`);
-          // loop continua
+          throw new Error(insertError?.message ?? JSON.stringify(insertError));
         }
+
+        finalData = inserted;
+        break;
       }
 
-      if (!finalData) {
-        throw new Error("Não foi possível criar o cardápio depois de várias tentativas.");
-      }
+      if (!finalData) throw new Error("Não foi possível criar o cardápio depois de várias tentativas.");
 
-      console.log("Cardápio criado com sucesso!", finalData);
+      alert("Cardápio criado com sucesso!", "success");
       router.push("/dashboard");
     } catch (err) {
       console.error("Erro ao criar cardápio:", err);
       const supaMsg = err?.message ?? err?.error ?? JSON.stringify(err);
       const details = err?.details ?? err?.hint ?? "";
-      alert("Erro ao criar cardápio.", "error");
+      alert(`Erro ao criar cardápio: ${supaMsg} ${details}`.trim(), "error");
     } finally {
       setCreatingMenu(false);
-      console.log("[submit] finalizado (creatingMenu=false)", new Date().toISOString());
     }
   };
 
@@ -447,23 +352,19 @@ export default function GetStart() {
 
   return (
     <form className="flex flex-col items-center p-1 xs:p-4" onSubmit={handleSubmit}>
-      {/* Container do form */}
       <div className="max-w-[700px] w-full rounded-lg mt-6 p-2 py-4 xs:p-6 space-y-6 bg-translucid shadow-[0_0_40px_var(--shadow)]">
-        {/* Cabeçalho */}
         <div className="max-w-[700px] text-center">
           <h1 className="default-h1 mb-2">Responda as perguntas para montar seu cardápio digital!</h1>
           <p className="color-gray">Nenhuma pergunta é obrigatória e você pode mudar tudo depois.</p>
         </div>
+
         {/* 1. Nome */}
         <div>
           <label className="block font-semibold">1. Como seu negócio se chama?</label>
           <input
             type="text"
             value={establishmentName}
-            onChange={(e) => {
-              const v = e.target.value.slice(0, 30);
-              setEstablishmentName(v);
-            }}
+            onChange={(e) => setEstablishmentName(e.target.value.slice(0, 30))}
             maxLength={30}
             placeholder="Nome do seu estabelecimento"
             className="w-full px-3 py-2 bg-translucid border border-[var(--low-gray)] rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -490,12 +391,9 @@ export default function GetStart() {
                     backgroundColor: selectedServices.includes(opt.id) ? "#155dfc" : "transparent",
                   }}
                 />
-
                 <span
                   className="relative after:content-['✓'] after:absolute after:text-white after:text-sm after:font-bold after:top-[3px] after:left-[-25px] peer-checked:after:opacity-100 after:opacity-0 transition-opacity duration-150 text-sm xs:text-base"
-                  style={{
-                    color: "var(--gray)",
-                  }}
+                  style={{ color: "var(--gray)" }}
                 >
                   {opt.label}
                 </span>
@@ -504,23 +402,32 @@ export default function GetStart() {
           </div>
         </div>
 
-        {/* 3. Logo do estabelecimento */}
+        {/* 3. Logo */}
         <div className="mb-4">
           <p className="font-semibold mb-2">3. Tem uma logo ou imagem que represente seu negócio? (ideal quadrada)</p>
+
           <label className="text-center flex flex-col items-center justify-center w-36 h-36 border-2 border-dashed border-translucid rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
-            {logoFile ? (
-              <img src={URL.createObjectURL(logoFile)} alt="Preview da logo" className="object-contain w-full h-full" />
+            {logoPreview ? (
+              <img src={logoPreview} alt="Preview da logo" className="object-contain w-full h-full" />
             ) : (
               <span className="color-gray">Clique aqui para inserir sua logo (1:1)</span>
             )}
-            <input id="logoInput" type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
+            <input
+              ref={logoInputRef}
+              id="logoInput"
+              type="file"
+              accept="image/*"
+              onChange={handleLogoChange}
+              className="hidden"
+            />
           </label>
+
           {logoFile && (
             <button
               type="button"
               onClick={() => {
                 setLogoFile(null);
-                document.querySelector("#logoInput").value = "";
+                if (logoInputRef.current) logoInputRef.current.value = "";
               }}
               className="mt-1 text-sm text-red-500 hover:underline"
             >
@@ -529,23 +436,32 @@ export default function GetStart() {
           )}
         </div>
 
-        {/* 4. Banner do estabelecimento */}
+        {/* 4. Banner */}
         <div className="mb-4">
           <p className="font-semibold mb-2">4. Tem uma imagem grande pro banner? (1640×664)</p>
+
           <label className="text-center flex flex-col items-center justify-center w-full h-30 border-2 border-dashed border-translucid rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
-            {bannerFile ? (
-              <img src={URL.createObjectURL(bannerFile)} alt="Preview do banner" className="object-cover w-full h-full" />
+            {bannerPreview ? (
+              <img src={bannerPreview} alt="Preview do banner" className="object-cover w-full h-full" />
             ) : (
               <span className="color-gray">Clique aqui para inserir seu banner (1640×664)</span>
             )}
-            <input id="bannerInput" type="file" accept="image/*" onChange={handleBannerChange} className="hidden" />
+            <input
+              ref={bannerInputRef}
+              id="bannerInput"
+              type="file"
+              accept="image/*"
+              onChange={handleBannerChange}
+              className="hidden"
+            />
           </label>
+
           {bannerFile && (
             <button
               type="button"
               onClick={() => {
                 setBannerFile(null);
-                document.querySelector("#bannerInput").value = "";
+                if (bannerInputRef.current) bannerInputRef.current.value = "";
               }}
               className="mt-1 text-sm text-red-500 hover:underline"
             >
@@ -560,11 +476,12 @@ export default function GetStart() {
             6. Escolha as cores do seu cardápio! (Clique em <span className="inline-block align-middle">{noneIcon}</span>{" "}
             para resetar)
           </p>
+
           <div className="flex flex-col space-y-4">
             {colorFields.map((item, idx) => (
               <div key={idx} className="flex items-center space-x-4">
                 <label className="w-32">{item.label}</label>
-                <input type="color" value={item.value} onChange={(e) => item.setter(e.target.value)} className="h-8 w-8 " />
+                <input type="color" value={item.value} onChange={(e) => item.setter(e.target.value)} className="h-8 w-8" />
                 <button
                   type="button"
                   onClick={() => clearColor(item.setter, item.defaultValue)}
@@ -577,7 +494,6 @@ export default function GetStart() {
             ))}
           </div>
 
-          {/* Botão de sugerir paleta aleatória */}
           <div className="mt-4 flex justify-begin">
             <button type="button" onClick={suggestRandomPalette} className="custom-gray-button has-icon">
               <FaLightbulb /> Sugerir cores
@@ -588,7 +504,7 @@ export default function GetStart() {
         {/* Preview ao vivo */}
         <div className="mt-6">
           <p className="font-semibold mb-2">
-            Este é uma prévia rápida — ainda não è o cardápio final. Aqui você confere se cores, logos e imagens estão
+            Este é uma prévia rápida — ainda não é o cardápio final. Aqui você confere se cores, logos e imagens estão
             harmonizados antes de seguir adiante:
           </p>
 
@@ -603,18 +519,12 @@ export default function GetStart() {
                 backgroundColor: getContrastTextColor(backgroundColor) === "white" ? "#ffffff30" : "#00000030",
               }}
             >
-              {bannerFile ? (
-                <img
-                  src={URL.createObjectURL(bannerFile)}
-                  alt="Banner do estabelecimento"
-                  className="object-cover w-full h-full"
-                />
+              {bannerPreview ? (
+                <img src={bannerPreview} alt="Banner do estabelecimento" className="object-cover w-full h-full" />
               ) : (
                 <span
                   className="transition-colors duration-500 ease-in-out"
-                  style={{
-                    color: getContrastTextColor(backgroundColor) === "white" ? "#ccc" : "#555",
-                  }}
+                  style={{ color: getContrastTextColor(backgroundColor) === "white" ? "#ccc" : "#555" }}
                 >
                   Banner (1640x664)
                 </span>
@@ -631,23 +541,18 @@ export default function GetStart() {
                     backgroundColor: getContrastTextColor(backgroundColor) === "white" ? "#ffffff30" : "#00000030",
                   }}
                 >
-                  {logoFile ? (
-                    <img
-                      src={URL.createObjectURL(logoFile)}
-                      alt="Logo do estabelecimento"
-                      className="object-contain w-full h-full"
-                    />
+                  {logoPreview ? (
+                    <img src={logoPreview} alt="Logo do estabelecimento" className="object-contain w-full h-full" />
                   ) : (
                     <span
                       className="text-xs transition-colors duration-500 ease-in-out"
-                      style={{
-                        color: getContrastTextColor(backgroundColor) === "white" ? "#ccc" : "#555",
-                      }}
+                      style={{ color: getContrastTextColor(backgroundColor) === "white" ? "#ccc" : "#555" }}
                     >
                       Logo
                     </span>
                   )}
                 </div>
+
                 <h3 className="ml-2 font-bold transition-colors duration-500 ease-in-out" style={{ color: titleColor }}>
                   {establishmentName || "Meu Estabelecimento"}
                 </h3>
@@ -693,6 +598,7 @@ export default function GetStart() {
                     >
                       {item.desc}
                     </p>
+
                     <div className="flex justify-between w-full">
                       <p
                         className="text-2xl font-semibold transition-colors duration-500 ease-in-out"
@@ -701,13 +607,10 @@ export default function GetStart() {
                         R${item.price}
                       </p>
 
-                      {/* Botão Adicionar ao carrinho */}
                       <button
                         className="rounded-md h-8 w-16 flex items-center justify-center transition-colors duration-500 ease-in-out"
-                        style={{
-                          backgroundColor: detailsColor,
-                          color: getContrastTextColor(detailsColor),
-                        }}
+                        style={{ backgroundColor: detailsColor, color: getContrastTextColor(detailsColor) }}
+                        type="button"
                       >
                         <FaShoppingCart size={16} />
                       </button>
