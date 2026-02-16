@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
-import { FaChevronLeft, FaMapMarkerAlt, FaMinus, FaPlus, FaShoppingCart, FaWhatsapp } from "react-icons/fa";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { FaMapMarkerAlt, FaMinus, FaPlus, FaShoppingCart, FaWhatsapp } from "react-icons/fa";
 import Image from "next/image";
 import GenericModal from "@/components/GenericModal";
 import { useCartContext } from "@/contexts/CartContext";
@@ -55,20 +55,15 @@ function scrollToCategoryId(id, offset = 15) {
   } else {
     const parentRect = scrollable.getBoundingClientRect();
     const elRect = el.getBoundingClientRect();
-    // calcula posição relativa ao scrollable
     const relativeTop = elRect.top - parentRect.top + scrollable.scrollTop;
     const target = Math.max(0, relativeTop - offset);
     scrollable.scrollTo({ top: target, behavior: "smooth" });
   }
 
-  // atualiza hash sem recarregar a página
   try {
     history.replaceState(null, "", `#${id}`);
-  } catch (e) {
-    // fallback silencioso
-  }
+  } catch (e) {}
 
-  // foco acessível sem scrollear de novo
   try {
     el.setAttribute("tabindex", "-1");
     el.focus({ preventScroll: true });
@@ -114,10 +109,15 @@ function formatHours(hours) {
   });
 }
 
+function isSafeImageUrl(url) {
+  return typeof url === "string" && url.length > 8 && (url.startsWith("http://") || url.startsWith("https://"));
+}
+
 export default function ClientMenu({ menu }) {
   const cart = useCartContext();
-  const [animateCart, setAnimateCart] = useState(false);
   const alert = useAlert();
+
+  const [animateCart, setAnimateCart] = useState(false);
   const [hoursModalOpen, setHoursModalOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const cartOpenRef = useRef(cartOpen);
@@ -125,10 +125,12 @@ export default function ClientMenu({ menu }) {
   const [establishmentPhone, setEstablishmentPhone] = useState(null);
   const [ownerRole, setOwnerRole] = useState(null);
 
-  const open = isOpenNow(menu.hours);
-  const translucidToUse = getContrastTextColor(menu.background_color) === "white" ? "#ffffff15" : "#00000015";
-  const grayToUse = getContrastTextColor(menu.background_color) === "white" ? "#cccccc" : "#333333";
-  const foregroundToUse = getContrastTextColor(menu.background_color) === "white" ? "#fafafa" : "#171717";
+  const open = useMemo(() => isOpenNow(menu.hours), [menu.hours]);
+
+  const contrast = useMemo(() => getContrastTextColor(menu.background_color), [menu.background_color]);
+  const translucidToUse = contrast === "white" ? "#ffffff15" : "#00000015";
+  const grayToUse = contrast === "white" ? "#cccccc" : "#333333";
+  const foregroundToUse = contrast === "white" ? "#fafafa" : "#171717";
 
   const now = new Date();
   const timeString = now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
@@ -171,13 +173,13 @@ export default function ClientMenu({ menu }) {
     setFilteredCategories(filtered);
   }, [searchTerm, orderedCategories]);
 
-  const handleItemClick = (item) => {
+  const handleItemClick = useCallback((item) => {
     setSelectedItem(item);
     setItemModalOpen(true);
     setQuantity(1);
     setSelectedAddons({});
     setNote("");
-  };
+  }, []);
 
   const toggleAddon = (idx) => {
     if (!selectedItem) return;
@@ -185,11 +187,9 @@ export default function ClientMenu({ menu }) {
     const key = String(idx);
     const limit = Number(selectedItem.additionals_limit ?? 0);
 
-    // calcula contagem atual fora do setter (estado atual)
     const currentCount = Object.values(selectedAddons).filter(Boolean).length;
     const isSelected = !!selectedAddons[key];
 
-    // se vai selecionar e tem limite, bloqueia antes
     if (!isSelected && limit > 0 && currentCount >= limit) {
       alert?.(`Você pode escolher no máximo ${limit} adicional${limit === 1 ? "" : "is"}.`, "error", {
         backgroundColor: `${menu.details_color}90`,
@@ -198,7 +198,6 @@ export default function ClientMenu({ menu }) {
       return;
     }
 
-    // update puro (sem side effects)
     setSelectedAddons((prev) => {
       const next = { ...prev };
       if (next[key]) delete next[key];
@@ -208,7 +207,6 @@ export default function ClientMenu({ menu }) {
   };
 
   const hasPlusPermissions = ownerRole === "plus" || ownerRole === "pro" || ownerRole === "admin";
-
   const canShowPromoPrice = hasPlusPermissions;
 
   const totalPrice = useMemo(() => {
@@ -220,10 +218,6 @@ export default function ClientMenu({ menu }) {
     }, 0);
     return (base + addonsPerUnit) * quantity;
   }, [selectedItem, quantity, selectedAddons, canShowPromoPrice]);
-
-  const selectedAddonsCount = useMemo(() => {
-    return Object.values(selectedAddons).filter(Boolean).length;
-  }, [selectedAddons]);
 
   const handleAddToCart = async () => {
     if (!selectedItem) return;
@@ -280,9 +274,7 @@ export default function ClientMenu({ menu }) {
       if (!(window.history.state && window.history.state.ui === "cart")) {
         window.history.pushState({ ui: "cart" }, "");
       }
-    } catch (e) {
-      console.warn("pushState falhou", e);
-    }
+    } catch (e) {}
     setCartOpen(true);
   };
 
@@ -292,9 +284,7 @@ export default function ClientMenu({ menu }) {
         if (window.history.state && window.history.state.ui === "cart") {
           window.history.replaceState(null, "");
         }
-      } catch (e) {
-        console.warn("replaceState falhou", e);
-      }
+      } catch (e) {}
     }
     setCartOpen(false);
   };
@@ -307,97 +297,64 @@ export default function ClientMenu({ menu }) {
     setNote("");
   };
 
-  const closeHoursModal = () => {
-    setHoursModalOpen(false);
-  };
+  const closeHoursModal = () => setHoursModalOpen(false);
 
-  // Busca o telefone do estabelecimento
   useEffect(() => {
-    const fetchPhone = async () => {
+    const fetchOwnerData = async () => {
       let phone = null;
-
-      if (menu?.owner_id) {
-        const { data, error } = await supabase.from("profiles").select("phone").eq("id", menu.owner_id).single();
-
-        if (!error && data?.phone) {
-          phone = data.phone;
-        }
-      }
-
-      // fallback
-      phone = phone || menu?.owner_phone || menu?.phone || null;
-
-      setEstablishmentPhone(phone);
-
-      if (!phone) {
-        console.warn("CartDrawer: nenhum telefone disponível (establishmentPhone/menu.owner_phone/menu.phone)", {
-          establishmentPhone: phone,
-          menuPhone: menu?.phone,
-        });
-      }
-    };
-
-    fetchPhone();
-  }, [menu?.owner_id, menu?.owner_phone, menu?.phone]);
-
-  // Busca o cargo do dono do estabelecimento
-  useEffect(() => {
-    const fetchRole = async () => {
       let role = null;
 
       if (menu?.owner_id) {
-        const { data, error } = await supabase.from("profiles").select("role").eq("id", menu.owner_id).single();
+        const { data, error } = await supabase.from("profiles").select("phone, role").eq("id", menu.owner_id).maybeSingle();
 
-        if (!error && data?.role) {
-          role = data.role;
+        if (!error && data) {
+          phone = data.phone || null;
+          role = data.role || null;
         }
       }
 
-      // fallback
+      phone = phone || menu?.owner_phone || menu?.phone || null;
       role = role || menu?.owner_role || menu?.role || null;
 
+      setEstablishmentPhone(phone);
       setOwnerRole(role || "free");
     };
 
-    fetchRole();
-  }, [menu?.owner_id, menu?.owner_role, menu?.role]);
+    fetchOwnerData();
+  }, [menu?.owner_id, menu?.owner_phone, menu?.phone, menu?.owner_role, menu?.role]);
 
   useEffect(() => {
     cartOpenRef.current = cartOpen;
   }, [cartOpen]);
 
-  // Fecha o cart com botão voltar
+  // Fecha modais com botão voltar
   useEffect(() => {
     const onPopState = () => {
-      if (cartOpenRef.current) {
-        setCartOpen(false);
-      }
-
-      if (itemModalOpen) {
-        closeItemModal();
-      }
-
-      if (hoursModalOpen) {
-        closeHoursModal();
-      }
+      if (cartOpenRef.current) setCartOpen(false);
+      if (itemModalOpen) closeItemModal();
+      if (hoursModalOpen) closeHoursModal();
     };
 
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, [itemModalOpen, hoursModalOpen]);
 
-  // Abre o modal de produto adicionando entrada no histórico
   useEffect(() => {
-    if (itemModalOpen) {
-      window.history.pushState({ ui: "productModal" }, "");
-    }
+    if (!itemModalOpen) return;
+    try {
+      if (!(window.history.state && window.history.state.ui === "productModal")) {
+        window.history.pushState({ ui: "productModal" }, "");
+      }
+    } catch (e) {}
   }, [itemModalOpen]);
 
-  // Abre o modal de horários adicionando entrada no histórico
   useEffect(() => {
-    if (hoursModalOpen) {
-      window.history.pushState({ ui: "hoursModal" }, "");
-    }
+    if (!hoursModalOpen) return;
+    try {
+      if (!(window.history.state && window.history.state.ui === "hoursModal")) {
+        window.history.pushState({ ui: "hoursModal" }, "");
+      }
+    } catch (e) {}
   }, [hoursModalOpen]);
 
   const cartCount = typeof cart.totalItems === "function" ? cart.totalItems(menu?.id) : 0;
@@ -412,22 +369,30 @@ export default function ClientMenu({ menu }) {
   useEffect(() => {
     const cartButton = document.getElementById("cart-button-wrapper");
     const footer = document.querySelector("footer");
-
     if (!cartButton || !footer) return;
 
+    let raf = 0;
     const onScroll = () => {
-      const footerRect = footer.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        const footerRect = footer.getBoundingClientRect();
+        const windowHeight = window.innerHeight;
 
-      if (footerRect.top < windowHeight) {
-        cartButton.style.bottom = `${windowHeight - footerRect.top + 20}px`;
-      } else {
-        cartButton.style.bottom = "20px";
-      }
+        if (footerRect.top < windowHeight) {
+          cartButton.style.bottom = `${windowHeight - footerRect.top + 20}px`;
+        } else {
+          cartButton.style.bottom = "20px";
+        }
+      });
     };
 
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
   }, []);
 
   const starredItems = useMemo(() => {
@@ -438,7 +403,9 @@ export default function ClientMenu({ menu }) {
 
   const hasStarred = starredItems.length > 0;
 
-  const navCategories = orderedCategories.filter((cat) => (cat.menu_items || []).some((it) => it.visible));
+  const navCategories = useMemo(() => {
+    return orderedCategories.filter((cat) => (cat.menu_items || []).some((it) => it.visible));
+  }, [orderedCategories]);
 
   const totalVisibleItems = useMemo(() => {
     return (filteredCategories || []).reduce((sum, cat) => {
@@ -457,7 +424,6 @@ export default function ClientMenu({ menu }) {
 
   return (
     <>
-      {/* === Conteúdo da página === */}
       <div
         className="min-h-screen w-full lg:px-20 xl:px-32 relative pb-18"
         style={{ backgroundColor: menu.background_color }}
@@ -465,7 +431,7 @@ export default function ClientMenu({ menu }) {
         {/* Indicador de status no topo */}
         {menu.banner_url ? (
           <div
-            className={`cursor-pointer absolute mt-2 flex items-center h-[35px] top-[calc(18dvh-50px)] sm:top-[calc(25dvh-50px)] right-2 lg:right-20 xl:right-32 px-3 py-1 mr-2 rounded-lg font-bold text-sm z-2`}
+            className="cursor-pointer absolute mt-2 flex items-center h-[35px] top-[calc(18dvh-50px)] sm:top-[calc(25dvh-50px)] right-2 lg:right-20 xl:right-32 px-3 py-1 mr-2 rounded-lg font-bold text-sm z-2"
             style={{ backgroundColor: open ? "#16a34a" : "#dc2626", color: "white" }}
             onClick={() => setHoursModalOpen(true)}
           >
@@ -473,8 +439,8 @@ export default function ClientMenu({ menu }) {
           </div>
         ) : null}
 
-        {/* Banner */}
-        {menu.banner_url && (
+        {/* Banner (Next/Image com sizes) */}
+        {isSafeImageUrl(menu.banner_url) && (
           <div className="relative w-full h-[18dvh] sm:h-[25dvh]">
             <Image
               alt="Banner do estabelecimento"
@@ -482,7 +448,8 @@ export default function ClientMenu({ menu }) {
               fill
               className="object-cover"
               priority
-              quality={60}
+              sizes="(max-width: 640px) 100vw, (max-width: 1280px) 80vw, 60vw"
+              quality={55}
             />
           </div>
         )}
@@ -491,11 +458,20 @@ export default function ClientMenu({ menu }) {
         <div className="py-4">
           <div className="flex items-center justify-between px-4">
             <div className="flex items-center min-w-full">
-              {menu.logo_url && (
-                <div className="relative w-full max-w-[45px] xxs:max-w-[55px] sm:max-w-[80px] aspect-[1/1] rounded-lg mr-2 sm:mr-4">
-                  <img alt="Logo do estabelecimento" src={menu.logo_url} className="object-cover rounded-lg w-full h-full" />
+              {/* Logo (Next/Image em vez de <img>) */}
+              {isSafeImageUrl(menu.logo_url) && (
+                <div className="relative w-full max-w-[45px] xxs:max-w-[55px] sm:max-w-[80px] aspect-[1/1] rounded-lg mr-2 sm:mr-4 overflow-hidden">
+                  <Image
+                    alt="Logo do estabelecimento"
+                    src={menu.logo_url}
+                    fill
+                    className="object-cover"
+                    quality={55}
+                    sizes="(max-width: 480px) 55px, (max-width: 640px) 80px, 80px"
+                  />
                 </div>
               )}
+
               <div className="flex flex-col items-start">
                 <h1
                   className="text-lg xs:text-xl md:text-2xl font-bold line-clamp-2 pr-8"
@@ -503,17 +479,19 @@ export default function ClientMenu({ menu }) {
                 >
                   {menu.title}
                 </h1>
-                {menu.banner_url ? null : (
+
+                {!menu.banner_url ? (
                   <div
-                    className={`cursor-pointer flex items-center h-[30px] px-2 mr-2 rounded-lg font-bold text-sm z-2`}
+                    className="cursor-pointer flex items-center h-[30px] px-2 mr-2 rounded-lg font-bold text-sm z-2"
                     style={{ backgroundColor: open ? "#16a34a" : "#dc2626", color: "white" }}
                     onClick={() => setHoursModalOpen(true)}
                   >
                     {open ? "Aberto agora" : "Fechado"}
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
+
             <div
               className="cursor-pointer hover:scale-[1.1] transition transform-[translatex(-100%)]"
               onClick={() => {
@@ -591,6 +569,7 @@ export default function ClientMenu({ menu }) {
           </div>
         )}
 
+        {/* Destaques */}
         {hasStarred && hasPlusPermissions && searchTerm === "" && (
           <div className="rounded py-3 px-4" id="starred-section">
             <div className="flex items-center gap-2 mb-2 pt-4">
@@ -617,18 +596,21 @@ export default function ClientMenu({ menu }) {
                   style={{ backgroundColor: translucidToUse }}
                   onClick={() => handleItemClick(it)}
                 >
-                  {/* content */}
                   <div className="flex flex-col justify-between h-full">
                     <div>
-                      {it.image_url && (
-                        <img
-                          src={it.image_url}
-                          alt={it.name}
-                          className="w-full aspect-square object-cover rounded-md mb-2"
-                          loading="lazy"
-                          decoding="async"
-                        />
+                      {isSafeImageUrl(it.image_url) && (
+                        <div className="relative w-full aspect-square rounded-md mb-2 overflow-hidden">
+                          <Image
+                            src={it.image_url}
+                            alt={it.name}
+                            fill
+                            className="object-cover"
+                            quality={55}
+                            sizes="(max-width: 640px) 60vw, (max-width: 1024px) 30vw, 24vw"
+                          />
+                        </div>
                       )}
+
                       <div className="text-lg font-semibold line-clamp-1" style={{ color: foregroundToUse }}>
                         {it.name}
                       </div>
@@ -636,27 +618,19 @@ export default function ClientMenu({ menu }) {
                         {it.description}
                       </div>
                     </div>
+
                     {it.promo_price && canShowPromoPrice ? (
                       <div>
                         <span className="text-xs xs:text-sm line-through" style={{ color: grayToUse }}>
-                          {Number(it.price).toLocaleString("pt-BR", {
-                            style: "currency",
-                            currency: "BRL",
-                          })}
+                          {Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                         </span>
                         <div className="font-bold text-xl lg:text-2xl" style={{ color: foregroundToUse }}>
-                          {Number(it.promo_price).toLocaleString("pt-BR", {
-                            style: "currency",
-                            currency: "BRL",
-                          })}
+                          {Number(it.promo_price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                         </div>
                       </div>
                     ) : (
                       <div className="font-bold text-2xl" style={{ color: foregroundToUse }}>
-                        {Number(it.price).toLocaleString("pt-BR", {
-                          style: "currency",
-                          currency: "BRL",
-                        })}
+                        {Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                       </div>
                     )}
                   </div>
@@ -672,10 +646,10 @@ export default function ClientMenu({ menu }) {
           </div>
         )}
 
+        {/* Lista */}
         <div className="space-y-4 px-4">
           {filteredCategories.map((cat) => {
             const visibleItems = (cat.menu_items || []).filter((it) => it.visible);
-
             if (visibleItems.length === 0) return null;
 
             return (
@@ -692,31 +666,41 @@ export default function ClientMenu({ menu }) {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {visibleItems.map((it) => (
                     <div key={it.id} className="flex items-stretch justify-between">
-                      {it.image_url && (
-                        <img
-                          src={it.image_url}
-                          alt={it.name}
-                          loading="lazy"
-                          decoding="async"
-                          onClick={() => handleItemClick(it)}
+                      {isSafeImageUrl(it.image_url) && (
+                        <div
                           className="
+                            relative
                             w-[72px] h-[72px]
                             sm:w-[130px] sm:h-[130px]
-                            object-cover rounded-l-lg
+                            overflow-hidden
+                            rounded-l-lg
                             sm:relative sm:m-0 m-2 absolute
-
                           "
                           style={{ flexShrink: 0 }}
-                        />
+                          onClick={() => handleItemClick(it)}
+                        >
+                          <Image
+                            src={it.image_url}
+                            alt={it.name}
+                            fill
+                            className="object-cover"
+                            quality={55}
+                            sizes="(max-width: 640px) 72px, 130px"
+                          />
+                        </div>
                       )}
 
                       <div
-                        className={`cursor-pointer flex-1 h-auto min-h-[116px] sm:h-[130px] flex flex-col justify-between px-2 p-1 ${it.image_url ? "rounded-lg sm:rounded-tr-lg sm:rounded-br-lg sm:rounded-tl-none sm:rounded-bl-none" : "rounded-lg"}`}
+                        className={`cursor-pointer flex-1 h-auto min-h-[116px] sm:h-[130px] flex flex-col justify-between px-2 p-1 ${
+                          it.image_url
+                            ? "rounded-lg sm:rounded-tr-lg sm:rounded-br-lg sm:rounded-tl-none sm:rounded-bl-none"
+                            : "rounded-lg"
+                        }`}
                         style={{ backgroundColor: translucidToUse }}
                         onClick={() => handleItemClick(it)}
                       >
                         <div className="flex items-start gap-2">
-                          <div className={`${it.image_url ? "pl-20 sm:pl-0" : null} mb-2 sm:mb-0 h-[72px] sm:h-auto`}>
+                          <div className={`${it.image_url ? "pl-20 sm:pl-0" : ""} mb-2 sm:mb-0 h-[72px] sm:h-auto`}>
                             <div className="text-xl line-clamp-1" style={{ color: foregroundToUse }}>
                               {it.name}
                             </div>
@@ -733,14 +717,12 @@ export default function ClientMenu({ menu }) {
                             </div>
                           </div>
                         </div>
+
                         <div className="flex items-end justify-between w-full">
                           {it.promo_price && canShowPromoPrice ? (
                             <div>
                               <span className="text-sm line-through" style={{ color: grayToUse }}>
-                                {Number(it.price).toLocaleString("pt-BR", {
-                                  style: "currency",
-                                  currency: "BRL",
-                                })}
+                                {Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                               </span>
                               <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
                                 {Number(it.promo_price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
@@ -749,10 +731,11 @@ export default function ClientMenu({ menu }) {
                           ) : (
                             <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
                               {it.price
-                                ? `${Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`
+                                ? Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
                                 : null}
                             </div>
                           )}
+
                           <div className="px-6 py-2 mb-1 rounded" style={{ backgroundColor: menu.details_color }}>
                             <FaShoppingCart style={{ color: getContrastTextColor(menu.details_color) }} />
                           </div>
@@ -778,10 +761,7 @@ export default function ClientMenu({ menu }) {
             className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg shadow-[0_0_20px_var(--shadow)] font-bold transition-transform duration-200 hover:opacity-90 hover:scale-110 ${
               animateCart ? "scale-110" : "scale-100"
             }`}
-            style={{
-              backgroundColor: menu.details_color,
-              color: getContrastTextColor(menu.details_color),
-            }}
+            style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
             aria-label="Abrir carrinho"
           >
             <span>Carrinho</span>
@@ -841,33 +821,31 @@ export default function ClientMenu({ menu }) {
         >
           <div className="flex flex-col gap-4 sm:min-w-[460px]">
             <div className="flex flex-row gap-4 mb-2">
-              {selectedItem.image_url && (
-                <img
-                  src={selectedItem.image_url}
-                  alt={selectedItem.name}
-                  loading="lazy"
-                  decoding="async"
-                  className="block h-26 w-26 sm:h-30 sm:w-30 object-cover rounded-lg"
-                  style={{ flexShrink: 0 }}
-                />
+              {isSafeImageUrl(selectedItem.image_url) && (
+                <div className="relative h-26 w-26 sm:h-30 sm:w-30 overflow-hidden rounded-lg" style={{ flexShrink: 0 }}>
+                  <Image
+                    src={selectedItem.image_url}
+                    alt={selectedItem.name}
+                    fill
+                    className="object-cover"
+                    quality={60}
+                    sizes="120px"
+                  />
+                </div>
               )}
+
               <div
-                className={`flex flex-col gap-2 justify-between ${
-                  selectedItem.image_url ? "w-[calc(100%-120px)]" : "w-[100%]"
-                }`}
+                className={`flex flex-col gap-2 justify-between ${selectedItem.image_url ? "w-[calc(100%-120px)]" : "w-[100%]"}`}
               >
                 {selectedItem.description && (
                   <p
                     className="min-h-[64px] max-h-[64px] sm:min-h-[80px] sm:max-h-[80px] overflow-auto text-sm pr-1"
-                    style={{
-                      color: grayToUse,
-                      wordBreak: "normal",
-                      overflowWrap: "anywhere",
-                    }}
+                    style={{ color: grayToUse, wordBreak: "normal", overflowWrap: "anywhere" }}
                   >
                     {selectedItem.description?.replace(/,\s*/g, ", ")}
                   </p>
                 )}
+
                 {selectedItem.promo_price && canShowPromoPrice ? (
                   <div className="flex flex-col">
                     <span className="text-xs font-semibold line-through" style={{ color: grayToUse }}>
@@ -889,17 +867,13 @@ export default function ClientMenu({ menu }) {
               </div>
             </div>
 
-            {menu.orders != "none" ? (
+            {menu.orders !== "none" ? (
               <div className="max-w-full">
                 <textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   className="w-[100%] h-full p-2 border"
-                  style={{
-                    backgroundColor: translucidToUse,
-                    color: foregroundToUse,
-                    borderColor: grayToUse,
-                  }}
+                  style={{ backgroundColor: translucidToUse, color: foregroundToUse, borderColor: grayToUse }}
                   placeholder="Comentário (opicional)"
                 />
               </div>
@@ -917,9 +891,8 @@ export default function ClientMenu({ menu }) {
               </div>
             ) : null}
 
-            {menu.orders != "none" ? (
+            {menu.orders !== "none" ? (
               <>
-                {/* adicionais: somente se existirem */}
                 {Array.isArray(selectedItem.additionals) && selectedItem.additionals.length > 0 && (
                   <div className="space-y-2">
                     <div className="font-semibold" style={{ color: foregroundToUse }}>
@@ -956,7 +929,6 @@ export default function ClientMenu({ menu }) {
                   </div>
                 )}
 
-                {/* seletor de quantidade do item */}
                 <div className="flex items-center gap-4">
                   <button
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
