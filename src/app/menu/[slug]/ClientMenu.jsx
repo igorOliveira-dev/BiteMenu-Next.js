@@ -667,7 +667,7 @@ export default function ClientMenu({ menu }) {
                   {visibleItems.map((it) => (
                     <div key={it.id} className="flex items-stretch">
                       <div
-                        className="flex-1 min-h-[72px] sm:min-h-[130px] rounded-lg p-2 flex flex-col justify-between cursor-pointer"
+                        className="flex-1 min-h-[130px] rounded-lg p-2 flex flex-col justify-between cursor-pointer"
                         style={{ backgroundColor: translucidToUse }}
                         onClick={() => handleItemClick(it)}
                       >
