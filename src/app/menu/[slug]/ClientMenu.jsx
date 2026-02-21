@@ -206,6 +206,25 @@ export default function ClientMenu({ menu }) {
     });
   };
 
+  // scroll modal desc view
+  const [showFade, setShowFade] = useState(false);
+  const descRef = useRef(null);
+
+  useEffect(() => {
+    const el = descRef.current;
+    if (!el) return;
+
+    const checkScroll = () => {
+      const hasMore = el.scrollTop + el.clientHeight < el.scrollHeight - 1;
+      setShowFade(hasMore);
+    };
+
+    checkScroll();
+    el.addEventListener("scroll", checkScroll);
+
+    return () => el.removeEventListener("scroll", checkScroll);
+  }, [selectedItem]);
+
   const hasPlusPermissions = ownerRole === "plus" || ownerRole === "pro" || ownerRole === "admin";
   const canShowPromoPrice = hasPlusPermissions;
 
@@ -814,14 +833,31 @@ export default function ClientMenu({ menu }) {
               <div
                 className={`flex flex-col gap-2 justify-between ${selectedItem.image_url ? "w-[calc(100%-120px)]" : "w-[100%]"}`}
               >
-                {selectedItem.description && (
-                  <p
-                    className="min-h-[64px] max-h-[64px] sm:min-h-[80px] sm:max-h-[80px] overflow-auto text-sm pr-1"
-                    style={{ color: grayToUse, wordBreak: "normal", overflowWrap: "anywhere" }}
-                  >
-                    {selectedItem.description?.replace(/,\s*/g, ", ")}
-                  </p>
-                )}
+                <div className="relative">
+                  {selectedItem.description && (
+                    <>
+                      <p
+                        ref={descRef}
+                        className="min-h-[64px] max-h-[64px] sm:min-h-[80px] sm:max-h-[80px] overflow-auto text-sm pr-1 scrollbar-none"
+                        style={{
+                          color: grayToUse,
+                          wordBreak: "normal",
+                          overflowWrap: "anywhere",
+                        }}
+                      >
+                        {selectedItem.description?.replace(/,\s*/g, ", ")}
+                      </p>
+
+                      <div
+                        className="pointer-events-none absolute bottom-0 left-0 w-full h-6 transition-opacity duration-200"
+                        style={{
+                          opacity: showFade ? 1 : 0,
+                          background: `linear-gradient(to top, ${menu.background_color}, ${menu.background_color}00)`,
+                        }}
+                      />
+                    </>
+                  )}
+                </div>
 
                 {selectedItem.promo_price && canShowPromoPrice ? (
                   <div className="flex flex-col">
