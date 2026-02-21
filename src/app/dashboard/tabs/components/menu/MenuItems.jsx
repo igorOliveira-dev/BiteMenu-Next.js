@@ -59,6 +59,8 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
   const hasPlusPermissions = ownerRole === "admin" || ownerRole === "plus" || ownerRole === "pro";
 
+  const [showCatIndicator, setShowCatIndicator] = useState(false);
+
   const canShowPromoPrice = hasPlusPermissions;
   const canHighlightItems = hasPlusPermissions;
 
@@ -221,6 +223,15 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     return () => window.removeEventListener("popstate", handlePopState);
   }, [modalOpen, planModalOpen, additionalsCfgOpen, additionalsCfgDraft]);
 
+  // verifica se existe alguma categoria criada
+  useEffect(() => {
+    if (!loading && categories?.length === 0) {
+      console.log("Sem categorias encontradas");
+      alert("Clique no botão '+ categoria' para começar a adicionar seus itens!", "slow");
+      setShowCatIndicator(true);
+    }
+  }, [loading]);
+
   const closePlanModal = () => {
     setPlanModalOpen(false);
     setPlanModalFeature(null);
@@ -339,6 +350,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       );
 
       alert?.("Categoria criada", "success");
+      setShowCatIndicator(false);
       return data;
     } catch (err) {
       console.error("createCategory error:", err);
@@ -981,12 +993,23 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     <div className={`p-4 ${changedFields.length > 0 ? "pb-48 lg:pb-34" : "pb-12 lg:pb-0"}`}>
       <div className="mb-4">
         <div className="flex gap-2">
-          <button
-            onClick={() => openCategoryModal("create")}
-            className="cursor-pointer px-3 py-1 bg-blue-600/80 border-2 border-[var(--translucid)] hover:bg-blue-700/80 text-white rounded"
-          >
-            + Categoria
-          </button>
+          {showCatIndicator ? (
+            <>
+              <button
+                onClick={() => openCategoryModal("create")}
+                className="cursor-pointer px-3 py-1 bg-blue-600/80 border-2 border-[var(--translucid)] hover:bg-blue-700/80 text-white rounded pulse-btn"
+              >
+                + Categoria
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => openCategoryModal("create")}
+              className="cursor-pointer px-3 py-1 bg-blue-600/80 border-2 border-[var(--translucid)] hover:bg-blue-700/80 text-white rounded"
+            >
+              + Categoria
+            </button>
+          )}
           {categories.length > 0 && (
             <button
               onClick={openSortModal}

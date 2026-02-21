@@ -5,32 +5,45 @@ import { FaTimes } from "react-icons/fa";
 
 const AlertContext = createContext(null);
 
-export function AlertProvider({ children }) {
+const alertPresets = {
+  fast: {
+    duration: 2500,
+  },
+  slow: {
+    duration: 8000,
+  },
+};
+
+export function AlertProvider({ children, duration: defaultDuration = 4000 }) {
   const [alerts, setAlerts] = useState([]);
 
   const showAlert = useCallback(
-    (
-      message,
-      type = "info",
-      options = {} // aqui vem duração, cores, etc
-    ) => {
-      const { duration = 4000, backgroundColor = null, textColor = null } = options;
+    (message, type = "info", options = {}) => {
+      const preset = alertPresets[type] || {};
+
+      const finalDuration = options.duration ?? preset.duration ?? defaultDuration;
+
+      const finalBackgroundColor = options.backgroundColor ?? preset.backgroundColor ?? null;
+
+      const finalTextColor = options.textColor ?? preset.textColor ?? null;
 
       const id = Date.now();
+
       const newAlert = {
         id,
         message,
         type,
-        duration,
+        duration: finalDuration,
         visible: true,
-        backgroundColor,
-        textColor,
+        backgroundColor: finalBackgroundColor,
+        textColor: finalTextColor,
       };
+
       setAlerts((prev) => [...prev, newAlert]);
 
-      setTimeout(() => closeAlert(id), duration);
+      setTimeout(() => closeAlert(id), finalDuration);
     },
-    []
+    [defaultDuration],
   );
 
   const closeAlert = (id) => {
@@ -38,13 +51,11 @@ export function AlertProvider({ children }) {
 
     setTimeout(() => {
       setAlerts((prev) => prev.filter((a) => a.id !== id));
-    }, 300); // fade-out duration
+    }, 300);
   };
 
   const getBackgroundColor = (a) => {
     if (a.backgroundColor) return a.backgroundColor;
-    // if (a.type === "error") return "#ff000005";
-    // if (a.type === "success") return "#00ff0005";
     return "var(--low-gray)";
   };
 
