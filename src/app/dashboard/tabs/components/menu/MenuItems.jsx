@@ -351,6 +351,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
       alert?.("Categoria criada", "success");
       setShowCatIndicator(false);
+      requestAnimationFrame(() => {
+        scrollToCategoryId(data.id.slice(0, 5), 50);
+      });
       return data;
     } catch (err) {
       console.error("createCategory error:", err);
@@ -993,23 +996,12 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     <div className={`p-4 ${changedFields.length > 0 ? "pb-48 lg:pb-34" : "pb-12 lg:pb-0"}`}>
       <div className="mb-4">
         <div className="flex gap-2">
-          {showCatIndicator ? (
-            <>
-              <button
-                onClick={() => openCategoryModal("create")}
-                className="cursor-pointer px-3 py-1 bg-blue-600/80 border-2 border-[var(--translucid)] hover:bg-blue-700/80 text-white rounded pulse-btn"
-              >
-                + Categoria
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={() => openCategoryModal("create")}
-              className="cursor-pointer px-3 py-1 bg-blue-600/80 border-2 border-[var(--translucid)] hover:bg-blue-700/80 text-white rounded"
-            >
-              + Categoria
-            </button>
-          )}
+          <button
+            onClick={() => openCategoryModal("create")}
+            className={`cursor-pointer px-3 py-1 bg-blue-600/80 border-2 border-[var(--translucid)] hover:bg-blue-700/80 text-white rounded ${showCatIndicator ? "pulse-btn" : ""}`}
+          >
+            + Categoria
+          </button>
           {categories.length > 0 && (
             <button
               onClick={openSortModal}
