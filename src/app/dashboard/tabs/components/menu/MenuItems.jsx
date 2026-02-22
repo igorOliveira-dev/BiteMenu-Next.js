@@ -1167,7 +1167,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => openItemModal("create", cat.id)}
-                  className="min-w-[32px] cursor-pointer px-2 py-1 bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white rounded"
+                  className={`min-w-[32px] cursor-pointer px-2 py-1 bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white rounded ${cat.menu_items?.length === 0 ? "pulse-btn" : ""}`}
                 >
                   + <span className="hidden xs:inline">Item</span>
                 </button>
