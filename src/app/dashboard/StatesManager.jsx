@@ -10,6 +10,7 @@ import { useAlert } from "@/providers/AlertProvider";
 import GenericModal from "@/components/GenericModal";
 import { FaChevronLeft } from "react-icons/fa";
 import { useConfirm } from "@/providers/ConfirmProvider";
+import useModalBackHandler from "@/hooks/useModalBackHandler";
 
 /**
  * StatesManager (versão com checagem de auth e tratamento RLS/storage)
@@ -256,7 +257,9 @@ export default function StatesManager({
   }, [menuFromServer?.id]);
 
   const timerRef = useRef(null);
-  const isPoppingRef = useRef(false);
+
+  // Modal de "Alterações não salvas" fecha com botão "Voltar"
+  useModalBackHandler(showChanges, () => setShowChanges(false));
 
   useEffect(() => {
     if (!localState || !serverState) {
@@ -274,22 +277,6 @@ export default function StatesManager({
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [localState, serverState, keys, changedFields]);
-
-  useEffect(() => {
-    setTabHistory((prev) => {
-      if (prev[prev.length - 1] !== selectedTab) {
-        return [...prev, selectedTab];
-      }
-      return prev;
-    });
-
-    if (isPoppingRef.current) {
-      isPoppingRef.current = false;
-      return;
-    }
-
-    window.history.pushState({ selectedTab }, "", window.location.pathname);
-  }, [selectedTab]);
 
   const revertField = (key) => {
     if (!serverState) return;

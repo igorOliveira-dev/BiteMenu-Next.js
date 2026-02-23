@@ -7,6 +7,7 @@ import useMenu from "@/hooks/useMenu";
 import Loading from "@/components/Loading";
 import GenericModal from "@/components/GenericModal";
 import { useAlert } from "@/providers/AlertProvider";
+import useModalBackHandler from "@/hooks/useModalBackHandler";
 
 const DEFAULT_HOURS = {
   mon: "09:00-18:00",
@@ -139,6 +140,12 @@ const ConfigMenu = (props) => {
   const [tempDescription, setTempDescription] = useState(propDescription ?? "");
   const [tempAddress, setTempAddress] = useState(propAddress ?? "");
   const [tempSlug, setTempSlug] = useState(slug ?? "");
+
+  // Modais de texto do ConfigMenu fecham com botão "Voltar"
+  useModalBackHandler(titleModalOpen, () => setTitleModalOpen(false));
+  useModalBackHandler(descModalOpen, () => setDescModalOpen(false));
+  useModalBackHandler(addressModalOpen, () => setAddressModalOpen(false));
+  useModalBackHandler(slugModalOpen, () => setSlugModalOpen(false));
 
   useEffect(() => {
     if (menu) {
@@ -556,7 +563,7 @@ const ConfigMenu = (props) => {
 
       {/* MODALS */}
       {titleModalOpen && (
-        <GenericModal title="Alterar nome" onClose={() => setTitleModalOpen(false)} wfull maxWidth={"420px"}>
+        <GenericModal title="Alterar nome" onClose={() => setTitleModalOpen(false)} wfull size="md">
           <input
             type="text"
             placeholder="Novo título"
@@ -598,7 +605,7 @@ const ConfigMenu = (props) => {
       )}
 
       {descModalOpen && (
-        <GenericModal title="Alterar descrição" onClose={() => setDescModalOpen(false)} wfull maxWidth={"420px"}>
+        <GenericModal title="Alterar descrição" onClose={() => setDescModalOpen(false)} wfull size="md">
           <textarea
             placeholder="Nova descrição"
             value={tempDescription || ""}
@@ -647,7 +654,7 @@ const ConfigMenu = (props) => {
       )}
 
       {addressModalOpen && (
-        <GenericModal title="Alterar endereço" onClose={() => setAddressModalOpen(false)} wfull maxWidth={"420px"}>
+        <GenericModal title="Alterar endereço" onClose={() => setAddressModalOpen(false)} wfull size="md">
           <textarea
             placeholder="Novo endereço"
             value={tempAddress || ""}
@@ -691,7 +698,7 @@ const ConfigMenu = (props) => {
       )}
 
       {slugModalOpen && (
-        <GenericModal title="Alterar slug" onClose={() => setSlugModalOpen(false)} wfull maxWidth={"420px"}>
+        <GenericModal title="Alterar slug" onClose={() => setSlugModalOpen(false)} wfull size="md">
           <input
             type="text"
             placeholder="Novo slug"

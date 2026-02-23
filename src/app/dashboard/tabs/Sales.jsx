@@ -9,6 +9,7 @@ import { FaTrash, FaChevronLeft, FaChevronDown, FaChevronRight, FaChevronUp, FaS
 import GenericModal from "@/components/GenericModal";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import SalesSummary from "./components/sales/SalesSummary";
+import useModalBackHandler from "@/hooks/useModalBackHandler";
 
 const Sales = ({ setSelectedTab }) => {
   const { menu, loading } = useMenu();
@@ -305,6 +306,9 @@ const Sales = ({ setSelectedTab }) => {
   const modalFee = Number(selectedSale?.delivery_fee) || 0;
   const modalTotal = modalSubtotal + modalFee;
 
+  // Modal de detalhes de venda fecha com botão "Voltar"
+  useModalBackHandler(saleModalOpen, () => setSaleModalOpen(false));
+
   if (loading) return <Loading />;
   if (!menu) return <p>Você ainda não criou seu cardápio.</p>;
 
@@ -512,8 +516,8 @@ const Sales = ({ setSelectedTab }) => {
       </div>
 
       {saleModalOpen && selectedSale && (
-        <GenericModal title="Detalhes da venda" onClose={() => setSaleModalOpen(false)}>
-          <div className="max-h-[90vh] sm:max-h-[80vh] w-[min(900px,90vw)] overflow-y-auto scrollbar-none space-y-4">
+        <GenericModal title="Detalhes da venda" onClose={() => setSaleModalOpen(false)} size="xl">
+          <div className="max-h-[90vh] sm:max-h-[80vh] w-full overflow-y-auto scrollbar-none space-y-4">
             <form
               className="space-y-3"
               onSubmit={async (e) => {

@@ -10,6 +10,7 @@ import { useAlert } from "@/providers/AlertProvider";
 import MenuFooter from "./components/MenuFooter";
 import { supabase } from "@/lib/supabaseClient";
 import Loading from "@/components/Loading";
+import useModalBackHandler from "@/hooks/useModalBackHandler";
 
 // util para contraste de cor
 function getContrastTextColor(hex) {
@@ -346,35 +347,10 @@ export default function ClientMenu({ menu }) {
     cartOpenRef.current = cartOpen;
   }, [cartOpen]);
 
-  // Fecha modais com botão voltar
-  useEffect(() => {
-    const onPopState = () => {
-      if (cartOpenRef.current) setCartOpen(false);
-      if (itemModalOpen) closeItemModal();
-      if (hoursModalOpen) closeHoursModal();
-    };
-
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, [itemModalOpen, hoursModalOpen]);
-
-  useEffect(() => {
-    if (!itemModalOpen) return;
-    try {
-      if (!(window.history.state && window.history.state.ui === "productModal")) {
-        window.history.pushState({ ui: "productModal" }, "");
-      }
-    } catch (e) {}
-  }, [itemModalOpen]);
-
-  useEffect(() => {
-    if (!hoursModalOpen) return;
-    try {
-      if (!(window.history.state && window.history.state.ui === "hoursModal")) {
-        window.history.pushState({ ui: "hoursModal" }, "");
-      }
-    } catch (e) {}
-  }, [hoursModalOpen]);
+  // Fecha modais com botão voltar usando hook central
+  useModalBackHandler(cartOpen, () => setCartOpen(false));
+  useModalBackHandler(itemModalOpen, closeItemModal);
+  useModalBackHandler(hoursModalOpen, closeHoursModal);
 
   const cartCount = typeof cart.totalItems === "function" ? cart.totalItems(menu?.id) : 0;
 

@@ -12,6 +12,7 @@ import MenuItems from "./components/menu/MenuItems";
 import QrCodeModal from "./components/menu/QrCodeModal";
 import { uploadItemImage } from "@/lib/uploadImage";
 import { fileToWebp } from "@/app/utils/imageToWebp";
+import useModalBackHandler from "@/hooks/useModalBackHandler";
 
 function getContrastTextColor(hex) {
   const cleanHex = (hex || "").replace("#", "");
@@ -98,29 +99,6 @@ const Menu = (props) => {
 
   const anyModalOpen = titleModalOpen || bannerModalOpen || logoModalOpen;
 
-  // o botão de voltar do navegador fecha o modal
-  const closingFromPopState = useRef(false);
-
-  useEffect(() => {
-    const handlePopState = () => {
-      if (anyModalOpen) {
-        closingFromPopState.current = true;
-        setTitleModalOpen(false);
-        setBannerModalOpen(false);
-        setLogoModalOpen(false);
-      }
-    };
-
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, [anyModalOpen]);
-
-  useEffect(() => {
-    if (anyModalOpen && !history.state?.modal) {
-      history.pushState({ modal: true }, "");
-    }
-  }, [anyModalOpen]);
-
   const shareUrl = useMemo(() => {
     if (typeof window === "undefined") return "";
     const s = menu?.slug || slug;
@@ -133,13 +111,12 @@ const Menu = (props) => {
     setTitleModalOpen(false);
     setBannerModalOpen(false);
     setLogoModalOpen(false);
-
-    if (history.state?.modal && !closingFromPopState.current) {
-      history.back();
-    }
-
-    closingFromPopState.current = false;
   };
+
+  // Fecha cada modal com o botão Voltar, sem duplicar lógica de history
+  useModalBackHandler(titleModalOpen, () => setTitleModalOpen(false));
+  useModalBackHandler(bannerModalOpen, () => setBannerModalOpen(false));
+  useModalBackHandler(logoModalOpen, () => setLogoModalOpen(false));
 
   // synchronize temp files when external files change
   useEffect(() => {
@@ -506,7 +483,7 @@ const Menu = (props) => {
 
       {/* MODALS */}
       {titleModalOpen && (
-        <GenericModal title="Alterar nome" onClose={closeAllModals} wfull maxWidth={"420px"}>
+        <GenericModal title="Alterar nome" onClose={closeAllModals} wfull size="md">
           <input
             type="text"
             placeholder="Novo título"
@@ -546,7 +523,7 @@ const Menu = (props) => {
       )}
 
       {bannerModalOpen && (
-        <GenericModal title="Alterar banner" onClose={closeAllModals} wfull maxWidth={"420px"}>
+        <GenericModal title="Alterar banner" onClose={closeAllModals} wfull size="md">
           <label className="text-center flex flex-col items-center justify-center w-full h-30 border-2 border-dashed border-[var(--gray)] rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
             {tempBannerPreview ? (
               <img src={tempBannerPreview} alt="Preview temporário" className="object-cover w-full h-full" />
@@ -579,7 +556,7 @@ const Menu = (props) => {
       )}
 
       {logoModalOpen && (
-        <GenericModal title="Alterar logo" onClose={closeAllModals} wfull maxWidth={"420px"}>
+        <GenericModal title="Alterar logo" onClose={closeAllModals} wfull size="md">
           <label className="text-center flex flex-col items-center justify-center w-30 h-30 border-2 border-dashed border-[var(--gray)] rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
             {tempLogoPreview ? (
               <img src={tempLogoPreview} alt="Preview temporário" className="object-cover w-full h-full" />

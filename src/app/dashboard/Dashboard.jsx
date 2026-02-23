@@ -15,6 +15,7 @@ import SalesDashboard from "./tabs/SalesDashboard";
 import PlanDetails from "./tabs/PlanDetails";
 import GenericModal from "@/components/GenericModal";
 import QrCodeModal from "./tabs/components/menu/QrCodeModal";
+import useModalBackHandler from "@/hooks/useModalBackHandler";
 
 const Dashboard = ({
   menuState: externalMenuState,
@@ -77,6 +78,9 @@ const Dashboard = ({
   useEffect(() => {
     if (menu?.slug) setSlug(menu.slug);
   }, [menu?.slug]);
+
+  // Modal de compartilhamento (hamburger) fecha com botão "Voltar"
+  useModalBackHandler(isOpen, () => setIsOpen(false));
 
   const handleMenuSelect = (tab) => {
     setSelectedTab(tab);

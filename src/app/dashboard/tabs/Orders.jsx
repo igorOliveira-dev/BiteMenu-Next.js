@@ -9,6 +9,7 @@ import { FaCheck, FaTrash, FaMoneyBill, FaChevronDown, FaSyncAlt } from "react-i
 import GenericModal from "@/components/GenericModal";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import OrdersFilter from "./components/orders/OrdersFilter";
+import useModalBackHandler from "@/hooks/useModalBackHandler";
 
 const Orders = ({ setSelectedTab }) => {
   const { menu, loading } = useMenu();
@@ -383,6 +384,9 @@ const Orders = ({ setSelectedTab }) => {
     return subtotal + delivery;
   };
 
+  // Modal de detalhes de pedido fecha com botão "Voltar"
+  useModalBackHandler(orderModalOpen, () => setOrderModalOpen(false));
+
   if (loading || loadingOrders) return <Loading />;
   if (!menu) return <p>Você ainda não criou seu cardápio.</p>;
 
@@ -685,8 +689,8 @@ const Orders = ({ setSelectedTab }) => {
       ) : null}
 
       {orderModalOpen && selectedOrder && (
-        <GenericModal title="Detalhes do pedido" onClose={() => setOrderModalOpen(false)}>
-          <div className="max-h-[90vh] sm:max-h-[80vh] w-[min(900px,90vw)] overflow-y-auto scrollbar-none space-y-4">
+        <GenericModal title="Detalhes do pedido" onClose={() => setOrderModalOpen(false)} size="xl">
+          <div className="max-h-[90vh] sm:max-h-[80vh] w-full overflow-y-auto scrollbar-none space-y-4">
             <form
               className="space-y-3"
               onSubmit={async (e) => {

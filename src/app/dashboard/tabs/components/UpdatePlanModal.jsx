@@ -10,7 +10,7 @@ const UpdatePlanModal = ({
   onCta,
 }) => {
   return (
-    <GenericModal title={title} onClose={onClose} zIndex={160} maxWidth={"480px"}>
+    <GenericModal title={title} onClose={onClose} zIndex={160} size="md">
       <div>
         {image ? <img src={image} alt="" className="w-full h-auto max-h-[240px] object-contain mb-3" /> : null}
 
