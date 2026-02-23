@@ -988,6 +988,19 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   const grayToUse = getContrastTextColor(backgroundColor) === "white" ? "#cccccc" : "#333333";
   const foregroundToUse = getContrastTextColor(backgroundColor) === "white" ? "#fafafa" : "#171717";
 
+  const commitAdditionalsCfg = () => {
+    if (!additionalsCfgDraft) return;
+
+    setModalPayload((p) => ({
+      ...p,
+      data: {
+        ...p.data,
+        mandatory_additional: additionalsCfgDraft.mandatory_additional,
+        additionals_limit: additionalsCfgDraft.additionals_limit,
+      },
+    }));
+  };
+
   if (menuLoading || loading || categories === null || ownerRole === null)
     return <div className="p-4">Carregando categorias...</div>;
   if (!menu) return <div className="p-4">Você ainda não criou um menu.</div>;
@@ -1710,16 +1723,65 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
             setAdditionalsCfgDraft(null);
           }}
         >
-          <div className="space-y-4">
+          <form
+            className="space-y-4"
+            onSubmit={async (e) => {
+              e.preventDefault();
+
+              const limitNum =
+                additionalsCfgDraft?.additionals_limit === "" ? 0 : Number(additionalsCfgDraft?.additionals_limit ?? 0);
+
+              if (additionalsCfgDraft?.mandatory_additional && limitNum < 1) {
+                alert?.("Se os adicionais são obrigatórios, defina um limite mínimo de 1.", "error");
+                return;
+              }
+
+              const patch = {
+                mandatory_additional: !!additionalsCfgDraft.mandatory_additional,
+                additionals_limit: limitNum,
+              };
+
+              try {
+                const { error } = await supabase.from("menu_items").update(patch).eq("id", modalPayload.itemId);
+
+                if (error) throw error;
+
+                setModalPayload((p) => ({
+                  ...p,
+                  data: {
+                    ...p.data,
+                    ...patch,
+                  },
+                }));
+
+                setCategories((prev = []) =>
+                  prev.map((cat) => ({
+                    ...cat,
+                    menu_items: (cat.menu_items || []).map((it) =>
+                      it.id === modalPayload.itemId ? { ...it, ...patch } : it,
+                    ),
+                  })),
+                );
+
+                alert?.("Configurações de adicionais salvas", "success");
+
+                setAdditionalsCfgOpen(false);
+                setAdditionalsCfgDraft(null);
+              } catch (err) {
+                console.error("Erro ao salvar adicionais:", err);
+                alert?.("Erro ao salvar configurações", "error");
+              }
+            }}
+          >
             <label className="flex items-center gap-3 cursor-pointer">
               <span className="switch">
                 <input
                   type="checkbox"
-                  checked={!!modalPayload.data.mandatory_additional}
+                  checked={!!additionalsCfgDraft?.mandatory_additional}
                   onChange={(e) =>
-                    setModalPayload((p) => ({
-                      ...p,
-                      data: { ...p.data, mandatory_additional: e.target.checked },
+                    setAdditionalsCfgDraft((d) => ({
+                      ...d,
+                      mandatory_additional: e.target.checked,
                     }))
                   }
                 />
@@ -1731,20 +1793,18 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
             <label className="block">
               <div className="text-sm color-gray mb-1">Limite de adicionais</div>
+
               <input
                 type="text"
                 inputMode="numeric"
                 placeholder="0"
-                value={modalPayload.data.additionals_limit ?? ""}
+                value={additionalsCfgDraft?.additionals_limit ?? ""}
                 onChange={(e) => {
                   const raw = e.target.value.replace(/[^0-9]/g, "");
 
-                  setModalPayload((p) => ({
-                    ...p,
-                    data: {
-                      ...p.data,
-                      additionals_limit: raw,
-                    },
+                  setAdditionalsCfgDraft((d) => ({
+                    ...d,
+                    additionals_limit: raw,
                   }));
                 }}
                 className="w-full p-2 rounded border border-translucid bg-translucid"
@@ -1757,51 +1817,21 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
             <div className="flex justify-end gap-2 mt-4">
               <button
+                type="button"
                 onClick={() => {
-                  if (additionalsCfgDraft) {
-                    setModalPayload((p) => ({
-                      ...p,
-                      data: {
-                        ...p.data,
-                        mandatory_additional: additionalsCfgDraft.mandatory_additional,
-                        additionals_limit: additionalsCfgDraft.additionals_limit,
-                      },
-                    }));
-                  }
                   setAdditionalsCfgOpen(false);
                   setAdditionalsCfgDraft(null);
                 }}
                 className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded"
-                type="button"
               >
                 Cancelar
               </button>
 
-              <button
-                onClick={() => {
-                  const limitNum =
-                    modalPayload.data.additionals_limit === "" ? 0 : Number(modalPayload.data.additionals_limit);
-
-                  if (modalPayload.data.mandatory_additional && limitNum < 1) {
-                    alert?.("Se os adicionais são obrigatórios, defina um limite mínimo de 1.", "error");
-                    return;
-                  }
-
-                  setModalPayload((p) => ({
-                    ...p,
-                    data: { ...p.data, additionals_limit: limitNum },
-                  }));
-
-                  setAdditionalsCfgOpen(false);
-                  setAdditionalsCfgDraft(null);
-                }}
-                className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded"
-                type="button"
-              >
+              <button type="submit" className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded">
                 Salvar
               </button>
             </div>
-          </div>
+          </form>
         </GenericModal>
       )}
 
