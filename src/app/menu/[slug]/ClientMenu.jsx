@@ -443,7 +443,7 @@ export default function ClientMenu({ menu }) {
               fill
               className="object-cover"
               priority
-              sizes="(max-width: 640px) 100vw, (max-width: 1280px) 80vw, 60vw"
+              sizes="100vw"
               quality={55}
             />
           </div>
@@ -455,14 +455,14 @@ export default function ClientMenu({ menu }) {
             <div className="flex items-center min-w-full">
               {/* Logo (Next/Image em vez de <img>) */}
               {isSafeImageUrl(menu.logo_url) && (
-                <div className="relative w-full max-w-[45px] xxs:max-w-[55px] sm:max-w-[80px] aspect-[1/1] rounded-lg mr-2 sm:mr-4 overflow-hidden">
+                <div className="mr-2 sm:mr-4">
                   <Image
                     alt="Logo do estabelecimento"
                     src={menu.logo_url}
-                    fill
-                    className="object-cover"
+                    width={80}
+                    height={80}
+                    className="w-[45px] xxs:w-[55px] sm:w-[80px] aspect-square object-cover rounded-lg"
                     quality={55}
-                    sizes="(max-width: 480px) 55px, (max-width: 640px) 80px, 80px"
                   />
                 </div>
               )}
@@ -594,14 +594,14 @@ export default function ClientMenu({ menu }) {
                   <div className="flex flex-col justify-between h-full">
                     <div>
                       {isSafeImageUrl(it.image_url) && (
-                        <div className="relative w-full aspect-square rounded-md mb-2 overflow-hidden">
+                        <div className="w-full aspect-square rounded-md mb-2 overflow-hidden">
                           <Image
                             src={it.image_url}
                             alt={it.name}
-                            fill
-                            className="object-cover"
+                            width={400}
+                            height={400}
+                            className="w-full h-full object-cover"
                             quality={55}
-                            sizes="(max-width: 640px) 60vw, (max-width: 1024px) 30vw, 24vw"
                           />
                         </div>
                       )}
@@ -669,16 +669,16 @@ export default function ClientMenu({ menu }) {
                         <div className="flex gap-2">
                           {isSafeImageUrl(it.image_url) && (
                             <div
-                              className="relative w-[72px] h-[72px] shrink-0 overflow-hidden rounded-lg"
+                              className="w-[72px] h-[72px] shrink-0 overflow-hidden rounded-lg"
                               onClick={() => handleItemClick(it)}
                             >
                               <Image
                                 src={it.image_url}
                                 alt={it.name}
-                                fill
-                                className="object-cover"
+                                width={72}
+                                height={72}
+                                className="object-cover w-full h-full"
                                 quality={55}
-                                sizes="(max-width: 640px) 72px, 130px"
                               />
                             </div>
                           )}
@@ -794,14 +794,14 @@ export default function ClientMenu({ menu }) {
           <div className="flex flex-col gap-4 sm:min-w-[460px]">
             <div className="flex flex-row gap-4 mb-2">
               {isSafeImageUrl(selectedItem.image_url) && (
-                <div className="relative h-26 w-26 sm:h-30 sm:w-30 overflow-hidden rounded-lg" style={{ flexShrink: 0 }}>
+                <div className="h-26 w-26 sm:h-30 sm:w-30 overflow-hidden rounded-lg" style={{ flexShrink: 0 }}>
                   <Image
                     src={selectedItem.image_url}
                     alt={selectedItem.name}
-                    fill
-                    className="object-cover"
+                    width={120}
+                    height={120}
+                    className="object-cover w-full h-full"
                     quality={60}
-                    sizes="120px"
                   />
                 </div>
               )}
