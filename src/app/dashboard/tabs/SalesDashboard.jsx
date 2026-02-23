@@ -287,7 +287,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
     return (
       <div className="p-4">
         <p className="font-bold">Você não tem permissão para acessar essa área</p>
-        <a href="dashboard" className="py-2 underline color-gray">
+        <a href="/dashboard" className="py-2 underline color-gray">
           Voltar
         </a>
       </div>

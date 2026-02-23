@@ -48,7 +48,7 @@ export default function DashboardLayout({ children }) {
     if (user && profile) {
       setOwnerPlan(profile.role);
     }
-  }, [user, router, checkingMenu]);
+  }, [user, profile]);
 
   useEffect(() => {
     if (window.location.pathname === "/dashboard") {

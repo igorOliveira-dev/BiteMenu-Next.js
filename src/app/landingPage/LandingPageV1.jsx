@@ -57,7 +57,7 @@ export default function LandingPageV1() {
                 Acessar cardápio!
               </Link>
             ) : (
-              <Link className="cta-button small" href="register">
+              <Link className="cta-button small" href="/register">
                 Criar cardápio!
               </Link>
             )}

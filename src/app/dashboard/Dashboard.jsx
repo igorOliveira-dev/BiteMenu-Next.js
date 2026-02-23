@@ -264,14 +264,14 @@ const Dashboard = ({
             </li>
             <li>
               <button className="w-full flex text-left px-2 py-2 hover:bg-[var(--translucid)] border-b-2 border-[var(--translucid)] rounded">
-                <Link href="support" className="flex-1">
+                <Link href="/support" className="flex-1">
                   Suporte
                 </Link>
               </button>
             </li>
             <li>
               <button className="w-full flex text-left px-2 py-2 hover:bg-[var(--translucid)] border-b-2 border-[var(--translucid)] rounded">
-                <Link href="politica-de-privacidade" className="flex-1">
+                <Link href="/politica-de-privacidade" className="flex-1">
                   Política de privacidade
                 </Link>
               </button>
