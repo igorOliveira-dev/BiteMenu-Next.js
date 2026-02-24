@@ -445,6 +445,7 @@ export default function ClientMenu({ menu }) {
               priority
               sizes="100vw"
               quality={55}
+              unoptimized
             />
           </div>
         )}
@@ -463,6 +464,7 @@ export default function ClientMenu({ menu }) {
                     height={80}
                     className="w-[45px] xxs:w-[55px] sm:w-[80px] aspect-square object-cover rounded-lg"
                     quality={55}
+                    unoptimized
                   />
                 </div>
               )}
@@ -602,6 +604,7 @@ export default function ClientMenu({ menu }) {
                             height={400}
                             className="w-full h-full object-cover"
                             quality={55}
+                            unoptimized
                           />
                         </div>
                       )}
@@ -679,6 +682,7 @@ export default function ClientMenu({ menu }) {
                                 height={72}
                                 className="object-cover w-full h-full"
                                 quality={55}
+                                unoptimized
                               />
                             </div>
                           )}
@@ -802,6 +806,7 @@ export default function ClientMenu({ menu }) {
                     height={120}
                     className="object-cover w-full h-full"
                     quality={60}
+                    unoptimized
                   />
                 </div>
               )}

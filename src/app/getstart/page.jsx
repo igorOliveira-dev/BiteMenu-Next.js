@@ -253,7 +253,14 @@ export default function GetStart() {
 
       if (logoFile) {
         console.time("logoConvert+Upload");
-        const webpLogoRaw = await fileToWebp(logoFile, { quality: 0.9, maxSize: 512, force: true });
+        const webpLogoRaw = await fileToWebp(logoFile, {
+          maxBytes: 80 * 1024,
+          maxDimension: 256,
+          minDimension: 128,
+          startQuality: 0.9,
+          minQuality: 0.6,
+          force: true,
+        });
         const webpLogo =
           webpLogoRaw instanceof File ? webpLogoRaw : new File([webpLogoRaw], "logo.webp", { type: "image/webp" });
 
@@ -264,7 +271,14 @@ export default function GetStart() {
 
       if (bannerFile) {
         console.time("bannerConvert+Upload");
-        const webpBannerRaw = await fileToWebp(bannerFile, { quality: 0.82, maxSize: 2000, force: true });
+        const webpBannerRaw = await fileToWebp(bannerFile, {
+          maxBytes: 300 * 1024,
+          maxDimension: 1024,
+          minDimension: 640,
+          startQuality: 0.82,
+          minQuality: 0.55,
+          force: true,
+        });
         const webpBanner =
           webpBannerRaw instanceof File ? webpBannerRaw : new File([webpBannerRaw], "banner.webp", { type: "image/webp" });
 
