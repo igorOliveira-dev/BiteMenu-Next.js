@@ -702,15 +702,20 @@ export default function ClientMenu({ menu }) {
 
                         <div className="flex items-end justify-between mt-2">
                           {/* preço */}
-                          <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
-                            {Number(it.promo_price && canShowPromoPrice ? it.promo_price : it.price).toLocaleString(
-                              "pt-BR",
-                              {
-                                style: "currency",
-                                currency: "BRL",
-                              },
-                            )}
-                          </div>
+                          {it.promo_price && canShowPromoPrice ? (
+                            <div>
+                              <span className="text-xs xs:text-sm line-through" style={{ color: grayToUse }}>
+                                {Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                              </span>
+                              <div className="font-bold text-xl lg:text-2xl" style={{ color: foregroundToUse }}>
+                                {Number(it.promo_price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="font-bold text-2xl" style={{ color: foregroundToUse }}>
+                              {Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                            </div>
+                          )}
 
                           <div className="px-6 py-2 rounded" style={{ backgroundColor: menu.details_color }}>
                             <FaShoppingCart style={{ color: getContrastTextColor(menu.details_color) }} />
