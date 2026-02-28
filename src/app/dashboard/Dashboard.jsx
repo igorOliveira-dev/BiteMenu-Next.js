@@ -7,7 +7,7 @@ import Orders from "./tabs/Orders";
 import Sales from "./tabs/Sales";
 import { useAlert } from "@/providers/AlertProvider";
 import ConfigMenu from "./tabs/ConfigMenu";
-import { FaChevronLeft, FaQrcode } from "react-icons/fa";
+import { FaChevronLeft, FaHeadset, FaQrcode } from "react-icons/fa";
 import Account from "./tabs/Account";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -16,6 +16,7 @@ import PlanDetails from "./tabs/PlanDetails";
 import GenericModal from "@/components/GenericModal";
 import QrCodeModal from "./tabs/components/menu/QrCodeModal";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
+import { FaUtensils, FaShoppingBag, FaChartLine, FaUser, FaLifeRing, FaShieldAlt } from "react-icons/fa";
 
 const Dashboard = ({
   menuState: externalMenuState,
@@ -114,51 +115,60 @@ const Dashboard = ({
   return (
     <div className="flex w-[100dvw] pt-[85px] items-center lg:items-start lg:h-[calc(100dvh-110px)] lg:flex-row flex-col-reverse items-center">
       <div className="flex items-center">
-        <aside className="m-2 rounded-lg bg-translucid border-2 border-translucid h-full max-w-[720px] w-[calc(100dvw-86px)] lg:w-60 shadow-[0_0_10px_var(--shadow)] flex lg:flex-col items-center overflow-hidden lg:h-[calc(100dvh-110px)]">
-          <button
-            className={`cursor-pointer w-full px-2 p-4 sm:px-4 hover-bg-translucid ${
-              selectedTab === "menu" ? "bg-translucid" : ""
-            } transition-colors font-semibold border-b-2 border-[var(--translucid)] text-nowrap text-sm xs:text-base`}
-            onClick={() => setSelectedTab("menu")}
-          >
-            {changedFields.length > 0 ? "Cardápio *" : "Cardápio"}
-          </button>
-          <button
-            className={`cursor-pointer w-full px-2 p-4 sm:px-4 hover-bg-translucid ${
-              selectedTab === "orders" ? "bg-translucid" : ""
-            } transition-colors font-semibold border-b-2 border-[var(--translucid)] text-sm xs:text-base`}
-            onClick={() => setSelectedTab("orders")}
-          >
-            Pedidos
-          </button>
-          <button
-            className={`cursor-pointer w-full px-2 p-4 sm:px-4 hover-bg-translucid ${
-              selectedTab === "sales" ? "bg-translucid" : ""
-            } transition-colors font-semibold border-b-2 border-[var(--translucid)] text-sm xs:text-base`}
-            onClick={() => setSelectedTab("sales")}
-          >
-            Vendas
-          </button>
-          <button
-            className={`cursor-pointer w-full hidden lg:block p-4 hover-bg-translucid ${
-              selectedTab === "account" ? "bg-translucid" : ""
-            } transition-colors font-semibold border-b-2 border-[var(--translucid)]`}
-            onClick={() => setSelectedTab("account")}
-          >
-            Conta
-          </button>
-          <Link
-            className="w-full hidden lg:block p-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)] text-center"
-            href="/support"
-          >
-            Suporte
-          </Link>
-          <Link
-            className="w-full hidden lg:block p-4 hover-bg-translucid transition-colors font-semibold border-b-2 border-[var(--translucid)] text-center"
-            href="/politica-de-privacidade"
-          >
-            Política de privacidade
-          </Link>
+        <aside className="m-2 rounded-lg bg-translucid border-2 border-translucid h-full max-w-[720px] w-[calc(100dvw-86px)] lg:w-60 shadow-[0_0_10px_var(--shadow)] flex flex-col justify-between items-stretch overflow-hidden lg:h-[calc(100dvh-110px)]">
+          {/* Top section */}
+          <div className="w-full flex lg:flex-col">
+            <button
+              onClick={() => setSelectedTab("menu")}
+              className={`w-full px-4 py-4 hover-bg-translucid transition-colors border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "menu" ? "bg-translucid" : ""}`}
+            >
+              <FaUtensils className="hidden lg:block text-lg shrink-0" />
+              <span>{changedFields.length > 0 ? "Cardápio *" : "Cardápio"}</span>
+            </button>
+
+            <button
+              onClick={() => setSelectedTab("orders")}
+              className={`w-full px-4 py-4 hover-bg-translucid transition-colors border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "orders" ? "bg-translucid" : ""}`}
+            >
+              <FaShoppingBag className="hidden lg:block text-lg shrink-0" />
+              <span>Pedidos</span>
+            </button>
+
+            <button
+              onClick={() => setSelectedTab("sales")}
+              className={`w-full px-4 py-4 hover-bg-translucid transition-colors border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "sales" ? "bg-translucid" : ""}`}
+            >
+              <FaChartLine className="hidden lg:block text-lg shrink-0" />
+              <span>Vendas</span>
+            </button>
+          </div>
+
+          {/* Bottom section */}
+          <div className="w-full hidden lg:flex flex-col">
+            <Link
+              href="/support"
+              className="w-full px-4 py-4 hover-bg-translucid transition-colors border-t-2 border-[var(--translucid)] flex items-center gap-3 text-left"
+            >
+              <FaHeadset className="text-lg shrink-0" />
+              <span>Suporte</span>
+            </Link>
+
+            <Link
+              href="/politica-de-privacidade"
+              className="w-full px-4 py-4 hover-bg-translucid transition-colors border-t-2 border-[var(--translucid)] flex items-center gap-3 text-left"
+            >
+              <FaShieldAlt className="text-lg shrink-0" />
+              <span>Política de privacidade</span>
+            </Link>
+
+            <button
+              onClick={() => setSelectedTab("account")}
+              className={`cursor-pointer w-full px-4 py-4 hover-bg-translucid transition-colors border-t-2 border-[var(--translucid)] flex items-center gap-3 text-left ${selectedTab === "account" ? "bg-translucid" : ""}`}
+            >
+              <FaUser className="text-lg shrink-0" />
+              <span>Conta</span>
+            </button>
+          </div>
         </aside>
 
         {/* Hamburger mobile */}
