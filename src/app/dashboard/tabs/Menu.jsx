@@ -103,7 +103,7 @@ const Menu = (props) => {
     if (typeof window === "undefined") return "";
     const s = menu?.slug || slug;
     if (!s) return "";
-    return `${window.location.origin}/menu/${s}`;
+    return `https://external.bitemenu.com.br/menu/${s}`;
   }, [menu?.slug, slug]);
 
   // função de fechar modais
