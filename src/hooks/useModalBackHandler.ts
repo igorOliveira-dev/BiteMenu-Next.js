@@ -2,14 +2,6 @@
 
 import { useEffect, useRef } from "react";
 
-/**
- * Hook para fechar modais com o botão "Voltar" do navegador / sistema.
- *
- * - Quando o modal abre (isOpen === true), empurra um novo estado no history.
- * - Quando o usuário aperta "Voltar" e esse estado é removido, disparamos onClose().
- * - Ao fechar o modal por outros meios (X, botão, etc.), o history extra permanece,
- *   mas continua apontando para a mesma URL, o que é aceitável do ponto de vista de UX.
- */
 export default function useModalBackHandler(isOpen, onClose) {
   const onCloseRef = useRef(onClose);
 
@@ -21,22 +13,27 @@ export default function useModalBackHandler(isOpen, onClose) {
     if (!isOpen) return;
 
     const handlePopState = () => {
-      if (typeof onCloseRef.current === "function") {
-        onCloseRef.current();
+      onCloseRef.current?.();
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onCloseRef.current?.();
       }
     };
 
+    // empurra estado para permitir voltar
     try {
       const currentState = window.history.state || {};
       window.history.pushState({ ...currentState, __modal: true }, "");
-    } catch {
-      // se history não estiver disponível por algum motivo, apenas ignora
-    }
+    } catch {}
 
     window.addEventListener("popstate", handlePopState);
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
       window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen]);
 }

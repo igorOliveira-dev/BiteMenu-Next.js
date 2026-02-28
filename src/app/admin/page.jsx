@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import useAllMenus from "@/hooks/useAllMenus";
 import { supabase } from "@/lib/supabaseClient";
 import Loading from "@/components/Loading";
+import Return from "@/components/Return";
 
 const Admin = () => {
   const { menus, loading: menusLoading } = useAllMenus();
@@ -137,8 +138,10 @@ const Admin = () => {
 
   return (
     <div className="p-4">
-      <h1 className="default-h1 mb-4 text-center">Admin dashboard</h1>
-
+      <div className="mb-4 flex items-center justify-center">
+        <Return />
+        <h1 className="default-h1 text-center">Admin dashboard</h1>
+      </div>
       {/* 🔹 Filtros */}
       <div className="flex flex-col items-center gap-4 mb-4">
         <input
