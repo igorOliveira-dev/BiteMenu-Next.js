@@ -31,6 +31,7 @@ const Dashboard = ({
   const { menu, loading } = useMenu();
   const [isOpen, setIsOpen] = useState(false);
   const customAlert = useAlert();
+  const externalUrl = menu?.slug ? `https://external.bitemenu.com.br/menu/${menu.slug}` : "";
 
   // Se houver menuState externo, usaremos ele; senão, mantemos estados locais como antes.
   const usingExternal = Array.isArray(externalMenuState) && externalMenuState.length === 2;
@@ -103,7 +104,7 @@ const Dashboard = ({
     if (typeof window === "undefined") return "";
     const s = menu?.slug || slug;
     if (!s) return "";
-    return `https://external.bitemenu.com.br/menu/${s}`;
+    return `${window.location.origin}/menu/${s}`;
   }, [menu?.slug, slug]);
 
   const accessMenu = () => {
@@ -298,6 +299,7 @@ const Dashboard = ({
         isOpen={showQrCode}
         onClose={() => setShowQrCode(false)}
         url={shareUrl}
+        externalUrl={externalUrl}
         filename={`qrcode-${menu?.slug || slug || "menu"}`}
         onToast={(msg, type) => customAlert(msg, type === "error" ? "error" : undefined)}
       />

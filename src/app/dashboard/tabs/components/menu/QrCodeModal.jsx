@@ -10,6 +10,7 @@ export default function QrCodeModal({
   isOpen,
   onClose,
   url,
+  externalUrl,
   filename = "qrcode",
   onToast, // (msg, type) => void  // type: "success" | "error"
   zIndex = 180,
@@ -35,8 +36,8 @@ export default function QrCodeModal({
   };
 
   const open = () => {
-    if (!url) return;
-    window.open(url, "_blank", "noopener,noreferrer");
+    if (!externalUrl) return;
+    window.open(externalUrl, "_blank", "noopener,noreferrer");
   };
 
   const downloadPng = () => {

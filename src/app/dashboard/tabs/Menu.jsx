@@ -60,6 +60,7 @@ const Menu = (props) => {
 
   const { menu, loading } = useMenu();
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+  const externalUrl = menu?.slug ? `https://external.bitemenu.com.br/menu/${menu.slug}` : "";
   const customAlert = useAlert();
 
   const [uploadingBanner, setUploadingBanner] = useState(false);
@@ -103,7 +104,7 @@ const Menu = (props) => {
     if (typeof window === "undefined") return "";
     const s = menu?.slug || slug;
     if (!s) return "";
-    return `https://external.bitemenu.com.br/menu/${s}`;
+    return `${window.location.origin}/menu/${s}`;
   }, [menu?.slug, slug]);
 
   // função de fechar modais
@@ -593,6 +594,7 @@ const Menu = (props) => {
         isOpen={showQrCode}
         onClose={() => setShowQrCode(false)}
         url={shareUrl}
+        externalUrl={externalUrl}
         filename={`qrcode-${menu?.slug || slug || "menu"}`}
         onToast={(msg, type) => customAlert(msg, type === "error" ? "error" : undefined)}
       />
