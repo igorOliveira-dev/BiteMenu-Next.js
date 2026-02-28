@@ -68,9 +68,6 @@ export default function DownloadPage() {
       if (outcome !== "accepted") {
         setStatus("ready");
       } else {
-        // Aceitou: o navegador pode abrir o app imediatamente.
-        // Não tentamos manipular isso — a aba original pode perder foco/ser fechada.
-        // Mantemos o estado "installing" por breve tempo (UX), depois atualizamos.
         setTimeout(() => {
           setStatus("installed");
         }, 1200);
