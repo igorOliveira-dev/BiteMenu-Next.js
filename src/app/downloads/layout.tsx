@@ -23,7 +23,7 @@ export default function DownloadLayout({ children }: { children: React.ReactNode
 
     const role = profile.role?.trim().toLowerCase();
 
-    const allowed = role === "plus" || role === "pro" || role === "admin";
+    const allowed = role === "pro" || role === "admin";
 
     if (!allowed) {
       if (!alertTriggered) {
