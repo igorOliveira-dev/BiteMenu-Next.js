@@ -11,7 +11,7 @@ import LogoTip from "../../../public/LogoTipo-sem-fundo.png";
 import ThemeToggle from "@/components/ThemeToggle";
 import { FaBolt } from "react-icons/fa";
 
-export default function DashboardLayout({ children }) {
+export default function DashboardLayoutClient({ children }) {
   const router = useRouter();
   const { user, profile, loading } = useUser();
   const [checkingMenu, setCheckingMenu] = useState(true);
