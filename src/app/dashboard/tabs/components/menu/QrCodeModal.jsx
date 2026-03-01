@@ -37,7 +37,12 @@ export default function QrCodeModal({
 
   const open = () => {
     if (!externalUrl) return;
-    window.open(externalUrl, "_blank", "noopener,noreferrer");
+
+    const standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+
+    const urlToOpen = standalone ? externalUrl : url;
+
+    window.open(urlToOpen, "_blank", "noopener,noreferrer");
   };
 
   const downloadPng = () => {
