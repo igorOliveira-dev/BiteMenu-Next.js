@@ -5,6 +5,7 @@ import Image from "next/image";
 import ThemeToggle from "@/components/ThemeToggle";
 import logoMark from "../../../public/LogoMarca-sem-fundo.png";
 import logoTip from "../../../public/LogoTipo-sem-fundo.png";
+import Link from "next/link";
 
 type InstallStatus = "checking" | "ready" | "installing" | "installed" | "unsupported";
 
@@ -82,7 +83,7 @@ export default function DownloadPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4">
+    <main className="min-h-screen flex flex-col items-center justify-center px-4">
       <header className="fixed top-0 inset-x-0 flex items-center justify-between p-2 m-2 my-3 bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)] z-50 backdrop-blur-sm">
         <Image
           src={logoMark}
@@ -142,6 +143,13 @@ export default function DownloadPage() {
           </div>
         )}
       </div>
+      <p className="text-sm color-gray pt-2 text-center">
+        Em qualquer caso de problemas com o download, entre em contato com o{" "}
+        <Link href="/support" className="underline text-blue-500 hover:text-blue-700">
+          suporte
+        </Link>
+        .
+      </p>
     </main>
   );
 }

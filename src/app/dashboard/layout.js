@@ -17,6 +17,7 @@ export default function DashboardLayout({ children }) {
   const [checkingMenu, setCheckingMenu] = useState(true);
   const [ownerPlan, setOwnerPlan] = useState(null);
   const [showPlanButton, setShowPlanButton] = useState(false);
+  const [showDownloadButton, setShowDownloadButton] = useState(false);
 
   useEffect(() => {
     const checkUserMenu = async () => {
@@ -52,10 +53,15 @@ export default function DashboardLayout({ children }) {
 
   useEffect(() => {
     if (window.location.pathname === "/dashboard") {
-      if (ownerPlan === "free" || ownerPlan === "plus" || ownerPlan === "admin") {
+      if (ownerPlan === "free" || ownerPlan === "plus") {
         setShowPlanButton(true);
       } else {
         setShowPlanButton(false);
+      }
+      if (ownerPlan === "pro") {
+        setShowDownloadButton(true);
+      } else {
+        setShowDownloadButton(false);
       }
     }
   }, [ownerPlan]);
@@ -114,6 +120,12 @@ export default function DashboardLayout({ children }) {
                 <FaBolt />
               </span>
               Melhorar plano!
+            </a>
+          ) : null}
+
+          {showDownloadButton ? (
+            <a href="/downloads" className="cta-button small has-icon">
+              APP Bite Menu
             </a>
           ) : null}
 
