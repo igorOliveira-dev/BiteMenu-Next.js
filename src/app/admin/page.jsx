@@ -227,9 +227,11 @@ const Admin = () => {
               className={`p-4 bg-translucid border-2 ${
                 menu.owner_role === "admin"
                   ? "border-red-500"
-                  : menu.owner_role === "plus" || menu.owner_role === "pro"
+                  : menu.owner_role === "plus"
                     ? "border-blue-500"
-                    : "border-translucid"
+                    : menu.owner_role === "pro"
+                      ? "border-4 border-blue-900"
+                      : "border-translucid"
               } rounded-lg flex flex-col gap-2`}
             >
               <div className="flex items-center gap-2">
