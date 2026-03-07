@@ -14,7 +14,7 @@ const page = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center absolute top-[50%] left-[50%] transform-[translate(-50%,-50%)] bg-translucid backdrop-blur-sm border-2 border-translucid p-6 rounded-xl text-center min-w-[90dvw] sm:min-w-[460px] max-w-[520px]">
+    <div className="flex flex-col items-center justify-center absolute top-[50%] left-[50%] transform-[translate(-50%,-50%)] bg-translucid backdrop-blur-2xl border-2 border-translucid p-6 rounded-xl text-center min-w-[90dvw] sm:min-w-[460px] max-w-[520px]">
       <Image src={logoTip} alt="Bite Menu" className="absolute opacity-10 -z-[1]" />
       <h1 className="default-h1">Fale conosco!</h1>
       <p>Para suporte, dúvidas ou sugestões relacionadas ao Bite Menu, envie uma mensagem pelo WhatsApp!</p>

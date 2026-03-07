@@ -84,7 +84,7 @@ export default function DownloadPage() {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-4">
-      <header className="fixed top-0 inset-x-0 flex items-center justify-between p-2 m-2 my-3 bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)] z-50 backdrop-blur-sm">
+      <header className="fixed top-0 inset-x-0 flex items-center justify-between p-2 m-2 my-3 bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)] z-50 backdrop-blur-2xl">
         <Image
           src={logoMark}
           height={50}

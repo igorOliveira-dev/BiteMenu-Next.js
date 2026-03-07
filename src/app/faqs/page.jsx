@@ -93,7 +93,7 @@ const page = () => {
 
   return (
     <div className="flex flex-col items-center">
-      <div className="fixed bg-translucid rounded-lg backdrop-blur-sm top-2 left-2">
+      <div className="fixed bg-translucid rounded-lg backdrop-blur-2xl top-2 left-2">
         <Return />
       </div>
       <div className="max-w-3xl flex flex-col gap-4 p-4 w-full pt-12">

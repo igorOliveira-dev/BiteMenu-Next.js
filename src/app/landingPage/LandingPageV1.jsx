@@ -33,7 +33,7 @@ export default function LandingPageV1() {
   return (
     <main className="hide-overflow">
       <section className="bg-degraded-b border-b-3 border-red-500/50" id="begin">
-        <header className="fixed inset-x-0 flex items-center justify-between p-2 m-2 my-3 bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)] z-50 backdrop-blur-sm">
+        <header className="fixed inset-x-0 flex items-center justify-between p-2 m-2 my-3 bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)] z-50 backdrop-blur-2xl">
           <Image
             src={logoMark}
             height={50}

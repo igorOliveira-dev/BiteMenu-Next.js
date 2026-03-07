@@ -91,7 +91,7 @@ export default function DashboardLayoutClient({ children }) {
 
   return (
     <>
-      <header className="z-10 backdrop-blur-sm flex items-center fixed top-0 w-[calc(100%-20px)] justify-between p-2 m-2 my-3 bg-translucid border-2 border-translucid rounded-lg shadow-[0_0_10px_var(--shadow)]">
+      <header className="z-10 backdrop-blur-2xl flex items-center fixed top-0 w-[calc(100%-20px)] justify-between p-2 m-2 my-3 bg-translucid border-2 border-translucid rounded-lg shadow-[0_0_10px_var(--shadow)]">
         {/* logo marca - telas grandes */}
         <Image
           src={LogoMark}

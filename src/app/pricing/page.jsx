@@ -12,7 +12,7 @@ import PlansSection from "@/components/PlansSection";
 const page = () => {
   return (
     <section>
-      <header className="fixed top-0 inset-x-0 flex items-center justify-between p-2 m-2 my-3 bg-translucid border-2 border-translucid rounded-lg shadow-[0_0_10px_var(--shadow)] z-10 backdrop-blur-sm">
+      <header className="fixed top-0 inset-x-0 flex items-center justify-between p-2 m-2 my-3 bg-translucid border-2 border-translucid rounded-lg shadow-[0_0_10px_var(--shadow)] z-10 backdrop-blur-2xl">
         <Image src={logoMark} height={50} width={180} alt="Bite Menu" onClick={() => (window.location.href = "/")} />
         <ThemeToggle />
       </header>
