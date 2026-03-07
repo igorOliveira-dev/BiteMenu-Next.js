@@ -126,7 +126,7 @@ const page = () => {
           ))}
         </div>
 
-        <p className="text-sm color-gray mt-6 text-center">Última atualização: 20/01/2025</p>
+        <p className="text-sm color-gray mt-6 text-center">Última atualização: 20/01/2026</p>
       </div>
     </div>
   );
