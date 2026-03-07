@@ -11,7 +11,6 @@ import useUser from "@/hooks/useUser";
 import { useEffect, useState } from "react";
 import { FaCheck, FaClipboardCheck, FaShoppingCart, FaWhatsappSquare } from "react-icons/fa";
 
-import BlogSection from "../blog/BlogSection";
 import PlansSection from "@/components/PlansSection";
 
 export default function LandingPageV1() {
@@ -196,12 +195,6 @@ export default function LandingPageV1() {
       </section>
 
       <PlansSection />
-
-      {/* <div id="blog" className="pt-8">
-        <div className="bg-translucid py-12 px-4 sm:px-8">
-          <BlogSection />
-        </div>
-      </div> */}
 
       <footer className="bg-low-gray p-6 border-t border-gray-300 dark:border-gray-700">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
