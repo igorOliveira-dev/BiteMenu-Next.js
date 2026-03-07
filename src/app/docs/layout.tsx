@@ -13,6 +13,7 @@ export default function Layout({ children }) {
   const { loading, profile } = useUser();
   const [userRole, setUserRole] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [expension, setExpension] = useState("");
   const [theme, setTheme] = useState(null);
   const navRef = useRef<HTMLDivElement>(null);
   const [showFade, setShowFade] = useState(false);
@@ -73,7 +74,7 @@ export default function Layout({ children }) {
 
   return (
     <div>
-      <header className="fixed inset-x-0 flex items-center justify-between p-2 m-2 my-3 bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)] z-10 backdrop-blur-sm">
+      <header className="fixed inset-x-0 flex items-center justify-between p-2 m-2 my-3 bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)] z-10 backdrop-blur-2xl">
         <Link href="/docs" onClick={() => setIsOpen(false)}>
           <Image src={logoMark} height={50} width={180} alt="Bite Menu" className="hidden xs:block" />
           <Image src={logoTip} height={50} width={50} alt="Bite Menu" className="block xs:hidden" />
@@ -114,21 +115,54 @@ export default function Layout({ children }) {
         <div className="relative w-full h-full">
           <nav
             ref={navRef}
-            className="flex flex-col items-center w-full h-full bg-translucid rounded-lg backdrop-blur-sm text-center overflow-y-auto overflow-x-hidden scrollbar-none"
+            className="flex flex-col w-full h-full bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)] z-10 backdrop-blur-2xl overflow-y-auto overflow-x-hidden scrollbar-none"
           >
             <button
-              className="flex items-center gap-2 w-full justify-center cursor-pointer p-3 transition-colors hover-bg-translucid lg:hidden color-gray border-b-2 border-translucid"
+              className="flex gap-2 w-full justify-center cursor-pointer p-3 transition-colors hover-bg-translucid lg:hidden color-gray border-b-2 border-translucid"
               onClick={toggleTheme}
             >
               Alterar tema{theme === "dark" ? <FaSun size={20} /> : <FaMoon size={20} />}
             </button>
             <Link
               className="w-full p-3 hover-bg-translucid transition-colors"
-              onClick={() => setIsOpen(false)}
+              onClick={() => {
+                (setIsOpen(false), setExpension(""));
+              }}
               href="/docs/getstart"
             >
               Comece agora
             </Link>
+            <Link
+              className="w-full p-3 hover-bg-translucid transition-colors"
+              onClick={() => {
+                (setIsOpen(false), setExpension("test"));
+              }}
+              href="/docs"
+            >
+              Planos
+            </Link>
+            {expension === "test" && (
+              <>
+                <Link
+                  className="w-full p-2 px-5 hover-bg-translucid transition-colors opacity-80 text-sm"
+                  onClick={() => {
+                    setIsOpen(false);
+                  }}
+                  href="/docs"
+                >
+                  Plano Plus
+                </Link>
+                <Link
+                  className="w-full p-2 px-5 hover-bg-translucid transition-colors opacity-80 text-sm"
+                  onClick={() => {
+                    setIsOpen(false);
+                  }}
+                  href="/docs"
+                >
+                  Plano Pro
+                </Link>
+              </>
+            )}
           </nav>
           <div
             className="pointer-events-none absolute bottom-0 left-0 w-full h-16 rounded-b-lg transition-opacity duration-200"
