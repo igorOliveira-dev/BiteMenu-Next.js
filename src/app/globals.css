@@ -126,14 +126,16 @@ h3 {
 
 @media (width < 620px) {
   .default-h1 {
-    font-size: 24px;
+    font-size: 26px;
   }
   h2 {
     font-size: 22px;
   }
+  h3 {
+    font-size: 18px;
+  }
 }
-
-.color-gray {
+z .color-gray {
   color: var(--gray);
 }
 
