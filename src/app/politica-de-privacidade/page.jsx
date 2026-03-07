@@ -11,7 +11,7 @@ const page = () => {
       <div className="max-w-2xl flex flex-col gap-6 p-4 pt-12">
         <h1 className="default-h1">Política de Privacidade – Bite Menu</h1>
 
-        <p>Última atualização: 29/10/2025</p>
+        <p>Última atualização: 07/03/2026</p>
         <p>
           O <strong>Bite Menu</strong> valoriza sua privacidade e está comprometido com a proteção dos seus dados pessoais.
           Esta Política de Privacidade descreve como coletamos, utilizamos, armazenamos e protegemos suas informações ao
@@ -156,7 +156,10 @@ const page = () => {
             dados de pagamento. O Bite Menu <strong>não armazena nem tem acesso</strong> a informações sensíveis como número
             de cartão, código de segurança (CVV) ou data de validade.
           </p>
-          <p>Ao contratar um plano pago, o valor informado será cobrado uma vez por mês até o cancelamento.</p>
+          <p>
+            Ao contratar um plano pago, o valor informado será cobrado uma vez por mês até o cancelamento ou falha no
+            pagamento.
+          </p>
           <p>As informações que podemos receber do Stripe incluem:</p>
           <ul className="list-disc ml-6">
             <li>Identificador da transação;</li>
