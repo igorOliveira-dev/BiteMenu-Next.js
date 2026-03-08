@@ -2,7 +2,15 @@ import Link from "next/link";
 
 export const metadata = {
   title: "Documentação - Bite Menu",
-  description: "Documentação do Bite Menu para todos os usuários, incluindo guias de uso e FAQs.",
+  description: "Guias completos, perguntas frequentes e instruções para usar o Bite Menu e criar seu cardápio digital.",
+
+  openGraph: {
+    title: "Documentação - Bite Menu",
+    description: "Aprenda a usar o Bite Menu com nossos guias e FAQs.",
+    url: "https://www.bitemenu.com/docs",
+    siteName: "Bite Menu",
+    type: "website",
+  },
 };
 
 const page = () => {
@@ -38,7 +46,7 @@ const page = () => {
           surgir qualquer dúvida ou sugestão,{" "}
           <Link href="/support" className="underline text-blue-500 hover:text-blue-700">
             entre em contato conosco
-          </Link>{" "}
+          </Link>
           !
         </p>
       </section>

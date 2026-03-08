@@ -137,7 +137,7 @@ export default function Layout({ children }) {
               onClick={() => {
                 (setIsOpen(false), setExpension("test"));
               }}
-              href="/docs"
+              href="/docs/plans"
             >
               Planos
             </Link>
@@ -148,7 +148,7 @@ export default function Layout({ children }) {
                   onClick={() => {
                     setIsOpen(false);
                   }}
-                  href="/docs"
+                  href="/docs/plans#plus"
                 >
                   Plano Plus
                 </Link>
@@ -157,7 +157,7 @@ export default function Layout({ children }) {
                   onClick={() => {
                     setIsOpen(false);
                   }}
-                  href="/docs"
+                  href="/docs/plans#pro"
                 >
                   Plano Pro
                 </Link>
