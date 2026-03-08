@@ -128,16 +128,16 @@ export default function Layout({ children }) {
               onClick={() => {
                 (setIsOpen(false), setExpension(""));
               }}
-              href="/docs/getstart"
+              href="/docs/como-comecar"
             >
-              Comece agora
+              Como começar
             </Link>
             <Link
               className="w-full p-3 hover-bg-translucid transition-colors"
               onClick={() => {
                 (setIsOpen(false), setExpension("test"));
               }}
-              href="/docs/plans"
+              href="/docs/planos"
             >
               Planos
             </Link>
@@ -148,7 +148,7 @@ export default function Layout({ children }) {
                   onClick={() => {
                     setIsOpen(false);
                   }}
-                  href="/docs/plans#plus"
+                  href="/docs/planos#plus"
                 >
                   Plano Plus
                 </Link>
@@ -157,7 +157,7 @@ export default function Layout({ children }) {
                   onClick={() => {
                     setIsOpen(false);
                   }}
-                  href="/docs/plans#pro"
+                  href="/docs/planos#pro"
                 >
                   Plano Pro
                 </Link>

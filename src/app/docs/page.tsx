@@ -4,10 +4,14 @@ export const metadata = {
   title: "Documentação - Bite Menu",
   description: "Guias completos, perguntas frequentes e instruções para usar o Bite Menu e criar seu cardápio digital.",
 
+  alternates: {
+    canonical: "https://www.bitemenu.com.br/docs",
+  },
+
   openGraph: {
     title: "Documentação - Bite Menu",
     description: "Aprenda a usar o Bite Menu com nossos guias e FAQs.",
-    url: "https://www.bitemenu.com/docs",
+    url: "https://www.bitemenu.com.br/docs",
     siteName: "Bite Menu",
     type: "website",
   },
