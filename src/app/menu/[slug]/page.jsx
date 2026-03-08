@@ -76,14 +76,12 @@ export async function generateMetadata({ params }) {
   return {
     title: `${menu.title} | Bite Menu`,
     description: menu.description || "Confira este cardápio no Bite Menu.",
-    alternates: { canonical: canonicalUrl },
-    openGraph: {
-      title: `${menu.title} | Bite Menu`,
-      description: menu.description || "Confira este cardápio no Bite Menu.",
-      url: canonicalUrl,
-      siteName: "Bite Menu",
-      images: [{ url: imageUrl, width: 1200, height: 630, alt: menu.title }],
-      type: "website",
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    robots: {
+      index: true,
+      follow: false,
     },
   };
 }
