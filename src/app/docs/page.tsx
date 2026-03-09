@@ -27,13 +27,13 @@ const page = () => {
 
       <section className="mt-4">
         <h2 className="font-semibold">Bem-vindo à documentação do Bite Menu!</h2>
-        <p>
+        <p className="mb-2">
           Aqui você encontrará guias de uso, respostas de FAQs e tudo o que precisa para aproveitar ao máximo o Bite Menu.
           Basta navegar pelo menu lateral e encontrar o que precisa.
         </p>
 
         <h3 className="font-semibold mt-2">Navegação na documentação</h3>
-        <p>
+        <p className="mb-2">
           <span className="hidden lg:inline">
             Para encontrar o que precisa na documentação do Bite Menu, utilize o menu lateral de navegação, à esquerda da sua
             tela!
@@ -45,7 +45,7 @@ const page = () => {
         </p>
 
         <h3 className="font-semibold mt-2">Dúvidas e sugestões</h3>
-        <p>
+        <p className="mb-2">
           No Bite Menu valorizamos muito a experiência do cliente e trabalhamos sempre para atender todas as necessidades. Se
           surgir qualquer dúvida ou sugestão,{" "}
           <Link href="/support" className="underline text-blue-500 hover:text-blue-700">

@@ -16,10 +16,10 @@ export default function GetstartLayout({ children }) {
       if (!loading && user) {
         const { data: menus } = await supabase.from("menus").select("id").eq("owner_id", user.id);
 
-        if (menus && menus.length > 0) {
-          router.replace("/dashboard");
-          return;
-        }
+        // if (menus && menus.length > 0) {
+        //   router.replace("/dashboard");
+        //   return;
+        // }
 
         setCheckingMenu(false);
       }
