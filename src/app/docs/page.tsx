@@ -19,7 +19,7 @@ export const metadata = {
 
 const page = () => {
   return (
-    <main className="max-w-[1080px] flex flex-col">
+    <div className="max-w-[1080px] flex flex-col">
       <h1 className="default-h1">
         Bite Menu - <span className="hidden xxs:inline">Documentação</span>
         <span className="inline xxs:hidden">Docs</span>
@@ -54,7 +54,7 @@ const page = () => {
           !
         </p>
       </section>
-    </main>
+    </div>
   );
 };
 
