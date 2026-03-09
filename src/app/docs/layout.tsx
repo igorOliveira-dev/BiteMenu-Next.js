@@ -75,7 +75,12 @@ export default function Layout({ children }) {
   return (
     <div>
       <header className="fixed inset-x-0 flex items-center justify-between p-2 m-2 my-3 bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)] z-10 backdrop-blur-2xl">
-        <Link href="/docs" onClick={() => setIsOpen(false)}>
+        <Link
+          href="/docs"
+          onClick={() => {
+            (setIsOpen(false), setExpension(""));
+          }}
+        >
           <Image src={logoMark} height={50} width={180} alt="Bite Menu" className="hidden xs:block" />
           <Image src={logoTip} height={50} width={50} alt="Bite Menu" className="block xs:hidden" />
         </Link>
