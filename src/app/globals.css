@@ -481,3 +481,13 @@ input[type="time"]::-webkit-calendar-picker-indicator {
     box-shadow: 0 0 0 0 rgba(29, 78, 216, 0.8);
   }
 }
+
+.docs-title {
+  opacity: 0.95;
+  font-weight: 600;
+}
+
+.docs-paragraph {
+  color: var(--gray);
+  margin-bottom: 16px;
+}
