@@ -131,22 +131,62 @@ export default function Layout({ children }) {
             <Link
               className="w-full p-3 hover-bg-translucid transition-colors"
               onClick={() => {
-                (setIsOpen(false), setExpension(""));
+                (setIsOpen(false), setExpension("como-comecar"));
               }}
               href="/docs/como-comecar"
             >
               Como começar
             </Link>
+            {expension === "como-comecar" && (
+              <>
+                <Link
+                  className="w-full p-2 px-5 hover-bg-translucid transition-colors opacity-80 text-sm"
+                  onClick={() => {
+                    setIsOpen(false);
+                  }}
+                  href="/docs/como-comecar#criacao-de-conta"
+                >
+                  Criação de conta
+                </Link>
+                <Link
+                  className="w-full p-2 px-5 hover-bg-translucid transition-colors opacity-80 text-sm"
+                  onClick={() => {
+                    setIsOpen(false);
+                  }}
+                  href="/docs/como-comecar#preenchimento-do-formulario"
+                >
+                  Preenchimento do formulário
+                </Link>
+                <Link
+                  className="w-full p-2 px-5 hover-bg-translucid transition-colors opacity-80 text-sm"
+                  onClick={() => {
+                    setIsOpen(false);
+                  }}
+                  href="/docs/como-comecar#criacao-de-itens"
+                >
+                  Criação de itens
+                </Link>
+                <Link
+                  className="w-full p-2 px-5 hover-bg-translucid transition-colors opacity-80 text-sm"
+                  onClick={() => {
+                    setIsOpen(false);
+                  }}
+                  href="/docs/como-comecar#configuracoes-basicas"
+                >
+                  Configurações básicas
+                </Link>
+              </>
+            )}
             <Link
               className="w-full p-3 hover-bg-translucid transition-colors"
               onClick={() => {
-                (setIsOpen(false), setExpension("test"));
+                (setIsOpen(false), setExpension("plans"));
               }}
               href="/docs/planos"
             >
               Planos
             </Link>
-            {expension === "test" && (
+            {expension === "plans" && (
               <>
                 <Link
                   className="w-full p-2 px-5 hover-bg-translucid transition-colors opacity-80 text-sm"

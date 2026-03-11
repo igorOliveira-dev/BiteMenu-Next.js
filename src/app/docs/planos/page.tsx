@@ -1,3 +1,4 @@
+import Link from "next/link";
 import React from "react";
 
 export const metadata = {
@@ -18,7 +19,25 @@ export const metadata = {
 };
 
 const page = () => {
-  return <div>Planos</div>;
+  return (
+    <div>
+      <h1 className="default-h1">Planos</h1>
+
+      <nav className="my-2">
+        <Link className="underline text-blue-500 hover:text-blue-700" href="#o-que-sao-os-planos">
+          O que são os planos?
+        </Link>
+        {" - "}
+        <Link className="underline text-blue-500 hover:text-blue-700" href="#plus">
+          Plano Plus
+        </Link>
+        {" - "}
+        <Link className="underline text-blue-500 hover:text-blue-700" href="#pro">
+          Plano Pro
+        </Link>
+      </nav>
+    </div>
+  );
 };
 
 export default page;
