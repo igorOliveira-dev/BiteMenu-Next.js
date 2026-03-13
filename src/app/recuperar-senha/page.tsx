@@ -30,9 +30,9 @@ export default function ForgotPasswordPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-md rounded-2xl border p-6 shadow-sm">
+      <div className="w-full max-w-md rounded-2xl border-2 border-[var(--translucid)] bg-translucid p-6 shadow-sm">
         <h1 className="text-2xl font-bold mb-2">Recuperar senha</h1>
-        <p className="text-sm text-gray-600 mb-6">Digite o email da sua conta para receber o link de redefinição.</p>
+        <p className="text-sm text-[var(--gray)] mb-6">Digite o email da sua conta para receber o link de redefinição.</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -46,11 +46,15 @@ export default function ForgotPasswordPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="seuemail@exemplo.com"
-              className="w-full rounded-lg border px-3 py-2 outline-none"
+              className="w-full rounded-lg border-2 border-[var(--translucid)] bg-translucid px-3 py-2 outline-none"
             />
           </div>
 
-          <button type="submit" disabled={loading} className="w-full rounded-lg border px-4 py-2 font-medium">
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
+          >
             {loading ? "Enviando..." : "Enviar link de recuperação"}
           </button>
         </form>
@@ -58,7 +62,7 @@ export default function ForgotPasswordPage() {
         {message && <p className="mt-4 text-sm">{message}</p>}
 
         <div className="mt-4">
-          <Link href="/login" className="text-sm underline">
+          <Link href="/login" className="text-sm underline text-blue-500 hover:text-blue-700">
             Voltar para o login
           </Link>
         </div>
