@@ -90,6 +90,9 @@ export default function SignIn() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+            <Link href="/recuperar-senha" className="underline text-blue-500 hover:text-blue-700 text-sm">
+              Esqueci minha senha
+            </Link>
           </div>
 
           <div>

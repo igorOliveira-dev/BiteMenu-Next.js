@@ -69,11 +69,11 @@ export default function UpdatePasswordPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-md rounded-2xl border p-6 shadow-sm">
+      <div className="w-full max-w-md rounded-2xl border-w border-translucid bg-translucid p-6 shadow-sm">
         <h1 className="text-2xl font-bold mb-2">Definir nova senha</h1>
-        <p className="text-sm text-gray-600 mb-6">Escolha uma nova senha para acessar sua conta.</p>
+        <p className="text-sm text-[var(--gray)] mb-6">Escolha uma nova senha para acessar sua conta.</p>
 
-        {!canReset ? (
+        {canReset ? (
           <p className="text-sm">Abra esta página pelo link enviado no email de recuperação.</p>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -87,7 +87,7 @@ export default function UpdatePasswordPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border px-3 py-2 outline-none"
+                className="w-full rounded-lg border-2 border-[var(--translucid)] bg-translucid px-3 py-2 outline-none"
               />
             </div>
 
@@ -101,11 +101,15 @@ export default function UpdatePasswordPage() {
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full rounded-lg border px-3 py-2 outline-none"
+                className="w-full rounded-lg border-2 border-[var(--translucid)] bg-translucid px-3 py-2 outline-none"
               />
             </div>
 
-            <button type="submit" disabled={loading} className="w-full rounded-lg border px-4 py-2 font-medium">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
+            >
               {loading ? "Salvando..." : "Salvar nova senha"}
             </button>
           </form>
