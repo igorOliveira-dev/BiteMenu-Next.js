@@ -73,7 +73,7 @@ export default function UpdatePasswordPage() {
         <h1 className="text-2xl font-bold mb-2">Definir nova senha</h1>
         <p className="text-sm text-[var(--gray)] mb-6">Escolha uma nova senha para acessar sua conta.</p>
 
-        {canReset ? (
+        {!canReset ? (
           <p className="text-sm">Abra esta página pelo link enviado no email de recuperação.</p>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
