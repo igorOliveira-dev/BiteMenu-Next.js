@@ -10,28 +10,11 @@ import logoTip from "../../../public/LogoTipo-sem-fundo.png";
 import { FaMoon, FaSun } from "react-icons/fa";
 
 export default function Layout({ children }) {
-  const { loading, profile } = useUser();
-  const [userRole, setUserRole] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
   const [expension, setExpension] = useState("");
   const [theme, setTheme] = useState(null);
   const navRef = useRef<HTMLDivElement>(null);
   const [showFade, setShowFade] = useState(false);
-
-  // verifica o perfil do usuário para garantir que é admin (por enquanto só admin acessa docs)
-  useEffect(() => {
-    if (!loading && profile) {
-      const role = profile.role;
-      setUserRole(role);
-    }
-  }, [profile]);
-
-  useEffect(() => {
-    if (!loading && userRole !== "admin") {
-      window.location.href = "/";
-    }
-  }, [userRole]);
-  // fim da verificação de admin
 
   useEffect(() => {
     const saved = localStorage.getItem("theme");
@@ -51,8 +34,6 @@ export default function Layout({ children }) {
 
   // observa o scroll do aside para controlar a sombra inferior
   useEffect(() => {
-    if (loading || userRole !== "admin") return;
-
     const el = navRef.current;
     if (!el) return;
 
@@ -65,12 +46,7 @@ export default function Layout({ children }) {
     el.addEventListener("scroll", checkScroll);
 
     return () => el.removeEventListener("scroll", checkScroll);
-  }, [loading, userRole]);
-
-  // loading se estiver carregando
-  if (loading || userRole !== "admin") {
-    return <Loading />;
-  }
+  }, []);
 
   return (
     <div>
@@ -177,7 +153,7 @@ export default function Layout({ children }) {
                 </Link>
               </>
             )}
-            <Link
+            {/* <Link
               className="w-full p-3 hover-bg-translucid transition-colors"
               onClick={() => {
                 (setIsOpen(false), setExpension("plans"));
@@ -207,7 +183,7 @@ export default function Layout({ children }) {
                   Plano Pro
                 </Link>
               </>
-            )}
+            )} */}
           </nav>
           <div
             className="pointer-events-none absolute bottom-0 left-0 w-full h-16 rounded-b-lg transition-opacity duration-200"
