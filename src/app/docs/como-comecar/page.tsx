@@ -19,7 +19,7 @@ export const metadata = {
 
 const page = () => {
   return (
-    <div className="max-w-[1080px] flex flex-col">
+    <div className="max-w-[1080px] flex flex-col scroll-mt-[90px]">
       <h1 className="default-h1 docs-title">Como começar</h1>
 
       <nav className="my-2">
