@@ -68,7 +68,7 @@ const page = () => {
         <ul className="docs-paragraph list-disc pl-6">
           <li>Limite de 20 itens no cardápio</li>
           <li>Limite de 4 categorias no cardápio</li>
-          <li>Não inclui diversas funcionalidades premium</li>
+          <li>Não inclui diversas funcionalidades do Plus e do Pro</li>
         </ul>
       </section>
 

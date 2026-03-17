@@ -241,6 +241,109 @@ export default function Layout({ children }) {
                 </Link>
               </>
             )}
+            <Link
+              className="w-full p-3 hover-bg-translucid transition-colors"
+              onClick={() => {
+                (setIsOpen(false), setExpension("cardapio-digital"));
+              }}
+              href="/docs/cardapio-digital"
+            >
+              Cardápio Digital
+            </Link>
+            {expension === "cardapio-digital" && (
+              <>
+                <Link
+                  className="w-full p-2 px-5 hover-bg-translucid transition-colors opacity-80 text-sm"
+                  onClick={() => {
+                    setIsOpen(false);
+                  }}
+                  href="/docs/cardapio-digital#o-que-e-o-cardapio-digital"
+                >
+                  O que é o cardápio digital?
+                </Link>
+                <Link
+                  className="w-full p-2 px-5 hover-bg-translucid transition-colors opacity-80 text-sm"
+                  onClick={() => {
+                    setIsOpen(false);
+                  }}
+                  href="/docs/cardapio-digital#como-o-cliente-acessa"
+                >
+                  Como o cliente acessa?
+                </Link>
+                <Link
+                  className="w-full p-2 px-5 hover-bg-translucid transition-colors opacity-80 text-sm"
+                  onClick={() => {
+                    setIsOpen(false);
+                  }}
+                  href="/docs/cardapio-digital#o-que-aparece-no-cardapio"
+                >
+                  O que aparece no cardápio?
+                </Link>
+                <Link
+                  className="w-full p-2 px-5 hover-bg-translucid transition-colors opacity-80 text-sm"
+                  onClick={() => {
+                    setIsOpen(false);
+                  }}
+                  href="/docs/cardapio-digital#como-funciona-o-pedido"
+                >
+                  Como funciona o pedido?
+                </Link>
+                <Link
+                  className="w-full p-2 px-5 hover-bg-translucid transition-colors opacity-80 text-sm"
+                  onClick={() => {
+                    setIsOpen(false);
+                  }}
+                  href="/docs/cardapio-digital#personalizacao-do-cardapio"
+                >
+                  Personalização do cardápio
+                </Link>
+                <Link
+                  className="w-full p-2 px-5 hover-bg-translucid transition-colors opacity-80 text-sm"
+                  onClick={() => {
+                    setIsOpen(false);
+                  }}
+                  href="/docs/cardapio-digital#organizacao-dos-itens"
+                >
+                  Organização dos itens
+                </Link>
+                <Link
+                  className="w-full p-2 px-5 hover-bg-translucid transition-colors opacity-80 text-sm"
+                  onClick={() => {
+                    setIsOpen(false);
+                  }}
+                  href="/docs/cardapio-digital#itens-em-destaque-e-promocoes"
+                >
+                  Itens em destaque e promoções
+                </Link>
+                <Link
+                  className="w-full p-2 px-5 hover-bg-translucid transition-colors opacity-80 text-sm"
+                  onClick={() => {
+                    setIsOpen(false);
+                  }}
+                  href="/docs/cardapio-digital#horarios-e-disponibilidade"
+                >
+                  Horários e disponibilidade
+                </Link>
+                <Link
+                  className="w-full p-2 px-5 hover-bg-translucid transition-colors opacity-80 text-sm"
+                  onClick={() => {
+                    setIsOpen(false);
+                  }}
+                  href="/docs/cardapio-digital#vantagens-do-cardapio-digital"
+                >
+                  Vantagens do cardápio digital
+                </Link>
+                <Link
+                  className="w-full p-2 px-5 hover-bg-translucid transition-colors opacity-80 text-sm"
+                  onClick={() => {
+                    setIsOpen(false);
+                  }}
+                  href="/docs/cardapio-digital#boas-praticas"
+                >
+                  Boas práticas para cardápios
+                </Link>
+              </>
+            )}
           </nav>
           <div
             className="pointer-events-none absolute bottom-0 left-0 w-full h-16 rounded-b-lg transition-opacity duration-200"
