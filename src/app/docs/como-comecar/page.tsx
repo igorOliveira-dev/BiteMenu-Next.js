@@ -22,24 +22,6 @@ const page = () => {
     <div className="max-w-[1080px] flex flex-col scroll-mt-[90px]">
       <h1 className="default-h1 docs-title">Como começar</h1>
 
-      <nav className="my-2">
-        <Link className="underline text-blue-500 hover:text-blue-700" href="#criacao-de-conta">
-          Criação de conta
-        </Link>
-        {" - "}
-        <Link className="underline text-blue-500 hover:text-blue-700" href="#preenchimento-do-formulario">
-          Preenchimento do formulário
-        </Link>
-        {" - "}
-        <Link className="underline text-blue-500 hover:text-blue-700" href="#criacao-de-itens">
-          Criação de itens
-        </Link>
-        {" - "}
-        <Link className="underline text-blue-500 hover:text-blue-700" href="#configuracoes-basicas">
-          Configurações básicas
-        </Link>
-      </nav>
-
       <section className="mt-4 scroll-mt-[90px]" id="criacao-de-conta">
         <h2 className="docs-title">Criação de conta</h2>
         <p className="docs-paragraph">

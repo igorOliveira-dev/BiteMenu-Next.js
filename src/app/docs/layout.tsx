@@ -153,7 +153,7 @@ export default function Layout({ children }) {
                 </Link>
               </>
             )}
-            {/* <Link
+            <Link
               className="w-full p-3 hover-bg-translucid transition-colors"
               onClick={() => {
                 (setIsOpen(false), setExpension("plans"));
@@ -164,6 +164,35 @@ export default function Layout({ children }) {
             </Link>
             {expension === "plans" && (
               <>
+                <Link
+                  className="w-full p-2 px-5 hover-bg-translucid transition-colors opacity-80 text-sm"
+                  onClick={() => {
+                    setIsOpen(false);
+                  }}
+                  href="/docs/planos#como-funcionam-os-planos"
+                >
+                  Como funcionam os planos?
+                </Link>
+
+                <Link
+                  className="w-full p-2 px-5 hover-bg-translucid transition-colors opacity-80 text-sm"
+                  onClick={() => {
+                    setIsOpen(false);
+                  }}
+                  href="/docs/planos#assinatura-de-planos"
+                >
+                  Assinatura de Planos
+                </Link>
+                <Link
+                  className="w-full p-2 px-5 hover-bg-translucid transition-colors opacity-80 text-sm"
+                  onClick={() => {
+                    setIsOpen(false);
+                  }}
+                  href="/docs/planos#free"
+                >
+                  Plano Free
+                </Link>
+
                 <Link
                   className="w-full p-2 px-5 hover-bg-translucid transition-colors opacity-80 text-sm"
                   onClick={() => {
@@ -182,8 +211,36 @@ export default function Layout({ children }) {
                 >
                   Plano Pro
                 </Link>
+                <Link
+                  className="w-full p-2 px-5 hover-bg-translucid transition-colors opacity-80 text-sm"
+                  onClick={() => {
+                    setIsOpen(false);
+                  }}
+                  href="/docs/planos#troca-de-plano"
+                >
+                  Troca de plano
+                </Link>
+                <Link
+                  className="w-full p-2 px-5 hover-bg-translucid transition-colors opacity-80 text-sm"
+                  onClick={() => {
+                    setIsOpen(false);
+                  }}
+                  href="/docs/planos#cancelamento"
+                >
+                  Cancelamento
+                </Link>
+
+                <Link
+                  className="w-full p-2 px-5 hover-bg-translucid transition-colors opacity-80 text-sm"
+                  onClick={() => {
+                    setIsOpen(false);
+                  }}
+                  href="/docs/planos#seguranca"
+                >
+                  Segurança
+                </Link>
               </>
-            )} */}
+            )}
           </nav>
           <div
             className="pointer-events-none absolute bottom-0 left-0 w-full h-16 rounded-b-lg transition-opacity duration-200"
