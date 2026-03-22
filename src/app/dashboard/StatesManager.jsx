@@ -75,6 +75,11 @@ function detectChanges(local, server, watchKeys = []) {
       continue;
     }
 
+    if (key === "deliveryFeeMode") {
+      if ((lv ?? null) !== (sv ?? null)) diffs.push(key);
+      continue;
+    }
+
     if ((lv ?? "") !== (sv ?? "")) diffs.push(key);
   }
   return diffs.sort();
@@ -198,6 +203,8 @@ export default function StatesManager({
     "selectedServices",
     "selectedPayments",
     "deliveryFee",
+    "deliveryZones",
+    "deliveryFeeMode",
     "pixKey",
     "hours",
   ],
@@ -247,7 +254,18 @@ export default function StatesManager({
       slug: menuFromServer.slug ?? "",
       selectedServices: menuFromServer.services ?? [],
       selectedPayments: menuFromServer.payments ?? [],
-      deliveryFee: menuFromServer.delivery_fee ?? 0,
+      deliveryFee:
+        menuFromServer.delivery_fee !== undefined && menuFromServer.delivery_fee !== null
+          ? String(menuFromServer.delivery_fee)
+          : "",
+      deliveryZones: Array.isArray(menuFromServer.delivery_zones)
+        ? menuFromServer.delivery_zones.map((z, index) => ({
+            id: z?.id || `zone-${index}`,
+            name: z?.name || "",
+            shipping_fee: z?.shipping_fee !== undefined && z?.shipping_fee !== null ? String(z.shipping_fee) : "",
+          }))
+        : [],
+      deliveryFeeMode: menuFromServer.delivery_fee_mode ?? "fixed",
       pixKey: menuFromServer.pix_key ?? null,
       hours: menuFromServer.hours ?? null,
     };
@@ -344,6 +362,14 @@ export default function StatesManager({
       }
 
       // payload
+      const cleanedZones = (localState.deliveryZones || [])
+        .map((z) => ({
+          id: z.id,
+          name: z.name?.trim(),
+          shipping_fee: Number(z.shipping_fee || 0),
+        }))
+        .filter((z) => z.name);
+
       const payload = {
         title: localState.title,
         description: localState.description,
@@ -354,7 +380,14 @@ export default function StatesManager({
         slug: localState.slug,
         services: localState.selectedServices,
         payments: localState.selectedPayments,
-        delivery_fee: parseFloat(localState.deliveryFee) || 0,
+
+        delivery_fee:
+          localState.deliveryFee !== "" && localState.deliveryFee !== null ? Number(localState.deliveryFee) : null,
+
+        delivery_zones: cleanedZones,
+
+        delivery_fee_mode: localState.deliveryFeeMode,
+
         pix_key: localState.pixKey || null,
         hours: localState.hours,
       };
@@ -420,7 +453,15 @@ export default function StatesManager({
           slug: data.slug ?? "",
           selectedServices: data.services ?? [],
           selectedPayments: data.payments ?? [],
-          deliveryFee: data.delivery_fee ?? 0,
+          deliveryFee: data.delivery_fee !== undefined && data.delivery_fee !== null ? String(data.delivery_fee) : "",
+          deliveryZones: Array.isArray(data.delivery_zones)
+            ? data.delivery_zones.map((z, index) => ({
+                id: z?.id || `zone-${index}`,
+                name: z?.name || "",
+                shipping_fee: z?.shipping_fee !== undefined && z?.shipping_fee !== null ? String(z.shipping_fee) : "",
+              }))
+            : [],
+          deliveryFeeMode: data.delivery_fee_mode ?? null,
           pixKey: data.pix_key ?? null,
           hours: data.hours ?? null,
         };
@@ -558,6 +599,8 @@ export default function StatesManager({
                     selectedServices: "Serviços selecionados",
                     selectedPayments: "Formas de pagamento",
                     deliveryFee: "Taxa de entrega",
+                    deliveryZones: "Bairros de entrega",
+                    deliveryFeeMode: "Modo do frete",
                     pixKey: "Chave PIX",
                     hours: "Horário",
                   };

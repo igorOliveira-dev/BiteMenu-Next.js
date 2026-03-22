@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { FaPen, FaChevronLeft, FaLightbulb } from "react-icons/fa";
+import { FaPen, FaChevronLeft, FaLightbulb, FaTrash, FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { COLOR_PALETTES } from "@/consts/colorPallets";
 import useMenu from "@/hooks/useMenu";
 import Loading from "@/components/Loading";
 import GenericModal from "@/components/GenericModal";
 import { useAlert } from "@/providers/AlertProvider";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
+import { useConfirm } from "@/providers/ConfirmProvider";
 
 const DEFAULT_HOURS = {
   mon: "09:00-18:00",
@@ -19,20 +20,9 @@ const DEFAULT_HOURS = {
   sun: "09:00-18:00",
 };
 
-const DEFAULT_BACKGROUND = COLOR_PALETTES[0].bg;
-
-function getContrastTextColor(hex) {
-  const cleanHex = (hex || DEFAULT_BACKGROUND).replace("#", "");
-  const r = parseInt(cleanHex.substring(0, 2), 16);
-  const g = parseInt(cleanHex.substring(2, 4), 16);
-  const b = parseInt(cleanHex.substring(4, 6), 16);
-  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
-  return yiq >= 128 ? "black" : "white";
-}
-
 function normalizeHours(data) {
   if (!data) return { ...DEFAULT_HOURS };
-  // compatibilidade com formato antigo
+
   if (data?.hours && typeof data.hours === "string" && Array.isArray(data.days)) {
     const obj = {};
     data.days.forEach((day) => {
@@ -40,7 +30,33 @@ function normalizeHours(data) {
     });
     return { ...DEFAULT_HOURS, ...obj };
   }
+
   return { ...DEFAULT_HOURS, ...data };
+}
+
+function createZoneId(index = 0) {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return `zone-${Date.now()}-${index}-${Math.random().toString(36).slice(2)}`;
+}
+
+function normalizeDeliveryZones(zones = []) {
+  if (!Array.isArray(zones)) return [];
+
+  return zones.map((zone, index) => ({
+    id: zone?.id || createZoneId(index),
+    name: zone?.name || "",
+    shipping_fee: zone?.shipping_fee !== undefined && zone?.shipping_fee !== null ? String(zone.shipping_fee) : "",
+  }));
+}
+
+function createEmptyZone() {
+  return {
+    id: createZoneId(),
+    name: "",
+    shipping_fee: "",
+  };
 }
 
 const ConfigMenu = (props) => {
@@ -61,22 +77,26 @@ const ConfigMenu = (props) => {
     menuState,
   } = props;
 
+  const confirm = useConfirm();
   const customAlert = useAlert();
+  const { menu, loading } = useMenu();
+
+  const [expandedZones, setExpandedZones] = useState(false);
 
   const usingExternal = Array.isArray(menuState) && menuState.length === 2;
   const [externalState, externalSetState] = usingExternal ? menuState : [null, null];
 
-  const { menu, loading } = useMenu();
-
-  // estados locais (fallback)
   const [slugLocal, setSlugLocal] = useState(menu?.slug ?? "");
   const [selectedServicesLocal, setSelectedServicesLocal] = useState(menu?.services ?? []);
   const [selectedPaymentsLocal, setSelectedPaymentsLocal] = useState(menu?.payments ?? []);
-  const [deliveryFeeLocal, setDeliveryFeeLocal] = useState(menu?.delivery_fee ?? 0);
+  const [deliveryFeeLocal, setDeliveryFeeLocal] = useState(
+    menu?.delivery_fee !== undefined && menu?.delivery_fee !== null ? String(menu.delivery_fee) : "",
+  );
+  const [deliveryZonesLocal, setDeliveryZonesLocal] = useState(normalizeDeliveryZones(menu?.delivery_zones));
+  const [deliveryFeeModeLocal, setDeliveryFeeModeLocal] = useState(menu?.delivery_fee_mode ?? null);
   const [pixKeyLocal, setPixKeyLocal] = useState(menu?.pix_key ?? null);
   const [hoursLocal, setHoursLocal] = useState(() => normalizeHours(menu?.hours));
 
-  // getters/setters unificados (slug / services / payments)
   const slug = usingExternal ? externalState?.slug : slugLocal;
   const setSlug = usingExternal ? (v) => externalSetState((p) => ({ ...p, slug: v })) : setSlugLocal;
 
@@ -90,21 +110,40 @@ const ConfigMenu = (props) => {
     ? (arr) => externalSetState((p) => ({ ...p, selectedPayments: arr }))
     : setSelectedPaymentsLocal;
 
-  // getter taxa de delivery
-  const deliveryFee = usingExternal ? (externalState?.deliveryFee ?? 0) : deliveryFeeLocal;
+  const deliveryFee = usingExternal ? (externalState?.deliveryFee ?? "") : deliveryFeeLocal;
   const setDeliveryFee = usingExternal ? (v) => externalSetState((p) => ({ ...p, deliveryFee: v })) : setDeliveryFeeLocal;
 
-  // getter pix key
+  const deliveryZones = usingExternal
+    ? normalizeDeliveryZones(externalState?.deliveryZones)
+    : normalizeDeliveryZones(deliveryZonesLocal);
+
+  const setDeliveryZones = usingExternal
+    ? (arrOrUpdater) =>
+        externalSetState((prev) => {
+          const current = normalizeDeliveryZones(prev?.deliveryZones);
+          const next = typeof arrOrUpdater === "function" ? arrOrUpdater(current) : arrOrUpdater;
+          return { ...prev, deliveryZones: normalizeDeliveryZones(next) };
+        })
+    : (arrOrUpdater) =>
+        setDeliveryZonesLocal((prev) => {
+          const current = normalizeDeliveryZones(prev);
+          const next = typeof arrOrUpdater === "function" ? arrOrUpdater(current) : arrOrUpdater;
+          return normalizeDeliveryZones(next);
+        });
+
+  const deliveryFeeMode = usingExternal ? (externalState?.deliveryFeeMode ?? null) : deliveryFeeModeLocal;
+
+  const setDeliveryFeeMode = usingExternal
+    ? (v) => externalSetState((p) => ({ ...p, deliveryFeeMode: v }))
+    : setDeliveryFeeModeLocal;
+
   const pixKey = usingExternal ? (externalState?.pixKey ?? null) : pixKeyLocal;
   const setPixKey = usingExternal ? (v) => externalSetState((p) => ({ ...p, pixKey: v })) : setPixKeyLocal;
 
-  // hours: para renderizar sempre usamos a versão normalizada
   const hours = normalizeHours(usingExternal ? externalState?.hours : hoursLocal);
 
-  // wrapper seguro para atualizar "hours" que aceita updater function ou objeto
   const safeSetHours = (updaterOrValue) => {
     if (usingExternal) {
-      // externalSetState recebe função que recebe o estado externo completo
       if (typeof updaterOrValue === "function") {
         externalSetState((prev) => {
           const prevHours = normalizeHours(prev?.hours);
@@ -113,72 +152,91 @@ const ConfigMenu = (props) => {
           return { ...prev, hours: next };
         });
       } else {
-        externalSetState((prev) => ({ ...prev, hours: normalizeHours(updaterOrValue) }));
+        externalSetState((prev) => ({
+          ...prev,
+          hours: normalizeHours(updaterOrValue),
+        }));
       }
     } else {
-      // setHoursLocal aceita updater function
       setHoursLocal((prevRaw) => {
         const prevHours = normalizeHours(prevRaw);
         if (typeof updaterOrValue === "function") {
           const nextRaw = updaterOrValue(prevHours);
           return normalizeHours(nextRaw);
-        } else {
-          return normalizeHours(updaterOrValue);
         }
+        return normalizeHours(updaterOrValue);
       });
     }
   };
 
-  // modais
   const [titleModalOpen, setTitleModalOpen] = useState(false);
   const [descModalOpen, setDescModalOpen] = useState(false);
   const [addressModalOpen, setAddressModalOpen] = useState(false);
   const [slugModalOpen, setSlugModalOpen] = useState(false);
 
-  // temps
   const [tempTitle, setTempTitle] = useState(propTitle ?? "");
   const [tempDescription, setTempDescription] = useState(propDescription ?? "");
   const [tempAddress, setTempAddress] = useState(propAddress ?? "");
   const [tempSlug, setTempSlug] = useState(slug ?? "");
 
-  // Modais de texto do ConfigMenu fecham com botão "Voltar"
+  const visibleZones = expandedZones ? deliveryZones : deliveryZones.slice(0, 2);
+
   useModalBackHandler(titleModalOpen, () => setTitleModalOpen(false));
   useModalBackHandler(descModalOpen, () => setDescModalOpen(false));
   useModalBackHandler(addressModalOpen, () => setAddressModalOpen(false));
   useModalBackHandler(slugModalOpen, () => setSlugModalOpen(false));
 
   useEffect(() => {
-    if (menu) {
-      if (menu.title) {
-        if (!usingExternal && typeof propSetTitle === "function") {
-          propSetTitle(menu.title);
-        }
-        setTempTitle(menu.title);
-      }
-      if (menu.description) {
-        if (!usingExternal && typeof propSetDescription === "function") {
-          propSetDescription(menu.description);
-        }
-        setTempDescription(menu.description);
-      }
-      if (menu.address) {
-        if (!usingExternal && typeof propSetAddress === "function") {
-          propSetAddress(menu.address);
-        }
-        setTempAddress(menu.address);
-      }
-      if (menu.slug) {
-        if (!usingExternal) setSlugLocal(menu.slug);
-        setTempSlug(menu.slug);
-      }
-      if (menu.services && !usingExternal) setSelectedServices(menu.services);
-      if (menu.payments && !usingExternal) setSelectedPayments(menu.payments);
-      if (menu.delivery_fee && !usingExternal) setDeliveryFee(menu.delivery_fee);
-      if (menu.pix_key && !usingExternal) setPixKey(menu.pix_key);
-      if (menu.background_color && !usingExternal && typeof propSetBg === "function") propSetBg(menu.background_color);
-      if (menu.title_color && !usingExternal && typeof propSetTitleColor === "function") propSetTitleColor(menu.title_color);
-      if (menu.hours && !usingExternal) safeSetHours(menu.hours);
+    if (!menu) return;
+
+    if (menu.title) {
+      if (!usingExternal && typeof propSetTitle === "function") propSetTitle(menu.title);
+      setTempTitle(menu.title);
     }
+
+    if (menu.description) {
+      if (!usingExternal && typeof propSetDescription === "function") {
+        propSetDescription(menu.description);
+      }
+      setTempDescription(menu.description);
+    }
+
+    if (menu.address) {
+      if (!usingExternal && typeof propSetAddress === "function") {
+        propSetAddress(menu.address);
+      }
+      setTempAddress(menu.address);
+    }
+
+    if (menu.slug) {
+      if (!usingExternal) setSlugLocal(menu.slug);
+      setTempSlug(menu.slug);
+    }
+
+    if (menu.services && !usingExternal) setSelectedServicesLocal(menu.services);
+    if (menu.payments && !usingExternal) setSelectedPaymentsLocal(menu.payments);
+
+    if (!usingExternal) {
+      setDeliveryFeeLocal(menu?.delivery_fee !== undefined && menu?.delivery_fee !== null ? String(menu.delivery_fee) : "");
+      setDeliveryZonesLocal(normalizeDeliveryZones(menu?.delivery_zones));
+      setDeliveryFeeModeLocal(menu?.delivery_fee_mode ?? null);
+    }
+
+    if (menu.pix_key && !usingExternal) setPixKeyLocal(menu.pix_key);
+
+    if (menu.background_color && !usingExternal && typeof propSetBg === "function") {
+      propSetBg(menu.background_color);
+    }
+
+    if (menu.title_color && !usingExternal && typeof propSetTitleColor === "function") {
+      propSetTitleColor(menu.title_color);
+    }
+
+    if (menu.details_color && !usingExternal && typeof propSetDetailsColor === "function") {
+      propSetDetailsColor(menu.details_color);
+    }
+
+    if (menu.hours && !usingExternal) safeSetHours(menu.hours);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [menu?.id]);
 
@@ -189,6 +247,7 @@ const ConfigMenu = (props) => {
   }, [propTitle, propDescription, propAddress]);
 
   const [paletteIndex, setPaletteIndex] = useState(0);
+
   const colorFields = [
     { label: "Cor do fundo:", value: propBg, setter: propSetBg },
     { label: "Cor do título:", value: propTitleColor, setter: propSetTitleColor },
@@ -222,10 +281,10 @@ const ConfigMenu = (props) => {
   function slugify(value) {
     return value
       .toLowerCase()
-      .normalize("NFD") // separa letra + acento
-      .replace(/[\u0300-\u036f]/g, "") // remove os acentos
-      .replace(/[^a-z0-9-]/g, "") // remove tudo que NÃO seja letra, número ou hífen
-      .replace(/-+/g, "-"); // evita múltiplos hífens seguidos
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9-]/g, "")
+      .replace(/-+/g, "-");
   }
 
   const dayOrder = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
@@ -236,9 +295,16 @@ const ConfigMenu = (props) => {
       next = Math.floor(Math.random() * COLOR_PALETTES.length);
     }
     setPaletteIndex(next);
+
     const { bg, title, details } = COLOR_PALETTES[next];
+
     if (usingExternal) {
-      externalSetState((p) => ({ ...p, backgroundColor: bg, titleColor: title, detailsColor: details }));
+      externalSetState((p) => ({
+        ...p,
+        backgroundColor: bg,
+        titleColor: title,
+        detailsColor: details,
+      }));
     } else {
       if (typeof propSetBg === "function") propSetBg(bg);
       if (typeof propSetTitleColor === "function") propSetTitleColor(title);
@@ -248,27 +314,71 @@ const ConfigMenu = (props) => {
 
   const toggleService = (id) => {
     const prev = selectedServices || [];
+
     if (prev.length === 1 && prev.includes(id)) {
       customAlert("Mantenha ao menos 1 serviço.");
       return;
     }
+
     let next;
     if (prev.includes(id)) next = prev.filter((s) => s !== id);
     else next = [...prev, id];
+
     setSelectedServices(next);
+
+    if (id === "delivery" && prev.includes("delivery")) {
+      setDeliveryFeeMode(null);
+    }
   };
 
   const togglePayment = (id) => {
     const prev = selectedPayments || [];
+
     let next;
     if (prev.includes(id)) next = prev.filter((p) => p !== id);
     else next = [...prev, id];
-    // opcional: garantir pelo menos um método — comente a linha abaixo se não quiser essa restrição
+
     if (next.length === 0) {
       customAlert("Mantenha ao menos 1 forma de pagamento.");
       return;
     }
+
     setSelectedPayments(next);
+  };
+
+  const addDeliveryZone = () => {
+    setDeliveryZones((prev) => [...prev, createEmptyZone()]);
+  };
+
+  const updateDeliveryZone = (id, field, value) => {
+    setDeliveryZones((prev) =>
+      prev.map((zone) => {
+        if (zone.id !== id) return zone;
+
+        if (field === "shipping_fee") {
+          let nextValue = String(value ?? "").replace(",", ".");
+          if (nextValue.includes("-")) nextValue = nextValue.replace("-", "");
+          return { ...zone, [field]: nextValue };
+        }
+
+        return { ...zone, [field]: value };
+      }),
+    );
+  };
+
+  const removeDeliveryZone = async (id) => {
+    const ok = await confirm("Tem certeza que deseja remover este bairro?");
+    if (ok) {
+      setDeliveryZones((prev) => prev.filter((zone) => zone.id !== id));
+    }
+  };
+
+  const toggleDeliveryMode = (mode) => {
+    if (deliveryFeeMode === mode) {
+      setDeliveryFeeMode(null);
+      return;
+    }
+    setDeliveryFeeMode(mode);
   };
 
   if (loading) return <Loading />;
@@ -284,7 +394,6 @@ const ConfigMenu = (props) => {
             <h2 className="xs:font-semibold">Configurações do cardápio</h2>
           </div>
 
-          {/* Nome */}
           <div>
             <div className="flex sm:items-center max-w-full min-h-[46px] flex-col sm:flex-row">
               <p className="font-semibold mr-2 whitespace-nowrap">Nome do estabelecimento:</p>
@@ -300,7 +409,6 @@ const ConfigMenu = (props) => {
             <hr className="border-1 border-translucid mt-2 mb-4 max-w-full" />
           </div>
 
-          {/* Description */}
           <div>
             <div className="flex sm:items-center max-w-full min-h-[46px] flex-col sm:flex-row">
               <p className="font-semibold mr-2 whitespace-nowrap">Descrição:</p>
@@ -316,7 +424,6 @@ const ConfigMenu = (props) => {
             <hr className="border-1 border-translucid mt-2 mb-4 max-w-full" />
           </div>
 
-          {/* Address */}
           <div>
             <div className="flex sm:items-center max-w-full min-h-[46px] flex-col sm:flex-row">
               <p className="font-semibold mr-2 whitespace-nowrap">Endereço:</p>
@@ -332,7 +439,6 @@ const ConfigMenu = (props) => {
             <hr className="border-1 border-translucid mt-2 mb-4 max-w-full" />
           </div>
 
-          {/* Slug */}
           <div>
             <div className="flex sm:items-center max-w-full min-h-[46px] flex-col sm:flex-row">
               <p className="font-semibold mr-2 whitespace-nowrap">Slug:</p>
@@ -349,7 +455,6 @@ const ConfigMenu = (props) => {
             <hr className="border-1 border-translucid mt-2 mb-4 max-w-full" />
           </div>
 
-          {/* Colors */}
           <div className="mt-2 max-w-full">
             <p className="font-semibold mb-2">Cores do cardápio:</p>
 
@@ -376,9 +481,9 @@ const ConfigMenu = (props) => {
             <hr className="border-1 border-translucid mt-2 mb-4 max-w-full" />
           </div>
 
-          {/* Services */}
           <div className="mb-4">
             <p className="font-semibold mb-2">Serviços disponíveis:</p>
+
             <div className="grid grid-cols-1 xs:grid-cols-2 gap-y-4 max-w-160">
               {serviceOptions.map((opt) => (
                 <label key={opt.id} className="flex items-center space-x-2 cursor-pointer">
@@ -402,30 +507,134 @@ const ConfigMenu = (props) => {
                 </label>
               ))}
             </div>
-            <div className="mt-4">
-              <label className="flex items-center w-[300px] gap-2">
-                <span className="whitespace-nowrap">Taxa de entrega (R$):</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={deliveryFee || ""}
-                  onChange={(e) => {
-                    let value = e.target.value;
-                    if (value.includes("-")) value = value.replace("-", "");
-                    if (parseFloat(value) < 0) value = "0";
-                    setDeliveryFee(value);
-                  }}
-                  placeholder="0.00"
-                  className="p-1 rounded border-2 border-translucid bg-translucid flex-1 min-w-0"
-                />
-              </label>
-            </div>
 
-            <hr className="border-1 border-translucid mt-2 mb-4 max-w-full" />
+            {selectedServices?.includes("delivery") && (
+              <div className="mt-5">
+                <p className="font-semibold mb-3">Forma de cobrança do frete:</p>
+
+                <div className="flex flex-col gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <span className="switch">
+                      <input
+                        type="checkbox"
+                        checked={deliveryFeeMode === "fixed"}
+                        onChange={() => toggleDeliveryMode("fixed")}
+                      />
+                      <span className="slider"></span>
+                    </span>
+                    <span>Usar taxa fixa de entrega</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <span className="switch">
+                      <input
+                        type="checkbox"
+                        checked={deliveryFeeMode === "zones"}
+                        onChange={() => toggleDeliveryMode("zones")}
+                      />
+                      <span className="slider"></span>
+                    </span>
+                    <span>Usar taxa por bairro</span>
+                  </label>
+                </div>
+
+                {deliveryFeeMode === "fixed" && (
+                  <div className="mt-4">
+                    <label className="flex items-center w-[300px] gap-2">
+                      <span className="whitespace-nowrap">Taxa de entrega (R$):</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={deliveryFee || ""}
+                        onChange={(e) => setDeliveryFee(String(e.target.value).replace(",", "."))}
+                        placeholder="0.00"
+                        className="p-1 rounded border-2 border-translucid bg-translucid flex-1 min-w-0"
+                      />
+                    </label>
+                  </div>
+                )}
+
+                {deliveryFeeMode === "zones" && (
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+                      <p className="font-semibold">Bairros e taxas de entrega:</p>
+
+                      <button type="button" onClick={addDeliveryZone} className="custom-gray-button">
+                        Adicionar bairro
+                      </button>
+                    </div>
+
+                    {deliveryZones.length === 0 ? (
+                      <div className="p-3 rounded-lg color-gray">Nenhum bairro cadastrado ainda.</div>
+                    ) : (
+                      <div className="flex flex-col gap-3">
+                        {visibleZones.map((zone, index) => (
+                          <div key={zone.id} className="border-2 border-translucid rounded-xl p-3 bg-translucid">
+                            <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+                              <div className="flex flex-col flex-1">
+                                <label className="mb-1 text-sm color-gray">Bairro {index + 1}</label>
+                                <input
+                                  type="text"
+                                  value={zone.name}
+                                  onChange={(e) => updateDeliveryZone(zone.id, "name", e.target.value)}
+                                  placeholder="Ex.: Centro"
+                                  className="p-2 rounded border-2 border-translucid bg-background"
+                                />
+                              </div>
+
+                              <div className="flex flex-col w-full sm:w-[170px]">
+                                <label className="mb-1 text-sm color-gray">Taxa (R$)</label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={zone.shipping_fee}
+                                  onChange={(e) => updateDeliveryZone(zone.id, "shipping_fee", e.target.value)}
+                                  placeholder="0.00"
+                                  className="p-2 rounded border-2 border-translucid bg-background"
+                                />
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => removeDeliveryZone(zone.id)}
+                                className="cursor-pointer px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-all flex gap-2 items-center justify-center"
+                              >
+                                Remover
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+
+                        {deliveryZones.length > 2 && (
+                          <button
+                            type="button"
+                            onClick={() => setExpandedZones((prev) => !prev)}
+                            className="w-full p-3 rounded-xl border-2 border-dashed border-translucid bg-translucid hover:opacity-80 transition-all text-sm font-medium cursor-pointer"
+                          >
+                            {expandedZones ? (
+                              <div className="flex items-center justify-center gap-2">
+                                <FaChevronUp /> Mostrar menos bairros
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-center gap-2">
+                                <FaChevronDown /> Ver mais {deliveryZones.length - 2} bairro
+                                {deliveryZones.length - 2 > 1 ? "s" : ""}
+                              </div>
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <hr className="border-1 border-translucid mt-4 mb-4 max-w-full" />
           </div>
 
-          {/* Payments */}
           <div className="mb-4">
             <p className="font-semibold mb-2">Formas de pagamento:</p>
             <div className="grid grid-cols-2 gap-4 max-w-160">
@@ -451,6 +660,7 @@ const ConfigMenu = (props) => {
                 </label>
               ))}
             </div>
+
             {selectedPayments?.includes("pix") && (
               <div className="mt-4">
                 <label className="flex items-center w-[300px] gap-2">
@@ -465,10 +675,10 @@ const ConfigMenu = (props) => {
                 </label>
               </div>
             )}
+
             <hr className="border-1 border-translucid mt-2 mb-4 max-w-full" />
           </div>
 
-          {/* Hours */}
           <div className="mb-4">
             <p className="font-semibold mb-2">Horários de funcionamento:</p>
             <div className="flex flex-col space-y-2">
@@ -561,7 +771,6 @@ const ConfigMenu = (props) => {
         </div>
       </div>
 
-      {/* MODALS */}
       {titleModalOpen && (
         <GenericModal title="Alterar nome" onClose={() => setTitleModalOpen(false)} wfull size="md">
           <input
@@ -610,7 +819,6 @@ const ConfigMenu = (props) => {
             placeholder="Nova descrição"
             value={tempDescription || ""}
             onChange={(e) => {
-              // limita imediatamente a 200 caracteres
               const v = e.target.value.slice(0, 200);
               setTempDescription(v);
             }}
@@ -637,11 +845,13 @@ const ConfigMenu = (props) => {
 
             <button
               onClick={() => {
-                // garantir que nunca salve mais de 200 chars
                 const finalDesc = (tempDescription || "").slice(0, 200);
 
-                if (usingExternal) externalSetState((p) => ({ ...p, description: finalDesc }));
-                else if (typeof propSetDescription === "function") propSetDescription(finalDesc);
+                if (usingExternal) {
+                  externalSetState((p) => ({ ...p, description: finalDesc }));
+                } else if (typeof propSetDescription === "function") {
+                  propSetDescription(finalDesc);
+                }
 
                 setDescModalOpen(false);
               }}
@@ -659,7 +869,6 @@ const ConfigMenu = (props) => {
             placeholder="Novo endereço"
             value={tempAddress || ""}
             onChange={(e) => {
-              // limita imediatamente a 255 caracteres
               const v = e.target.value.slice(0, 255);
               setTempAddress(v);
             }}
@@ -681,11 +890,13 @@ const ConfigMenu = (props) => {
 
             <button
               onClick={() => {
-                // garantir que nunca salve mais de 200 chars
-                const finalAddress = (tempAddress || "").slice(0, 200);
+                const finalAddress = (tempAddress || "").slice(0, 255);
 
-                if (usingExternal) externalSetState((p) => ({ ...p, address: finalAddress }));
-                else if (typeof propSetAddress === "function") propSetAddress(finalAddress);
+                if (usingExternal) {
+                  externalSetState((p) => ({ ...p, address: finalAddress }));
+                } else if (typeof propSetAddress === "function") {
+                  propSetAddress(finalAddress);
+                }
 
                 setAddressModalOpen(false);
               }}
