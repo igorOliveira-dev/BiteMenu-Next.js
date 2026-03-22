@@ -385,11 +385,20 @@ const ConfigMenu = (props) => {
     }
   };
 
+  const canUseZones = userRole === "admin" || userRole === "plus" || userRole === "pro";
+
   const toggleDeliveryMode = (mode) => {
-    if (deliveryFeeMode === mode) {
-      setDeliveryFeeMode(null);
+    if (mode === "zones" && !canUseZones) {
+      customAlert?.("Taxa por bairro está disponível apenas no Plus ou Pro.", "error");
+      setDeliveryFeeMode("fixed");
       return;
     }
+
+    if (deliveryFeeMode === mode) {
+      setDeliveryFeeMode("fixed");
+      return;
+    }
+
     setDeliveryFeeMode(mode);
   };
 
