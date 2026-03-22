@@ -93,7 +93,7 @@ const PlansSection = () => {
   };
 
   return (
-    <section className="py-12 px-6 flex flex-col items-center justify-center">
+    <section className="py-3 px-6 flex flex-col items-center justify-center">
       <h2 className="font-bold scale-130 xxs:scale-150 mb-8 text-center">Planos disponíveis:</h2>
 
       <div className="w-full max-w-[1248px] flex justify-around flex-wrap gap-6 lg:gap-12">
