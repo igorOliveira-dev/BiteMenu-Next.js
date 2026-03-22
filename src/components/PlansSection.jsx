@@ -46,6 +46,10 @@ const PaymentMethodModal = ({ open, plan, onClose, onCredit, onPix, stripeLoadin
             Pix (em breve)
           </button>
         </div>
+        <p className="mt-2 text-sm text-center">
+          A cobrança acontece de forma recorrente, 1 vez por mês. <br />
+          Cancele quando quiser no seu Dashboard.
+        </p>
       </div>
     </GenericModal>
   );
