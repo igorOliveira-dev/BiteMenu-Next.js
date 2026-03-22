@@ -119,7 +119,7 @@ const Orders = ({ setSelectedTab }) => {
 
     const withTotal = (data || []).map((order) => ({
       ...order,
-      total: computeSubtotal(order),
+      delivery_fee: Number(order?.delivery_fee) || 0,
     }));
 
     setOrders((prev) => {
@@ -310,8 +310,10 @@ const Orders = ({ setSelectedTab }) => {
       return customAlert("Erro ao localizar pedido", "error");
     }
 
-    const deliveryFee = deliveryFeeOnSales && order.service === "delivery" ? menu.delivery_fee : null;
-    const saleTotal = order.total + (deliveryFee || 0);
+    const deliveryFee = deliveryFeeOnSales && order.service === "delivery" ? Number(order.delivery_fee) || 0 : 0;
+
+    const subtotal = computeSubtotal(order);
+    const saleTotal = subtotal + deliveryFee;
 
     const { error: insertError } = await supabase.from("sales").insert([
       {
@@ -375,7 +377,7 @@ const Orders = ({ setSelectedTab }) => {
   const computeDeliveryFee = (order) => {
     if (!order) return 0;
     if (order.service !== "delivery") return 0;
-    return Number(menu?.delivery_fee) || 0;
+    return Number(order?.delivery_fee) || 0;
   };
 
   const computeTotalWithDelivery = (order) => {
@@ -696,7 +698,12 @@ const Orders = ({ setSelectedTab }) => {
               onSubmit={async (e) => {
                 e.preventDefault();
                 const subtotal = computeSubtotal(selectedOrder);
-                const payload = { ...selectedOrder, total: subtotal };
+                const deliveryFee = computeDeliveryFee(selectedOrder);
+                const payload = {
+                  ...selectedOrder,
+                  delivery_fee: deliveryFee,
+                  total: subtotal + deliveryFee,
+                };
                 const { error } = await supabase.from("orders").update(payload).eq("id", selectedOrder.id);
                 if (error) return customAlert("Erro ao atualizar pedido", "error");
                 customAlert("Pedido atualizado com sucesso!", "success");

@@ -9,6 +9,7 @@ import GenericModal from "@/components/GenericModal";
 import { useAlert } from "@/providers/AlertProvider";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import { useConfirm } from "@/providers/ConfirmProvider";
+import useUser from "@/hooks/useUser";
 
 const DEFAULT_HOURS = {
   mon: "09:00-18:00",
@@ -79,7 +80,11 @@ const ConfigMenu = (props) => {
 
   const confirm = useConfirm();
   const customAlert = useAlert();
+
+  const { profile, loadingUser } = useUser();
   const { menu, loading } = useMenu();
+
+  const [userRole, setUserRole] = useState(null);
 
   const [expandedZones, setExpandedZones] = useState(false);
 
@@ -245,6 +250,13 @@ const ConfigMenu = (props) => {
     setTempDescription(propDescription);
     setTempAddress(propAddress);
   }, [propTitle, propDescription, propAddress]);
+
+  useEffect(() => {
+    if (!loading && profile) {
+      const role = profile.role;
+      setUserRole(role);
+    }
+  }, [profile]);
 
   const [paletteIndex, setPaletteIndex] = useState(0);
 
@@ -556,78 +568,87 @@ const ConfigMenu = (props) => {
                 )}
 
                 {deliveryFeeMode === "zones" && (
-                  <div className="mt-4">
-                    <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
-                      <p className="font-semibold">Bairros e taxas de entrega:</p>
+                  <>
+                    {userRole === "admin" || userRole === "plus" || userRole === "pro" ? (
+                      <div className="mt-4">
+                        <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+                          <p className="font-semibold">Bairros e taxas de entrega:</p>
 
-                      <button type="button" onClick={addDeliveryZone} className="custom-gray-button">
-                        Adicionar bairro
-                      </button>
-                    </div>
+                          <button type="button" onClick={addDeliveryZone} className="custom-gray-button">
+                            Adicionar bairro
+                          </button>
+                        </div>
 
-                    {deliveryZones.length === 0 ? (
-                      <div className="p-3 rounded-lg color-gray">Nenhum bairro cadastrado ainda.</div>
-                    ) : (
-                      <div className="flex flex-col gap-3">
-                        {visibleZones.map((zone, index) => (
-                          <div key={zone.id} className="border-2 border-translucid rounded-xl p-3 bg-translucid">
-                            <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
-                              <div className="flex flex-col flex-1">
-                                <label className="mb-1 text-sm color-gray">Bairro {index + 1}</label>
-                                <input
-                                  type="text"
-                                  value={zone.name}
-                                  onChange={(e) => updateDeliveryZone(zone.id, "name", e.target.value)}
-                                  placeholder="Ex.: Centro"
-                                  className="p-2 rounded border-2 border-translucid bg-background"
-                                />
+                        {deliveryZones.length === 0 ? (
+                          <div className="p-3 rounded-lg color-gray">Nenhum bairro cadastrado ainda.</div>
+                        ) : (
+                          <div className="flex flex-col gap-3">
+                            {visibleZones.map((zone, index) => (
+                              <div key={zone.id} className="border-2 border-translucid rounded-xl p-3 bg-translucid">
+                                <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+                                  <div className="flex flex-col flex-1">
+                                    <label className="mb-1 text-sm color-gray">Bairro {index + 1}</label>
+                                    <input
+                                      type="text"
+                                      value={zone.name}
+                                      onChange={(e) => updateDeliveryZone(zone.id, "name", e.target.value)}
+                                      placeholder="Ex.: Centro"
+                                      className="p-2 rounded border-2 border-translucid bg-background"
+                                    />
+                                  </div>
+
+                                  <div className="flex flex-col w-full sm:w-[170px]">
+                                    <label className="mb-1 text-sm color-gray">Taxa (R$)</label>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      value={zone.shipping_fee}
+                                      onChange={(e) => updateDeliveryZone(zone.id, "shipping_fee", e.target.value)}
+                                      placeholder="0.00"
+                                      className="p-2 rounded border-2 border-translucid bg-background"
+                                    />
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => removeDeliveryZone(zone.id)}
+                                    className="cursor-pointer px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-all flex gap-2 items-center justify-center"
+                                  >
+                                    Remover
+                                  </button>
+                                </div>
                               </div>
+                            ))}
 
-                              <div className="flex flex-col w-full sm:w-[170px]">
-                                <label className="mb-1 text-sm color-gray">Taxa (R$)</label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  step="0.01"
-                                  value={zone.shipping_fee}
-                                  onChange={(e) => updateDeliveryZone(zone.id, "shipping_fee", e.target.value)}
-                                  placeholder="0.00"
-                                  className="p-2 rounded border-2 border-translucid bg-background"
-                                />
-                              </div>
-
+                            {deliveryZones.length > 2 && (
                               <button
                                 type="button"
-                                onClick={() => removeDeliveryZone(zone.id)}
-                                className="cursor-pointer px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-all flex gap-2 items-center justify-center"
+                                onClick={() => setExpandedZones((prev) => !prev)}
+                                className="w-full p-3 rounded-xl border-2 border-dashed border-translucid bg-translucid hover:opacity-80 transition-all text-sm font-medium cursor-pointer"
                               >
-                                Remover
+                                {expandedZones ? (
+                                  <div className="flex items-center justify-center gap-2">
+                                    <FaChevronUp /> Mostrar menos bairros
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center justify-center gap-2">
+                                    <FaChevronDown /> Ver mais {deliveryZones.length - 2} bairro
+                                    {deliveryZones.length - 2 > 1 ? "s" : ""}
+                                  </div>
+                                )}
                               </button>
-                            </div>
-                          </div>
-                        ))}
-
-                        {deliveryZones.length > 2 && (
-                          <button
-                            type="button"
-                            onClick={() => setExpandedZones((prev) => !prev)}
-                            className="w-full p-3 rounded-xl border-2 border-dashed border-translucid bg-translucid hover:opacity-80 transition-all text-sm font-medium cursor-pointer"
-                          >
-                            {expandedZones ? (
-                              <div className="flex items-center justify-center gap-2">
-                                <FaChevronUp /> Mostrar menos bairros
-                              </div>
-                            ) : (
-                              <div className="flex items-center justify-center gap-2">
-                                <FaChevronDown /> Ver mais {deliveryZones.length - 2} bairro
-                                {deliveryZones.length - 2 > 1 ? "s" : ""}
-                              </div>
                             )}
-                          </button>
+                          </div>
                         )}
                       </div>
+                    ) : (
+                      <p className="text-sm text-[var(--gray)] my-4">
+                        Você precisa estar com o plano Plus ou Pro para gerenciar taxas por bairro. <br /> Seu cardápio
+                        utilizará a taxa fixa de entrega.
+                      </p>
                     )}
-                  </div>
+                  </>
                 )}
               </div>
             )}

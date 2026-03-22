@@ -47,6 +47,7 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
   const panelRef = useRef(null);
   const startYRef = useRef(0);
   const draggingRef = useRef(false);
+  const dropdownRef = useRef(null);
   const [dragOffset, setDragOffset] = useState(0);
 
   const [purchaseStage, setPurchaseStage] = useState("services");
@@ -57,18 +58,37 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
   const [costumerAddress, setCostumerAddress] = useState("");
   const [costumerPhone, setCostumerPhone] = useState("");
 
+  const [costumerNeighborhood, setCostumerNeighborhood] = useState("");
+  const [deliveryFeeValue, setDeliveryFeeValue] = useState(0);
+
   const [showWhatsappButtonOnPixStage, setShowWhatsappButtonOnPixStage] = useState(false);
 
   const [finalValue, setFinalValue] = useState(0);
 
+  const [search, setSearch] = useState("");
+  const [isOpenDropdown, setIsOpenDropdown] = useState(false);
+
+  const [ownerRole, setOwnerRole] = useState(null);
+
+  const deliveryZones = normalizeDeliveryZones(menu?.delivery_zones);
+  const filteredZones = deliveryZones.filter((zone) => zone.name.toLowerCase().includes(search.toLowerCase()));
+
+  const hasPlusPermissions = ["plus", "pro", "admin"].includes(ownerRole);
+  const canUseZones = menu?.delivery_fee_mode === "zones" && hasPlusPermissions && deliveryZones.length > 0;
+
   const serviceOptions = [
-    { id: "delivery", label: `Entrega ${menu.delivery_fee > 0 ? `(R$ ${menu.delivery_fee.toFixed(2)})` : ""}` },
+    {
+      id: "delivery",
+      label: !canUseZones
+        ? `Entrega ${normalizeMoney(menu.delivery_fee) > 0 ? `(R$ ${normalizeMoney(menu.delivery_fee).toFixed(2)})` : ""}`
+        : "Entrega",
+    },
     { id: "pickup", label: "Retirada" },
     { id: "dinein", label: "Comer no local" },
     { id: "faceToFace", label: "Atendimento presencial" },
   ];
 
-  const availableServiceOptions = serviceOptions.filter((option) => menu.services.includes(option.id));
+  const availableServiceOptions = serviceOptions.filter((option) => (menu?.services || []).includes(option.id));
 
   const paymentOptions = [
     { id: "cash", label: "Dinheiro" },
@@ -77,7 +97,49 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
     { id: "pix", label: "PIX" },
   ];
 
-  const availablePaymentsOptions = paymentOptions.filter((option) => menu.payments.includes(option.id));
+  const availablePaymentsOptions = paymentOptions.filter((option) => (menu?.payments || []).includes(option.id));
+
+  function normalizeMoney(value) {
+    const num = Number(String(value ?? "").replace(",", "."));
+    return Number.isFinite(num) ? num : 0;
+  }
+
+  function normalizeText(value) {
+    return String(value ?? "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  }
+
+  function normalizeDeliveryZones(zones = []) {
+    if (!Array.isArray(zones)) return [];
+
+    return zones
+      .map((zone, index) => ({
+        id: zone?.id || `zone-${index}-${Math.random().toString(36).slice(2)}`,
+        name: String(zone?.name ?? "").trim(),
+        shipping_fee: normalizeMoney(zone?.shipping_fee),
+      }))
+      .filter((zone) => zone.name.length > 0);
+  }
+
+  function getSelectedDeliveryFee(menu, neighborhood, hasPlusPermissions) {
+    if (!menu) return 0;
+
+    const canUseZones = menu.delivery_fee_mode === "zones" && hasPlusPermissions;
+
+    if (canUseZones) {
+      const normalizedNeighborhood = normalizeText(neighborhood);
+      const zones = normalizeDeliveryZones(menu.delivery_zones);
+
+      const matchedZone = zones.find((zone) => normalizeText(zone.name) === normalizedNeighborhood);
+
+      return matchedZone ? normalizeMoney(matchedZone.shipping_fee) : 0;
+    }
+
+    return normalizeMoney(menu.delivery_fee);
+  }
 
   useEffect(() => {
     const fetchPhone = async () => {
@@ -108,16 +170,25 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
   }, [menu?.owner_id, menu?.owner_phone, menu?.phone]);
 
   useEffect(() => {
-    if (availableServiceOptions.length < 2) {
-      setSelectedService(availableServiceOptions[0]?.id || null);
+    if (availableServiceOptions.length === 1) {
+      setSelectedService(availableServiceOptions[0].id);
     }
-  }, [menu]);
+  }, [availableServiceOptions]);
 
   useEffect(() => {
     if (selectedService != null) {
       setPurchaseStage("costumerInfos");
     }
   }, [selectedService]);
+
+  // limpar bairro se o estabalecimento não receber mais bairro
+  useEffect(() => {
+    if (!(menu?.delivery_fee_mode === "zones" && hasPlusPermissions && deliveryZones.length > 0)) {
+      setCostumerNeighborhood("");
+      setSearch("");
+      setIsOpenDropdown(false);
+    }
+  }, [menu?.delivery_fee_mode, hasPlusPermissions, deliveryZones.length]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -151,6 +222,18 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
     };
   }, []);
 
+  // detectar clique fora do dropdown
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsOpenDropdown(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   // lock body scroll
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -177,16 +260,40 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
     }
   }, [open]);
 
+  // adquirir role do owner para controle de exibição de taxa de entrega por zonas
+  useEffect(() => {
+    const fetchOwnerData = async () => {
+      let phone = null;
+      let role = null;
+
+      if (menu?.owner_id) {
+        const { data, error } = await supabase.from("profiles").select("phone, role").eq("id", menu.owner_id).maybeSingle();
+
+        if (!error && data) {
+          phone = data.phone || null;
+          role = data.role || null;
+        }
+      }
+
+      phone = phone || menu?.owner_phone || menu?.phone || null;
+      role = role || menu?.owner_role || menu?.role || null;
+
+      setEstablishmentPhone(phone);
+      setOwnerRole(role || "free");
+    };
+
+    fetchOwnerData();
+  }, [menu?.owner_id, menu?.owner_phone, menu?.phone, menu?.owner_role, menu?.role]);
+
   // Ler dados no local storage
   useEffect(() => {
-    console.log(menu.orders);
     if (!open) return;
     if (typeof window === "undefined") return;
 
     try {
       const stored = localStorage.getItem("customerInfo");
       if (stored) {
-        const { name = "", phone = "", address = "" } = JSON.parse(stored);
+        const { name = "", phone = "", address = "", neighborhood = "" } = JSON.parse(stored);
         setCostumerName(name);
         setCostumerPhone(phone);
         setCostumerAddress(address);
@@ -196,6 +303,20 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
       console.warn("⚠ Erro ao ler customerInfo do localStorage", error);
     }
   }, [open]);
+
+  // calcular taxa de entrega
+  useEffect(() => {
+    if (selectedService !== "delivery") {
+      setDeliveryFeeValue(0);
+      return;
+    }
+
+    const fee = getSelectedDeliveryFee(menu, costumerNeighborhood, hasPlusPermissions);
+    setDeliveryFeeValue(fee);
+  }, [menu, selectedService, costumerNeighborhood, hasPlusPermissions]);
+
+  const drawerSubtotal = cart.totalPrice(menu?.id) || 0;
+  const drawerTotal = drawerSubtotal + (selectedService === "delivery" ? deliveryFeeValue : 0);
 
   // guardar no local storage
   const saveCustomerInfo = () => {
@@ -273,6 +394,10 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
     setIsPurchaseModalOpen(false);
     setPurchaseStage("services");
     setSelectedService(null);
+    setSelectedPayment(null);
+    setShowWhatsappButtonOnPixStage(false);
+    setWhatsappURL(null);
+    setDeliveryFeeValue(0);
   };
 
   const handleServiceSelect = (id) => {
@@ -282,7 +407,7 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
   const confirmPurchase = () => {
     saveCustomerInfo();
 
-    if (costumerName.length < 3) {
+    if (costumerName.trim().length < 3) {
       customAlert("O nome deve ter pelo menos 3 letras.", "error");
       return;
     }
@@ -292,11 +417,23 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
       return;
     }
 
-    if (costumerAddress < 10) {
-      if (selectedService === "delivery") {
-        customAlert("O endereço deve ter pelo menos 10 letras", "error");
+    if (selectedService === "delivery" && canUseZones) {
+      if (costumerNeighborhood.trim().length < 2) {
+        customAlert("Selecione seu bairro.", "error");
         return;
       }
+
+      const matchedZone = deliveryZones.find((zone) => normalizeText(zone.name) === normalizeText(costumerNeighborhood));
+
+      if (!matchedZone) {
+        customAlert("No momento, este bairro não está disponível para entrega.", "error");
+        return;
+      }
+    }
+
+    if (selectedService === "delivery" && costumerAddress.trim().length < 10) {
+      customAlert("O endereço deve ter pelo menos 10 letras.", "error");
+      return;
     }
 
     if (!selectedService) {
@@ -328,9 +465,14 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
       })
       .join("\n\n");
 
-    const deliveryFee = selectedService === "delivery" ? Number(menu?.delivery_fee) || 0 : 0;
+    const subtotal = (currentItems || []).reduce((acc, item) => {
+      const base = (Number(item.price) || 0) * (Number(item.qty) || 0);
+      const extrasPerItem = (item.additionals || []).reduce((s, a) => s + (Number(a.price) || 0), 0);
+      const extras = extrasPerItem * (Number(item.qty) || 0);
+      return acc + base + extras;
+    }, 0);
 
-    const subtotal = cart.totalPrice(menu?.id) || 0;
+    const deliveryFee = selectedService === "delivery" ? deliveryFeeValue : 0;
     const total = subtotal + deliveryFee;
 
     setFinalValue(total);
@@ -338,6 +480,7 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
     const customerInfo = `
 👤 Nome: ${costumerName}
 📞 Telefone: ${costumerPhone}
+${selectedService === "delivery" && canUseZones ? `🏘 Bairro: ${costumerNeighborhood}\n` : ""}
 ${selectedService === "delivery" ? `📍 Endereço: ${costumerAddress}\n` : ""}
 💳 Pagamento: ${paymentOptions.find((p) => p.id === selectedPayment)?.label || "-"}
 🚚 Serviço: ${serviceOptions.find((s) => s.id === selectedService)?.label || "-"}`;
@@ -347,7 +490,8 @@ ${selectedService === "delivery" ? `📍 Endereço: ${costumerAddress}\n` : ""}
 ${itemsList}
 
 ————————————
-${menu.delivery_fee > 0 ? `Subtotal: ${subtotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}` : ""}
+Subtotal: ${subtotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+${selectedService === "delivery" ? `Frete: ${deliveryFee.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}` : ""}
 💰 Total: ${total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
 
 ${customerInfo}`;
@@ -369,12 +513,15 @@ ${customerInfo}`;
     (async () => {
       try {
         if (menu.orders === "site_whatsapp") {
-          const total = (currentItems || []).reduce((acc, item) => {
+          const subtotal = (currentItems || []).reduce((acc, item) => {
             const base = (Number(item.price) || 0) * (Number(item.qty) || 0);
             const extrasPerItem = (item.additionals || []).reduce((s, a) => s + (Number(a.price) || 0), 0);
             const extras = extrasPerItem * (Number(item.qty) || 0);
             return acc + base + extras;
           }, 0);
+
+          const deliveryFee = selectedService === "delivery" ? deliveryFeeValue : 0;
+          const total = subtotal + deliveryFee;
 
           const payload = {
             menu_id: menu?.id || null,
@@ -390,7 +537,9 @@ ${customerInfo}`;
               additionals: it.additionals || [],
               note: it.note || "",
             })),
+            neighborhood: selectedService === "delivery" && canUseZones ? costumerNeighborhood : null,
             address: selectedService === "delivery" ? costumerAddress : null,
+            delivery_fee: deliveryFee,
             is_paid: false,
             total,
             created_at: new Date().toISOString(),
@@ -492,7 +641,7 @@ ${customerInfo}`;
             <div className="flex items-center justify-between mb-2">
               <div className="font-semibold">Total</div>
               <div className="text-xl font-bold">
-                {(cart.totalPrice(menu?.id) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                {drawerTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
               </div>
             </div>
             <div className="flex gap-2">
@@ -606,20 +755,93 @@ ${customerInfo}`;
                   />
                 </div>
                 {selectedService === "delivery" && (
-                  <div>
-                    <label className="block text-sm font-medium">Digite seu endereço:</label>
-                    <input
-                      type="text"
-                      placeholder="Endereço"
-                      value={costumerAddress}
-                      onChange={(e) => {
-                        setCostumerAddress(e.target.value);
-                      }}
-                      maxLength={40}
-                      className="w-full p-2 rounded mb-2"
-                      style={{ backgroundColor: translucidToUse }}
-                    />
-                  </div>
+                  <>
+                    {canUseZones && (
+                      <div>
+                        <label className="block text-sm font-medium">Digite seu bairro:</label>
+                        <div ref={dropdownRef} className="relative mb-2">
+                          <input
+                            type="text"
+                            placeholder="Digite seu bairro..."
+                            value={search}
+                            onChange={(e) => {
+                              setSearch(e.target.value);
+                              setIsOpenDropdown(true);
+                            }}
+                            onFocus={() => setIsOpenDropdown(true)}
+                            className="w-full p-2 rounded"
+                            style={{
+                              backgroundColor: translucidToUse,
+                              color: foregroundToUse,
+                            }}
+                          />
+
+                          {/* DROPDOWN */}
+                          {isOpenDropdown && (
+                            <div
+                              className="absolute w-full mt-1 max-h-60 overflow-y-auto rounded-lg shadow-lg z-50"
+                              style={{
+                                backgroundColor: bgColor,
+                                border: `1px solid ${translucidToUse}`,
+                              }}
+                            >
+                              {filteredZones.length === 0 ? (
+                                <div className="p-2 text-sm" style={{ color: grayToUse }}>
+                                  Nenhum bairro encontrado
+                                </div>
+                              ) : (
+                                filteredZones.map((zone) => (
+                                  <div
+                                    key={zone.id}
+                                    onClick={() => {
+                                      setCostumerNeighborhood(zone.name);
+                                      setSearch(zone.name);
+                                      setIsOpenDropdown(false);
+                                    }}
+                                    className="p-2 cursor-pointer hover:opacity-80"
+                                    style={{ color: foregroundToUse }}
+                                  >
+                                    {zone.name} —{" "}
+                                    {zone.shipping_fee.toLocaleString("pt-BR", {
+                                      style: "currency",
+                                      currency: "BRL",
+                                    })}
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {costumerNeighborhood.trim() && (
+                          <p className="text-sm mb-2" style={{ color: grayToUse }}>
+                            Taxa de entrega:{" "}
+                            <strong style={{ color: foregroundToUse }}>
+                              {deliveryFeeValue.toLocaleString("pt-BR", {
+                                style: "currency",
+                                currency: "BRL",
+                              })}
+                            </strong>
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-sm font-medium">Digite seu endereço:</label>
+                      <input
+                        type="text"
+                        placeholder="Endereço"
+                        value={costumerAddress}
+                        onChange={(e) => {
+                          setCostumerAddress(e.target.value);
+                        }}
+                        maxLength={80}
+                        className="w-full p-2 rounded mb-2"
+                        style={{ backgroundColor: translucidToUse }}
+                      />
+                    </div>
+                  </>
                 )}
                 <div>
                   <label className="block text-sm font-medium">Forma de pagamento:</label>
@@ -649,6 +871,15 @@ ${customerInfo}`;
                     ))}
                   </div>
                 </div>
+                <p className="mt-2">
+                  Valor final:{" "}
+                  <strong>
+                    {drawerTotal.toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    })}
+                  </strong>
+                </p>
                 <button
                   onClick={() => {
                     confirmPurchase();
