@@ -69,6 +69,23 @@ const docsNavigation = [
       { label: "Boas práticas para pedidos", href: "/docs/pedidos#boas-praticas-para-pedidos" },
     ],
   },
+  {
+    key: "vendas",
+    label: "Vendas",
+    href: "/docs/vendas",
+    sections: [
+      { label: "Como as vendas funcionam?", href: "/docs/vendas#como-as-vendas-funcionam" },
+      { label: "O que é a aba Vendas?", href: "/docs/vendas#o-que-e-a-aba-vendas" },
+      { label: "Como uma venda é registrada?", href: "/docs/vendas#como-uma-venda-e-registrada" },
+      { label: "Informações da venda", href: "/docs/vendas#informacoes-registradas" },
+      { label: "Visualização das vendas", href: "/docs/vendas#visualizacao-das-vendas" },
+      { label: "Ferramentas da aba Vendas", href: "/docs/vendas#ferramentas-da-aba-vendas" },
+      { label: "Detalhes de cada venda", href: "/docs/vendas#detalhes-de-cada-venda" },
+      { label: "Vantagens da aba Vendas", href: "/docs/vendas#vantagens-da-aba-vendas" },
+      { label: "Boas práticas", href: "/docs/vendas#boas-praticas-para-acompanhar-vendas" },
+      { label: "Dashboard de vendas", href: "/docs/vendas#dashboard-de-vendas" },
+    ],
+  },
 ];
 
 export default function Layout({ children }) {

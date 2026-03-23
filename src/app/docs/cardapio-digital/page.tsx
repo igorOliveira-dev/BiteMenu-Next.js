@@ -10,7 +10,7 @@ export const metadata = {
   },
 
   openGraph: {
-    title: "Cardápio Digital: o que é, como funciona e como criar o seu | Bite Menu",
+    title: "Cardápio Digital - Bite Menu",
     description:
       "Descubra o que é um cardápio digital, como funciona e como criar o seu para vender mais no WhatsApp. Guia completo para restaurantes e delivery.",
     url: "https://www.bitemenu.com.br/docs/cardapio-digital",
