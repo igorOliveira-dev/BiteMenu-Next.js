@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabaseClient";
 
-export const planClick = async (plan) => {
+export const planClick = async (plan, withTrial = false) => {
   if (plan === "free") {
     window.location.href = "/dashboard";
     return;
@@ -35,6 +35,7 @@ export const planClick = async (plan) => {
     body: JSON.stringify({
       userId: user.id,
       priceId: planData.stripe_price_id,
+      withTrial,
     }),
   });
 

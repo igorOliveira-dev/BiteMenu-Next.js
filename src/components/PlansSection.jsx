@@ -6,9 +6,12 @@ import { plans } from "@/consts/Plans";
 import { FaCheck } from "react-icons/fa";
 import GenericModal from "./GenericModal";
 import { useAlert } from "@/providers/AlertProvider";
-import XButton from "./XButton";
+import useUser from "@/hooks/useUser";
 
-const PaymentMethodModal = ({ open, plan, onClose, onCredit, onPix, stripeLoading }) => {
+const PaymentMethodModal = ({ open, plan, selectedPlanTrial, onClose, onCredit, stripeLoading }) => {
+  const trialEndDate = new Date();
+  trialEndDate.setDate(trialEndDate.getDate() + 7);
+
   useEffect(() => {
     if (!open) return;
 
@@ -23,10 +26,18 @@ const PaymentMethodModal = ({ open, plan, onClose, onCredit, onPix, stripeLoadin
   if (!open) return null;
 
   return (
-    <GenericModal title="Escolha o pagamento" onClose={onClose} wfull maxWidth={"480px"} margin={"12px"}>
+    <GenericModal title="Pagamento" onClose={onClose} wfull maxWidth={"480px"} margin={"12px"}>
       <div className="rounded-2xl text-[var(--foreground)]">
         <p className="mt-1 text-sm">
-          Plano: <span className="font-semibold">{plan?.name}</span>
+          {selectedPlanTrial ? (
+            <>
+              Teste grátis do plano: <span className="font-semibold">{plan?.name}</span>
+            </>
+          ) : (
+            <>
+              Plano: <span className="font-semibold">{plan?.name}</span>
+            </>
+          )}
         </p>
 
         <div className="mt-6 flex flex-col gap-3">
@@ -35,47 +46,52 @@ const PaymentMethodModal = ({ open, plan, onClose, onCredit, onPix, stripeLoadin
             disabled={stripeLoading}
             className="w-full rounded-xl py-3 font-semibold bg-[var(--foreground)] text-[var(--background)] opacity-80 hover:opacity-100 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {stripeLoading ? "Processando..." : "Cartão de crédito"}
-          </button>
-
-          <button
-            onClick={onPix}
-            disabled={stripeLoading}
-            className="w-full rounded-xl border border-2 border-translucid py-3 font-semibold hover:opacity-80 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Pix (em breve)
+            {stripeLoading ? "Processando..." : selectedPlanTrial ? "Iniciar teste grátis" : "Assinar agora"}
           </button>
         </div>
-        <p className="mt-2 text-sm text-center">
-          A cobrança acontece de forma recorrente, 1 vez por mês. <br />
-          Cancele quando quiser no seu Dashboard.
-        </p>
+        {selectedPlanTrial ? (
+          <p className="mt-4 text-sm text-center">
+            <span className="font-bold text-lg">7 dias grátis</span> <br /> Depois, R$ {plan?.price} por mês (cobrança
+            automática), começando em {trialEndDate.toLocaleDateString("pt-BR")} <br />
+            Cancele antes da data para não ser cobrado.
+          </p>
+        ) : (
+          <p className="mt-4 text-sm text-center">
+            R$ {plan?.price}/mês (cobrança recorrente) Cancele quando quiser no seu Dashboard.
+          </p>
+        )}
       </div>
     </GenericModal>
   );
 };
 
-const PlansSection = () => {
+const PlansSection = ({ canShowFreeTrialBtn }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [selectedPlanTrial, setSelectedPlanTrial] = useState(false);
   const [stripeLoading, setStripeLoading] = useState(false);
+  const [showFreeTrialBtn, setShowFreeTrialBtn] = useState(false);
+
+  const { profile, loading } = useUser();
 
   const alert = useAlert();
 
-  const openModal = (plan) => {
+  const openModal = (plan, withTrial = false) => {
     if (plan.id === "free") {
       planClick("free");
       return;
     }
 
     setSelectedPlan(plan);
+    setSelectedPlanTrial(withTrial);
     setModalOpen(true);
   };
 
   const closeModal = () => {
-    if (stripeLoading) return; // evita fechar enquanto processa o Stripe
+    if (stripeLoading) return;
     setModalOpen(false);
     setSelectedPlan(null);
+    setSelectedPlanTrial(false);
   };
 
   const handleCredit = async () => {
@@ -83,7 +99,7 @@ const PlansSection = () => {
 
     try {
       setStripeLoading(true);
-      await planClick(selectedPlan.id);
+      await planClick(selectedPlan.id, selectedPlanTrial);
     } catch (e) {
       console.error(e);
       alert("Não foi possível iniciar o pagamento. Tente novamente.");
@@ -92,19 +108,25 @@ const PlansSection = () => {
     }
   };
 
-  const handlePix = () => {
-    alert("Pix ainda não está disponível. Em breve!");
-  };
+  useEffect(() => {
+    if (profile?.role === "free" && profile?.has_used_trial !== true && canShowFreeTrialBtn) {
+      setShowFreeTrialBtn(true);
+    }
+  }, [profile, loading]);
 
   return (
-    <section className="py-3 px-6 flex flex-col items-center justify-center">
-      <h2 className="font-bold scale-130 xxs:scale-150 mb-8 text-center">Planos disponíveis:</h2>
+    <section className="py-3 px-6 flex flex-col items-center justify-center min-h-[calc(100dvh-100px)]">
+      <h2 className="font-bold scale-130 xxs:scale-150 mt-4 lg:mt-0 mb-8 text-center">Planos disponíveis:</h2>
+
+      {showFreeTrialBtn && (
+        <button className="cta-button glow-red w-full mb-6 py-4 text-lg font-bold">🚀 Teste o Pro grátis por 7 dias</button>
+      )}
 
       <div className="w-full max-w-[1248px] flex justify-around flex-wrap gap-6 lg:gap-12">
         {plans.map((plan) => (
           <div
             key={plan.name}
-            className="p-4 px-6 bg-degraded-t-speckled border-2 border-[var(--translucid)] rounded-xl w-64 flex flex-col gap-6 justify-between cursor-pointer hover:border-[var(--red)] transition"
+            className="p-4 px-6 bg-degraded-t-speckled border-2 border-[var(--translucid)] rounded-xl w-64 flex flex-col gap-6 justify-between cursor-pointer hover:border-[var(--red)] hover:scale-102 hover:shadow-[0_0_25px_rgba(255,0,0,0.4)] transition"
             onClick={() => openModal(plan)}
           >
             <div>
@@ -138,9 +160,9 @@ const PlansSection = () => {
       <PaymentMethodModal
         open={modalOpen}
         plan={selectedPlan}
+        selectedPlanTrial={selectedPlanTrial}
         onClose={closeModal}
         onCredit={handleCredit}
-        onPix={handlePix}
         stripeLoading={stripeLoading}
       />
     </section>

@@ -25,6 +25,8 @@ export async function POST(req) {
         const session = await stripe.checkout.sessions.retrieve(event.data.object.id, { expand: ["line_items"] });
         const userId = session.metadata?.supabase_user_id;
         const subscriptionId = session.subscription;
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        const isTrial = subscription.status === "trialing";
         const priceId = session.line_items.data[0].price.id;
 
         if (!userId || !priceId) throw new Error("Dados insuficientes");
@@ -35,7 +37,12 @@ export async function POST(req) {
 
         await supabase
           .from("profiles")
-          .update({ role: planData.role, stripe_subscription_id: subscriptionId, stripe_price_id: priceId })
+          .update({
+            role: planData.role,
+            stripe_subscription_id: subscriptionId,
+            stripe_price_id: priceId,
+            ...(isTrial && { has_used_trial: true }),
+          })
           .eq("id", userId);
 
         console.log("[Webhook] Role atualizado para:", planData.role);

@@ -194,7 +194,9 @@ export default function LandingPageV1() {
         </div>
       </section>
 
-      <PlansSection />
+      <div className="flex justify-center items-center">
+        <PlansSection />
+      </div>
 
       <footer className="bg-low-gray p-6 border-t border-gray-300 dark:border-gray-700">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">

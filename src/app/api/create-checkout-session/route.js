@@ -6,7 +6,7 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.
 
 export async function POST(req) {
   try {
-    const { userId, priceId } = await req.json();
+    const { userId, priceId, withTrial } = await req.json();
 
     if (!userId || !priceId) {
       return new Response(JSON.stringify({ error: "userId ou priceId ausente" }), {
@@ -18,7 +18,7 @@ export async function POST(req) {
     // 🔹 Buscar perfil do usuário
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("stripe_customer_id, stripe_subscription_id, role")
+      .select("stripe_customer_id, stripe_subscription_id, role, has_used_trial")
       .eq("id", userId)
       .maybeSingle();
 
@@ -37,7 +37,7 @@ export async function POST(req) {
     }
 
     // 🔹 NOVO TRECHO: impedir compra se já tiver assinatura ativa
-    if (profile?.stripe_subscription_id || profile?.role !== "free") {
+    if (profile?.role !== "free") {
       return new Response(
         JSON.stringify({
           error: "Você já possui um plano ativo. Cancele o atual antes de assinar outro.",
@@ -50,6 +50,14 @@ export async function POST(req) {
       );
     }
 
+    // impedir que usuário que ja usou free trial tente um novo free trial
+    if (withTrial && profile?.has_used_trial) {
+      return new Response(JSON.stringify({ error: "Você já utilizou seu período de teste gratuito." }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     // 🔹 Caso não tenha assinatura ainda → criar sessão de checkout normal
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
@@ -57,6 +65,7 @@ export async function POST(req) {
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
       metadata: { supabase_user_id: userId },
+      subscription_data: withTrial ? { trial_period_days: 7 } : {},
       success_url: `${process.env.APP_URL}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.APP_URL}/billing/cancel`,
     });
