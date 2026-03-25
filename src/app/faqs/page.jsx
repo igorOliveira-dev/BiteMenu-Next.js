@@ -71,6 +71,31 @@ const faqs = [
     ),
   },
   {
+    question: "O Bite Menu oferece teste grátis?",
+    answer: (
+      <>
+        Sim! O Bite Menu pode oferecer um período de teste gratuito em alguns planos, como 7 dias no plano{" "}
+        <strong>Pro</strong>. Durante esse período, você pode usar todas as funcionalidades do plano sem cobrança.
+        <br />
+        <br />
+        Após o término do teste, a assinatura é convertida automaticamente em paga e o valor do plano passa a ser cobrado
+        mensalmente. Caso não queira continuar, você pode cancelar a qualquer momento antes do fim do período de teste.
+      </>
+    ),
+  },
+  {
+    question: "Preciso cancelar o teste grátis?",
+    answer: (
+      <>
+        Sim. Caso você não queira continuar com o plano pago após o período de teste, é necessário cancelar antes do fim do
+        teste gratuito.
+        <br />
+        <br />
+        Caso contrário, a assinatura será iniciada automaticamente e o valor do plano será cobrado mensalmente.
+      </>
+    ),
+  },
+  {
     question: "Como entro em contato com o suporte?",
     answer: (
       <>
@@ -126,7 +151,7 @@ const page = () => {
           ))}
         </div>
 
-        <p className="text-sm color-gray mt-6 text-center">Última atualização: 20/01/2026</p>
+        <p className="text-sm color-gray mt-6 text-center">Última atualização: 25/03/2026</p>
       </div>
     </div>
   );

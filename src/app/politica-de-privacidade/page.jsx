@@ -11,7 +11,7 @@ const page = () => {
       <div className="max-w-2xl flex flex-col gap-6 p-4 pt-12">
         <h1 className="default-h1">Política de Privacidade – Bite Menu</h1>
 
-        <p>Última atualização: 07/03/2026</p>
+        <p>Última atualização: 25/03/2026</p>
         <p>
           O <strong>Bite Menu</strong> valoriza sua privacidade e está comprometido com a proteção dos seus dados pessoais.
           Esta Política de Privacidade descreve como coletamos, utilizamos, armazenamos e protegemos suas informações ao
@@ -21,7 +21,7 @@ const page = () => {
           segura através do <strong>Stripe</strong>.
         </p>
 
-        <section>
+        <section className="flex flex-col gap-2 mb-4">
           <h2 className="default-h2">1. Informações Gerais</h2>
           <p>Esta política aplica-se a todos os usuários do Bite Menu, incluindo:</p>
           <ul className="list-disc ml-6">
@@ -34,7 +34,7 @@ const page = () => {
           </ul>
         </section>
 
-        <section>
+        <section className="flex flex-col gap-2 mb-4">
           <h2 className="default-h2">2. Criadores de Cardápio</h2>
           <p>
             Ao criar uma conta no Bite Menu, coletamos informações necessárias para operação e personalização do serviço:
@@ -70,7 +70,7 @@ const page = () => {
           </p>
         </section>
 
-        <section>
+        <section className="flex flex-col gap-2 mb-4">
           <h2 className="default-h2">3. Consumidores e Visitantes</h2>
           <p>
             Quando alguém acessa um cardápio criado no Bite Menu sem cadastro, podemos coletar dados técnicos para garantir
@@ -97,7 +97,7 @@ const page = () => {
           <p>Nenhum dado pessoal identificável é compartilhado ou vendido a terceiros sem seu consentimento.</p>
         </section>
 
-        <section>
+        <section className="flex flex-col gap-2 mb-4">
           <h2 className="default-h2">4. Consentimento para Comunicações</h2>
           <p>
             Ao fornecer seu telefone ou e-mail e aceitar receber comunicações, você concorda em receber mensagens
@@ -107,7 +107,7 @@ const page = () => {
           <p>Esse consentimento pode ser revogado a qualquer momento entrando em contato com nosso suporte.</p>
         </section>
 
-        <section>
+        <section className="flex flex-col gap-2 mb-4">
           <h2 className="default-h2">5. Cookies e Rastreamento</h2>
           <p>
             Podemos utilizar cookies e tecnologias semelhantes para melhorar sua experiência no site, analisar tráfego e
@@ -115,7 +115,7 @@ const page = () => {
           </p>
         </section>
 
-        <section>
+        <section className="flex flex-col gap-2 mb-4">
           <h2 className="default-h2">6. Direitos dos Usuários</h2>
           <p>De acordo com a LGPD, todos os titulares de dados possuem direitos, incluindo:</p>
           <ul className="list-disc ml-6">
@@ -135,7 +135,7 @@ const page = () => {
           </p>
         </section>
 
-        <section>
+        <section className="flex flex-col gap-2 mb-4">
           <h2 className="default-h2">7. Retenção e Segurança</h2>
           <p>
             Seus dados serão armazenados apenas pelo tempo necessário para cumprir as finalidades desta política, salvo
@@ -144,7 +144,7 @@ const page = () => {
           </p>
         </section>
 
-        <section>
+        <section className="flex flex-col gap-2 mb-4">
           <h2 className="default-h2">8. Pagamentos e Dados Financeiros</h2>
           <p>
             O Bite Menu utiliza o serviço <strong>Stripe</strong> para processar pagamentos dos planos <strong>Plus</strong>{" "}
@@ -159,6 +159,17 @@ const page = () => {
           <p>
             Ao contratar um plano pago, o valor informado será cobrado uma vez por mês até o cancelamento ou falha no
             pagamento.
+          </p>
+          <p>
+            O Bite Menu pode oferecer um período de teste gratuito para determinados planos (por exemplo, 7 dias no plano
+            Pro). Durante esse período, não haverá cobrança. Após o término do período de teste, a assinatura será
+            automaticamente convertida em paga e o valor do plano será cobrado mensalmente, salvo cancelamento antes do fim
+            do período de teste.
+          </p>
+
+          <p>
+            É de responsabilidade do usuário cancelar a assinatura antes do término do período de teste gratuito caso não
+            deseje continuar com o plano pago.
           </p>
           <p>As informações que podemos receber do Stripe incluem:</p>
           <ul className="list-disc ml-6">
@@ -188,7 +199,7 @@ const page = () => {
           </p>
         </section>
 
-        <section>
+        <section className="flex flex-col gap-2 mb-4">
           <h2 className="default-h2">9. Alterações nesta Política</h2>
           <p>
             Podemos atualizar esta política periodicamente. A versão mais recente estará disponível em{" "}
@@ -202,7 +213,7 @@ const page = () => {
           </p>
         </section>
 
-        <section>
+        <section className="flex flex-col gap-2 mb-4">
           <h2 className="default-h2">10. Contato</h2>
           <p>
             Em caso de dúvidas ou solicitações sobre esta Política, entre em contato{" "}
@@ -213,7 +224,7 @@ const page = () => {
           </p>
         </section>
 
-        <section>
+        <section className="flex flex-col gap-2 mb-4">
           <h2 className="default-h2">11. Aceite</h2>
           <p>
             Ao utilizar o Bite Menu, você concorda com esta Política de Privacidade e com o tratamento dos seus dados
