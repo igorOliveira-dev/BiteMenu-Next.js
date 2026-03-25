@@ -119,7 +119,17 @@ const PlansSection = ({ canShowFreeTrialBtn }) => {
       <h2 className="font-bold scale-130 xxs:scale-150 mt-4 lg:mt-0 mb-8 text-center">Planos disponíveis:</h2>
 
       {showFreeTrialBtn && (
-        <button className="cta-button glow-red w-full mb-6 py-4 text-lg font-bold">🚀 Teste o Pro grátis por 7 dias</button>
+        <button
+          className="cta-button glow-red w-full mb-6 py-4 text-lg font-bold"
+          onClick={() =>
+            openModal(
+              plans.find((p) => p.id === "pro"),
+              true,
+            )
+          }
+        >
+          🚀 Teste o Pro grátis por 7 dias
+        </button>
       )}
 
       <div className="w-full max-w-[1248px] flex justify-around flex-wrap gap-6 lg:gap-12">

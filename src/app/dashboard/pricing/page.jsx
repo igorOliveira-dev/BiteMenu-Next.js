@@ -8,7 +8,7 @@ import PlansSection from "@/components/PlansSection";
 const page = () => {
   return (
     <div className="flex justify-center items-center pt-20">
-      <PlansSection />
+      <PlansSection canShowFreeTrialBtn={true} />
     </div>
   );
 };
