@@ -247,11 +247,11 @@ const Menu = (props) => {
 
       // ✅ converte / redimensiona / recomprime
       const webp = await fileToWebp(tempBannerFile, {
-        maxBytes: 300 * 1024,
-        maxDimension: 1024,
-        minDimension: 640,
-        startQuality: 0.82,
-        minQuality: 0.55,
+        maxBytes: 700 * 1024,
+        maxDimension: 1640,
+        minDimension: 1200,
+        startQuality: 0.9,
+        minQuality: 0.72,
         force: true,
       });
 
