@@ -12,6 +12,10 @@ import {
   FaShoppingCart,
   FaStar,
 } from "react-icons/fa";
+import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { FaGripVertical } from "react-icons/fa";
 import Image from "next/image";
 import GenericModal from "@/components/GenericModal";
 import { useCartContext } from "@/contexts/CartContext";
@@ -34,6 +38,148 @@ function getContrastTextColor(hex) {
 }
 
 const uid = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `tmp-${Date.now()}`);
+
+function SortableMenuItem({
+  item,
+  cat,
+  openItemModal,
+  deleteItem,
+  toggleItemVisibility,
+  detailsColor,
+  backgroundColor,
+  foregroundToUse,
+  grayToUse,
+  canShowPromoPrice,
+  getContrastTextColor,
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.75 : 1,
+  };
+
+  const dragHandleProps = {
+    ...attributes,
+    ...listeners,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex gap-2 items-stretch">
+      <div className="flex-1 flex rounded-lg overflow-hidden">
+        <div
+          className="flex-1 min-w-0 p-2 sm:p-3"
+          style={{
+            backgroundColor: getContrastTextColor(backgroundColor) === "white" ? "#ffffff10" : "#00000010",
+          }}
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-3 min-w-0">
+              {item.image_url && (
+                <div
+                  {...dragHandleProps}
+                  className="cursor-grab active:cursor-grabbing"
+                  style={{ touchAction: "none", flexShrink: 0 }}
+                >
+                  <img
+                    src={item.image_url}
+                    alt={item.name}
+                    loading="lazy"
+                    decoding="async"
+                    draggable={false}
+                    className="w-[54px] h-[54px] object-cover rounded-lg sm:rounded-l-lg"
+                  />
+                </div>
+              )}
+
+              <div className="min-w-0">
+                <div className="text-xl line-clamp-1" style={{ color: foregroundToUse }}>
+                  {item.name}
+                </div>
+
+                <div className="text-sm line-clamp-2" style={{ color: grayToUse }}>
+                  {item.description}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between w-full mt-2 gap-2">
+            <div {...dragHandleProps} className="cursor-grab active:cursor-grabbing" style={{ touchAction: "none" }}>
+              {item.promo_price && canShowPromoPrice ? (
+                <div>
+                  <span className="text-sm line-through" style={{ color: grayToUse }}>
+                    {Number(item.price).toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    })}
+                  </span>
+                  <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
+                    {Number(item.promo_price).toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
+                  {item.price
+                    ? Number(item.price).toLocaleString("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                      })
+                    : "-"}
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => toggleItemVisibility(item.id, item.visible)}
+              className="cursor-pointer mr-2 px-6 py-2 rounded"
+              style={{ backgroundColor: detailsColor }}
+            >
+              {item.visible ? (
+                <FaEyeSlash style={{ color: getContrastTextColor(detailsColor) }} />
+              ) : (
+                <FaEye style={{ color: getContrastTextColor(detailsColor) }} />
+              )}
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-col self-stretch w-14">
+          <button
+            type="button"
+            title="Editar item"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => openItemModal("edit", cat.id, item)}
+            className="flex-1 flex items-center justify-center cursor-pointer p-2 rounded-tr-lg hover:opacity-80 transition"
+            style={{
+              color: foregroundToUse,
+              backgroundColor: getContrastTextColor(backgroundColor) === "white" ? "#ffffff25" : "#00000025",
+            }}
+          >
+            <FaPen />
+          </button>
+
+          <button
+            type="button"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => deleteItem(cat.id, item.id)}
+            className="flex-1 flex items-center justify-center cursor-pointer p-2 bg-red-600 hover:bg-red-700 text-white rounded-br-lg"
+          >
+            <FaTrash />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ------------------------------------------------------------------------------
 
@@ -81,6 +227,20 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   const [sortCollapsed, setSortCollapsed] = useState({});
   // refs to DOM nodes (used for FLIP)
   const domRefs = useRef({});
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 180,
+        tolerance: 8,
+      },
+    }),
+  );
 
   // fetch categories/items
   useEffect(() => {
@@ -710,6 +870,60 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     return next;
   };
 
+  const persistCategoryItemsOrder = async (categoryId, orderedItems) => {
+    const updates = orderedItems.map((it, index) =>
+      supabase.from("menu_items").update({ position: index, category_id: categoryId }).eq("id", it.id),
+    );
+
+    const results = await Promise.all(updates);
+    const errored = results.find((r) => r?.error);
+
+    if (errored) {
+      throw errored.error || new Error("Erro ao salvar ordenação.");
+    }
+  };
+
+  const handleItemsDragEnd = async (categoryId, event) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    const before = categories;
+
+    let reorderedItems = null;
+
+    setCategories((prev = []) =>
+      prev.map((cat) => {
+        if (cat.id !== categoryId) return cat;
+
+        const oldIndex = (cat.menu_items || []).findIndex((it) => it.id === active.id);
+        const newIndex = (cat.menu_items || []).findIndex((it) => it.id === over.id);
+
+        if (oldIndex === -1 || newIndex === -1) return cat;
+
+        reorderedItems = arrayMove(cat.menu_items || [], oldIndex, newIndex).map((it, index) => ({
+          ...it,
+          position: index,
+        }));
+
+        return {
+          ...cat,
+          menu_items: reorderedItems,
+        };
+      }),
+    );
+
+    if (!reorderedItems) return;
+
+    try {
+      await persistCategoryItemsOrder(categoryId, reorderedItems);
+    } catch (err) {
+      console.error("Erro ao salvar ordem dos itens:", err);
+      setCategories(before);
+      alert?.("Erro ao salvar a nova ordem dos itens.", "error");
+    }
+  };
+
   // MOVES com FLIP
   const moveCategory = (index, direction) => {
     const before = captureRects();
@@ -1148,7 +1362,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         )}
 
         {categories.map((cat) => (
-          <div key={cat.id} className="rounded py-3" id={cat.id.slice(0, 5)}>
+          <div key={cat.id} id={cat.id.slice(0, 5)} className="mb-6">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <button
@@ -1185,95 +1399,32 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
               </div>
             </div>
 
-            <div className="space-y-3">
-              {(cat.menu_items || []).map((it) => (
-                <div key={it.id} className={`flex items-stretch justify-between ${it.visible ? "" : "opacity-50"}`}>
-                  <div className="flex items-stretch flex-1">
-                    <div
-                      className="min-h-[110px] flex-1 flex flex-col rounded-l-lg items-start justify-between p-2"
-                      style={{ backgroundColor: translucidToUse }}
-                    >
-                      <div className="flex items-center gap-2">
-                        {it.image_url && (
-                          <img
-                            src={it.image_url}
-                            alt={it.name}
-                            loading="lazy"
-                            decoding="async"
-                            className="w-[54px] h-[54px] object-cover rounded-lg sm:rounded-l-lg"
-                            style={{ flexShrink: 0 }}
-                          />
-                        )}
-
-                        <div>
-                          <div className="text-xl line-clamp-1" style={{ color: foregroundToUse }}>
-                            {it.name}
-                          </div>
-
-                          <div className="text-sm line-clamp-2" style={{ color: grayToUse }}>
-                            {it.description}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between w-full">
-                        {it.promo_price && canShowPromoPrice ? (
-                          <div>
-                            <span className="text-sm line-through" style={{ color: grayToUse }}>
-                              {Number(it.price).toLocaleString("pt-BR", {
-                                style: "currency",
-                                currency: "BRL",
-                              })}
-                            </span>
-                            <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
-                              {Number(it.promo_price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
-                            {it.price
-                              ? `${Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`
-                              : "-"}
-                          </div>
-                        )}
-                        <button
-                          onClick={() => toggleItemVisibility(it.id, it.visible)}
-                          className="cursor-pointer mr-2 px-6 py-2 rounded"
-                          style={{ backgroundColor: detailsColor }}
-                        >
-                          {it.visible ? (
-                            <FaEyeSlash style={{ color: getContrastTextColor(detailsColor) }} />
-                          ) : (
-                            <FaEye style={{ color: getContrastTextColor(detailsColor) }} />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col self-stretch w-14">
-                    <button
-                      title="Editar item"
-                      onClick={() => openItemModal("edit", cat.id, it)}
-                      className="flex-1 flex items-center justify-center cursor-pointer p-2 rounded-tr-lg hover:opacity-80 transition"
-                      style={{
-                        color: foregroundToUse,
-                        backgroundColor: getContrastTextColor(backgroundColor) === "white" ? "#ffffff25" : "#00000025",
-                      }}
-                    >
-                      <FaPen />
-                    </button>
-
-                    <button
-                      onClick={() => deleteItem(cat.id, it.id)}
-                      className="flex-1 flex items-center justify-center cursor-pointer p-2 bg-red-600 hover:bg-red-700 text-white rounded-br-lg"
-                    >
-                      <FaTrash />
-                    </button>
-                  </div>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={(event) => handleItemsDragEnd(cat.id, event)}
+            >
+              <SortableContext items={(cat.menu_items || []).map((it) => it.id)} strategy={verticalListSortingStrategy}>
+                <div className="flex flex-col gap-2">
+                  {(cat.menu_items || []).map((it) => (
+                    <SortableMenuItem
+                      key={it.id}
+                      item={it}
+                      cat={cat}
+                      openItemModal={openItemModal}
+                      deleteItem={deleteItem}
+                      toggleItemVisibility={toggleItemVisibility}
+                      detailsColor={detailsColor}
+                      backgroundColor={backgroundColor}
+                      foregroundToUse={foregroundToUse}
+                      grayToUse={grayToUse}
+                      canShowPromoPrice={canShowPromoPrice}
+                      getContrastTextColor={getContrastTextColor}
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
           </div>
         ))}
       </div>
