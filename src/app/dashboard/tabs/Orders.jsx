@@ -692,7 +692,7 @@ const Orders = ({ setSelectedTab }) => {
 
       {orderModalOpen && selectedOrder && (
         <GenericModal title="Detalhes do pedido" onClose={() => setOrderModalOpen(false)} size="xl">
-          <div className="max-h-[90vh] sm:max-h-[80vh] w-full overflow-y-auto scrollbar-none space-y-4">
+          <div className="max-h-[90dvh] sm:max-h-[80vh] w-full overflow-y-auto scrollbar-none space-y-4">
             <form
               className="space-y-3"
               onSubmit={async (e) => {
