@@ -354,6 +354,15 @@ const Orders = ({ setSelectedTab }) => {
     resetAndFetch();
   };
 
+  const deleteItem = async (i) => {
+    const ok = await confirm("Quer mesmo deletar esse item?");
+    if (!ok) return;
+
+    const updated = [...(selectedOrder.items_list || [])];
+    updated.splice(i, 1);
+    setSelectedOrder({ ...selectedOrder, items_list: updated });
+  };
+
   const openOrderModal = (order) => {
     setSelectedOrder(order);
     setOrderModalOpen(true);
@@ -826,11 +835,7 @@ const Orders = ({ setSelectedTab }) => {
 
                           <button
                             type="button"
-                            onClick={() => {
-                              const updated = [...(selectedOrder.items_list || [])];
-                              updated.splice(i, 1);
-                              setSelectedOrder({ ...selectedOrder, items_list: updated });
-                            }}
+                            onClick={() => deleteItem(i)}
                             className="p-2 text-sm bg-red-600 text-white rounded hover:opacity-90"
                           >
                             <FaTrash />
