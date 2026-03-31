@@ -27,6 +27,7 @@ const getMenuBySlug = cache(async (slug) => {
       delivery_fee,
       delivery_zones,
       delivery_fee_mode,
+      minimum_order_value,
       pix_key,
       orders,
       categories (

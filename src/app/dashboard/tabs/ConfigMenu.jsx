@@ -266,6 +266,9 @@ const ConfigMenu = (props) => {
   const [deliveryFeeModeLocal, setDeliveryFeeModeLocal] = useState(menu?.delivery_fee_mode ?? null);
   const [pixKeyLocal, setPixKeyLocal] = useState(menu?.pix_key ?? "");
   const [hoursLocal, setHoursLocal] = useState(() => normalizeHours(menu?.hours));
+  const [minimumOrderValueLocal, setMinimumOrderValueLocal] = useState(
+    menu?.minimum_order_value !== undefined && menu?.minimum_order_value !== null ? String(menu.minimum_order_value) : "",
+  );
 
   const slug = usingExternal ? externalState?.slug : slugLocal;
   const setSlug = usingExternal ? (value) => externalSetState((p) => ({ ...p, slug: value })) : setSlugLocal;
@@ -311,6 +314,11 @@ const ConfigMenu = (props) => {
   const pixKey = usingExternal ? (externalState?.pixKey ?? "") : pixKeyLocal;
   const setPixKey = usingExternal ? (value) => externalSetState((p) => ({ ...p, pixKey: value })) : setPixKeyLocal;
 
+  const minimumOrderValue = usingExternal ? (externalState?.minimumOrderValue ?? "") : minimumOrderValueLocal;
+  const setMinimumOrderValue = usingExternal
+    ? (value) => externalSetState((p) => ({ ...p, minimumOrderValue: value }))
+    : setMinimumOrderValueLocal;
+
   const hours = normalizeHours(usingExternal ? externalState?.hours : hoursLocal);
 
   const safeSetHours = (updaterOrValue) => {
@@ -353,6 +361,11 @@ const ConfigMenu = (props) => {
       setDeliveryFeeLocal(menu?.delivery_fee !== undefined && menu?.delivery_fee !== null ? String(menu.delivery_fee) : "");
       setDeliveryZonesLocal(normalizeDeliveryZones(menu?.delivery_zones));
       setDeliveryFeeModeLocal(menu?.delivery_fee_mode ?? null);
+      setMinimumOrderValueLocal(
+        menu?.minimum_order_value !== undefined && menu?.minimum_order_value !== null
+          ? String(menu.minimum_order_value)
+          : "",
+      );
       setPixKeyLocal(menu?.pix_key ?? "");
       safeSetHours(menu?.hours);
     }
@@ -371,6 +384,7 @@ const ConfigMenu = (props) => {
   }, [loading, profile]);
 
   const canUseZones = userRole === "admin" || userRole === "plus" || userRole === "pro";
+  const hasPlusPermissions = userRole === "admin" || userRole === "plus" || userRole === "pro";
 
   const previewStyles = useMemo(
     () => ({
@@ -628,7 +642,7 @@ const ConfigMenu = (props) => {
                   {deliveryFeeMode === "zones" && (
                     <div className="mt-4 space-y-4">
                       {!canUseZones ? (
-                        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-100/90">
+                        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/20 p-4 text-sm">
                           Taxa por bairro está disponível apenas no Plus ou Pro. Enquanto isso, seu cardápio continuará
                           usando taxa fixa.
                         </div>
@@ -703,6 +717,28 @@ const ConfigMenu = (props) => {
                   )}
                 </div>
               )}
+            </div>
+            <div className="mt-4">
+              <Field
+                label="Valor mínimo de pedido (R$)"
+                hint="Pedidos abaixo desse valor não poderão ser finalizados pelo cliente."
+              >
+                {hasPlusPermissions ? (
+                  <TextInput
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={minimumOrderValue || ""}
+                    onChange={(e) => setMinimumOrderValue(String(e.target.value).replace(",", "."))}
+                    placeholder="Ex.: 15.00"
+                  />
+                ) : (
+                  <div className="rounded-2xl border border-amber-500/20 bg-amber-500/20 p-4 text-sm">
+                    O valor mínimo de pedido está disponível apenas no Plus ou Pro. Enquanto isso, seus clientes poderão
+                    finalizar pedidos de qualquer valor.
+                  </div>
+                )}
+              </Field>
             </div>
           </SectionCard>
 

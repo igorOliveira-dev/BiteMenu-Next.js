@@ -205,6 +205,7 @@ export default function StatesManager({
     "deliveryFee",
     "deliveryZones",
     "deliveryFeeMode",
+    "minimumOrderValue",
     "pixKey",
     "hours",
   ],
@@ -266,6 +267,10 @@ export default function StatesManager({
           }))
         : [],
       deliveryFeeMode: menuFromServer.delivery_fee_mode ?? "fixed",
+      minimumOrderValue:
+        menuFromServer.minimum_order_value !== undefined && menuFromServer.minimum_order_value !== null
+          ? String(menuFromServer.minimum_order_value)
+          : "",
       pixKey: menuFromServer.pix_key ?? null,
       hours: menuFromServer.hours ?? null,
     };
@@ -388,6 +393,11 @@ export default function StatesManager({
 
         delivery_fee_mode: localState.deliveryFeeMode,
 
+        minimum_order_value:
+          localState.minimumOrderValue !== "" && localState.minimumOrderValue !== null
+            ? Number(localState.minimumOrderValue)
+            : null,
+
         pix_key: localState.pixKey || null,
         hours: localState.hours,
       };
@@ -462,6 +472,10 @@ export default function StatesManager({
               }))
             : [],
           deliveryFeeMode: data.delivery_fee_mode ?? null,
+          minimumOrderValue:
+            data.minimum_order_value !== undefined && data.minimum_order_value !== null
+              ? String(data.minimum_order_value)
+              : "",
           pixKey: data.pix_key ?? null,
           hours: data.hours ?? null,
         };
@@ -496,6 +510,10 @@ export default function StatesManager({
           deliveryFee: data.delivery_fee ?? 0,
           pixKey: data.pix_key ?? null,
           hours: data.hours ?? null,
+          minimumOrderValue:
+            data.minimum_order_value !== undefined && data.minimum_order_value !== null
+              ? String(data.minimum_order_value)
+              : "",
         };
 
         setServerState(normalized);

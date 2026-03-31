@@ -651,6 +651,21 @@ ${customerInfo}`;
                     customAlert(`${menu.title} está fechado no momento!`);
                     return;
                   }
+                  if (hasPlusPermissions) {
+                    if (menu.minimum_order_value && drawerSubtotal < menu.minimum_order_value) {
+                      customAlert(
+                        `O valor mínimo para pedidos neste estabelecimento é de ${menu.minimum_order_value.toLocaleString(
+                          "pt-BR",
+                          {
+                            style: "currency",
+                            currency: "BRL",
+                          },
+                        )}`,
+                      );
+                      return;
+                    }
+                  }
+
                   setIsPurchaseModalOpen(true);
                 }}
                 className="cursor-pointer flex-1 py-2 rounded hover:opacity-90 text-white font-bold transition"
