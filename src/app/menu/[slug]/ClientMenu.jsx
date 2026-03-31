@@ -11,6 +11,7 @@ import MenuFooter from "./components/MenuFooter";
 import { supabase } from "@/lib/supabaseClient";
 import Loading from "@/components/Loading";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
+import XButton from "@/components/XButton";
 
 // util para contraste de cor
 function getContrastTextColor(hex) {
@@ -117,6 +118,9 @@ function isSafeImageUrl(url) {
 export default function ClientMenu({ menu }) {
   const cart = useCartContext();
   const alert = useAlert();
+
+  const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
+  const [imagePreviewVisible, setImagePreviewVisible] = useState(false);
 
   const [animateCart, setAnimateCart] = useState(false);
   const [hoursModalOpen, setHoursModalOpen] = useState(false);
@@ -239,6 +243,18 @@ export default function ClientMenu({ menu }) {
     return (base + addonsPerUnit) * quantity;
   }, [selectedItem, quantity, selectedAddons, canShowPromoPrice]);
 
+  const openImagePreview = () => {
+    setImagePreviewOpen(true);
+  };
+
+  const closeImagePreview = () => {
+    setImagePreviewVisible(false);
+
+    setTimeout(() => {
+      setImagePreviewOpen(false);
+    }, 220);
+  };
+
   const handleAddToCart = async () => {
     if (!selectedItem) return;
 
@@ -310,6 +326,8 @@ export default function ClientMenu({ menu }) {
   };
 
   const closeItemModal = () => {
+    setImagePreviewVisible(false);
+    setImagePreviewOpen(false);
     setItemModalOpen(false);
     setSelectedItem(null);
     setQuantity(1);
@@ -389,6 +407,17 @@ export default function ClientMenu({ menu }) {
       if (raf) cancelAnimationFrame(raf);
     };
   }, []);
+
+  useEffect(() => {
+    if (imagePreviewOpen) {
+      const id = requestAnimationFrame(() => {
+        setImagePreviewVisible(true);
+      });
+      return () => cancelAnimationFrame(id);
+    } else {
+      setImagePreviewVisible(false);
+    }
+  }, [imagePreviewOpen]);
 
   const starredItems = useMemo(() => {
     return (menu?.categories || [])
@@ -803,7 +832,13 @@ export default function ClientMenu({ menu }) {
           <div className="flex flex-col gap-4 sm:min-w-[460px]">
             <div className="flex flex-row gap-4 mb-2">
               {isSafeImageUrl(selectedItem.image_url) && (
-                <div className="h-26 w-26 sm:h-30 sm:w-30 overflow-hidden rounded-lg" style={{ flexShrink: 0 }}>
+                <button
+                  type="button"
+                  onClick={openImagePreview}
+                  className="h-26 w-26 sm:h-30 sm:w-30 overflow-hidden rounded-lg cursor-zoom-in hover:opacity-95 transition"
+                  style={{ flexShrink: 0 }}
+                  aria-label="Ampliar imagem do produto"
+                >
                   <Image
                     src={selectedItem.image_url}
                     alt={selectedItem.name}
@@ -813,7 +848,7 @@ export default function ClientMenu({ menu }) {
                     quality={60}
                     unoptimized
                   />
-                </div>
+                </button>
               )}
 
               <div
@@ -961,6 +996,55 @@ export default function ClientMenu({ menu }) {
             ) : null}
           </div>
         </GenericModal>
+      )}
+
+      {imagePreviewOpen && selectedItem?.image_url && (
+        <div
+          onClick={closeImagePreview}
+          className="fixed inset-0 z-[200] flex items-center justify-center"
+          style={{
+            backgroundColor: imagePreviewVisible ? "rgba(0,0,0,0.82)" : "rgba(0,0,0,0)",
+            transition: "background-color 220ms ease",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: "fixed",
+              top: "50%",
+              left: "50%",
+              width: "min(88vw, 420px)",
+              height: "min(88vw, 420px)",
+              transform: imagePreviewVisible ? "translate(-50%, -50%) scale(1)" : "translate(-50%, -50%) scale(0.85)",
+              opacity: imagePreviewVisible ? 1 : 0,
+              transition: "transform 220ms ease, opacity 220ms ease",
+            }}
+          >
+            <div
+              onClick={closeImagePreview}
+              className="absolute top-2 right-2 z-10 w-10 h-10 rounded-full bg-black/70 text-white text-xl flex items-center justify-center cursor-pointer"
+              aria-label="Fechar imagem ampliada"
+            >
+              <XButton />
+            </div>
+
+            <button
+              type="button"
+              onClick={closeImagePreview}
+              className="w-full h-full block rounded-2xl overflow-hidden shadow-2xl cursor-zoom-out"
+            >
+              <Image
+                src={selectedItem.image_url}
+                alt={selectedItem.name}
+                width={900}
+                height={900}
+                className="w-full h-full object-cover"
+                quality={85}
+                unoptimized
+              />
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Carrinho */}
