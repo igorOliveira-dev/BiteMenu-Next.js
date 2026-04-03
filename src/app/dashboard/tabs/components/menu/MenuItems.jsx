@@ -69,7 +69,12 @@ function SortableMenuItem({
 
   return (
     <div ref={setNodeRef} style={style} className="flex gap-2 items-stretch">
-      <div className="flex-1 flex rounded-lg overflow-hidden">
+      <div
+        className="flex-1 flex rounded-lg overflow-hidden transition-opacity"
+        style={{
+          opacity: item.visible === false ? 0.5 : 1,
+        }}
+      >
         <div
           className="flex-1 min-w-0 p-2 sm:p-3"
           style={{
@@ -1264,7 +1269,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
       {categories.length > 0 && (
         <div
-          className="flex sticky -top-1 border-y-2 overflow-x-auto whitespace-nowrap scrollbar-none z-50"
+          className="flex sticky -top-1 border-y-2 overflow-x-auto whitespace-nowrap scrollbar-none z-50 mb-2"
           style={{ backgroundColor: backgroundColor, borderColor: translucidToUse, color: foregroundToUse }}
         >
           {hasStarred && (
@@ -1297,7 +1302,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       <div className="space-y-4">
         {hasStarred && (
           <div className="rounded py-3" id="starred-section">
-            <div className="flex items-center gap-2 mb-2 pt-4">
+            <div className="flex items-center gap-2 mb-2">
               <strong style={{ color: foregroundToUse }}>Destaques</strong>
             </div>
 
