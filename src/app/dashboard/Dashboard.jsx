@@ -121,7 +121,7 @@ const Dashboard = ({
           <div className="w-full flex lg:flex-col">
             <button
               onClick={() => setSelectedTab("menu")}
-              className={`w-full px-4 py-4 hover-bg-translucid transition-colors border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "menu" ? "bg-translucid" : ""}`}
+              className={`w-full px-1 xxs:px-4 py-4 hover-bg-translucid transition-colors border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "menu" ? "bg-translucid" : ""}`}
             >
               <FaUtensils className="hidden lg:block text-lg shrink-0" />
               <span>{changedFields.length > 0 ? "Cardápio *" : "Cardápio"}</span>
@@ -129,7 +129,7 @@ const Dashboard = ({
 
             <button
               onClick={() => setSelectedTab("orders")}
-              className={`w-full px-4 py-4 hover-bg-translucid transition-colors border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "orders" ? "bg-translucid" : ""}`}
+              className={`w-full px-1 xxs:px-4 py-4 hover-bg-translucid transition-colors border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "orders" ? "bg-translucid" : ""}`}
             >
               <FaShoppingBag className="hidden lg:block text-lg shrink-0" />
               <span>Pedidos</span>
@@ -137,7 +137,7 @@ const Dashboard = ({
 
             <button
               onClick={() => setSelectedTab("sales")}
-              className={`w-full px-4 py-4 hover-bg-translucid transition-colors border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "sales" ? "bg-translucid" : ""}`}
+              className={`w-full px-1 xxs:px-4 py-4 hover-bg-translucid transition-colors border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "sales" ? "bg-translucid" : ""}`}
             >
               <FaChartLine className="hidden lg:block text-lg shrink-0" />
               <span>Vendas</span>
