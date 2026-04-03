@@ -207,6 +207,8 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
   const [showCatIndicator, setShowCatIndicator] = useState(false);
 
+  const [showUpgradePlanModal, setShowUpgradePlanModal] = useState(false);
+
   const canShowPromoPrice = hasPlusPermissions;
   const canHighlightItems = hasPlusPermissions;
 
@@ -471,19 +473,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   // CRUD helpers
   const createCategory = async ({ name = "Nova categoria" } = {}) => {
     const catCount = categories?.length ?? 0;
+    const categoryLimit = getCategoryLimitByRole(ownerRole);
 
-    if (ownerRole === "free" && catCount >= 4) {
-      alert?.("Limite de 4 categorias atingido no plano gratuito.", "error");
-      return null;
-    }
-
-    if (ownerRole === "plus" && catCount >= 10) {
-      alert?.("Limite de 10 categorias atingido no plano Plus.", "error");
-      return null;
-    }
-
-    if (ownerRole === "pro" && catCount >= 50) {
-      alert?.("Limite de 50 categorias atingido no plano Pro.", "error");
+    if (catCount >= categoryLimit) {
+      openCategoriesLimitModal();
       return null;
     }
 
@@ -511,9 +504,11 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
       alert?.("Categoria criada", "success");
       setShowCatIndicator(false);
+
       requestAnimationFrame(() => {
         scrollToCategoryId(data.id.slice(0, 5), 50);
       });
+
       return data;
     } catch (err) {
       console.error("createCategory error:", err);
@@ -557,22 +552,12 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     } = {},
   ) => {
     const safeCategories = Array.isArray(categories) ? categories : [];
-
     const totalItems = safeCategories.reduce((sum, c) => sum + (c.menu_items?.length || 0), 0);
 
-    // limites por plano
-    if (ownerRole === "free" && totalItems >= 20) {
-      alert?.("Limite de 20 itens atingido no plano gratuito.", "error");
-      return null;
-    }
+    const itemLimit = getItemLimitByRole(ownerRole);
 
-    if (ownerRole === "plus" && totalItems >= 50) {
-      alert?.("Limite de 50 itens atingido no plano Plus.", "error");
-      return null;
-    }
-
-    if (ownerRole === "pro" && totalItems >= 200) {
-      alert?.("Limite de 200 itens atingido no plano Pro.", "error");
+    if (totalItems >= itemLimit) {
+      openItemsLimitModal();
       return null;
     }
 
@@ -646,7 +631,6 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     } catch (err) {
       console.error("createItem error:", err);
 
-      // rollback: remove o item temporário
       setCategories((prev = []) =>
         (Array.isArray(prev) ? prev : []).map((c) =>
           c.id === categoryId ? { ...c, menu_items: (c.menu_items || []).filter((it) => it.id !== tempId) } : c,
@@ -1180,6 +1164,32 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       console.error(err);
       alert("Erro ao destacar item", "error");
     }
+  };
+
+  const getItemLimitByRole = (role) => {
+    if (role === "free") return 20;
+    if (role === "plus") return 50;
+    if (role === "pro") return 200;
+    if (role === "admin") return Infinity;
+    return 20;
+  };
+
+  const openItemsLimitModal = () => {
+    setPlanModalFeature("items_limit");
+    setPlanModalOpen(true);
+  };
+
+  const getCategoryLimitByRole = (role) => {
+    if (role === "free") return 4;
+    if (role === "plus") return 10;
+    if (role === "pro") return 50;
+    if (role === "admin") return Infinity;
+    return 4;
+  };
+
+  const openCategoriesLimitModal = () => {
+    setPlanModalFeature("categories_limit");
+    setPlanModalOpen(true);
   };
 
   // verificar se o item do modal é starred
@@ -1989,19 +1999,31 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       {planModalOpen && planModalFeature && (
         <UpdatePlanModal
           onClose={closePlanModal}
-          title={`${
+          title={
             planModalFeature === "promo_price"
-              ? "Preços promocionais"
+              ? "Preços promocionais são vantagens exclusivas do Plus"
               : planModalFeature === "highlight_items"
-                ? "Itens em destaque"
-                : ""
-          } são vantagens exclusivas do Plus`}
+                ? "Itens em destaque são vantagens exclusivas do Plus"
+                : planModalFeature === "items_limit"
+                  ? "Você atingiu o limite de itens do seu plano"
+                  : planModalFeature === "categories_limit"
+                    ? "Você atingiu o limite de categorias do seu plano"
+                    : ""
+          }
           text={
             planModalFeature === "promo_price"
               ? "Crie preços promocionais que chamam atenção e incentivam a decisão de compra no seu menu."
               : planModalFeature === "highlight_items"
                 ? "Destaque os itens mais estratégicos do seu menu e guie o olhar dos clientes para o que mais vende."
-                : ""
+                : planModalFeature === "items_limit"
+                  ? "Faça upgrade para continuar adicionando mais produtos ao seu cardápio."
+                  : planModalFeature === "categories_limit"
+                    ? ownerRole === "free"
+                      ? "Seu plano gratuito permite até 4 categorias. Faça upgrade para organizar melhor seu cardápio com mais categorias."
+                      : ownerRole === "plus"
+                        ? "Seu plano Plus permite até 10 categorias. Faça upgrade para continuar organizando seu cardápio."
+                        : "Seu plano atual atingiu o limite de categorias."
+                    : ""
           }
           image={
             planModalFeature === "promo_price"
