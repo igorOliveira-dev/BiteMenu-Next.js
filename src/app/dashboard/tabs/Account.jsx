@@ -113,10 +113,15 @@ const Account = ({ setSelectedTab }) => {
   return (
     <>
       <div className="p-2">
-        <div className="flex items-center mb-4">
-          <div onClick={() => setSelectedTab("menu")}>
-            <FaChevronLeft className="cursor-pointer" />
-          </div>
+        <div className="flex items-center pb-5">
+          <button
+            type="button"
+            className="p-2 rounded hover:bg-[var(--translucid)] transition cursor-pointer"
+            onClick={() => setSelectedTab("menu")}
+            aria-label="Voltar"
+          >
+            <FaChevronLeft />
+          </button>
           <h2 className="ml-2 xs:font-semibold">Conta</h2>
         </div>
 

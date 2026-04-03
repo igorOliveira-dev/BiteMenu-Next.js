@@ -494,12 +494,19 @@ const ConfigMenu = (props) => {
   if (loading) return <Loading />;
 
   return (
-    <div className="w-full max-w-7xl pb-32 pt-3 px-2 xxs:px-4">
+    <div className="w-full max-w-7xl pb-32 pt-3 px-2">
       <div>
-        <div className="flex gap-2 xs:gap-5 pb-5 lg:flex-row lg:items-center">
-          <Return />
+        <div className="flex pb-5 lg:flex-row lg:items-center">
+          <button
+            type="button"
+            className="p-2 rounded hover:bg-[var(--translucid)] transition cursor-pointer"
+            onClick={() => setSelectedTab("menu")}
+            aria-label="Voltar"
+          >
+            <FaChevronLeft />
+          </button>
 
-          <h2 className="font-semibold">Configurações do cardápio</h2>
+          <h2 className="ml-2 font-semibold">Configurações do cardápio</h2>
         </div>
       </div>
 

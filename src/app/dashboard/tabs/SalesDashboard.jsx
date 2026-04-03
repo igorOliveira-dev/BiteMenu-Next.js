@@ -392,7 +392,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              className="p-2 rounded hover:bg-white/5 transition"
+              className="p-2 rounded hover:bg-[var(--translucid)] transition cursor-pointer"
               onClick={() => setSelectedTab("sales")}
               aria-label="Voltar"
             >
