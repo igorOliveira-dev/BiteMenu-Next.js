@@ -219,6 +219,24 @@ export default function GetStart() {
     );
   }
 
+  const getUniqueSlug = async (baseSlug) => {
+    let candidate = baseSlug;
+    let count = 1;
+
+    while (true) {
+      const { data, error } = await supabase.from("menus").select("id").eq("slug", candidate).maybeSingle();
+
+      if (error && error.code !== "PGRST116") {
+        throw error;
+      }
+
+      if (!data) return candidate;
+
+      candidate = `${baseSlug}-${count}`;
+      count++;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -233,8 +251,10 @@ export default function GetStart() {
     setCreatingMenu(true);
 
     try {
-      const base = establishmentName?.trim() || "meu-estabelecimento";
-      let slug = slugify(base);
+      const rawName = establishmentName?.trim();
+      const base = rawName || "meu-estabelecimento";
+      const baseSlug = rawName ? slugify(rawName) : `meu-estabelecimento-${user.id.slice(0, 8)}`;
+      let slug = await getUniqueSlug(baseSlug);
 
       const MAX_BYTES = 8 * 1024 * 1024; // 8MB
       if (logoFile && logoFile.size > MAX_BYTES) {
@@ -287,7 +307,7 @@ export default function GetStart() {
         console.timeEnd("bannerConvert+Upload");
       }
 
-      const safeTitle = establishmentName?.trim() ? establishmentName.trim() : `${slug}`;
+      const safeTitle = rawName || "Meu estabelecimento";
 
       const insertObj = {
         owner_id: user.id,
@@ -305,7 +325,6 @@ export default function GetStart() {
       const MAX_INSERT_ATTEMPTS = 5;
       let insertAttempt = 0;
       let finalData = null;
-      const baseSlug = slug.replace(/-\d+$/, "");
 
       while (insertAttempt < MAX_INSERT_ATTEMPTS) {
         insertAttempt++;
