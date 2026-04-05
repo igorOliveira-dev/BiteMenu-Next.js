@@ -2,7 +2,7 @@
 
 import { useAlert } from "@/providers/AlertProvider";
 import useMenu from "@/hooks/useMenu";
-import { FaPen, FaCamera, FaChevronLeft, FaLightbulb } from "react-icons/fa";
+import { FaPen, FaCamera, FaChevronLeft, FaLightbulb, FaMapMarkerAlt } from "react-icons/fa";
 import { FiSettings } from "react-icons/fi";
 import GenericModal from "@/components/GenericModal";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -29,6 +29,7 @@ const Menu = (props) => {
     title: propTitle,
     setTitle: propSetTitle,
     description: propDescription,
+    setAddress: propSetAddress,
     setDescription: propSetDescription,
     backgroundColor: propBg,
     setBackgroundColor: propSetBg,
@@ -45,6 +46,9 @@ const Menu = (props) => {
 
   const title = usingExternal ? externalState.title : propTitle;
   const setTitle = usingExternal ? (v) => externalSetState((p) => ({ ...p, title: v })) : propSetTitle;
+
+  const address = usingExternal ? externalState.address : propAddress;
+  const setAddress = usingExternal ? (v) => externalSetState((p) => ({ ...p, address: v })) : propSetAddress;
 
   const description = usingExternal ? externalState.description : propDescription;
   const setDescription = usingExternal ? (v) => externalSetState((p) => ({ ...p, description: v })) : propSetDescription;
@@ -427,7 +431,15 @@ const Menu = (props) => {
             </button>
           </div>
 
-          <p className="mx-4" style={{ color: getContrastTextColor(backgroundColor) === "white" ? "#fafafa" : "#171717" }}>
+          <p
+            className="px-4 flex items-center mb-2"
+            style={{ color: getContrastTextColor(backgroundColor) === "white" ? "#ccc" : "#333" }}
+          >
+            <FaMapMarkerAlt className="inline mr-2" />
+            {address}
+          </p>
+
+          <p className="mx-4 text-sm" style={{ color: getContrastTextColor(backgroundColor) === "white" ? "#ccc" : "#333" }}>
             {description}
           </p>
 

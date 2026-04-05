@@ -536,7 +536,7 @@ export default function ClientMenu({ menu }) {
             </p>
           )}
 
-          <p className="mt-1 px-4" style={{ color: getContrastTextColor(menu.background_color) }}>
+          <p className="mt-1 px-4" style={{ color: grayToUse }}>
             {menu.description}
           </p>
         </div>

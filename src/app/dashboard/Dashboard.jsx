@@ -201,6 +201,7 @@ const Dashboard = ({
             title={title}
             setTitle={setTitle}
             description={description}
+            setAddress={setAddress}
             setDescription={setDescription}
             backgroundColor={backgroundColor}
             setBackgroundColor={setBackgroundColor}
