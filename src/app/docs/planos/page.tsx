@@ -153,6 +153,11 @@ const page = () => {
           <li>Acesse "Detalhes do plano"</li>
           <li>Cancele o plano atual</li>
         </ol>
+        <p className="docs-paragraph">
+          Após o cancelamento, os benefícios do seu plano serão cancelados imediatamente. Se você tiver mais itens ou
+          categorias do que é permitido no plano gratuito, você não poderá editar itens ou criar itens novos até que esteja
+          dentro dos limites do plano. No entanto, seu cardápio continuará funcionando normalmente para os clientes.
+        </p>
       </section>
 
       <section className="mt-4 scroll-mt-[90px]" id="seguranca">
