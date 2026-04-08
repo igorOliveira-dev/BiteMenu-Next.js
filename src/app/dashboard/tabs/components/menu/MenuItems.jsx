@@ -648,6 +648,22 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   };
 
   const updateItem = async (itemId, patch) => {
+    const safeCategories = Array.isArray(categories) ? categories : [];
+    const totalItems = safeCategories.reduce((sum, c) => sum + (c.menu_items?.length || 0), 0);
+
+    const itemLimit = getItemLimitByRole(ownerRole);
+
+    if (totalItems >= itemLimit) {
+      openItemsLimitModal();
+      return null;
+    }
+
+    const targetCat = safeCategories.find((c) => c.id === categoryId);
+    if (!targetCat) {
+      alert?.("Categoria não encontrada.", "error");
+      return null;
+    }
+
     const before = categories;
     setCategories((prev = []) =>
       prev.map((c) => ({
@@ -2021,7 +2037,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
               : planModalFeature === "highlight_items"
                 ? "Destaque os itens mais estratégicos do seu menu e guie o olhar dos clientes para o que mais vende."
                 : planModalFeature === "items_limit"
-                  ? "Faça upgrade para continuar adicionando mais produtos ao seu cardápio."
+                  ? "Faça upgrade para continuar adicionando/editando  produtos ao seu cardápio."
                   : planModalFeature === "categories_limit"
                     ? ownerRole === "free"
                       ? "Seu plano gratuito permite até 4 categorias. Faça upgrade para organizar melhor seu cardápio com mais categorias."
