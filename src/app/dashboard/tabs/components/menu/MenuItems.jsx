@@ -653,33 +653,32 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
     const itemLimit = getItemLimitByRole(ownerRole);
 
-    if (totalItems >= itemLimit) {
+    if (totalItems > itemLimit) {
       openItemsLimitModal();
       return null;
     }
 
-    const targetCat = safeCategories.find((c) => c.id === categoryId);
-    if (!targetCat) {
-      alert?.("Categoria não encontrada.", "error");
-      return null;
-    }
-
     const before = categories;
+
     setCategories((prev = []) =>
       prev.map((c) => ({
         ...c,
         menu_items: (c.menu_items || []).map((it) => (it.id === itemId ? { ...it, ...patch } : it)),
       })),
     );
+
     try {
       const { data, error } = await supabase.from("menu_items").update(patch).eq("id", itemId).select().single();
+
       if (error) throw error;
+
       setCategories((prev = []) =>
         prev.map((c) => ({
           ...c,
           menu_items: (c.menu_items || []).map((it) => (it.id === itemId ? { ...it, ...data } : it)),
         })),
       );
+
       alert?.("Item atualizado", "success");
       return data;
     } catch (err) {
