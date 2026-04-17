@@ -427,7 +427,7 @@ const Orders = ({ setSelectedTab }) => {
 
   useModalBackHandler(orderModalOpen, () => setOrderModalOpen(false));
 
-  if (loading || loadingOrders) return <Loading />;
+  if (loading) return <Loading />;
   if (!menu) return <p>Você ainda não criou seu cardápio.</p>;
 
   return (
