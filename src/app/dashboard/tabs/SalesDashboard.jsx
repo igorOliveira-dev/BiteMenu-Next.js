@@ -127,6 +127,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
   const [ownerRole, setOwnerRole] = useState(null);
 
   const [rawSales, setRawSales] = useState([]);
+  const [prevRawSales, setPrevRawSales] = useState([]);
   const [salesData, setSalesData] = useState([]);
   const [granularity, setGranularity] = useState("day");
   const [loadingSales, setLoadingSales] = useState(false);
@@ -268,8 +269,23 @@ const SalesDashboard = ({ setSelectedTab }) => {
       }
     }
 
+    // Período anterior (mesma duração, terminando no dia antes de start)
+    const duration = end.getTime() - start.getTime();
+    const prevEnd = new Date(start.getTime() - MS_DAY);
+    prevEnd.setHours(23, 59, 59, 999);
+    const prevStart = new Date(prevEnd.getTime() - duration);
+    prevStart.setHours(0, 0, 0, 0);
+
+    const { data: prevData } = await supabase
+      .from("sales")
+      .select("created_at, items_list, total")
+      .eq("menu_id", menu.id)
+      .gte("created_at", prevStart.toISOString())
+      .lte("created_at", prevEnd.toISOString());
+
     setSalesData(entries);
     setRawSales(data);
+    setPrevRawSales(prevData || []);
     setLoadingSales(false);
   }, [menu?.id, startDate, endDate, singleDate, customAlert, isRangeTooLarge]);
 
@@ -280,6 +296,37 @@ const SalesDashboard = ({ setSelectedTab }) => {
   const totalPeriod = useMemo(() => salesData.reduce((sum, d) => sum + d.total, 0), [salesData]);
   const totalSalesCount = useMemo(() => salesData.reduce((sum, d) => sum + d.count, 0), [salesData]);
   const averageTicket = useMemo(() => (totalSalesCount ? totalPeriod / totalSalesCount : 0), [totalPeriod, totalSalesCount]);
+
+  const computeTotal = (sale) => {
+    const items = sale.items_list || [];
+    return items.reduce((acc, it) => {
+      const qty = Number(it.qty) || 0;
+      const base = (Number(it.price) || 0) * qty;
+      const adds = (it.additionals || []).reduce((sa, a) => sa + (Number(a.price) || 0), 0) * qty;
+      return acc + base + adds;
+    }, 0);
+  };
+
+  const prevTotalPeriod = useMemo(
+    () => prevRawSales.reduce((sum, s) => sum + Number(s.total ?? computeTotal(s)), 0),
+    [prevRawSales]
+  );
+  const prevTotalSalesCount = useMemo(() => prevRawSales.length, [prevRawSales]);
+  const prevAverageTicket = useMemo(
+    () => (prevTotalSalesCount ? prevTotalPeriod / prevTotalSalesCount : 0),
+    [prevTotalPeriod, prevTotalSalesCount]
+  );
+
+  const peakHour = useMemo(() => {
+    if (!rawSales.length) return null;
+    const counts = {};
+    rawSales.forEach((s) => {
+      const h = new Date(s.created_at).getHours();
+      counts[h] = (counts[h] || 0) + 1;
+    });
+    const peak = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    return { hour: Number(peak[0]), count: peak[1] };
+  }, [rawSales]);
 
   if (loading || ownerRole === null || loadingSales) return <Loading />;
 
@@ -384,6 +431,25 @@ const SalesDashboard = ({ setSelectedTab }) => {
           ? "por semana"
           : "por mês";
 
+  const calcVariation = (current, prev) => {
+    if (prev === 0) return null;
+    const pct = ((current - prev) / prev) * 100;
+    return pct;
+  };
+
+  const renderVariation = (pct) => {
+    if (pct === null) return <span className="text-xs color-gray mt-1">— vs período anterior</span>;
+    const isPositive = pct > 0;
+    const isZero = pct === 0;
+    const color = isZero ? "color-gray" : isPositive ? "text-green-500" : "text-red-500";
+    const arrow = isZero ? "" : isPositive ? "↑" : "↓";
+    return (
+      <span className={`text-xs ${color} mt-1`}>
+        {arrow} {Math.abs(pct).toFixed(1)}% vs período anterior
+      </span>
+    );
+  };
+
   return (
     <div className="px-2">
       <div className="w-full max-w-[1100px] min-h-[calc(100dvh-110px)]">
@@ -463,21 +529,38 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
         {/* KPIs (grid) */}
         <div className="grid gap-4 sm:grid-cols-3 mb-4">
-          <div className="bg-translucid border border-translucid rounded-lg p-4">
+          <div className="bg-translucid border border-translucid rounded-lg p-4 flex flex-col">
             <p className="text-sm color-gray">Total no período</p>
             <p className="text-blue-500 text-2xl font-bold mt-1">R$ {totalPeriod.toFixed(2)}</p>
+            {renderVariation(calcVariation(totalPeriod, prevTotalPeriod))}
           </div>
 
-          <div className="bg-translucid border border-translucid rounded-lg p-4">
+          <div className="bg-translucid border border-translucid rounded-lg p-4 flex flex-col">
             <p className="text-sm color-gray">Quantidade de vendas</p>
             <p className="text-green-500 text-2xl font-bold mt-1">{totalSalesCount}</p>
+            {renderVariation(calcVariation(totalSalesCount, prevTotalSalesCount))}
           </div>
 
-          <div className="bg-translucid border border-translucid rounded-lg p-4">
+          <div className="bg-translucid border border-translucid rounded-lg p-4 flex flex-col">
             <p className="text-sm color-gray">Ticket médio</p>
             <p className="text-2xl font-bold mt-1">R$ {averageTicket.toFixed(2)}</p>
+            {renderVariation(calcVariation(averageTicket, prevAverageTicket))}
           </div>
         </div>
+
+        {/* Horário de pico */}
+        {peakHour && (
+          <div className="bg-translucid border border-translucid rounded-lg p-4 mb-4 flex items-center gap-3">
+            <span className="text-xl">⏰</span>
+            <div>
+              <p className="text-sm color-gray">Horário de pico no período</p>
+              <p className="font-semibold">
+                Entre {pad2(peakHour.hour)}h e {pad2(peakHour.hour + 1)}h —{" "}
+                <span className="text-blue-500">{peakHour.count} pedidos</span> nesse horário
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Gráfico */}
         <div className="bg-translucid border border-translucid rounded-lg p-4 overflow-x-auto">
