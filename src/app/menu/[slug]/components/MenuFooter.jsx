@@ -1,21 +1,22 @@
 import Link from "next/link";
-import logoMark from "../../../../../public/LogoMarca-sem-fundo.png";
 import Image from "next/image";
+import logoMark from "../../../../../public/LogoMarca-sem-fundo.png";
 
 export default function MenuFooter({ bgColor, translucidToUse, grayToUse, foregroundToUse }) {
   return (
-    <footer className="bg-translucid w-full" style={{ color: foregroundToUse, backgroundColor: bgColor }}>
+    <footer className="w-full" style={{ color: foregroundToUse, backgroundColor: bgColor }}>
+      {/* Bloco informativo compacto */}
       <div className="p-6" style={{ backgroundColor: translucidToUse }}>
-        <div
-          className="max-w-6xl flex flex-col md:flex-row justify-between items-center gap-4 relative left-[50%] transform-[translatex(-50%)]"
-          style={{ bgColor: translucidToUse }}
-        >
-          {/* Nome do cardápio */}
-          <Link href="https://www.bitemenu.com.br" className="w-[220px] flex justify-center">
-            <Image src={logoMark} height={40} width={140} alt="Bite Menu" />
-          </Link>
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="w-[220px] flex flex-col items-center gap-1">
+            <Link href="https://www.bitemenu.com.br" className="flex justify-center">
+              <Image src={logoMark} height={40} width={140} alt="Bite Menu" />
+            </Link>
+            <Link href="/register" className="text-xs hover:underline" style={{ color: grayToUse }}>
+              Crie seu cardápio digital grátis →
+            </Link>
+          </div>
 
-          {/* Links */}
           <div className="flex flex-col md:flex-row justify-center items-center gap-2 gap-x-4 text-sm w-[220px]">
             <Link href="/politica-de-privacidade" className="hover:underline">
               Política de Privacidade
@@ -25,18 +26,9 @@ export default function MenuFooter({ bgColor, translucidToUse, grayToUse, foregr
             </Link>
           </div>
 
-          {/* Direitos */}
           <div className="text-xs text-center md:text-right w-[220px]" style={{ color: grayToUse }}>
             © {new Date().getFullYear()} Bite Menu. <br /> Todos os direitos reservados.
           </div>
-        </div>
-
-        {/* Criado por Bite Menu */}
-        <div className="mt-4 text-center text-xs" style={{ color: grayToUse }}>
-          Criado por{" "}
-          <Link href="https://www.bitemenu.com.br" target="_blank" className="underline">
-            Bite Menu
-          </Link>
         </div>
       </div>
     </footer>

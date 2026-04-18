@@ -515,6 +515,16 @@ export default function ClientMenu({ menu }) {
                     {open ? "Aberto agora" : "Fechado"}
                   </div>
                 ) : null}
+
+                <a
+                  href="https://www.bitemenu.com.br"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] xs:text-xs mt-1 hover:underline"
+                  style={{ color: grayToUse }}
+                >
+                  Feito com Bite Menu ↗
+                </a>
               </div>
             </div>
 
