@@ -65,7 +65,6 @@ const SalesSummary = ({ setSelectedTab, refreshSignal }) => {
     setSalesCount(data.length);
     setSalesTotal(total);
     setLoadingSales(false);
-    // Calcula ticket médio
     const avg = data.length > 0 ? total / data.length : 0;
     setAverageTicket(avg);
   };
@@ -82,7 +81,7 @@ const SalesSummary = ({ setSelectedTab, refreshSignal }) => {
 
   if (ownerRole === "free" || ownerRole === "plus") {
     return (
-      <div className="mb-6 h-40 lg:w-[calc(80dvw-256px)] max-w-[1024px] rounded-lg bg-translucid border-2 border-translucid flex flex-col justify-center items-center">
+      <div className="mb-6 h-40 lg:w-[calc(80dvw-256px)] max-w-[1024px] rounded-2xl bg-translucid border border-translucid flex flex-col justify-center items-center">
         <h4 className="color-gray mb-2 text-center mx-2">Seu plano não tem acesso ao dashboard de vendas</h4>
         <button onClick={() => upgradePlan()} className="cta-button flex has-icon">
           <FaBolt /> Melhorar plano!
@@ -92,33 +91,30 @@ const SalesSummary = ({ setSelectedTab, refreshSignal }) => {
   }
 
   return (
-    <div className="sm:p-4 p-2 py-4 mb-6 lg:w-[calc(80dvw-256px)] max-w-[1024px] rounded-xl bg-translucid border-2 border-translucid shadow-md flex flex-col gap-3">
-      <h3 className="text font-semibold text-center">Resumo das vendas</h3>
-      {/* Totais */}
-      <div className="flex flex-col xs:flex-row justify-around py-8 items-center gap-4 bg-translucid border-translucid rounded-xl">
-        <div className="flex flex-col items-center">
-          <span className="text-sm color-gray">Total de vendas</span>
-          <span className="text-3xl font-bold">{salesCount}</span>
+    <div className="sm:p-4 p-3 mb-6 lg:w-[calc(80dvw-256px)] max-w-[1024px] rounded-2xl bg-translucid border border-translucid shadow-sm flex flex-col gap-4">
+      <h3 className="text-base font-semibold">Resumo das vendas</h3>
+
+      <div className="grid text-center sm:grid-cols-3 gap-3">
+        <div className="rounded-2xl border border-translucid bg-translucid p-3">
+          <p className="text-xs uppercase tracking-wide color-gray">Total de vendas</p>
+          <p className="text-2xl font-bold mt-1">{salesCount}</p>
         </div>
-        <div className="flex flex-col items-center">
-          <span className="text-sm color-gray">Total faturado</span>
-          <span className="text-3xl font-bold">R$ {salesTotal.toFixed(2)}</span>
+        <div className="rounded-2xl border border-translucid bg-translucid p-3">
+          <p className="text-xs uppercase tracking-wide color-gray">Total faturado</p>
+          <p className="text-2xl font-bold mt-1">R$ {salesTotal.toFixed(2)}</p>
         </div>
-        <div className="flex flex-col items-center">
-          <span className="text-sm color-gray">Ticket médio</span>
-          <span className="text-3xl font-bold">R$ {averageTicket.toFixed(2)}</span>
+        <div className="rounded-2xl border border-translucid bg-translucid p-3">
+          <p className="text-xs uppercase tracking-wide color-gray">Ticket médio</p>
+          <p className="text-2xl font-bold mt-1">R$ {averageTicket.toFixed(2)}</p>
         </div>
       </div>
 
-      {/* Botão */}
-      <div className="flex justify-center mt-2">
-        <button
-          onClick={() => setSelectedTab("salesDashboard")}
-          className="cursor-pointer px-5 py-2 font-bold bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white transition"
-        >
-          Ver dashboard completo
-        </button>
-      </div>
+      <button
+        onClick={() => setSelectedTab("salesDashboard")}
+        className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-blue-700"
+      >
+        Ver dashboard completo
+      </button>
     </div>
   );
 };

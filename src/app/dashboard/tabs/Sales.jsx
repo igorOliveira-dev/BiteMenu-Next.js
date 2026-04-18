@@ -5,11 +5,24 @@ import useMenu from "@/hooks/useMenu";
 import { useAlert } from "@/providers/AlertProvider";
 import { supabase } from "@/lib/supabaseClient";
 import Loading from "@/components/Loading";
-import { FaTrash, FaChevronLeft, FaChevronDown, FaChevronRight, FaChevronUp, FaSyncAlt } from "react-icons/fa";
+import { FaTrash, FaChevronLeft, FaChevronDown, FaChevronRight, FaChevronUp, FaSyncAlt, FaPhoneAlt, FaClipboardList } from "react-icons/fa";
 import GenericModal from "@/components/GenericModal";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import SalesSummary from "./components/sales/SalesSummary";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
+
+const SectionCard = ({ title, subtitle, children, icon = null }) => (
+  <section className="rounded-2xl border border-translucid bg-translucid/70 p-4 shadow-sm">
+    <div className="mb-3 flex items-start gap-3">
+      {icon ? <div className="mt-0.5 opacity-80">{icon}</div> : null}
+      <div>
+        <h3 className="text-base font-semibold leading-tight">{title}</h3>
+        {subtitle ? <p className="mt-1 text-xs color-gray">{subtitle}</p> : null}
+      </div>
+    </div>
+    {children}
+  </section>
+);
 
 const Sales = ({ setSelectedTab }) => {
   const { menu, loading } = useMenu();
@@ -314,23 +327,30 @@ const Sales = ({ setSelectedTab }) => {
 
   return (
     <div className="px-4 sm:px-2 lg:grid">
-      <div className="md:m-auto lg:m-2 lg:w-[calc(80dvw-256px)] max-w-[1024px] min-h-[calc(100dvh-110px)] rounded-lg overflow-y-auto">
-        <div className="flex items-center gap-4 mb-2">
+      <div className="md:m-auto lg:m-2 lg:w-[calc(80dvw-256px)] max-w-[1024px] min-h-[calc(100dvh-110px)] rounded-2xl overflow-y-auto">
+        <div className="flex items-center gap-3 mb-4">
           <h2 className="default-h2 font-semibold">Vendas</h2>
-          <FaSyncAlt
-            className="cursor-pointer opacity-80 hover:opacity-100 transition"
+          <button
+            type="button"
+            className="cursor-pointer rounded-full p-2 opacity-80 transition hover:opacity-100"
             onClick={() => {
-              (resetSales(), setRefreshSummary((prev) => prev + 1));
+              resetSales();
+              setRefreshSummary((prev) => prev + 1);
             }}
-          />
+            title="Atualizar vendas"
+          >
+            <FaSyncAlt />
+          </button>
         </div>
 
-        <h3 className="mb-2">Dashboard de vendas</h3>
+        <h3 className="mb-2 text-base font-semibold">Dashboard de vendas</h3>
         <SalesSummary setSelectedTab={setSelectedTab} refreshSignal={refreshSummary} />
 
-        <h3 className="mb-2">Histórico de vendas</h3>
-        <div className="space-y-2">
-          {!monthsList || monthsList.length === 0 ? <p className="color-gray">Nenhuma venda encontrada.</p> : null}
+        <h3 className="mb-3 text-base font-semibold">Histórico de vendas</h3>
+        <div className="space-y-3">
+          {!monthsList || monthsList.length === 0 ? (
+            <p className="p-6 text-center color-gray">Nenhuma venda encontrada.</p>
+          ) : null}
           {monthsList.map((group) => {
             const key = group.key;
             const isOpen = expandedMonths[key] ?? false;
@@ -338,18 +358,18 @@ const Sales = ({ setSelectedTab }) => {
             const monthTotal = monthSales.reduce((sum, s) => sum + computeSaleTotal(s), 0);
 
             return (
-              <section key={key} className="border-2 border-translucid rounded-lg overflow-hidden">
+              <section key={key} className="border border-translucid rounded-2xl overflow-hidden">
                 <button
                   type="button"
                   onClick={() => toggleMonth(key, group.monthStart)}
-                  className="cursor-pointer w-full flex justify-between items-center p-3 bg-translucid hover:opacity-95"
+                  className="cursor-pointer w-full flex justify-between items-center p-4 bg-translucid hover:opacity-95 transition"
                 >
                   <div>
-                    <h3 className="xs:font-semibold text-lg capitalize">{key}</h3>
-                    <p className="text-sm color-gray text-start flex gap-2 items-center">{group.count} venda(s)</p>
+                    <h3 className="font-semibold text-lg capitalize">{key}</h3>
+                    <p className="text-sm color-gray text-start mt-0.5">{group.count} venda(s)</p>
                   </div>
-                  <div className="text-right flex items-center gap-1 xs:gap-4">
-                    <p className="font-semibold">R$ {Number(group.total || 0).toFixed(2)}</p>
+                  <div className="text-right flex items-center gap-3">
+                    <p className="font-bold">R$ {Number(group.total || 0).toFixed(2)}</p>
                     {isOpen ? <FaChevronDown /> : <FaChevronRight />}
                   </div>
                 </button>
@@ -360,7 +380,7 @@ const Sales = ({ setSelectedTab }) => {
                     <input
                       type="text"
                       placeholder="Pesquisar por nome, telefone, itens..."
-                      className="input w-full bg-translucid border-2 border-translucid p-2 rounded mb-3"
+                      className="input w-full bg-translucid border border-translucid p-3 rounded-xl"
                       value={filters[key]?.query || ""}
                       onChange={(e) =>
                         setFilters((prev) => ({
@@ -371,7 +391,7 @@ const Sales = ({ setSelectedTab }) => {
                     />
 
                     {/* Ordenação */}
-                    <div className="flex gap-2 mb-2">
+                    <div className="flex gap-2">
                       {[
                         { key: "date", label: "Data" },
                         { key: "value", label: "Valor" },
@@ -392,7 +412,7 @@ const Sales = ({ setSelectedTab }) => {
                                 },
                               }))
                             }
-                            className={`cursor-pointer flex items-center gap-2 text-sm px-3 py-1.5 rounded transition-all border border-2 border-translucid
+                            className={`cursor-pointer flex items-center gap-2 text-sm px-3 py-1.5 rounded-xl transition-all border border-translucid
                             ${isActive ? "bg-[#6060ff80] border-[#6060ff] shadow-md" : "bg-translucid hover:opacity-90"}`}
                           >
                             <span>Ordenar por {label}</span>
@@ -406,21 +426,29 @@ const Sales = ({ setSelectedTab }) => {
                     {monthPager[key]?.loading && <Loading />}
 
                     {getFilteredSales(key).length === 0 && !monthPager[key]?.loading ? (
-                      <p className="text-center color-gray">Nenhuma venda neste mês.</p>
+                      <p className="p-6 text-center color-gray">Nenhuma venda encontrada.</p>
                     ) : (
                       getFilteredSales(key).map((sale) => (
                         <div
                           key={sale.id}
-                          className="p-4 rounded-lg shadow-sm bg-translucid border-2 border-translucid flex flex-col xs:flex-row justify-between"
+                          className="rounded-2xl border border-translucid bg-translucid p-4 shadow-sm transition hover:shadow-md flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
                         >
-                          <div>
-                            <h3 className="font-bold text-lg line-clamp-1">{sale.costumer_name || "Cliente"}</h3>
-                            <span className="text-sm color-gray xs:hidden">
-                              {new Date(sale.created_at).toLocaleString("pt-BR")}
-                            </span>
-                            <p className="text-sm color-gray">
-                              <span className="line-clamp-1">
-                                <strong>Método:</strong>{" "}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-3 mb-3">
+                              <div className="min-w-0">
+                                <h3 className="font-semibold text-lg truncate">{sale.costumer_name || "Cliente"}</h3>
+                                <p className="text-sm color-gray mt-0.5">
+                                  {new Date(sale.created_at).toLocaleString("pt-BR")}
+                                </p>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <p className="text-xs uppercase tracking-wide color-gray">Total</p>
+                                <p className="text-2xl font-bold">R$ {computeSaleTotal(sale).toFixed(2)}</p>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2 mb-3 text-sm">
+                              <span className="rounded-full border border-translucid px-3 py-1 color-gray bg-[var(--translucid)]">
                                 {sale.payment_method === "pix"
                                   ? "Pix"
                                   : sale.payment_method === "debit"
@@ -431,8 +459,7 @@ const Sales = ({ setSelectedTab }) => {
                                         ? "Dinheiro"
                                         : "Não informado"}
                               </span>
-                              <span className="line-clamp-1">
-                                <strong>Serviço:</strong>{" "}
+                              <span className="rounded-full border border-translucid px-3 py-1 color-gray bg-[var(--translucid)]">
                                 {sale.service === "delivery"
                                   ? "Entrega"
                                   : sale.service === "pickup"
@@ -443,45 +470,43 @@ const Sales = ({ setSelectedTab }) => {
                                         ? "Atendimento presencial"
                                         : "Não informado"}
                               </span>
-                              <span className="text-sm color-gray">
-                                <strong>Telefone:</strong> {sale.costumer_phone}
-                              </span>
-                            </p>
+                              {sale.costumer_phone && (
+                                <span className="rounded-full border border-translucid px-3 py-1 color-gray bg-[var(--translucid)]">
+                                  {sale.costumer_phone}
+                                </span>
+                              )}
+                            </div>
 
                             {sale.items_list && (
-                              <ul className="mt-2 text-sm">
-                                {sale.items_list?.slice(0, 4).map((item, i) => (
-                                  <li key={i} className="line-clamp-1">
-                                    • {item.qty}x {item.name} — R$ {(item.price * item.qty).toFixed(2)}
-                                  </li>
-                                ))}
-                                {sale.items_list?.length > 4 && <li className="text-gray-400">...</li>}
-                              </ul>
+                              <div className="text-sm">
+                                <p className="text-xs uppercase tracking-wide font-bold mb-1">Itens</p>
+                                <ul>
+                                  {sale.items_list?.slice(0, 4).map((item, i) => (
+                                    <li key={i} className="line-clamp-1 color-gray">
+                                      {item.qty}x {item.name} — R$ {(item.price * item.qty).toFixed(2)}
+                                    </li>
+                                  ))}
+                                  {sale.items_list?.length > 4 && (
+                                    <li className="color-gray">+ {sale.items_list.length - 4} item(ns)</li>
+                                  )}
+                                </ul>
+                              </div>
                             )}
-
-                            <p className="mt-2 font-semibold text-lg">Total: R$ {computeSaleTotal(sale).toFixed(2)}</p>
                           </div>
 
-                          <div className="mt-2 flex flex-col justify-between items-start xs:items-end">
-                            <span className="text-sm color-gray hidden xs:block">
-                              {new Date(sale.created_at).toLocaleString("pt-BR")}
-                            </span>
-                            <div className="grid grid-rows-2 w-full xs:flex xs:flex-col gap-2">
-                              <div className="grid grid-cols-2 xs:flex xs:flex-col gap-2">
-                                <button
-                                  onClick={() => openSaleModal(sale)}
-                                  className="w-full cursor-pointer px-3 py-2 rounded-lg flex items-center justify-center gap-2 text-sm font-medium bg-translucid border-2 border-translucid hover:opacity-80 opacity-100 transition"
-                                >
-                                  Detalhes
-                                </button>
-                                <button
-                                  onClick={() => deleteSale(sale.id, key)}
-                                  className="w-full cursor-pointer px-3 py-2 rounded-lg flex items-center justify-center gap-2 text-xs xxs:text-sm font-medium bg-red-600 text-white hover:bg-red-700"
-                                >
-                                  <FaTrash /> Excluir
-                                </button>
-                              </div>
-                            </div>
+                          <div className="flex sm:flex-col gap-2 sm:w-[160px]">
+                            <button
+                              onClick={() => openSaleModal(sale)}
+                              className="flex-1 cursor-pointer px-4 py-2.5 rounded-xl border border-translucid bg-[var(--translucid)] text-sm font-medium hover:opacity-80 transition text-center"
+                            >
+                              Detalhes
+                            </button>
+                            <button
+                              onClick={() => deleteSale(sale.id, key)}
+                              className="flex-1 cursor-pointer px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition"
+                            >
+                              <FaTrash /> Excluir
+                            </button>
                           </div>
                         </div>
                       ))
@@ -494,7 +519,7 @@ const Sales = ({ setSelectedTab }) => {
                         <button
                           type="button"
                           disabled={pager.loading}
-                          className="w-full cursor-pointer px-3 py-2 rounded-lg bg-translucid border-2 border-translucid hover:opacity-80 transition"
+                          className="w-full cursor-pointer rounded-xl border border-translucid bg-translucid px-4 py-2 transition hover:opacity-80"
                           onClick={() => {
                             const start = new Date(group.monthStart);
                             const end = new Date(start);
@@ -517,9 +542,9 @@ const Sales = ({ setSelectedTab }) => {
 
       {saleModalOpen && selectedSale && (
         <GenericModal title="Detalhes da venda" onClose={() => setSaleModalOpen(false)} size="xl">
-          <div className="max-h-[90vh] sm:max-h-[80vh] w-full overflow-y-auto scrollbar-none space-y-4">
+          <div className="max-h-[90dvh] sm:max-h-[80vh] w-full overflow-y-auto scrollbar-none space-y-4">
             <form
-              className="space-y-3"
+              className="space-y-4"
               onSubmit={async (e) => {
                 e.preventDefault();
                 const subtotal = computeItemsSubtotal(selectedSale);
@@ -531,7 +556,6 @@ const Sales = ({ setSelectedTab }) => {
                 const { error } = await supabase.from("sales").update(payload).eq("id", selectedSale.id);
                 if (error) return customAlert("Erro ao atualizar venda", "error");
 
-                // Atualiza localmente o item no estado monthData
                 setMonthData((prev) => {
                   const updated = { ...prev };
                   const monthKey = Object.keys(prev).find((key) => prev[key].some((s) => s.id === selectedSale.id));
@@ -548,96 +572,74 @@ const Sales = ({ setSelectedTab }) => {
                 const key = d.toLocaleString("pt-BR", { month: "long", year: "numeric" });
 
                 refreshMonthSummary(start, end, key);
-
                 customAlert("Venda atualizada com sucesso!", "success");
                 setSaleModalOpen(false);
               }}
             >
-              {/* ... o resto do formulário permanece exatamente como antes ... */}
-              <div className="flex flex-col gap-3">
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <SectionCard title="Cliente" subtitle="Dados básicos da venda" icon={<FaPhoneAlt />}>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="block text-sm font-semibold mb-1">Nome do Cliente</label>
+                    <label className="mb-1 block text-sm font-medium">Nome do cliente</label>
                     <input
                       type="text"
-                      className="input w-full bg-translucid p-2 rounded"
+                      className="input w-full rounded-xl bg-black/10 p-3"
                       value={selectedSale.costumer_name || ""}
                       onChange={(e) => setSelectedSale({ ...selectedSale, costumer_name: e.target.value })}
                     />
                   </div>
-
                   <div>
-                    <label className="block text-sm font-semibold mb-1">Telefone</label>
+                    <label className="mb-1 block text-sm font-medium">Telefone</label>
                     <input
                       type="text"
-                      className="input w-full bg-translucid p-2 rounded"
+                      className="input w-full rounded-xl bg-black/10 p-3"
                       value={selectedSale.costumer_phone || ""}
                       onChange={(e) => setSelectedSale({ ...selectedSale, costumer_phone: e.target.value })}
                     />
                   </div>
                 </div>
+              </SectionCard>
 
-                <div className="grid grid-cols-1 gap-2 xs:grid-cols-2">
+              <SectionCard title="Venda" subtitle="Tipo de atendimento e pagamento" icon={<FaClipboardList />}>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="block text-sm font-semibold mb-1">Serviço</label>
+                    <label className="mb-1 block text-sm font-medium">Serviço</label>
                     <select
-                      className="input w-full bg-translucid p-2 rounded"
+                      className="input w-full rounded-xl bg-black/10 p-3"
                       value={selectedSale.service || ""}
                       onChange={(e) => setSelectedSale({ ...selectedSale, service: e.target.value })}
                     >
-                      <option className="text-black" value="delivery">
-                        Entrega
-                      </option>
-                      <option className="text-black" value="pickup">
-                        Retirada
-                      </option>
-                      <option className="text-black" value="dinein">
-                        No local
-                      </option>
-                      <option className="text-black" value="faceToFace">
-                        Atendimento presencial
-                      </option>
+                      <option className="text-black" value="delivery">Entrega</option>
+                      <option className="text-black" value="pickup">Retirada</option>
+                      <option className="text-black" value="dinein">No local</option>
+                      <option className="text-black" value="faceToFace">Atendimento presencial</option>
                     </select>
                   </div>
-
                   <div>
-                    <label className="block text-sm font-semibold mb-1">Método de Pagamento</label>
+                    <label className="mb-1 block text-sm font-medium">Método de pagamento</label>
                     <select
-                      className="input w-full bg-translucid p-2 rounded"
+                      className="input w-full rounded-xl bg-black/10 p-3"
                       value={selectedSale.payment_method || ""}
                       onChange={(e) => setSelectedSale({ ...selectedSale, payment_method: e.target.value })}
                     >
-                      <option className="text-black" value="pix">
-                        Pix
-                      </option>
-                      <option className="text-black" value="debit">
-                        Débito
-                      </option>
-                      <option className="text-black" value="credit">
-                        Crédito
-                      </option>
-                      <option className="text-black" value="cash">
-                        Dinheiro
-                      </option>
+                      <option className="text-black" value="pix">Pix</option>
+                      <option className="text-black" value="debit">Débito</option>
+                      <option className="text-black" value="credit">Crédito</option>
+                      <option className="text-black" value="cash">Dinheiro</option>
                     </select>
                   </div>
                 </div>
-                <hr className="border-translucid" />
-              </div>
+              </SectionCard>
 
-              {/* Itens (mantidos) */}
-              <div className="mt-8">
-                <label className="block text-lg font-semibold mb-2">Itens</label>
-
-                {(selectedSale.items_list || []).map((item, i) => (
-                  <div key={i} className="p-3 border border-2 border-translucid rounded-lg space-y-2">
-                    <div className="flex gap-2">
-                      <div className="w-full">
-                        <label className="text-sm color-gray">Nome:</label>
-                        <div className="flex items-center gap-3 mb-2">
+              <SectionCard title="Itens" subtitle="Edite rapidamente o conteúdo da venda">
+                <div className="space-y-4">
+                  {(selectedSale.items_list || []).map((item, i) => (
+                    <div key={i} className="rounded-2xl border border-translucid bg-black/10 p-4">
+                      <div className="mb-3 flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="mb-1 text-xs uppercase tracking-wide color-gray">Item</p>
                           <input
                             type="text"
-                            className="input w-full text-sm bg-translucid p-2 rounded"
+                            className="input w-full rounded-xl bg-translucid p-3 text-sm"
                             value={item.name}
                             onChange={(e) => {
                               const updated = [...selectedSale.items_list];
@@ -646,182 +648,187 @@ const Sales = ({ setSelectedTab }) => {
                             }}
                             placeholder="Nome do item"
                           />
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const updated = [...(selectedSale.items_list || [])];
-                              updated.splice(i, 1);
-                              setSelectedSale({ ...selectedSale, items_list: updated });
-                            }}
-                            className="p-2 text-sm bg-red-600 text-white rounded hover:opacity-90"
-                          >
-                            <FaTrash />
-                          </button>
                         </div>
-
-                        <div className="flex gap-6">
-                          <div className="flex flex-col">
-                            <label className="text-sm color-gray">Quantidade:</label>
-                            <input
-                              type="number"
-                              min="1"
-                              className="input w-21 text-sm bg-translucid p-2 rounded"
-                              value={item.qty}
-                              onChange={(e) => {
-                                const updated = [...selectedSale.items_list];
-                                updated[i] = { ...updated[i], qty: Number(e.target.value) || 0 };
-                                setSelectedSale({ ...selectedSale, items_list: updated });
-                              }}
-                              placeholder="Qtd"
-                            />
-                          </div>
-
-                          <div className="flex flex-col">
-                            <label className="text-sm color-gray">Preço unidade:</label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              className="input max-w-21 flex-1 text-sm bg-translucid p-2 rounded"
-                              value={item.price}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                const updated = [...selectedSale.items_list];
-                                updated[i] = { ...updated[i], price: value === "" ? null : Number(value) };
-                                setSelectedSale({ ...selectedSale, items_list: updated });
-                              }}
-                              placeholder="Preço unitário"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-sm color-gray">Observações:</label>
-                      <textarea
-                        className="input w-full text-sm p-2 bg-translucid rounded"
-                        value={item.note || ""}
-                        onChange={(e) => {
-                          const updated = [...selectedSale.items_list];
-                          updated[i] = { ...updated[i], note: e.target.value };
-                          setSelectedSale({ ...selectedSale, items_list: updated });
-                        }}
-                        placeholder="Observações do item"
-                      />
-                    </div>
-
-                    {/* Adicionais */}
-                    <div className="mt-2 pt-2">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-semibold color-gray">Adicionais:</span>
                         <button
                           type="button"
                           onClick={() => {
                             const updated = [...(selectedSale.items_list || [])];
-                            const additionals = updated[i].additionals ? [...updated[i].additionals] : [];
-                            additionals.push({ name: "", price: 0 });
-                            updated[i] = { ...updated[i], additionals };
+                            updated.splice(i, 1);
                             setSelectedSale({ ...selectedSale, items_list: updated });
                           }}
-                          className="cursor-pointer px-2 py-1 text-sm bg-blue-600 hover:bg-blue-700 rounded"
+                          className="rounded-xl bg-red-600 p-3 text-white transition hover:opacity-90 cursor-pointer mt-5"
                         >
-                          + Adicional
+                          <FaTrash />
                         </button>
                       </div>
-                      {(item.additionals || []).map((add, ai) => (
-                        <div key={ai} className="flex gap-2 items-center mb-2">
+
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                        <div>
+                          <label className="mb-1 block text-sm color-gray">Quantidade</label>
                           <input
-                            type="text"
-                            className="input w-40 xs:w-60 text-sm bg-translucid p-2 rounded"
-                            value={add.name}
+                            type="number"
+                            min="1"
+                            className="input w-full rounded-xl bg-translucid p-3 text-sm"
+                            value={item.qty}
                             onChange={(e) => {
                               const updated = [...selectedSale.items_list];
-                              const ad = updated[i].additionals ? [...updated[i].additionals] : [];
-                              ad[ai] = { ...ad[ai], name: e.target.value };
-                              updated[i] = { ...updated[i], additionals: ad };
+                              updated[i] = { ...updated[i], qty: Number(e.target.value) || 0 };
                               setSelectedSale({ ...selectedSale, items_list: updated });
                             }}
-                            placeholder="Nome do adicional"
                           />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-sm color-gray">Preço unidade</label>
                           <input
                             type="number"
                             step="0.01"
                             min="0"
-                            className="input w-12 xs:w-28 text-sm bg-translucid p-2 rounded"
-                            value={add.price ?? ""}
+                            className="input w-full rounded-xl bg-translucid p-3 text-sm"
+                            value={item.price}
                             onChange={(e) => {
                               const value = e.target.value;
                               const updated = [...selectedSale.items_list];
-                              const ad = updated[i].additionals ? [...updated[i].additionals] : [];
-                              ad[ai] = { ...ad[ai], price: value === "" ? null : Number(value) };
-                              updated[i] = { ...updated[i], additionals: ad };
+                              updated[i] = { ...updated[i], price: value === "" ? null : Number(value) };
                               setSelectedSale({ ...selectedSale, items_list: updated });
                             }}
-                            placeholder="Preço"
                           />
+                        </div>
+                        <div className="col-span-2 sm:col-span-1">
+                          <label className="mb-1 block text-sm color-gray">Subtotal</label>
+                          <div className="rounded-xl border border-translucid px-3 py-3 text-sm font-medium">
+                            R$ {((Number(item.qty) || 0) * (Number(item.price) || 0)).toFixed(2)}
+                          </div>
+                        </div>
+                      </div>
 
+                      <div className="mt-3">
+                        <label className="mb-1 block text-sm color-gray">Observações</label>
+                        <textarea
+                          className="input w-full rounded-xl bg-translucid p-3 text-sm"
+                          value={item.note || ""}
+                          onChange={(e) => {
+                            const updated = [...selectedSale.items_list];
+                            updated[i] = { ...updated[i], note: e.target.value };
+                            setSelectedSale({ ...selectedSale, items_list: updated });
+                          }}
+                          placeholder="Observações do item"
+                        />
+                      </div>
+
+                      <div className="mt-4 rounded-xl border border-translucid p-3">
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <span className="text-sm font-medium">Adicionais</span>
                           <button
                             type="button"
                             onClick={() => {
-                              const updated = [...selectedSale.items_list];
-                              const ad = updated[i].additionals ? [...updated[i].additionals] : [];
-                              ad.splice(ai, 1);
-                              updated[i] = { ...updated[i], additionals: ad };
+                              const updated = [...(selectedSale.items_list || [])];
+                              const additionals = updated[i].additionals ? [...updated[i].additionals] : [];
+                              additionals.push({ name: "", price: 0 });
+                              updated[i] = { ...updated[i], additionals };
                               setSelectedSale({ ...selectedSale, items_list: updated });
                             }}
-                            className="cursor-pointer p-2 bg-red-600 text-white rounded text-sm"
+                            className="cursor-pointer rounded-xl bg-blue-600 px-3 py-2 text-sm text-white transition hover:bg-blue-700"
                           >
-                            <FaTrash />
+                            + Adicional
                           </button>
                         </div>
-                      ))}
+
+                        {(item.additionals || []).length === 0 ? (
+                          <p className="text-sm color-gray">Nenhum adicional adicionado.</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {(item.additionals || []).map((add, ai) => (
+                              <div key={ai} className="grid grid-cols-[1fr_110px_48px] gap-2">
+                                <input
+                                  type="text"
+                                  className="input rounded-xl bg-translucid p-3 text-sm"
+                                  value={add.name}
+                                  onChange={(e) => {
+                                    const updated = [...selectedSale.items_list];
+                                    const ad = updated[i].additionals ? [...updated[i].additionals] : [];
+                                    ad[ai] = { ...ad[ai], name: e.target.value };
+                                    updated[i] = { ...updated[i], additionals: ad };
+                                    setSelectedSale({ ...selectedSale, items_list: updated });
+                                  }}
+                                  placeholder="Nome do adicional"
+                                />
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  className="input rounded-xl bg-translucid p-3 text-sm"
+                                  value={add.price ?? ""}
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+                                    const updated = [...selectedSale.items_list];
+                                    const ad = updated[i].additionals ? [...updated[i].additionals] : [];
+                                    ad[ai] = { ...ad[ai], price: value === "" ? null : Number(value) };
+                                    updated[i] = { ...updated[i], additionals: ad };
+                                    setSelectedSale({ ...selectedSale, items_list: updated });
+                                  }}
+                                  placeholder="Preço"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const updated = [...selectedSale.items_list];
+                                    const ad = updated[i].additionals ? [...updated[i].additionals] : [];
+                                    ad.splice(ai, 1);
+                                    updated[i] = { ...updated[i], additionals: ad };
+                                    setSelectedSale({ ...selectedSale, items_list: updated });
+                                  }}
+                                  className="cursor-pointer rounded-xl bg-red-600 p-2 flex justify-center items-center text-white hover:opacity-90 transition"
+                                >
+                                  <FaTrash />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <hr className="border-translucid" />
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSelectedSale({
+                      ...selectedSale,
+                      items_list: [
+                        ...(selectedSale.items_list || []),
+                        { name: "", qty: 1, price: 0, note: "", additionals: [] },
+                      ],
+                    })
+                  }
+                  className="mt-4 cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-white transition hover:bg-blue-700"
+                >
+                  + Adicionar item
+                </button>
+              </SectionCard>
+
+              <div className="sticky bottom-0 rounded-2xl border border-translucid bg-low-gray/95 p-4 backdrop-blur-xl">
+                <div className="mb-3 flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-xs uppercase tracking-wide color-gray">Total da venda</p>
+                    <p className="text-2xl font-bold">R$ {modalTotal.toFixed(2)}</p>
                   </div>
-                ))}
-
-                <div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setSelectedSale({
-                        ...selectedSale,
-                        items_list: [
-                          ...(selectedSale.items_list || []),
-                          { name: "", qty: 1, price: 0, note: "", additionals: [] },
-                        ],
-                      })
-                    }
-                    className="cursor-pointer px-2 py-1 mt-4 bg-blue-600 hover:bg-blue-700 transition text-white rounded"
-                  >
-                    + Adicionar item
-                  </button>
-                </div>
-              </div>
-
-              {/* total */}
-              <div className="sticky bottom-0 bg-low-gray">
-                <div className="flex justify-between sm:items-center flex-col sm:flex-row pt-4">
-                  <p className="text-sm color-gray">Subtotal: R$ {modalSubtotal.toFixed(2)}</p>
-                  {modalFee > 0 && <p className="text-sm color-gray">Taxa de entrega: R$ {modalFee.toFixed(2)}</p>}
-                  <p className="font-semibold">Total: R$ {modalTotal.toFixed(2)}</p>
+                  {modalFee > 0 && (
+                    <p className="text-sm color-gray">Taxa de entrega: R$ {modalFee.toFixed(2)}</p>
+                  )}
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row">
                   <button
                     type="submit"
-                    className="cursor-pointer flex-1 w-full bg-blue-600 text-white py-2 rounded-lg mt-3 hover:bg-blue-700 transition"
+                    className="w-full cursor-pointer rounded-xl bg-blue-600 py-3 text-white transition hover:bg-blue-700"
                   >
                     Salvar alterações
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      setSaleModalOpen(false);
-                    }}
-                    className="w-32 py-2 rounded-lg mt-3 border-2 bg-translucid border-translucid hover:opacity-80 transition cursor-pointer"
+                    onClick={() => setSaleModalOpen(false)}
+                    className="w-full cursor-pointer rounded-xl bg-[var(--translucid)] border border-translucid py-3 transition hover:opacity-80 sm:w-40"
                   >
                     Cancelar
                   </button>
