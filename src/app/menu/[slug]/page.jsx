@@ -3,6 +3,8 @@ import NotFoundMenu from "../NotFoundMenu";
 import ClientMenu from "./ClientMenu";
 import { CartProvider } from "@/contexts/CartContext";
 import { cache } from "react";
+import ClientMenu2 from "./ClientMenu2";
+import ClientMenu3 from "./ClientMenu3";
 
 const getMenuBySlug = cache(async (slug) => {
   if (!slug) return null;
