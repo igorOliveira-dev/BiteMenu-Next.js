@@ -93,20 +93,23 @@ export async function generateMetadata({ params }) {
 }
 
 // Página principal (server component)
-export default async function MenuPage({ params }) {
+export default async function MenuPage({ params, searchParams }) {
   const { slug } = await params;
+  const { preview_layout } = (await searchParams) ?? {};
 
   const menu = await getMenuBySlug(slug);
 
   if (!menu) return <NotFoundMenu />;
 
+  const effectiveLayout = preview_layout || menu.layout;
+
   return (
     <CartProvider>
-      {menu.layout === "default" ? (
+      {effectiveLayout === "default" ? (
         <ClientMenu menu={menu} />
-      ) : menu.layout === "list" ? (
+      ) : effectiveLayout === "list" ? (
         <ClientMenu2 menu={menu} />
-      ) : menu.layout === "grid" ? (
+      ) : effectiveLayout === "grid" ? (
         <ClientMenu3 menu={menu} />
       ) : (
         <ClientMenu menu={menu} />

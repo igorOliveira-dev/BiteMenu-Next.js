@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   FaChevronLeft,
   FaLightbulb,
@@ -253,7 +253,10 @@ const ConfigMenu = (props) => {
 
   const [userRole, setUserRole] = useState(null);
   const [paletteIndex, setPaletteIndex] = useState(0);
+  const [layoutPreview, setLayoutPreview] = useState(null);
   const [layout, setLayout] = useState("default");
+  const [previewScale, setPreviewScale] = useState(1);
+  const previewScrollRef = useRef(null);
 
   const usingExternal = Array.isArray(menuState) && menuState.length === 2;
   const [externalState, externalSetState] = usingExternal ? menuState : [null, null];
@@ -402,6 +405,101 @@ const ConfigMenu = (props) => {
     }
   }, [menu?.layout, profile?.role]);
 
+  useEffect(() => {
+    if (!layoutPreview) return;
+
+    const iframe = previewScrollRef.current;
+    if (!iframe) return;
+
+    let rafId = null;
+    let t1 = null;
+    let t2 = null;
+    let userTookControl = false;
+
+    const cancelAll = () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+
+    const linearScroll = (win, from, to, duration, onDone) => {
+      const startTime = performance.now();
+      const delta = to - from;
+
+      const step = (now) => {
+        if (userTookControl) return;
+        const progress = Math.min((now - startTime) / duration, 1);
+        win.scrollTo(0, from + delta * progress);
+        if (progress < 1) {
+          rafId = requestAnimationFrame(step);
+        } else if (onDone) {
+          onDone();
+        }
+      };
+
+      rafId = requestAnimationFrame(step);
+    };
+
+    const handleLoad = () => {
+      const win = iframe.contentWindow;
+      const doc = iframe.contentDocument;
+      if (!win || !doc) return;
+
+      // Bloqueia cliques e navegação dentro do iframe (fase de captura)
+      const blockInteraction = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      };
+      doc.addEventListener("click", blockInteraction, true);
+      doc.addEventListener("mousedown", blockInteraction, true);
+      doc.addEventListener("keydown", blockInteraction, true);
+      doc.addEventListener("submit", blockInteraction, true);
+
+      // Quando o usuário scrollar manualmente, cancela a animação
+      const onUserScroll = () => {
+        userTookControl = true;
+        cancelAll();
+      };
+      win.addEventListener("wheel", onUserScroll, { passive: true });
+      win.addEventListener("touchstart", onUserScroll, { passive: true });
+
+      win.scrollTo(0, 0);
+
+      t1 = setTimeout(() => {
+        linearScroll(win, 0, 550, 4500, () => {
+          t2 = setTimeout(() => {
+            linearScroll(win, 550, 0, 3500, null);
+          }, 600);
+        });
+      }, 900);
+    };
+
+    iframe.addEventListener("load", handleLoad);
+
+    return () => {
+      iframe.removeEventListener("load", handleLoad);
+      cancelAll();
+    };
+  }, [layoutPreview]);
+
+  useEffect(() => {
+    if (!layoutPreview) return;
+
+    const FRAME_W = 375;
+    const FRAME_H = 620;
+    const BUTTONS_H = 110;
+
+    const compute = () => {
+      const scaleW = Math.min(1, (window.innerWidth - 32) / FRAME_W);
+      const scaleH = Math.min(1, (window.innerHeight - BUTTONS_H) / FRAME_H);
+      setPreviewScale(Math.min(scaleW, scaleH));
+    };
+
+    compute();
+    window.addEventListener("resize", compute);
+    return () => window.removeEventListener("resize", compute);
+  }, [layoutPreview]);
+
   const canUseZones = userRole === "admin" || userRole === "plus" || userRole === "pro";
   const hasPlusPermissions = userRole === "admin" || userRole === "plus" || userRole === "pro";
 
@@ -446,18 +544,15 @@ const ConfigMenu = (props) => {
     }
   };
 
-  const handleLayoutClick = async (selectedLayout) => {
+  const handleLayoutClick = (selectedLayout) => {
     if (selectedLayout === layout) return;
+    setLayoutPreview(selectedLayout);
+  };
 
-    if (userRole === "free" && selectedLayout !== "default") {
-      // só preview (não salva)
-      window.location.href = "https://www.bitemenu.com.br/dashboard/pricing";
-      return;
-    }
-
-    // Plus / Pro → salva
-    setLayout(selectedLayout);
-    await updateLayout(selectedLayout);
+  const handleApplyLayout = async () => {
+    setLayout(layoutPreview);
+    await updateLayout(layoutPreview);
+    setLayoutPreview(null);
   };
 
   const toggleService = (id) => {
@@ -881,7 +976,7 @@ const ConfigMenu = (props) => {
                 </Field>
               </div>
 
-              {/* <div className="mb-4">
+              <div className="mb-4">
                 <div className="text-sm font-semibold">Estilo do menu</div>
                 <p className="mt-1 text-sm ">Escolha o estilo que melhor se adapta ao seu negócio.</p>
               </div>
@@ -904,7 +999,7 @@ const ConfigMenu = (props) => {
                   description="Fotos maiores organizadas em uma grade moderna e visualmente impactante."
                   onClick={() => handleLayoutClick("grid")}
                 />
-              </div> */}
+              </div>
             </div>
           </SectionCard>
 
@@ -1003,6 +1098,67 @@ const ConfigMenu = (props) => {
           </SectionCard>
         </div>
       </div>
+
+      {layoutPreview !== null && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center"
+          style={{ backgroundColor: "rgba(0,0,0,0.75)", backdropFilter: "blur(12px)" }}
+          onClick={() => setLayoutPreview(null)}
+        >
+          <div
+            style={{
+              width: 375 * previewScale,
+              height: 620 * previewScale,
+              position: "relative",
+              borderRadius: 32,
+              overflow: "hidden",
+              boxShadow: "0 25px 50px -12px rgba(0,0,0,0.9)",
+              border: "4px solid rgba(255,255,255,0.15)",
+              flexShrink: 0,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ transform: `scale(${previewScale})`, transformOrigin: "top left", width: 375, height: 620 }}>
+              <iframe
+                ref={previewScrollRef}
+                src={`/menu/${menu?.slug}?preview_layout=${layoutPreview}`}
+                style={{ width: "375px", height: "620px", border: "none" }}
+                title="Preview do cardápio"
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-3 mt-4" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => setLayoutPreview(null)}
+              className="rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:opacity-80 cursor-pointer"
+            >
+              Cancelar
+            </button>
+
+            {userRole === "free" && layoutPreview !== "default" ? (
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.href = "https://www.bitemenu.com.br/dashboard/pricing";
+                }}
+                className="rounded-2xl bg-[#d42020] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 cursor-pointer"
+              >
+                Assinar Plus para liberar estilo
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleApplyLayout}
+                className="rounded-2xl bg-[#d42020] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 cursor-pointer"
+              >
+                Aplicar estilo
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
