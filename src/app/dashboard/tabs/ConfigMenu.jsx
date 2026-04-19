@@ -21,6 +21,7 @@ import Loading from "@/components/Loading";
 import { useAlert } from "@/providers/AlertProvider";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import useUser from "@/hooks/useUser";
+import { supabase } from "@/lib/supabaseClient";
 import Return from "@/components/Return";
 
 const DEFAULT_HOURS = {
@@ -252,6 +253,7 @@ const ConfigMenu = (props) => {
 
   const [userRole, setUserRole] = useState(null);
   const [paletteIndex, setPaletteIndex] = useState(0);
+  const [layout, setLayout] = useState("default");
 
   const usingExternal = Array.isArray(menuState) && menuState.length === 2;
   const [externalState, externalSetState] = usingExternal ? menuState : [null, null];
@@ -383,6 +385,12 @@ const ConfigMenu = (props) => {
     }
   }, [loading, profile]);
 
+  useEffect(() => {
+    if (menu?.layout) {
+      setLayout(menu.layout);
+    }
+  }, [menu]);
+
   const canUseZones = userRole === "admin" || userRole === "plus" || userRole === "pro";
   const hasPlusPermissions = userRole === "admin" || userRole === "plus" || userRole === "pro";
 
@@ -417,6 +425,26 @@ const ConfigMenu = (props) => {
     if (typeof propSetBg === "function") propSetBg(bg);
     if (typeof propSetTitleColor === "function") propSetTitleColor(title);
     if (typeof propSetDetailsColor === "function") propSetDetailsColor(details);
+  };
+
+  const updateLayout = async (layout) => {
+    const { error } = await supabase.from("menus").update({ layout }).eq("id", menu.id);
+
+    if (error) {
+      console.error(error);
+    }
+  };
+
+  const handleLayoutClick = async (selectedLayout) => {
+    if (userRole === "free") {
+      // só preview (não salva)
+      setLayout(selectedLayout);
+      return;
+    }
+
+    // Plus / Pro → salva
+    setLayout(selectedLayout);
+    await updateLayout(selectedLayout);
   };
 
   const toggleService = (id) => {
@@ -798,45 +826,72 @@ const ConfigMenu = (props) => {
               </button>
             }
           >
-            <div className="grid gap-4">
-              <Field label="Cor do fundo">
-                <div className="flex items-center gap-3 rounded-2xl border border-[var(--translucid)] bg-translucid p-3">
-                  <input
-                    type="color"
-                    value={propBg}
-                    onChange={(e) => propSetBg?.(e.target.value)}
-                    className="h-12 w-14 cursor-pointer rounded-xl border border-[var(--translucid)] bg-transparent"
-                    aria-label="Cor do fundo"
-                  />
-                  <div className="text-sm ">{propBg}</div>
-                </div>
-              </Field>
+            <div className="space-y-5">
+              <div className="grid gap-4">
+                <Field label="Cor do fundo">
+                  <div className="flex items-center gap-3 rounded-2xl border border-[var(--translucid)] bg-translucid p-3">
+                    <input
+                      type="color"
+                      value={propBg}
+                      onChange={(e) => propSetBg?.(e.target.value)}
+                      className="h-12 w-14 cursor-pointer rounded-xl border border-[var(--translucid)] bg-transparent"
+                      aria-label="Cor do fundo"
+                    />
+                    <div className="text-sm ">{propBg}</div>
+                  </div>
+                </Field>
 
-              <Field label="Cor do título">
-                <div className="flex items-center gap-3 rounded-2xl border border-[var(--translucid)] bg-translucid p-3">
-                  <input
-                    type="color"
-                    value={propTitleColor}
-                    onChange={(e) => propSetTitleColor?.(e.target.value)}
-                    className="h-12 w-14 cursor-pointer rounded-xl border border-[var(--translucid)] bg-transparent"
-                    aria-label="Cor do título"
-                  />
-                  <div className="text-sm ">{propTitleColor}</div>
-                </div>
-              </Field>
+                <Field label="Cor do título">
+                  <div className="flex items-center gap-3 rounded-2xl border border-[var(--translucid)] bg-translucid p-3">
+                    <input
+                      type="color"
+                      value={propTitleColor}
+                      onChange={(e) => propSetTitleColor?.(e.target.value)}
+                      className="h-12 w-14 cursor-pointer rounded-xl border border-[var(--translucid)] bg-transparent"
+                      aria-label="Cor do título"
+                    />
+                    <div className="text-sm ">{propTitleColor}</div>
+                  </div>
+                </Field>
 
-              <Field label="Cor dos detalhes">
-                <div className="flex items-center gap-3 rounded-2xl border border-[var(--translucid)] bg-translucid p-3">
-                  <input
-                    type="color"
-                    value={propDetailsColor}
-                    onChange={(e) => propSetDetailsColor?.(e.target.value)}
-                    className="h-12 w-14 cursor-pointer rounded-xl border border-[var(--translucid)] bg-transparent"
-                    aria-label="Cor dos detalhes"
-                  />
-                  <div className="text-sm ">{propDetailsColor}</div>
-                </div>
-              </Field>
+                <Field label="Cor dos detalhes">
+                  <div className="flex items-center gap-3 rounded-2xl border border-[var(--translucid)] bg-translucid p-3">
+                    <input
+                      type="color"
+                      value={propDetailsColor}
+                      onChange={(e) => propSetDetailsColor?.(e.target.value)}
+                      className="h-12 w-14 cursor-pointer rounded-xl border border-[var(--translucid)] bg-transparent"
+                      aria-label="Cor dos detalhes"
+                    />
+                    <div className="text-sm ">{propDetailsColor}</div>
+                  </div>
+                </Field>
+              </div>
+
+              {/* <div className="mb-4">
+                <div className="text-sm font-semibold">Estilo do menu</div>
+                <p className="mt-1 text-sm ">Escolha o estilo que melhor se adapta ao seu negócio.</p>
+              </div>
+              <div className="grid gap-3 md:grid-cols-3">
+                <ModeOption
+                  active={layout === "default"}
+                  title="Padrão"
+                  description="Simples e eficiente, com foco total no seu cardápio."
+                  onClick={() => handleLayoutClick("default")}
+                />
+                <ModeOption
+                  active={layout === "list"}
+                  title="Lista"
+                  description="Fotos menores e itens organizados em uma lista elegante."
+                  onClick={() => handleLayoutClick("list")}
+                />
+                <ModeOption
+                  active={layout === "grid"}
+                  title="Grade de itens"
+                  description="Fotos maiores organizadas em uma grade moderna e visualmente impactante."
+                  onClick={() => handleLayoutClick("grid")}
+                />
+              </div> */}
             </div>
           </SectionCard>
 

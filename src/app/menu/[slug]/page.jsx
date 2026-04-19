@@ -32,6 +32,7 @@ const getMenuBySlug = cache(async (slug) => {
       minimum_order_value,
       pix_key,
       orders,
+      layout,
       categories (
         id,
         name,
@@ -101,7 +102,15 @@ export default async function MenuPage({ params }) {
 
   return (
     <CartProvider>
-      <ClientMenu menu={menu} />
+      {menu.layout === "default" ? (
+        <ClientMenu menu={menu} />
+      ) : menu.layout === "list" ? (
+        <ClientMenu2 menu={menu} />
+      ) : menu.layout === "grid" ? (
+        <ClientMenu3 menu={menu} />
+      ) : (
+        <ClientMenu menu={menu} />
+      )}
     </CartProvider>
   );
 }
