@@ -123,9 +123,7 @@ export default function ClientMenu3({ menu }) {
   const open = useMemo(() => isOpenNow(menu.hours), [menu.hours]);
 
   const contrast = useMemo(() => getContrastTextColor(menu.background_color), [menu.background_color]);
-  const darkBg = menu.background_color;
-  const darkCard = darkenColor(menu.background_color, 0.12);
-  const darkNav = darkenColor(menu.background_color, 0.08);
+  const background = menu.background_color;
   const foregroundToUse = contrast === "white" ? "#fafafa" : "#171717";
   const grayToUse = contrast === "white" ? "#cccccc" : "#333333";
   const translucidToUse = contrast === "white" ? "#ffffff15" : "#00000015";
@@ -396,7 +394,7 @@ export default function ClientMenu3({ menu }) {
 
   return (
     <>
-      <div className="min-h-screen w-full relative pb-18" style={{ backgroundColor: darkBg }}>
+      <div className="min-h-screen w-full relative pb-18" style={{ backgroundColor: background }}>
         {/* Header dark com banner ou gradiente */}
         <div className="relative w-full h-[28dvh] sm:h-[35dvh] overflow-hidden">
           {isSafeImageUrl(menu.banner_url) ? (
@@ -413,13 +411,13 @@ export default function ClientMenu3({ menu }) {
               />
               <div
                 className="absolute inset-0"
-                style={{ background: `linear-gradient(to bottom, ${darkBg}00 0%, ${darkBg} 100%)` }}
+                style={{ background: `linear-gradient(to bottom, ${background}00 0%, ${background} 100%)` }}
               />
             </>
           ) : (
             <div
               className="absolute inset-0"
-              style={{ background: `linear-gradient(135deg, ${darkNav} 0%, ${darkBg} 100%)` }}
+              style={{ background: `linear-gradient(135deg, ${background} 0%, ${background} 100%)` }}
             />
           )}
 
@@ -465,7 +463,7 @@ export default function ClientMenu3({ menu }) {
             </button>
             <button
               className="flex items-center gap-1 text-xs px-3 py-1 rounded-full"
-              style={{ backgroundColor: "rgba(255,255,255,0.1)", color: foregroundToUse }}
+              style={{ backgroundColor: background, color: foregroundToUse }}
               onClick={() => window.open(`https://wa.me/${establishmentPhone}`, "_blank")}
             >
               <FaWhatsapp size={13} />
@@ -578,17 +576,20 @@ export default function ClientMenu3({ menu }) {
                       <p className="font-semibold text-sm line-clamp-1" style={{ color: foregroundToUse }}>
                         {it.name}
                       </p>
+                      <p className="text-xs line-clamp-2 mt-0.5" style={{ color: grayToUse }}>
+                        {it.description}
+                      </p>
                       {it.promo_price && canShowPromoPrice ? (
                         <div>
                           <span className="text-[11px] line-through" style={{ color: grayToUse }}>
                             {Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                           </span>
-                          <p className="font-bold text-sm">
+                          <p className="font-bold text-sm" style={{ color: foregroundToUse }}>
                             {Number(it.promo_price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                           </p>
                         </div>
                       ) : (
-                        <p className="font-bold text-sm mt-1">
+                        <p className="font-bold text-sm mt-1" style={{ color: foregroundToUse }}>
                           {Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                         </p>
                       )}
@@ -627,7 +628,7 @@ export default function ClientMenu3({ menu }) {
                       <div
                         key={it.id}
                         className="rounded-xl overflow-hidden cursor-pointer flex flex-col"
-                        style={{ backgroundColor: darkCard, border: "1px solid rgba(255,255,255,0.07)" }}
+                        style={{ backgroundColor: translucidToUse, border: "1px solid rgba(255,255,255,0.07)" }}
                         onClick={() => handleItemClick(it)}
                       >
                         {/* Imagem quadrada no topo */}
@@ -735,7 +736,7 @@ export default function ClientMenu3({ menu }) {
           hoverXButtonColor={translucidToUse}
           wfull
           maxWidth={"480px"}
-          bgColor={darkBg}
+          bgColor={background}
           onClose={closeHoursModal}
         >
           <div className="space-y-2" style={{ color: foregroundToUse }}>
@@ -770,7 +771,7 @@ export default function ClientMenu3({ menu }) {
           title={selectedItem.name}
           titleColor={foregroundToUse}
           hoverXButtonColor={translucidToUse}
-          bgColor={darkBg}
+          bgColor={background}
           maxWidth={"580px"}
           margin={"12px"}
           wfull
@@ -811,7 +812,10 @@ export default function ClientMenu3({ menu }) {
                       </p>
                       <div
                         className="pointer-events-none absolute bottom-0 left-0 w-full h-6 transition-opacity duration-200"
-                        style={{ opacity: showFade ? 1 : 0, background: `linear-gradient(to top, ${darkBg}, ${darkBg}00)` }}
+                        style={{
+                          opacity: showFade ? 1 : 0,
+                          background: `linear-gradient(to top, ${background}, ${background}00)`,
+                        }}
                       />
                     </>
                   )}
@@ -982,7 +986,7 @@ export default function ClientMenu3({ menu }) {
       <CartDrawer
         menu={menu}
         open={cartOpen}
-        bgColor={darkBg}
+        bgColor={background}
         translucidToUse={translucidToUse}
         grayToUse={grayToUse}
         foregroundToUse={foregroundToUse}
@@ -991,7 +995,7 @@ export default function ClientMenu3({ menu }) {
       />
 
       <MenuFooter
-        bgColor={darkBg}
+        bgColor={background}
         translucidToUse={translucidToUse}
         grayToUse={grayToUse}
         foregroundToUse={foregroundToUse}

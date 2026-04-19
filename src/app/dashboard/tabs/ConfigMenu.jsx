@@ -345,6 +345,10 @@ const ConfigMenu = (props) => {
     }
   };
 
+  const setDefaultLayout = async () => {
+    await updateLayout("default");
+  };
+
   useEffect(() => {
     if (!menu) return;
 
@@ -386,10 +390,17 @@ const ConfigMenu = (props) => {
   }, [loading, profile]);
 
   useEffect(() => {
-    if (menu?.layout) {
+    if (profile?.role === "free" && menu?.layout && menu.layout !== "default") {
+      setLayout("default");
+      setDefaultLayout();
+    }
+  }, [profile?.role, menu?.layout]);
+
+  useEffect(() => {
+    if (menu?.layout && profile?.role !== "free") {
       setLayout(menu.layout);
     }
-  }, [menu]);
+  }, [menu?.layout, profile?.role]);
 
   const canUseZones = userRole === "admin" || userRole === "plus" || userRole === "pro";
   const hasPlusPermissions = userRole === "admin" || userRole === "plus" || userRole === "pro";
@@ -436,9 +447,11 @@ const ConfigMenu = (props) => {
   };
 
   const handleLayoutClick = async (selectedLayout) => {
-    if (userRole === "free") {
+    if (selectedLayout === layout) return;
+
+    if (userRole === "free" && selectedLayout !== "default") {
       // só preview (não salva)
-      setLayout(selectedLayout);
+      window.location.href = "https://www.bitemenu.com.br/dashboard/pricing";
       return;
     }
 
