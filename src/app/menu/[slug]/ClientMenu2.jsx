@@ -492,34 +492,40 @@ export default function ClientMenu2({ menu }) {
         {/* Nav de categorias — linha de texto simples */}
         {navCategories.length > 0 && (
           <div
-            className="flex sticky -top-1 overflow-x-auto whitespace-nowrap scrollbar-none z-10 px-4 sm:px-8 lg:px-20 xl:px-32 border-b"
-            style={{ backgroundColor: menu.background_color, borderColor: translucidToUse }}
+            className="flex sticky -top-1 border-y-2 overflow-x-auto whitespace-nowrap scrollbar-none z-10 lg:mx-20 xl:mx-32"
+            style={{
+              backgroundColor: menu.background_color,
+              borderColor: translucidToUse,
+              color: foregroundToUse,
+            }}
           >
-            {hasStarred && hasPlusPermissions && (
-              <button
-                className="cursor-pointer px-4 py-3 text-sm font-semibold border-b-2"
-                style={{ borderColor: menu.details_color, color: foregroundToUse }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  scrollToCategoryId("starred-section", 40);
-                }}
-              >
-                Destaques
-              </button>
-            )}
-            {navCategories.map((cat) => (
-              <button
-                key={cat.id}
-                className="cursor-pointer px-4 py-3 text-sm border-b-2"
-                style={{ borderColor: "transparent", color: grayToUse }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  scrollToCategoryId(cat.id.slice(0, 5), 40);
-                }}
-              >
-                {cat.name}
-              </button>
-            ))}
+            <>
+              {hasStarred && hasPlusPermissions && (
+                <button
+                  className="cursor-pointer p-4 font-semibold"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    scrollToCategoryId("starred-section", 40);
+                  }}
+                >
+                  Destaques
+                </button>
+              )}
+
+              {navCategories.map((cat) => (
+                <div key={cat.id}>
+                  <button
+                    className="cursor-pointer p-4"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      scrollToCategoryId(cat.id.slice(0, 5), 40);
+                    }}
+                  >
+                    {cat.name}
+                  </button>
+                </div>
+              ))}
+            </>
           </div>
         )}
 
@@ -530,7 +536,13 @@ export default function ClientMenu2({ menu }) {
               <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: grayToUse }}>
                 Destaques
               </p>
-              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none" style={{ scrollSnapType: "x mandatory" }}>
+              <div
+                className="flex gap-4 overflow-x-auto pb-2 starred-scroll"
+                style={{
+                  scrollSnapType: "x mandatory",
+                  "--scrollbar-color": menu.details_color,
+                }}
+              >
                 {starredItems.map((it) => (
                   <div
                     key={it.id}
@@ -539,12 +551,12 @@ export default function ClientMenu2({ menu }) {
                     onClick={() => handleItemClick(it)}
                   >
                     {isSafeImageUrl(it.image_url) && (
-                      <div className="w-full h-[140px] overflow-hidden">
+                      <div className="w-full aspect-square overflow-hidden">
                         <Image
                           src={it.image_url}
                           alt={it.name}
                           width={220}
-                          height={140}
+                          height={220}
                           className="w-full h-full object-cover"
                           quality={55}
                           unoptimized
@@ -595,18 +607,19 @@ export default function ClientMenu2({ menu }) {
                 <div key={cat.id} id={cat.id.slice(0, 5)}>
                   {/* Título de categoria com ornamento */}
                   <div className="flex items-center gap-3 mb-4 pt-4">
-                    <div className="flex-1 h-px" style={{ backgroundColor: translucidToUse }} />
+                    <div className="flex-1 h-px" style={{ backgroundColor: contrast }} />
                     <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: grayToUse }}>
                       {cat.name}
                     </p>
-                    <div className="flex-1 h-px" style={{ backgroundColor: translucidToUse }} />
+                    <div className="flex-1 h-px" style={{ backgroundColor: contrast }} />
                   </div>
 
-                  <div className="divide-y" style={{ borderColor: translucidToUse }}>
+                  <div>
                     {visibleItems.map((it) => (
                       <div
                         key={it.id}
-                        className="flex items-center justify-between gap-4 py-4 cursor-pointer group"
+                        className="flex items-center justify-between gap-4 py-4 cursor-pointer group border-b min-h-[170px]"
+                        style={{ borderColor: translucidToUse }}
                         onClick={() => handleItemClick(it)}
                       >
                         {/* Texto à esquerda */}
@@ -681,7 +694,9 @@ export default function ClientMenu2({ menu }) {
         >
           <button
             onClick={openCart}
-            className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-full shadow-lg font-bold transition-transform duration-200 hover:opacity-90 hover:scale-110 ${animateCart ? "scale-110" : "scale-100"}`}
+            className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg shadow-[0_0_20px_var(--shadow)] font-bold transition-transform duration-200 hover:opacity-90 hover:scale-110 ${
+              animateCart ? "scale-110" : "scale-100"
+            }`}
             style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
             aria-label="Abrir carrinho"
           >

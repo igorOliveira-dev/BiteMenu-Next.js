@@ -98,7 +98,6 @@ function isSafeImageUrl(url) {
   return typeof url === "string" && url.length > 8 && (url.startsWith("http://") || url.startsWith("https://"));
 }
 
-// Escurece qualquer cor para criar uma camada "dark" sobre o background_color
 function darkenColor(hex, amount = 0.85) {
   const cleanHex = (hex || "#ffffff").replace("#", "");
   const r = Math.round(parseInt(cleanHex.substring(0, 2), 16) * (1 - amount));
@@ -123,13 +122,13 @@ export default function ClientMenu3({ menu }) {
 
   const open = useMemo(() => isOpenNow(menu.hours), [menu.hours]);
 
-  // Layout dark: sempre fundo escuro, texto claro independente do background_color
-  const darkBg = darkenColor(menu.background_color, 0.88);
-  const darkCard = darkenColor(menu.background_color, 0.75);
-  const darkNav = darkenColor(menu.background_color, 0.82);
-  const foregroundToUse = "#f5f5f5";
-  const grayToUse = "#888888";
-  const translucidToUse = "rgba(255,255,255,0.06)";
+  const contrast = useMemo(() => getContrastTextColor(menu.background_color), [menu.background_color]);
+  const darkBg = menu.background_color;
+  const darkCard = darkenColor(menu.background_color, 0.12);
+  const darkNav = darkenColor(menu.background_color, 0.08);
+  const foregroundToUse = contrast === "white" ? "#fafafa" : "#171717";
+  const grayToUse = contrast === "white" ? "#cccccc" : "#333333";
+  const translucidToUse = contrast === "white" ? "#ffffff15" : "#00000015";
   const accentColor = menu.details_color;
   const accentContrast = getContrastTextColor(accentColor);
 
@@ -406,7 +405,7 @@ export default function ClientMenu3({ menu }) {
                 alt="Banner do estabelecimento"
                 src={menu.banner_url}
                 fill
-                className="object-cover opacity-40"
+                className="object-cover"
                 priority
                 sizes="100vw"
                 quality={55}
@@ -434,7 +433,6 @@ export default function ClientMenu3({ menu }) {
                   width={70}
                   height={70}
                   className="w-[52px] h-[52px] sm:w-[70px] sm:h-[70px] object-cover rounded-xl border-2 shrink-0"
-                  style={{ borderColor: accentColor }}
                   quality={55}
                   unoptimized
                 />
@@ -443,11 +441,15 @@ export default function ClientMenu3({ menu }) {
                 <h1 className="text-xl sm:text-2xl font-bold" style={{ color: menu.title_color || foregroundToUse }}>
                   {menu.title}
                 </h1>
-                {menu.address && (
-                  <p className="flex items-center gap-1 text-xs mt-0.5" style={{ color: grayToUse }}>
-                    <FaMapMarkerAlt size={10} /> {menu.address}
-                  </p>
-                )}
+                <a
+                  href="https://www.bitemenu.com.br"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] hover:underline mt-0.5 inline-block"
+                  style={{ color: grayToUse }}
+                >
+                  Feito com Bite Menu ↗
+                </a>
               </div>
             </div>
           </div>
@@ -471,6 +473,12 @@ export default function ClientMenu3({ menu }) {
           </div>
         </div>
 
+        {menu.address && (
+          <p className="flex gap-2 items-center px-4 sm:px-8 lg:px-20 xl:px-32 pt-3 text-sm" style={{ color: grayToUse }}>
+            <FaMapMarkerAlt size={10} /> {menu.address}
+          </p>
+        )}
+
         {menu.description && (
           <p className="px-4 sm:px-8 lg:px-20 xl:px-32 pt-3 text-sm" style={{ color: grayToUse }}>
             {menu.description}
@@ -486,9 +494,8 @@ export default function ClientMenu3({ menu }) {
             placeholder="Buscar item..."
             className="w-full py-2 px-4 rounded-lg outline-none text-sm"
             style={{
-              backgroundColor: "rgba(255,255,255,0.08)",
+              backgroundColor: translucidToUse,
               color: foregroundToUse,
-              border: "1px solid rgba(255,255,255,0.1)",
             }}
           />
         </div>
@@ -496,38 +503,40 @@ export default function ClientMenu3({ menu }) {
         {/* Nav de categorias — pills coloridas no dark */}
         {navCategories.length > 0 && (
           <div
-            className="flex sticky -top-1 overflow-x-auto whitespace-nowrap scrollbar-none z-10 px-4 sm:px-8 lg:px-20 xl:px-32 py-3 gap-2"
-            style={{ backgroundColor: darkNav, borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+            className="flex sticky -top-1 border-y-2 overflow-x-auto whitespace-nowrap scrollbar-none z-10 lg:mx-20 xl:mx-32"
+            style={{
+              backgroundColor: menu.background_color,
+              borderColor: translucidToUse,
+              color: foregroundToUse,
+            }}
           >
-            {hasStarred && hasPlusPermissions && (
-              <button
-                className="cursor-pointer px-4 py-1.5 text-sm font-semibold rounded-full shrink-0"
-                style={{ backgroundColor: accentColor, color: accentContrast }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  scrollToCategoryId("starred-section", 40);
-                }}
-              >
-                ⚡ Destaques
-              </button>
-            )}
-            {navCategories.map((cat) => (
-              <button
-                key={cat.id}
-                className="cursor-pointer px-4 py-1.5 text-sm rounded-full shrink-0"
-                style={{
-                  backgroundColor: "rgba(255,255,255,0.08)",
-                  color: foregroundToUse,
-                  border: "1px solid rgba(255,255,255,0.1)",
-                }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  scrollToCategoryId(cat.id.slice(0, 5), 40);
-                }}
-              >
-                {cat.name}
-              </button>
-            ))}
+            <>
+              {hasStarred && hasPlusPermissions && (
+                <button
+                  className="cursor-pointer p-4 font-semibold"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    scrollToCategoryId("starred-section", 40);
+                  }}
+                >
+                  Destaques
+                </button>
+              )}
+
+              {navCategories.map((cat) => (
+                <div key={cat.id}>
+                  <button
+                    className="cursor-pointer p-4"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      scrollToCategoryId(cat.id.slice(0, 5), 40);
+                    }}
+                  >
+                    {cat.name}
+                  </button>
+                </div>
+              ))}
+            </>
           </div>
         )}
 
@@ -535,24 +544,30 @@ export default function ClientMenu3({ menu }) {
           {/* Destaques — carrossel com cards grandes */}
           {hasStarred && hasPlusPermissions && searchTerm === "" && (
             <div className="py-5" id="starred-section">
-              <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: accentColor }}>
-                ⚡ Destaques
+              <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: foregroundToUse }}>
+                Destaques
               </p>
-              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none" style={{ scrollSnapType: "x mandatory" }}>
+              <div
+                className="flex gap-3 overflow-x-auto pb-2 starred-scroll"
+                style={{
+                  scrollSnapType: "x mandatory",
+                  "--scrollbar-color": menu.details_color,
+                }}
+              >
                 {starredItems.map((it) => (
                   <div
                     key={it.id}
-                    className="min-w-[180px] max-w-[180px] snap-start cursor-pointer rounded-xl overflow-hidden relative"
-                    style={{ backgroundColor: darkCard, border: "1px solid rgba(255,255,255,0.08)" }}
+                    className="min-w-[220px] max-w-[220px] snap-start cursor-pointer rounded-xl overflow-hidden relative"
+                    style={{ backgroundColor: translucidToUse }}
                     onClick={() => handleItemClick(it)}
                   >
                     {isSafeImageUrl(it.image_url) && (
-                      <div className="w-full h-[110px] overflow-hidden">
+                      <div className="w-full aspect-square overflow-hidden">
                         <Image
                           src={it.image_url}
                           alt={it.name}
-                          width={180}
-                          height={110}
+                          width={220}
+                          height={220}
                           className="w-full h-full object-cover"
                           quality={55}
                           unoptimized
@@ -568,12 +583,12 @@ export default function ClientMenu3({ menu }) {
                           <span className="text-[11px] line-through" style={{ color: grayToUse }}>
                             {Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                           </span>
-                          <p className="font-bold text-sm" style={{ color: accentColor }}>
+                          <p className="font-bold text-sm">
                             {Number(it.promo_price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                           </p>
                         </div>
                       ) : (
-                        <p className="font-bold text-sm mt-1" style={{ color: accentColor }}>
+                        <p className="font-bold text-sm mt-1">
                           {Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                         </p>
                       )}
@@ -590,7 +605,6 @@ export default function ClientMenu3({ menu }) {
             </div>
           )}
 
-          {/* Grid 2 colunas — cards compactos estilo app de delivery dark */}
           <div className="space-y-6 pb-6">
             {filteredCategories.map((cat) => {
               const visibleItems = (cat.menu_items || []).filter((it) => it.visible);
@@ -608,7 +622,7 @@ export default function ClientMenu3({ menu }) {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-6 gap-3">
                     {visibleItems.map((it) => (
                       <div
                         key={it.id}
@@ -664,12 +678,12 @@ export default function ClientMenu3({ menu }) {
                                   <p className="text-[10px] line-through leading-none" style={{ color: grayToUse }}>
                                     {Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                                   </p>
-                                  <p className="font-bold text-base leading-tight" style={{ color: accentColor }}>
+                                  <p className="font-bold text-base leading-tight" style={{ color: foregroundToUse }}>
                                     {Number(it.promo_price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                                   </p>
                                 </>
                               ) : (
-                                <p className="font-bold text-base leading-tight" style={{ color: accentColor }}>
+                                <p className="font-bold text-base leading-tight" style={{ color: foregroundToUse }}>
                                   {Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                                 </p>
                               )}
@@ -689,16 +703,6 @@ export default function ClientMenu3({ menu }) {
               );
             })}
           </div>
-
-          <a
-            href="https://www.bitemenu.com.br"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block text-center text-[10px] pb-4 hover:underline"
-            style={{ color: grayToUse }}
-          >
-            Feito com Bite Menu ↗
-          </a>
         </div>
       </div>
 
@@ -710,10 +714,13 @@ export default function ClientMenu3({ menu }) {
         >
           <button
             onClick={openCart}
-            className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-xl shadow-lg font-bold transition-transform duration-200 hover:opacity-90 hover:scale-110 ${animateCart ? "scale-110" : "scale-100"}`}
-            style={{ backgroundColor: accentColor, color: accentContrast }}
+            className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg shadow-[0_0_20px_var(--shadow)] font-bold transition-transform duration-200 hover:opacity-90 hover:scale-110 ${
+              animateCart ? "scale-110" : "scale-100"
+            }`}
+            style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
             aria-label="Abrir carrinho"
           >
+            <span>Carrinho</span>
             <FaShoppingCart />
             <span>{typeof cart.totalItems === "function" ? cart.totalItems(menu?.id) : 0}</span>
           </button>
@@ -814,14 +821,14 @@ export default function ClientMenu3({ menu }) {
                     <span className="text-xs font-semibold line-through" style={{ color: grayToUse }}>
                       {Number(selectedItem.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </span>
-                    <span className="text-2xl font-semibold" style={{ color: accentColor }}>
+                    <span className="text-2xl font-semibold" style={{ color: foregroundToUse }}>
                       {Number(selectedItem.promo_price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </span>
                   </div>
                 ) : (
                   <>
                     {selectedItem.price ? (
-                      <span className="text-3xl font-semibold" style={{ color: accentColor }}>
+                      <span className="text-3xl font-semibold" style={{ color: foregroundToUse }}>
                         {Number(selectedItem.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                       </span>
                     ) : null}
@@ -836,11 +843,7 @@ export default function ClientMenu3({ menu }) {
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   className="w-[100%] h-full p-2 border"
-                  style={{
-                    backgroundColor: "rgba(255,255,255,0.06)",
-                    color: foregroundToUse,
-                    borderColor: "rgba(255,255,255,0.1)",
-                  }}
+                  style={{ backgroundColor: translucidToUse, color: foregroundToUse, borderColor: grayToUse }}
                   placeholder="Comentário (opicional)"
                 />
               </div>
