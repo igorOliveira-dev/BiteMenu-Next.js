@@ -927,7 +927,7 @@ ${customerInfo}`;
                   {menu.pix_key}
                 </div>
                 <p className="text-center mt-2">
-                  Valor final: <strong>R${finalValue.toFixed(2)}</strong>
+                  Valor final: <strong className="text-2xl">R${finalValue.toFixed(2)}</strong>
                 </p>
                 <p className="text-center p-2" style={{ color: grayToUse }}>
                   Após fazer o PIX, envie o comprovante pelo WhatsApp!
