@@ -647,6 +647,33 @@ const ConfigMenu = (props) => {
     setDeliveryZones((prev) => prev.filter((zone) => zone.id !== id));
   };
 
+  const updateDayHour = (day, field, value) => {
+    const currentValue = hours?.[day];
+
+    if (currentValue === null) return;
+
+    const [currentOpen = "09:00", currentClose = "18:00"] =
+      typeof currentValue === "string" ? currentValue.split("-") : ["09:00", "18:00"];
+
+    const openTime = field === "open" ? value : currentOpen;
+    let closeTime = field === "close" ? value : currentClose;
+
+    if (closeTime === "00:00") {
+      closeTime = "23:59";
+      customAlert("Meia-noite foi ajustada para 23:59.", "info");
+    }
+
+    if (isCloseBeforeOpen(openTime, closeTime)) {
+      customAlert("O horário de fechamento não pode ser antes do horário de abertura.", "error");
+      return;
+    }
+
+    safeSetHours((prev) => ({
+      ...prev,
+      [day]: `${openTime}-${closeTime}`,
+    }));
+  };
+
   if (loading) return <Loading />;
 
   return (
@@ -1063,24 +1090,8 @@ const ConfigMenu = (props) => {
                         type="time"
                         value={openTime || ""}
                         disabled={isClosed}
-                        onChange={(e) => {
-                          const newOpen = e.target.value;
-
-                          const currentCloseRaw = typeof hours?.[day] === "string" ? hours[day].split("-")[1] : "23:59";
-
-                          const currentClose = normalizeCloseTime(currentCloseRaw || "23:59");
-
-                          if (isCloseBeforeOpen(newOpen, currentClose)) {
-                            customAlert("O horário de fechamento não pode ser antes do horário de abertura.", "error");
-                            return;
-                          }
-
-                          safeSetHours((prev) => {
-                            const base = { ...prev };
-                            base[day] = `${newOpen}-${currentClose}`;
-                            return base;
-                          });
-                        }}
+                        onChange={(e) => updateDayHour(day, "open", e.target.value)}
+                        onBlur={(e) => updateDayHour(day, "open", e.target.value)}
                         className="h-11 rounded-2xl border border-[var(--translucid)] bg-translucid px-3  outline-none disabled:cursor-not-allowed disabled:opacity-40"
                       />
                       <span className="text-center ">até</span>
@@ -1088,24 +1099,8 @@ const ConfigMenu = (props) => {
                         type="time"
                         value={closeTime || ""}
                         disabled={isClosed}
-                        onChange={(e) => {
-                          const newClose = normalizeCloseTime(e.target.value);
-
-                          const currentOpen = typeof hours?.[day] === "string" ? hours[day].split("-")[0] : "00:00";
-
-                          const openTime = currentOpen || "00:00";
-
-                          if (isCloseBeforeOpen(openTime, newClose)) {
-                            customAlert("O horário de fechamento não pode ser antes do horário de abertura.", "error");
-                            return;
-                          }
-
-                          safeSetHours((prev) => {
-                            const base = { ...prev };
-                            base[day] = `${openTime}-${newClose}`;
-                            return base;
-                          });
-                        }}
+                        onChange={(e) => updateDayHour(day, "close", e.target.value)}
+                        onBlur={(e) => updateDayHour(day, "close", e.target.value)}
                         className="h-11 rounded-2xl border border-[var(--translucid)] bg-translucid px-3  outline-none disabled:cursor-not-allowed disabled:opacity-40"
                       />
                     </div>
