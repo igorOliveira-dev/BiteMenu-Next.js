@@ -228,6 +228,26 @@ function ModeOption({ active, title, description, onClick }) {
   );
 }
 
+function timeToMinutes(time) {
+  if (!time) return null;
+
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function normalizeCloseTime(time) {
+  return time === "00:00" ? "23:59" : time;
+}
+
+function isCloseBeforeOpen(openTime, closeTime) {
+  const open = timeToMinutes(openTime);
+  const close = timeToMinutes(closeTime);
+
+  if (open === null || close === null) return false;
+
+  return close < open;
+}
+
 const ConfigMenu = (props) => {
   const {
     setSelectedTab,
@@ -1045,10 +1065,19 @@ const ConfigMenu = (props) => {
                         disabled={isClosed}
                         onChange={(e) => {
                           const newOpen = e.target.value;
+
+                          const currentCloseRaw = typeof hours?.[day] === "string" ? hours[day].split("-")[1] : "23:59";
+
+                          const currentClose = normalizeCloseTime(currentCloseRaw || "23:59");
+
+                          if (isCloseBeforeOpen(newOpen, currentClose)) {
+                            customAlert("O horário de fechamento não pode ser antes do horário de abertura.", "error");
+                            return;
+                          }
+
                           safeSetHours((prev) => {
                             const base = { ...prev };
-                            const currentClose = typeof base[day] === "string" ? base[day].split("-")[1] : "23:59";
-                            base[day] = `${newOpen}-${currentClose || "23:59"}`;
+                            base[day] = `${newOpen}-${currentClose}`;
                             return base;
                           });
                         }}
@@ -1060,11 +1089,20 @@ const ConfigMenu = (props) => {
                         value={closeTime || ""}
                         disabled={isClosed}
                         onChange={(e) => {
-                          const newClose = e.target.value;
+                          const newClose = normalizeCloseTime(e.target.value);
+
+                          const currentOpen = typeof hours?.[day] === "string" ? hours[day].split("-")[0] : "00:00";
+
+                          const openTime = currentOpen || "00:00";
+
+                          if (isCloseBeforeOpen(openTime, newClose)) {
+                            customAlert("O horário de fechamento não pode ser antes do horário de abertura.", "error");
+                            return;
+                          }
+
                           safeSetHours((prev) => {
                             const base = { ...prev };
-                            const currentOpen = typeof base[day] === "string" ? base[day].split("-")[0] : "00:00";
-                            base[day] = `${currentOpen || "00:00"}-${newClose}`;
+                            base[day] = `${openTime}-${newClose}`;
                             return base;
                           });
                         }}
