@@ -6,6 +6,7 @@ import { useAlert } from "@/providers/AlertProvider";
 import Loading from "@/components/Loading";
 import { supabase } from "@/lib/supabaseClient";
 import { FaBolt } from "react-icons/fa";
+import UpdatePlanModal from "../UpdatePlanModal";
 
 const SalesSummary = ({ setSelectedTab, refreshSignal }) => {
   const alert = useAlert();
@@ -15,6 +16,7 @@ const SalesSummary = ({ setSelectedTab, refreshSignal }) => {
   const [salesTotal, setSalesTotal] = useState(0);
   const [loadingSales, setLoadingSales] = useState(true);
   const [averageTicket, setAverageTicket] = useState(0);
+  const [showUpdatePlanModal, setShowUpdatePlanModal] = useState(false);
 
   useEffect(() => {
     if (!menu?.owner_id) return;
@@ -79,17 +81,6 @@ const SalesSummary = ({ setSelectedTab, refreshSignal }) => {
 
   if (loading || loadingSales) return <Loading />;
 
-  if (ownerRole === "free" || ownerRole === "plus") {
-    return (
-      <div className="mb-6 h-40 lg:w-[calc(80dvw-256px)] max-w-[1024px] rounded-2xl bg-translucid border border-translucid flex flex-col justify-center items-center">
-        <h4 className="color-gray mb-2 text-center mx-2">Seu plano não tem acesso ao dashboard de vendas</h4>
-        <button onClick={() => upgradePlan()} className="cta-button flex has-icon">
-          <FaBolt /> Melhorar plano!
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="sm:p-4 p-3 mb-6 lg:w-[calc(80dvw-256px)] max-w-[1024px] rounded-2xl bg-translucid border border-translucid shadow-sm flex flex-col gap-4">
       <h3 className="text-base font-semibold">Resumo das vendas</h3>
@@ -110,11 +101,24 @@ const SalesSummary = ({ setSelectedTab, refreshSignal }) => {
       </div>
 
       <button
-        onClick={() => setSelectedTab("salesDashboard")}
+        onClick={() =>
+          ownerRole === "free" || ownerRole === "plus" ? setShowUpdatePlanModal(true) : setSelectedTab("salesDashboard")
+        }
         className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-blue-700"
       >
         Ver dashboard completo
       </button>
+
+      {showUpdatePlanModal && (
+        <UpdatePlanModal
+          title="Veja o dashboard de vendas completo com o Bite Menu Pro"
+          text="Analise detalhes de vendas, produtos mais vendidos, horários de pico, e muito mais para otimizar seu negócio."
+          image="https://rfgkalwtrxbiqrqwxmxf.supabase.co/storage/v1/object/sign/utilImages/dash_vendas.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xOTdiYmQzMC01Njg2LTQzNTQtOWE2ZS1iOTA4YjlmNGRhYjIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ1dGlsSW1hZ2VzL2Rhc2hfdmVuZGFzLnBuZyIsImlhdCI6MTc3NzIzNTM5MiwiZXhwIjo4MDg0NDM1MzkyfQ.KqRDAMsYqM5yEu_eZGme_fdFwSsbcsoDnEBhB6L14_I"
+          isOpen={showUpdatePlanModal}
+          onClose={() => setShowUpdatePlanModal(false)}
+          onCta={upgradePlan}
+        />
+      )}
     </div>
   );
 };

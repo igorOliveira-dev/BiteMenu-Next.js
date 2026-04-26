@@ -309,12 +309,12 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
   const prevTotalPeriod = useMemo(
     () => prevRawSales.reduce((sum, s) => sum + Number(s.total ?? computeTotal(s)), 0),
-    [prevRawSales]
+    [prevRawSales],
   );
   const prevTotalSalesCount = useMemo(() => prevRawSales.length, [prevRawSales]);
   const prevAverageTicket = useMemo(
     () => (prevTotalSalesCount ? prevTotalPeriod / prevTotalSalesCount : 0),
-    [prevTotalPeriod, prevTotalSalesCount]
+    [prevTotalPeriod, prevTotalSalesCount],
   );
 
   const peakHour = useMemo(() => {
