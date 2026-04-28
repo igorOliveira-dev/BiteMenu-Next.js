@@ -20,7 +20,18 @@ function getContrastTextColor(hex) {
   return yiq >= 128 ? "black" : "white";
 }
 
-export default function CartDrawer({ menu, open, onClose, translucidToUse, grayToUse, foregroundToUse, bgColor, isOpen }) {
+export default function CartDrawer({
+  menu,
+  open,
+  onClose,
+  translucidToUse,
+  grayToUse,
+  foregroundToUse,
+  bgColor,
+  isOpen,
+  ownerPhone,
+  ownerRole,
+}) {
   const cart = useCartContext();
   const confirm = useConfirm();
   const customAlert = useAlert();
@@ -32,7 +43,7 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
   const currentTotalItems = cart.totalItems(menu?.id);
   const currentTotalPrice = cart.totalPrice(menu?.id);
 
-  const [establishmentPhone, setEstablishmentPhone] = useState(null);
+  const establishmentPhone = ownerPhone ?? null;
 
   const DURATION = 300;
   const MOUNT_DELAY = 20;
@@ -68,12 +79,11 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
   const [search, setSearch] = useState("");
   const [isOpenDropdown, setIsOpenDropdown] = useState(false);
 
-  const [ownerRole, setOwnerRole] = useState(null);
-
-  const deliveryZones = normalizeDeliveryZones(menu?.delivery_zones);
+  // delivery_zones é lazy-loaded ao abrir o carrinho (não vem mais na query principal)
+  const [deliveryZones, setDeliveryZones] = useState([]);
   const filteredZones = deliveryZones.filter((zone) => zone.name.toLowerCase().includes(search.toLowerCase()));
 
-  const hasPlusPermissions = ["plus", "pro", "admin"].includes(ownerRole);
+  const hasPlusPermissions = ["plus", "pro", "admin"].includes(ownerRole ?? "free");
   const canUseZones = menu?.delivery_fee_mode === "zones" && hasPlusPermissions && deliveryZones.length > 0;
 
   const serviceOptions = [
@@ -124,50 +134,38 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
       .filter((zone) => zone.name.length > 0);
   }
 
-  function getSelectedDeliveryFee(menu, neighborhood, hasPlusPermissions) {
+  function getSelectedDeliveryFee(menu, neighborhood, hasPlusPermissions, zones) {
     if (!menu) return 0;
 
     const canUseZones = menu.delivery_fee_mode === "zones" && hasPlusPermissions;
 
     if (canUseZones) {
       const normalizedNeighborhood = normalizeText(neighborhood);
-      const zones = normalizeDeliveryZones(menu.delivery_zones);
-
-      const matchedZone = zones.find((zone) => normalizeText(zone.name) === normalizedNeighborhood);
-
+      const matchedZone = (zones || []).find((zone) => normalizeText(zone.name) === normalizedNeighborhood);
       return matchedZone ? normalizeMoney(matchedZone.shipping_fee) : 0;
     }
 
     return normalizeMoney(menu.delivery_fee);
   }
 
+  // Lazy load delivery_zones apenas quando o carrinho abre e o menu usa cobrança por zona
   useEffect(() => {
-    const fetchPhone = async () => {
-      let phone = null;
+    if (!open) return;
+    if (menu?.delivery_fee_mode !== "zones") return;
+    if (!hasPlusPermissions) return;
+    if (deliveryZones.length > 0) return;
 
-      if (menu?.owner_id) {
-        const { data, error } = await supabase.from("profiles").select("phone").eq("id", menu.owner_id).single();
-
-        if (!error && data?.phone) {
-          phone = data.phone;
+    supabase
+      .from("menus")
+      .select("delivery_zones")
+      .eq("id", menu.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.delivery_zones) {
+          setDeliveryZones(normalizeDeliveryZones(data.delivery_zones));
         }
-      }
-
-      // fallback
-      phone = phone || menu?.owner_phone || menu?.phone || null;
-
-      setEstablishmentPhone(phone);
-
-      if (!phone) {
-        console.warn("CartDrawer: nenhum telefone disponível (establishmentPhone/menu.owner_phone/menu.phone)", {
-          establishmentPhone: phone,
-          menuPhone: menu?.phone,
-        });
-      }
-    };
-
-    fetchPhone();
-  }, [menu?.owner_id, menu?.owner_phone, menu?.phone]);
+      });
+  }, [open, menu?.id, menu?.delivery_fee_mode, hasPlusPermissions, deliveryZones.length]);
 
   useEffect(() => {
     if (availableServiceOptions.length === 1) {
@@ -260,31 +258,6 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
     }
   }, [open]);
 
-  // adquirir role do owner para controle de exibição de taxa de entrega por zonas
-  useEffect(() => {
-    const fetchOwnerData = async () => {
-      let phone = null;
-      let role = null;
-
-      if (menu?.owner_id) {
-        const { data, error } = await supabase.from("profiles").select("phone, role").eq("id", menu.owner_id).maybeSingle();
-
-        if (!error && data) {
-          phone = data.phone || null;
-          role = data.role || null;
-        }
-      }
-
-      phone = phone || menu?.owner_phone || menu?.phone || null;
-      role = role || menu?.owner_role || menu?.role || null;
-
-      setEstablishmentPhone(phone);
-      setOwnerRole(role || "free");
-    };
-
-    fetchOwnerData();
-  }, [menu?.owner_id, menu?.owner_phone, menu?.phone, menu?.owner_role, menu?.role]);
-
   // Ler dados no local storage
   useEffect(() => {
     if (!open) return;
@@ -311,9 +284,9 @@ export default function CartDrawer({ menu, open, onClose, translucidToUse, grayT
       return;
     }
 
-    const fee = getSelectedDeliveryFee(menu, costumerNeighborhood, hasPlusPermissions);
+    const fee = getSelectedDeliveryFee(menu, costumerNeighborhood, hasPlusPermissions, deliveryZones);
     setDeliveryFeeValue(fee);
-  }, [menu, selectedService, costumerNeighborhood, hasPlusPermissions]);
+  }, [menu, selectedService, costumerNeighborhood, hasPlusPermissions, deliveryZones]);
 
   const drawerSubtotal = cart.totalPrice(menu?.id) || 0;
   const drawerTotal = drawerSubtotal + (selectedService === "delivery" ? deliveryFeeValue : 0);

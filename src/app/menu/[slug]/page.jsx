@@ -6,6 +6,8 @@ import { cache } from "react";
 import ClientMenu2 from "./ClientMenu2";
 import ClientMenu3 from "./ClientMenu3";
 
+export const revalidate = 300; // 5 minutos — cardápios raramente mudam em alta frequência
+
 const getMenuBySlug = cache(async (slug) => {
   if (!slug) return null;
 
@@ -27,7 +29,6 @@ const getMenuBySlug = cache(async (slug) => {
       services,
       payments,
       delivery_fee,
-      delivery_zones,
       delivery_fee_mode,
       minimum_order_value,
       pix_key,
@@ -45,10 +46,10 @@ const getMenuBySlug = cache(async (slug) => {
           promo_price,
           image_url,
           additionals,
-          visible,
           starred,
           mandatory_additional,
-          additionals_limit
+          additionals_limit,
+          visible
         )
       )
     `,
@@ -101,18 +102,36 @@ export default async function MenuPage({ params, searchParams }) {
 
   if (!menu) return <NotFoundMenu />;
 
+  // Buscar phone e role do dono server-side para evitar 2 queries client-side por visita.
+  // Incluído no cache ISR — não gera egress adicional em visitas repetidas.
+  let ownerPhone = null;
+  let ownerRole = "free";
+
+  if (menu.owner_id) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("phone, role")
+      .eq("id", menu.owner_id)
+      .maybeSingle();
+
+    if (profile) {
+      ownerPhone = profile.phone || null;
+      ownerRole = profile.role || "free";
+    }
+  }
+
   const effectiveLayout = preview_layout || menu.layout;
 
   return (
     <CartProvider>
       {effectiveLayout === "default" ? (
-        <ClientMenu menu={menu} />
+        <ClientMenu menu={menu} ownerPhone={ownerPhone} ownerRole={ownerRole} />
       ) : effectiveLayout === "list" ? (
-        <ClientMenu2 menu={menu} />
+        <ClientMenu2 menu={menu} ownerPhone={ownerPhone} ownerRole={ownerRole} />
       ) : effectiveLayout === "grid" ? (
-        <ClientMenu3 menu={menu} />
+        <ClientMenu3 menu={menu} ownerPhone={ownerPhone} ownerRole={ownerRole} />
       ) : (
-        <ClientMenu menu={menu} />
+        <ClientMenu menu={menu} ownerPhone={ownerPhone} ownerRole={ownerRole} />
       )}
     </CartProvider>
   );

@@ -8,8 +8,7 @@ import { useCartContext } from "@/contexts/CartContext";
 import CartDrawer from "./components/CartDrawer";
 import { useAlert } from "@/providers/AlertProvider";
 import MenuFooter from "./components/MenuFooter";
-import { supabase } from "@/lib/supabaseClient";
-import Loading from "@/components/Loading";
+import { supabaseImg } from "@/lib/imageUtils";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import XButton from "@/components/XButton";
 
@@ -106,7 +105,7 @@ function darkenColor(hex, amount = 0.85) {
   return `rgb(${r},${g},${b})`;
 }
 
-export default function ClientMenu3({ menu }) {
+export default function ClientMenu3({ menu, ownerPhone, ownerRole }) {
   const cart = useCartContext();
   const alert = useAlert();
 
@@ -117,8 +116,7 @@ export default function ClientMenu3({ menu }) {
   const [cartOpen, setCartOpen] = useState(false);
   const cartOpenRef = useRef(cartOpen);
 
-  const [establishmentPhone, setEstablishmentPhone] = useState(null);
-  const [ownerRole, setOwnerRole] = useState(null);
+  const establishmentPhone = ownerPhone ?? null;
 
   const open = useMemo(() => isOpenNow(menu.hours), [menu.hours]);
 
@@ -298,25 +296,6 @@ export default function ClientMenu3({ menu }) {
   const closeHoursModal = () => setHoursModalOpen(false);
 
   useEffect(() => {
-    const fetchOwnerData = async () => {
-      let phone = null;
-      let role = null;
-      if (menu?.owner_id) {
-        const { data, error } = await supabase.from("profiles").select("phone, role").eq("id", menu.owner_id).maybeSingle();
-        if (!error && data) {
-          phone = data.phone || null;
-          role = data.role || null;
-        }
-      }
-      phone = phone || menu?.owner_phone || menu?.phone || null;
-      role = role || menu?.owner_role || menu?.role || null;
-      setEstablishmentPhone(phone);
-      setOwnerRole(role || "free");
-    };
-    fetchOwnerData();
-  }, [menu?.owner_id, menu?.owner_phone, menu?.phone, menu?.owner_role, menu?.role]);
-
-  useEffect(() => {
     cartOpenRef.current = cartOpen;
   }, [cartOpen]);
 
@@ -384,14 +363,6 @@ export default function ClientMenu3({ menu }) {
     );
   }, [filteredCategories]);
 
-  if (ownerRole === null) {
-    return (
-      <div className="flex items-center justify-center h-[100dvh] w-[100dvw]">
-        <Loading />
-      </div>
-    );
-  }
-
   return (
     <>
       <div className="min-h-screen w-full relative pb-18" style={{ backgroundColor: background }}>
@@ -401,13 +372,12 @@ export default function ClientMenu3({ menu }) {
             <>
               <Image
                 alt="Banner do estabelecimento"
-                src={menu.banner_url}
+                src={supabaseImg(menu.banner_url, { width: 1200, quality: 70 })}
                 fill
                 className="object-cover"
                 priority
                 sizes="100vw"
-                quality={55}
-                unoptimized
+              unoptimized
               />
               <div
                 className="absolute inset-0"
@@ -427,12 +397,12 @@ export default function ClientMenu3({ menu }) {
               {isSafeImageUrl(menu.logo_url) && (
                 <Image
                   alt="Logo do estabelecimento"
-                  src={menu.logo_url}
+                  src={supabaseImg(menu.logo_url, { width: 160, quality: 80 })}
                   width={70}
                   height={70}
                   className="w-[52px] h-[52px] sm:w-[70px] sm:h-[70px] object-cover rounded-xl border-2 shrink-0"
-                  quality={55}
-                  unoptimized
+                unoptimized
+                loading="lazy"
                 />
               )}
               <div>
@@ -562,13 +532,13 @@ export default function ClientMenu3({ menu }) {
                     {isSafeImageUrl(it.image_url) && (
                       <div className="w-full aspect-square overflow-hidden">
                         <Image
-                          src={it.image_url}
+                          src={supabaseImg(it.image_url, { width: 400, quality: 75 })}
                           alt={it.name}
                           width={220}
                           height={220}
                           className="w-full h-full object-cover"
-                          quality={55}
-                          unoptimized
+                        unoptimized
+                        loading="lazy"
                         />
                       </div>
                     )}
@@ -635,13 +605,13 @@ export default function ClientMenu3({ menu }) {
                         {isSafeImageUrl(it.image_url) ? (
                           <div className="w-full aspect-square overflow-hidden">
                             <Image
-                              src={it.image_url}
+                              src={supabaseImg(it.image_url, { width: 400, quality: 75 })}
                               alt={it.name}
                               width={200}
                               height={200}
                               className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                              quality={55}
-                              unoptimized
+                            unoptimized
+                            loading="lazy"
                             />
                           </div>
                         ) : (
@@ -787,13 +757,13 @@ export default function ClientMenu3({ menu }) {
                   aria-label="Ampliar imagem do produto"
                 >
                   <Image
-                    src={selectedItem.image_url}
+                    src={supabaseImg(selectedItem.image_url, { width: 240, quality: 80 })}
                     alt={selectedItem.name}
                     width={120}
                     height={120}
                     className="object-cover w-full h-full"
-                    quality={60}
-                    unoptimized
+                  unoptimized
+                  loading="lazy"
                   />
                 </button>
               )}
@@ -970,13 +940,13 @@ export default function ClientMenu3({ menu }) {
               className="w-full h-full block rounded-2xl overflow-hidden shadow-2xl cursor-zoom-out"
             >
               <Image
-                src={selectedItem.image_url}
+                src={supabaseImg(selectedItem.image_url, { width: 900, quality: 85 })}
                 alt={selectedItem.name}
                 width={900}
                 height={900}
                 className="w-full h-full object-cover"
-                quality={85}
-                unoptimized
+              unoptimized
+              loading="lazy"
               />
             </button>
           </div>
@@ -992,6 +962,8 @@ export default function ClientMenu3({ menu }) {
         foregroundToUse={foregroundToUse}
         onClose={closeCartProgrammatically}
         isOpen={open}
+        ownerPhone={ownerPhone}
+        ownerRole={ownerRole}
       />
 
       <MenuFooter

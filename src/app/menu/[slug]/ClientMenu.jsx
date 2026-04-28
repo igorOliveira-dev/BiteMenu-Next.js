@@ -8,8 +8,7 @@ import { useCartContext } from "@/contexts/CartContext";
 import CartDrawer from "./components/CartDrawer";
 import { useAlert } from "@/providers/AlertProvider";
 import MenuFooter from "./components/MenuFooter";
-import { supabase } from "@/lib/supabaseClient";
-import Loading from "@/components/Loading";
+import { supabaseImg } from "@/lib/imageUtils";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import XButton from "@/components/XButton";
 
@@ -115,7 +114,7 @@ function isSafeImageUrl(url) {
   return typeof url === "string" && url.length > 8 && (url.startsWith("http://") || url.startsWith("https://"));
 }
 
-export default function ClientMenu({ menu }) {
+export default function ClientMenu({ menu, ownerPhone, ownerRole }) {
   const cart = useCartContext();
   const alert = useAlert();
 
@@ -127,8 +126,7 @@ export default function ClientMenu({ menu }) {
   const [cartOpen, setCartOpen] = useState(false);
   const cartOpenRef = useRef(cartOpen);
 
-  const [establishmentPhone, setEstablishmentPhone] = useState(null);
-  const [ownerRole, setOwnerRole] = useState(null);
+  const establishmentPhone = ownerPhone ?? null;
 
   const open = useMemo(() => isOpenNow(menu.hours), [menu.hours]);
 
@@ -338,30 +336,6 @@ export default function ClientMenu({ menu }) {
   const closeHoursModal = () => setHoursModalOpen(false);
 
   useEffect(() => {
-    const fetchOwnerData = async () => {
-      let phone = null;
-      let role = null;
-
-      if (menu?.owner_id) {
-        const { data, error } = await supabase.from("profiles").select("phone, role").eq("id", menu.owner_id).maybeSingle();
-
-        if (!error && data) {
-          phone = data.phone || null;
-          role = data.role || null;
-        }
-      }
-
-      phone = phone || menu?.owner_phone || menu?.phone || null;
-      role = role || menu?.owner_role || menu?.role || null;
-
-      setEstablishmentPhone(phone);
-      setOwnerRole(role || "free");
-    };
-
-    fetchOwnerData();
-  }, [menu?.owner_id, menu?.owner_phone, menu?.phone, menu?.owner_role, menu?.role]);
-
-  useEffect(() => {
     cartOpenRef.current = cartOpen;
   }, [cartOpen]);
 
@@ -438,14 +412,6 @@ export default function ClientMenu({ menu }) {
     }, 0);
   }, [filteredCategories]);
 
-  if (ownerRole === null) {
-    return (
-      <div className="flex items-center justify-center h-[100dvh] w-[100dvw]">
-        <Loading />
-      </div>
-    );
-  }
-
   return (
     <>
       <div
@@ -468,13 +434,12 @@ export default function ClientMenu({ menu }) {
           <div className="relative w-full h-[18dvh] sm:h-[25dvh]">
             <Image
               alt="Banner do estabelecimento"
-              src={menu.banner_url}
+              src={supabaseImg(menu.banner_url, { width: 1200, quality: 70 })}
               fill
               className="object-cover"
               priority
               sizes="100vw"
-              quality={55}
-              unoptimized
+            unoptimized
             />
           </div>
         )}
@@ -488,12 +453,12 @@ export default function ClientMenu({ menu }) {
                 <div className="mr-2 sm:mr-4">
                   <Image
                     alt="Logo do estabelecimento"
-                    src={menu.logo_url}
+                    src={supabaseImg(menu.logo_url, { width: 160, quality: 80 })}
                     width={80}
                     height={80}
                     className="w-[45px] xxs:w-[55px] sm:w-[80px] aspect-square object-cover rounded-lg"
-                    quality={55}
-                    unoptimized
+                  unoptimized
+                  loading="lazy"
                   />
                 </div>
               )}
@@ -637,13 +602,13 @@ export default function ClientMenu({ menu }) {
                       {isSafeImageUrl(it.image_url) && (
                         <div className="w-full aspect-square rounded-md mb-2 overflow-hidden">
                           <Image
-                            src={it.image_url}
+                            src={supabaseImg(it.image_url, { width: 400, quality: 75 })}
                             alt={it.name}
                             width={400}
                             height={400}
                             className="w-full h-full object-cover"
-                            quality={55}
-                            unoptimized
+                          unoptimized
+                          loading="lazy"
                           />
                         </div>
                       )}
@@ -715,13 +680,13 @@ export default function ClientMenu({ menu }) {
                               onClick={() => handleItemClick(it)}
                             >
                               <Image
-                                src={it.image_url}
+                                src={supabaseImg(it.image_url, { width: 160, quality: 75 })}
                                 alt={it.name}
                                 width={72}
                                 height={72}
                                 className="object-cover w-full h-full"
-                                quality={55}
-                                unoptimized
+                              unoptimized
+                              loading="lazy"
                               />
                             </div>
                           )}
@@ -850,13 +815,13 @@ export default function ClientMenu({ menu }) {
                   aria-label="Ampliar imagem do produto"
                 >
                   <Image
-                    src={selectedItem.image_url}
+                    src={supabaseImg(selectedItem.image_url, { width: 240, quality: 80 })}
                     alt={selectedItem.name}
                     width={120}
                     height={120}
                     className="object-cover w-full h-full"
-                    quality={60}
-                    unoptimized
+                  unoptimized
+                  loading="lazy"
                   />
                 </button>
               )}
@@ -1044,13 +1009,13 @@ export default function ClientMenu({ menu }) {
               className="w-full h-full block rounded-2xl overflow-hidden shadow-2xl cursor-zoom-out"
             >
               <Image
-                src={selectedItem.image_url}
+                src={supabaseImg(selectedItem.image_url, { width: 900, quality: 85 })}
                 alt={selectedItem.name}
                 width={900}
                 height={900}
                 className="w-full h-full object-cover"
-                quality={85}
-                unoptimized
+              unoptimized
+              loading="lazy"
               />
             </button>
           </div>
@@ -1067,6 +1032,8 @@ export default function ClientMenu({ menu }) {
         foregroundToUse={foregroundToUse}
         onClose={closeCartProgrammatically}
         isOpen={open}
+        ownerPhone={ownerPhone}
+        ownerRole={ownerRole}
       />
 
       {/* Footer */}
