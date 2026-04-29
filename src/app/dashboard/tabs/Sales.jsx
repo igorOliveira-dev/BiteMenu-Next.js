@@ -141,7 +141,7 @@ const Sales = ({ setSelectedTab }) => {
 
     const { data, error } = await supabase
       .from("sales")
-      .select("total, delivery_fee, items_list")
+      .select("total, delivery_fee")
       .eq("menu_id", menu.id)
       .gte("created_at", monthStart.toISOString())
       .lt("created_at", monthEnd.toISOString());
@@ -187,7 +187,7 @@ const Sales = ({ setSelectedTab }) => {
     const fetchMonths = async () => {
       const { data, error } = await supabase
         .from("sales")
-        .select("created_at, items_list, total, delivery_fee")
+        .select("created_at, total, delivery_fee")
         .eq("menu_id", menu.id)
         .order("created_at", { ascending: false });
 

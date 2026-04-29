@@ -39,7 +39,7 @@ const SalesSummary = ({ setSelectedTab, refreshSignal }) => {
     if (!menu?.id) return;
     setLoadingSales(true);
 
-    const { data, error } = await supabase.from("sales").select("items_list").eq("menu_id", menu.id);
+    const { data, error } = await supabase.from("sales").select("total").eq("menu_id", menu.id);
 
     if (error) {
       console.error("Erro ao buscar vendas:", error);
@@ -47,22 +47,7 @@ const SalesSummary = ({ setSelectedTab, refreshSignal }) => {
       return;
     }
 
-    let total = 0;
-    data.forEach((sale) => {
-      let items = [];
-      try {
-        items = typeof sale.items_list === "string" ? JSON.parse(sale.items_list) : sale.items_list || [];
-      } catch {
-        items = [];
-      }
-
-      total += items.reduce((acc, it) => {
-        const qty = Number(it.qty) || 0;
-        const itemBase = (Number(it.price) || 0) * qty;
-        const adds = (it.additionals || []).reduce((sa, a) => sa + (Number(a.price) || 0), 0) * qty;
-        return acc + itemBase + adds;
-      }, 0);
-    });
+    const total = data.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
 
     setSalesCount(data.length);
     setSalesTotal(total);

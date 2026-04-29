@@ -160,12 +160,7 @@ const Orders = ({ setSelectedTab }) => {
   const buildSummaryQuery = (filters) => {
     let q = supabase
       .from("orders")
-      .select(
-        "id,is_paid,service,items_list,updated_at,delivery_fee,payment_method,created_at,costumer_name,costumer_phone",
-        {
-          count: "exact",
-        },
-      )
+      .select("is_paid,service,items_list,updated_at,delivery_fee", { count: "exact" })
       .eq("menu_id", menu.id)
       .order("updated_at", { ascending: false });
 

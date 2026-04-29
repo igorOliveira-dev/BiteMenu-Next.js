@@ -196,7 +196,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
     const { data, error } = await supabase
       .from("sales")
-      .select("created_at, items_list, total, payment_method, service")
+      .select("created_at, total, payment_method, service")
       .eq("menu_id", menu.id)
       .gte("created_at", start.toISOString())
       .lte("created_at", end.toISOString())
@@ -278,7 +278,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
     const { data: prevData } = await supabase
       .from("sales")
-      .select("created_at, items_list, total")
+      .select("created_at, total")
       .eq("menu_id", menu.id)
       .gte("created_at", prevStart.toISOString())
       .lte("created_at", prevEnd.toISOString());
