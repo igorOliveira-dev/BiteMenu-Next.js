@@ -373,7 +373,6 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
               className="object-cover"
               priority
               sizes="100vw"
-            unoptimized
             />
             <div
               className="absolute inset-0"
@@ -396,8 +395,7 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
                 height={90}
                 className="w-[70px] h-[70px] sm:w-[90px] sm:h-[90px] object-cover rounded-full border-4"
                 style={{ borderColor: menu.background_color }}
-              unoptimized
-              loading="lazy"
+                loading="lazy"
               />
             </div>
           )}
@@ -528,8 +526,7 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
                           width={220}
                           height={220}
                           className="w-full h-full object-cover"
-                        unoptimized
-                        loading="lazy"
+                          loading="lazy"
                         />
                       </div>
                     )}
@@ -634,8 +631,7 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
                                 width={96}
                                 height={96}
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                              unoptimized
-                              loading="lazy"
+                                loading="lazy"
                               />
                             </div>
                           )}
@@ -741,8 +737,7 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
                     width={120}
                     height={120}
                     className="object-cover w-full h-full"
-                  unoptimized
-                  loading="lazy"
+                    loading="lazy"
                   />
                 </button>
               )}
@@ -922,8 +917,7 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
                 width={900}
                 height={900}
                 className="w-full h-full object-cover"
-              unoptimized
-              loading="lazy"
+                loading="lazy"
               />
             </button>
           </div>

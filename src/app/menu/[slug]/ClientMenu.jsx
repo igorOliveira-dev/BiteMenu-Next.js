@@ -439,7 +439,6 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole }) {
               className="object-cover"
               priority
               sizes="100vw"
-            unoptimized
             />
           </div>
         )}
@@ -457,8 +456,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole }) {
                     width={80}
                     height={80}
                     className="w-[45px] xxs:w-[55px] sm:w-[80px] aspect-square object-cover rounded-lg"
-                  unoptimized
-                  loading="lazy"
+                    loading="lazy"
                   />
                 </div>
               )}
@@ -607,8 +605,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole }) {
                             width={400}
                             height={400}
                             className="w-full h-full object-cover"
-                          unoptimized
-                          loading="lazy"
+                            loading="lazy"
                           />
                         </div>
                       )}
@@ -685,8 +682,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole }) {
                                 width={72}
                                 height={72}
                                 className="object-cover w-full h-full"
-                              unoptimized
-                              loading="lazy"
+                                loading="lazy"
                               />
                             </div>
                           )}
@@ -820,8 +816,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole }) {
                     width={120}
                     height={120}
                     className="object-cover w-full h-full"
-                  unoptimized
-                  loading="lazy"
+                    loading="lazy"
                   />
                 </button>
               )}
@@ -1014,8 +1009,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole }) {
                 width={900}
                 height={900}
                 className="w-full h-full object-cover"
-              unoptimized
-              loading="lazy"
+                loading="lazy"
               />
             </button>
           </div>
