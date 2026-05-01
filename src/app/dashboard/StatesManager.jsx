@@ -152,7 +152,7 @@ async function uploadAndReplace(file, folderPrefix = "", oldPublicUrl = null) {
 
   // upload
   const { data: uploadData, error: uploadError } = await supabase.storage.from(BUCKET_NAME).upload(path, file, {
-    cacheControl: "3600",
+    cacheControl: "31536000",
     upsert: true,
     contentType: file.type || undefined,
   });

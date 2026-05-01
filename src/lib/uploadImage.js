@@ -22,7 +22,7 @@ export async function uploadItemImage(file, userId, oldImageUrl = null) {
   const filePath = `menu-items/${userId ?? "unknown"}/${crypto.randomUUID()}.webp`;
 
   const { error } = await supabase.storage.from("product-images").upload(filePath, file, {
-    cacheControl: "3600",
+    cacheControl: "31536000",
     upsert: false,
     contentType: "image/webp", // bom deixar explícito
   });
