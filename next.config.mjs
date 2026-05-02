@@ -28,6 +28,7 @@ const withPWA = withPWAInit({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    minimumCacheTTL: 31536000, // 1 ano — evita re-transformações para imagens sem cache header longo
     remotePatterns: [
       {
         protocol: "https",

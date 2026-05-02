@@ -3,7 +3,10 @@
     "allow": [
       "Bash(node -e ' *)",
       "Bash(git show *)",
-      "Bash(xargs grep *)"
+      "Bash(xargs grep *)",
+      "Bash(Get-ChildItem -Path \"c:\\\\vs-code\\\\projetos_principais\\\\bitemenu\" -Recurse -Filter \"next.config.*\")",
+      "Bash(Select-Object -First 20)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx|js|jsx\\)$\")"
     ]
   }
 }
