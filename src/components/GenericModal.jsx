@@ -23,6 +23,7 @@ const GenericModal = ({
   titleColor,
   hoverXButtonColor,
   backdropDontClose,
+  hideClose,
 }) => {
   const resolvedMaxWidth = maxWidth || MODAL_SIZES[size] || MODAL_SIZES.md;
 
@@ -44,9 +45,11 @@ const GenericModal = ({
       >
         <div className="flex items-center justify-between mb-4" style={{ color: titleColor }}>
           <h3 className="font-semibold">{title}</h3>
-          <div onClick={onClose}>
-            <XButton ariaLabel="Fechar" hoverColor={hoverXButtonColor} />
-          </div>
+          {!hideClose && (
+            <div onClick={onClose}>
+              <XButton ariaLabel="Fechar" hoverColor={hoverXButtonColor} />
+            </div>
+          )}
         </div>
         {children}
       </div>

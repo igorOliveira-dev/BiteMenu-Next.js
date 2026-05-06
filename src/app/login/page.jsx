@@ -95,15 +95,6 @@ export default function SignIn() {
             </Link>
           </div>
 
-          <div>
-            <p className="text-center">
-              Ainda não tem uma conta?{" "}
-              <Link href="/register" className="underline text-blue-500 hover:text-blue-700">
-                Registre-se
-              </Link>
-            </p>
-          </div>
-
           <button
             className="w-full py-2 rounded bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-50 flex justify-center items-center max-h-[40px]"
             type="submit"
@@ -118,6 +109,15 @@ export default function SignIn() {
             )}
           </button>
         </form>
+
+        <div>
+          <p className="text-center">
+            Ainda não tem uma conta?{" "}
+            <Link href="/register" className="underline text-blue-500 hover:text-blue-700">
+              Registre-se
+            </Link>
+          </p>
+        </div>
       </div>
       <div className="ml-20 text-center max-w-[500px] hidden lg:block">
         <Image src={LogoMark} alt="Bite Menu" height={130} width={500} />

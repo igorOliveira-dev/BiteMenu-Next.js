@@ -55,7 +55,7 @@ const page = () => {
         </section>
 
         {/* 3. Criadores de Cardápio */}
-        <section className="flex flex-col gap-2 mb-4">
+        <section id="coleta-de-dados" className="flex flex-col gap-2 mb-4 scroll-mt-4">
           <h2 className="default-h2">3. Criadores de Cardápio</h2>
           <p>
             Ao criar uma conta no Bite Menu, coletamos informações necessárias para operação e personalização do serviço:
@@ -380,8 +380,12 @@ const page = () => {
         <section className="flex flex-col gap-2 mb-4">
           <h2 className="default-h2">14. Aceite</h2>
           <p>
-            Ao utilizar o Bite Menu, você concorda com esta Política de Privacidade e com o tratamento dos seus dados
-            pessoais conforme aqui descrito.
+            O aceite desta Política de Privacidade é registrado de forma <strong>explícita</strong> no momento do
+            cadastro ou no primeiro acesso após uma atualização desta política, com data e hora armazenadas para fins de
+            comprovação. Sem esse aceite, não é possível utilizar a plataforma como criador de cardápio.
+          </p>
+          <p>
+            Em caso de atualização relevante desta política, solicitaremos novo aceite ao acessar a plataforma.
           </p>
 
           <p className="text-sm color-gray mt-4">

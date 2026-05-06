@@ -10,6 +10,8 @@ import LogoMark from "../../../public/LogoMarca-sem-fundo.png";
 import LogoTip from "../../../public/LogoTipo-sem-fundo.png";
 import ThemeToggle from "@/components/ThemeToggle";
 import { FaBolt } from "react-icons/fa";
+import PrivacyAcceptModal from "@/components/PrivacyAcceptModal";
+import { CURRENT_PRIVACY_VERSION } from "@/lib/privacy";
 
 export default function DashboardLayoutClient({ children }) {
   const router = useRouter();
@@ -18,6 +20,7 @@ export default function DashboardLayoutClient({ children }) {
   const [ownerPlan, setOwnerPlan] = useState(null);
   const [showPlanButton, setShowPlanButton] = useState(false);
   const [showDownloadButton, setShowDownloadButton] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
   useEffect(() => {
     const checkUserMenu = async () => {
@@ -50,6 +53,14 @@ export default function DashboardLayoutClient({ children }) {
       setOwnerPlan(profile.role);
     }
   }, [user, profile]);
+
+  useEffect(() => {
+    if (loading) return;
+    if (!profile) return;
+    const needsAccept =
+      !profile.privacy_accepted_at || profile.privacy_policy_version !== CURRENT_PRIVACY_VERSION;
+    setShowPrivacyModal(needsAccept);
+  }, [loading, profile]);
 
   useEffect(() => {
     if (window.location.pathname === "/dashboard") {
@@ -134,6 +145,9 @@ export default function DashboardLayoutClient({ children }) {
         </div>
       </header>
       <main>{children}</main>
+      {showPrivacyModal && user && (
+        <PrivacyAcceptModal userId={user.id} onAccepted={() => setShowPrivacyModal(false)} onClose={() => setShowPrivacyModal(false)} />
+      )}
     </>
   );
 }

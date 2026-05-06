@@ -10,6 +10,7 @@ import { supabase } from "@/lib/supabaseClient";
 import Image from "next/image";
 import Link from "next/link";
 import { useAlert } from "@/providers/AlertProvider";
+import { CURRENT_PRIVACY_VERSION } from "@/lib/privacy";
 
 export default function SignUp() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function SignUp() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [phone, setPhone] = useState("");
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const customAlert = useAlert();
@@ -43,6 +45,11 @@ export default function SignUp() {
 
       if (confirmPassword != password) {
         setError("As senhas não coincidem.");
+        return;
+      }
+
+      if (!acceptedPrivacy) {
+        setError("Você precisa aceitar a Política de Privacidade.");
         return;
       }
 
@@ -74,18 +81,39 @@ export default function SignUp() {
       // 3. Cria profile
       const user = data.user;
       if (user) {
-        const { error: insertError } = await supabase
-          .from("profiles")
-          .insert([{ id: user.id, email: user.email, display_name: displayName, phone: fullPhone }]);
+        const nowIso = new Date().toISOString();
+
+        const { error: insertError } = await supabase.from("profiles").insert([
+          {
+            id: user.id,
+            email: user.email,
+            display_name: displayName,
+            phone: fullPhone,
+            privacy_accepted_at: nowIso,
+            privacy_policy_version: CURRENT_PRIVACY_VERSION,
+          },
+        ]);
 
         if (insertError) {
           setError("Erro inesperado. Tente novamente.");
-          console.log(insertError.message);
+          console.error("profiles insert failed:", insertError);
           setLoading(false);
           return;
         }
 
-        // 4. Registro completo
+        // 4. Registra aceite na trilha de auditoria
+        const { error: auditError } = await supabase
+          .from("privacy_acceptances")
+          .insert({ user_id: user.id, policy_version: CURRENT_PRIVACY_VERSION });
+
+        if (auditError) {
+          setError("Erro inesperado. Tente novamente.");
+          console.error("privacy_acceptances insert failed:", auditError);
+          setLoading(false);
+          return;
+        }
+
+        // 5. Registro completo
         router.replace("/getstart");
       }
     } catch (err) {
@@ -165,12 +193,27 @@ export default function SignUp() {
           </div>
 
           <div>
-            <p className="text-center">
-              Já tem uma conta?{" "}
-              <Link href="/login" className="underline text-blue-500 hover:text-blue-700">
-                Faça login
-              </Link>
-            </p>
+            <label className="flex items-center justify-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={acceptedPrivacy}
+                onChange={(e) => setAcceptedPrivacy(e.target.checked)}
+                required
+                className="cursor-pointer"
+              />
+              <span>
+                Li e aceito a{" "}
+                <Link
+                  href="/politica-de-privacidade"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline text-blue-500 hover:text-blue-700"
+                >
+                  Política de Privacidade
+                </Link>
+                .
+              </span>
+            </label>
           </div>
 
           <button
@@ -187,6 +230,14 @@ export default function SignUp() {
             )}
           </button>
         </form>
+        <div>
+          <p className="text-center">
+            Já tem uma conta?{" "}
+            <Link href="/login" className="underline text-blue-500 hover:text-blue-700">
+              Faça login
+            </Link>
+          </p>
+        </div>
       </div>
       <div className="ml-20 text-center max-w-[500px] hidden lg:block">
         <h2 style={{ fontSize: "40px", fontWeight: "bold", transform: "translateY(50%)" }}>Bem vindo ao</h2>
