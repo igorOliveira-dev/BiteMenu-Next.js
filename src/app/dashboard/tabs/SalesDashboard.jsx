@@ -196,7 +196,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
     const { data, error } = await supabase
       .from("sales")
-      .select("created_at, total, payment_method, service")
+      .select("created_at, total, payment_method, service, items_list")
       .eq("menu_id", menu.id)
       .gte("created_at", start.toISOString())
       .lte("created_at", end.toISOString())
