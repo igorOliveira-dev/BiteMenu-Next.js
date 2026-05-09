@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { FaChevronLeft, FaSyncAlt } from "react-icons/fa";
+import { FaChevronLeft, FaSyncAlt, FaDownload } from "react-icons/fa";
 import { Line } from "react-chartjs-2";
 import { Chart as ChartJS, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend } from "chart.js";
 import useMenu from "@/hooks/useMenu";
@@ -118,6 +118,58 @@ function formatLabelDate(dateStr) {
 }
 
 /** -------------------------
+ * Helpers (exportação CSV)
+ * ------------------------ */
+const PAYMENT_LABELS_PT = {
+  cash: "Dinheiro",
+  debit: "Cartão de débito",
+  credit: "Cartão de crédito",
+  pix: "Pix",
+};
+
+const SERVICE_LABELS_PT = {
+  delivery: "Delivery",
+  pickup: "Retirada",
+  dinein: "No estabelecimento",
+  faceToFace: "Presencial",
+};
+
+function formatBRL(n) {
+  return (Number(n) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function formatDateTimeBR(iso) {
+  return new Date(iso).toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function formatItemsList(items) {
+  if (!items || !items.length) return "";
+  return items
+    .map((it) => {
+      const qty = Number(it.qty) || 0;
+      const base = `${qty}x ${it.name || ""}`.trim();
+      const adds = (it.additionals || []).map((a) => `+ ${a.name || ""}`).join(", ");
+      return adds ? `${base} (${adds})` : base;
+    })
+    .join("; ");
+}
+
+function csvEscape(v) {
+  if (v === null || v === undefined) return "";
+  const s = String(v);
+  if (/[;"\n\r]/.test(s)) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
+
+/** -------------------------
  * Componente
  * ------------------------ */
 const SalesDashboard = ({ setSelectedTab }) => {
@@ -196,7 +248,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
     const { data, error } = await supabase
       .from("sales")
-      .select("created_at, total, payment_method, service, items_list")
+      .select("created_at, total, payment_method, service, items_list, delivery_fee, costumer_name, costumer_phone")
       .eq("menu_id", menu.id)
       .gte("created_at", start.toISOString())
       .lte("created_at", end.toISOString())
@@ -292,6 +344,54 @@ const SalesDashboard = ({ setSelectedTab }) => {
   useEffect(() => {
     if (menu?.id) fetchSalesInPeriod();
   }, [menu?.id, fetchSalesInPeriod]);
+
+  const handleExportCSV = useCallback(() => {
+    if (!rawSales || rawSales.length === 0) {
+      customAlert("Nenhuma venda no período selecionado para exportar.", "info");
+      return;
+    }
+
+    const header = [
+      "Data/Hora",
+      "Cliente",
+      "Telefone",
+      "Itens",
+      "Forma de pagamento",
+      "Tipo de serviço",
+      "Taxa de entrega",
+      "Total",
+    ];
+
+    const rows = rawSales.map((s) => [
+      formatDateTimeBR(s.created_at),
+      s.costumer_name || "—",
+      s.costumer_phone ? `="${s.costumer_phone}"` : "—",
+      formatItemsList(s.items_list) || "—",
+      PAYMENT_LABELS_PT[s.payment_method] || s.payment_method || "—",
+      SERVICE_LABELS_PT[s.service] || s.service || "—",
+      formatBRL(s.delivery_fee),
+      formatBRL(s.total),
+    ]);
+
+    const body = [header, ...rows].map((r) => r.map(csvEscape).join(";")).join("\r\n");
+    const csv = "﻿" + body;
+
+    const startStr = singleDate || startDate;
+    const endStr = singleDate || endDate;
+    const filename = `vendas_${startStr}_a_${endStr}.csv`;
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    customAlert("CSV exportado.", "success");
+  }, [rawSales, startDate, endDate, singleDate, customAlert]);
 
   const totalPeriod = useMemo(() => salesData.reduce((sum, d) => sum + d.total, 0), [salesData]);
   const totalSalesCount = useMemo(() => salesData.reduce((sum, d) => sum + d.count, 0), [salesData]);
@@ -454,32 +554,45 @@ const SalesDashboard = ({ setSelectedTab }) => {
     <div className="px-2">
       <div className="w-full max-w-[1100px] min-h-[calc(100dvh-110px)]">
         {/* Header */}
-        <div className="mb-5 mt-2 flex items-start gap-3">
-          <div className="flex items-center gap-3">
+        <div className="mb-5 mt-2 flex items-start justify-between gap-3">
+          <div className="flex items-start">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                className="p-2 rounded hover:bg-[var(--translucid)] transition cursor-pointer"
+                onClick={() => setSelectedTab("sales")}
+                aria-label="Voltar"
+              >
+                <FaChevronLeft />
+              </button>
+
+              <div>
+                <h2 className="font-semibold leading-tight">Dashboard de vendas</h2>
+                <p className="text-sm color-gray">
+                  {formatLabelDate(startDate)} - {formatLabelDate(endDate)} • {granularityLabel}
+                </p>
+              </div>
+            </div>
+
             <button
               type="button"
-              className="p-2 rounded hover:bg-[var(--translucid)] transition cursor-pointer"
-              onClick={() => setSelectedTab("sales")}
-              aria-label="Voltar"
+              className="p-2 rounded hover:bg-white/5 transition opacity-90 hover:opacity-100"
+              onClick={fetchSalesInPeriod}
+              aria-label="Atualizar"
             >
-              <FaChevronLeft />
+              <FaSyncAlt />
             </button>
-
-            <div>
-              <h2 className="font-semibold leading-tight">Dashboard de vendas</h2>
-              <p className="text-sm color-gray">
-                {formatLabelDate(startDate)} - {formatLabelDate(endDate)} • {granularityLabel}
-              </p>
-            </div>
           </div>
 
           <button
             type="button"
-            className="p-2 rounded hover:bg-white/5 transition opacity-90 hover:opacity-100"
-            onClick={fetchSalesInPeriod}
-            aria-label="Atualizar"
+            className="p-2 rounded-lg flex items-center gap-2 bg-[var(--low-gray)] border border-[var(--translucid)] hover:bg-white/5 transition opacity-90 hover:opacity-100 text-sm"
+            onClick={handleExportCSV}
+            aria-label="Exportar CSV"
+            title="Exportar CSV"
           >
-            <FaSyncAlt />
+            <FaDownload />
+            <span className="hidden xs:inline">Exportar CSV</span>
           </button>
         </div>
 

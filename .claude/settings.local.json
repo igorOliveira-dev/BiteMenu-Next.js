@@ -15,7 +15,9 @@
       "Bash(git -C \"c:/vs-code/projetos_principais/bitemenu\" log --all --oneline)",
       "Bash(git -C \"c:/vs-code/projetos_principais/bitemenu\" show 8959bbc --name-only)",
       "Bash(git -C \"c:/vs-code/projetos_principais/bitemenu\" log --all --source --grep=\"schema\\\\|table\\\\|migration\\\\|profile\\\\|CREATE\" --oneline)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(Get-ChildItem -Path \"c:\\\\vs-code\\\\projetos_principais\\\\bitemenu\" -Directory)",
+      "Bash(Select-Object Name)"
     ]
   }
 }
