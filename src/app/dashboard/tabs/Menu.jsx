@@ -14,7 +14,6 @@ import { uploadItemImage } from "@/lib/uploadImage";
 import { fileToWebp } from "@/app/utils/imageToWebp";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import useUser from "@/hooks/useUser";
-import SuggestLamp from "@/components/SuggestLamp";
 
 function getContrastTextColor(hex) {
   const cleanHex = (hex || "").replace("#", "");
@@ -349,13 +348,6 @@ const Menu = (props) => {
   return (
     <>
       <div className="px-2 lg:grid">
-        <div
-          className={`lg:hidden ${
-            changedFields.length > 0 ? "bottom-69" : "bottom-32"
-          } fixed bottom-4 right-4 flex items-center space-x-2 z-100`}
-        >
-          <SuggestLamp lampColor={getContrastTextColor(backgroundColor)} userEmail={user?.email} />
-        </div>
         <button
           onClick={() => setSelectedTab("configMenu")}
           className={`flex lg:hidden cursor-pointer ${
