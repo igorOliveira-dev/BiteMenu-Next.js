@@ -31,11 +31,11 @@ export default function SurveyBanner() {
   return (
     <Link
       href="/dashboard/pesquisa-de-perfil"
-      className="max-w-[100%] flex flex-col xs:flex-row items-start xs:items-center gap-3 px-4 py-3 mb-3 max-w-3xl bg-translucid border-2 border-[var(--translucid)] rounded-2xl hover:opacity-90 transition"
+      className="max-w-[100%] flex flex-col xs:flex-row items-center gap-3 px-2 sm:px-4 py-2 my-2 max-w-3xl bg-translucid border-2 border-[var(--translucid)] rounded-2xl hover:opacity-90 transition"
     >
-      <FaClipboardList className="text-lg shrink-0" />
-      <span className="text-sm flex-1">Responda essa pesquisa rápida e ajude o Bite Menu</span>
-      <span className="px-4 py-1.5 rounded-lg border-2 border-[var(--translucid)] bg-translucid hover:opacity-80 text-sm shrink-0">
+      <FaClipboardList className="text-lg shrink-0 hidden xs:block" />
+      <span className="text-xs flex-1">Responda uma pesquisa rápida e ajude o Bite Menu</span>
+      <span className="w-full xs:w-auto text-center text-xs px-4 py-1.5 rounded-lg border-2 border-[var(--translucid)] bg-translucid hover:opacity-80 text-sm shrink-0">
         Responder
       </span>
     </Link>
