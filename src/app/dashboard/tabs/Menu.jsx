@@ -14,6 +14,7 @@ import { uploadItemImage } from "@/lib/uploadImage";
 import { fileToWebp } from "@/app/utils/imageToWebp";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import useUser from "@/hooks/useUser";
+import SurveyBanner from "@/components/CustomBanner";
 
 function getContrastTextColor(hex) {
   const cleanHex = (hex || "").replace("#", "");
@@ -357,96 +358,100 @@ const Menu = (props) => {
           <FiSettings className="text-xl mr-2" />
           Configurar cardápio
         </button>
-        <div
-          className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[812px] min-h-[calc(100dvh-110px)]"
-          style={{ backgroundColor }}
-        >
-          {/* Banner */}
-          <div className="relative w-full max-w-full h-[18dvh] sm:h-[25dvh]">
-            {bannerPreview ? (
-              <img alt="Preview do banner" src={bannerPreview} className="object-cover w-full h-full cursor-pointer" />
-            ) : (
-              <div
-                className="bg-translucid relative w-full h-full rounded-lg flex items-center justify-center"
-                style={{
-                  backgroundColor: getContrastTextColor(backgroundColor) === "white" ? "#ffffff30" : "#00000030",
-                  color: getContrastTextColor(backgroundColor) === "white" ? "#ccc" : "#555",
-                }}
-              >
-                <p>Banner</p>
-              </div>
-            )}
-            <button
-              onClick={() => {
-                setTempBannerFile(bannerFile ?? null);
-                setBannerModalOpen(true);
-              }}
-              className="cursor-pointer absolute inset-0 flex items-end justify-end opacity-75 hover:opacity-100 transition"
-            >
-              <div className="border border-2 border-gray-500 m-2 p-1.5 rounded-xl bg-translucid-50 transition">
-                <FaCamera className="text-2xl text-white" />
-              </div>
-            </button>
-          </div>
-
-          <div className="flex items-center py-4 px-4">
-            {/* Logo */}
-            <div className="relative w-full max-w-[80px] aspect-[1/1]">
-              {logoPreview ? (
-                <img
-                  alt="Preview da logo"
-                  src={logoPreview}
-                  className="object-cover rounded-lg cursor-pointer w-full h-full"
-                />
+        <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[812px] min-h-[calc(100dvh-110px)]">
+          {/* ESPAÇO PARA BANNER!!! */}
+          <SurveyBanner />
+          <div style={{ backgroundColor }}>
+            {/* Banner */}
+            <div className="relative w-full max-w-full h-[18dvh] sm:h-[25dvh]">
+              {bannerPreview ? (
+                <img alt="Preview do banner" src={bannerPreview} className="object-cover w-full h-full cursor-pointer" />
               ) : (
                 <div
-                  className="bg-translucid relative w-full max-w-[80px] aspect-[1/1] rounded-lg flex items-center justify-center"
+                  className="bg-translucid relative w-full h-full rounded-lg flex items-center justify-center"
                   style={{
                     backgroundColor: getContrastTextColor(backgroundColor) === "white" ? "#ffffff30" : "#00000030",
                     color: getContrastTextColor(backgroundColor) === "white" ? "#ccc" : "#555",
                   }}
                 >
-                  <p>Logo</p>
+                  <p>Banner</p>
                 </div>
               )}
               <button
                 onClick={() => {
-                  setTempLogoFile(logoFile ?? null);
-                  setLogoModalOpen(true);
+                  setTempBannerFile(bannerFile ?? null);
+                  setBannerModalOpen(true);
                 }}
                 className="cursor-pointer absolute inset-0 flex items-end justify-end opacity-75 hover:opacity-100 transition"
               >
-                <div className="border border-2 border-gray-500 m-1 p-1.5 rounded-xl bg-translucid-50 transition">
-                  <FaCamera className="text-sm text-white" />
+                <div className="border border-2 border-gray-500 m-2 p-1.5 rounded-xl bg-translucid-50 transition">
+                  <FaCamera className="text-2xl text-white" />
                 </div>
               </button>
             </div>
 
-            {/* Título */}
-            <h1 className="text-xl md:text-2xl font-bold ml-4" style={{ color: titleColor }}>
-              {title}
-            </h1>
-            <button
-              onClick={() => setTitleModalOpen(true)}
-              className="border border-2 border-gray-500 p-2 cursor-pointer bg-translucid-50 rounded-lg ml-2 opacity-75 hover:opacity-100"
+            <div className="flex items-center py-4 px-4">
+              {/* Logo */}
+              <div className="relative w-full max-w-[80px] aspect-[1/1]">
+                {logoPreview ? (
+                  <img
+                    alt="Preview da logo"
+                    src={logoPreview}
+                    className="object-cover rounded-lg cursor-pointer w-full h-full"
+                  />
+                ) : (
+                  <div
+                    className="bg-translucid relative w-full max-w-[80px] aspect-[1/1] rounded-lg flex items-center justify-center"
+                    style={{
+                      backgroundColor: getContrastTextColor(backgroundColor) === "white" ? "#ffffff30" : "#00000030",
+                      color: getContrastTextColor(backgroundColor) === "white" ? "#ccc" : "#555",
+                    }}
+                  >
+                    <p>Logo</p>
+                  </div>
+                )}
+                <button
+                  onClick={() => {
+                    setTempLogoFile(logoFile ?? null);
+                    setLogoModalOpen(true);
+                  }}
+                  className="cursor-pointer absolute inset-0 flex items-end justify-end opacity-75 hover:opacity-100 transition"
+                >
+                  <div className="border border-2 border-gray-500 m-1 p-1.5 rounded-xl bg-translucid-50 transition">
+                    <FaCamera className="text-sm text-white" />
+                  </div>
+                </button>
+              </div>
+
+              {/* Título */}
+              <h1 className="text-xl md:text-2xl font-bold ml-4" style={{ color: titleColor }}>
+                {title}
+              </h1>
+              <button
+                onClick={() => setTitleModalOpen(true)}
+                className="border border-2 border-gray-500 p-2 cursor-pointer bg-translucid-50 rounded-lg ml-2 opacity-75 hover:opacity-100"
+              >
+                <FaPen className="font-xl text-white opacity-75" />
+              </button>
+            </div>
+
+            <p
+              className="px-4 flex items-center mb-2"
+              style={{ color: getContrastTextColor(backgroundColor) === "white" ? "#ccc" : "#333" }}
             >
-              <FaPen className="font-xl text-white opacity-75" />
-            </button>
+              <FaMapMarkerAlt className="inline mr-2" />
+              {address}
+            </p>
+
+            <p
+              className="mx-4 text-sm"
+              style={{ color: getContrastTextColor(backgroundColor) === "white" ? "#ccc" : "#333" }}
+            >
+              {description}
+            </p>
+
+            <MenuItems backgroundColor={backgroundColor} detailsColor={detailsColor} changedFields={changedFields} />
           </div>
-
-          <p
-            className="px-4 flex items-center mb-2"
-            style={{ color: getContrastTextColor(backgroundColor) === "white" ? "#ccc" : "#333" }}
-          >
-            <FaMapMarkerAlt className="inline mr-2" />
-            {address}
-          </p>
-
-          <p className="mx-4 text-sm" style={{ color: getContrastTextColor(backgroundColor) === "white" ? "#ccc" : "#333" }}>
-            {description}
-          </p>
-
-          <MenuItems backgroundColor={backgroundColor} detailsColor={detailsColor} changedFields={changedFields} />
         </div>
 
         {/* Sidebar */}
