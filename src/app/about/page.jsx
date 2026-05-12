@@ -97,9 +97,9 @@ const page = () => {
           <h2 className="xs:font-semibold">Gerenciar pedidos e gerenciar vendas</h2>
           <p>
             Se você receber os pedidos pelo site, poderá finalizá-los e registrar como venda para ter controle de entrada de
-            cada mês. Além disso, nos planos Plus e Pro você ganha acesso à um dashboard de vendas mais complexo para filtrar
-            datas, ver dias e horários de cada venda, analisar entrada de caixa e ticket médio por período, ver número de
-            vendas, etc.
+            cada mês. Além disso, no plano Pro você ganha acesso à um dashboard de vendas mais complexo para filtrar datas,
+            ver dias e horários de cada venda, analisar entrada de caixa e ticket médio por período, ver número de vendas,
+            etc.
           </p>
         </section>
       </div>
