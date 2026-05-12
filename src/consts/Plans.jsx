@@ -18,7 +18,7 @@ export const plans = [
       "200 Itens",
       "20 Categorias",
       "Dashboard de vendas",
-      "Aplicativo Bite Menu",
+      "Relatório de vendas",
       "Prioridade de suporte",
     ],
     price: "44,90",
