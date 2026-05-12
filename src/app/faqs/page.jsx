@@ -2,157 +2,91 @@
 
 import Return from "@/components/Return";
 import React, { useState } from "react";
+import { FaPlus, FaMinus } from "react-icons/fa";
 
 const faqs = [
   {
-    question: "O que é o Bite Menu?",
-    answer: (
-      <>
-        O <strong>Bite Menu</strong> é uma plataforma para criar, gerenciar e compartilhar cardápios digitais de forma
-        simples e gratuita. Ideal para restaurantes, bares, lanchonetes e qualquer estabelecimento que queira modernizar sua
-        experiência de atendimento.
-      </>
-    ),
+    q: "É realmente grátis?",
+    a: "Sim. O plano Free não expira. Você pode usar o Bite Menu de graça para sempre, com cardápio digital, controle de pedidos e de vendas inclusos.",
   },
   {
-    question: "O Bite Menu é realmente gratuito?",
-    answer: (
-      <>
-        Sim! Existe um plano totalmente gratuito com recursos essenciais para criar, customizar e compartilhar seu cardápio
-        digital. No plano gratuito você também pode receber pedidos pelo WhatsApp e gerenciar pedidos e vendas pelo site.
-        Também oferecemos planos pagos (<strong>Plus</strong> e <strong>Pro</strong>) com funcionalidades extras como
-        dashboard de vendas e limite maior de categorias e itens. <br />
-        <a
-          href="https://www.bitemenu.com.br/pricing"
-          target="_blank"
-          className="underline text-blue-500 hover:text-blue-700"
-        >
-          Veja os planos disponíveis aqui.
-        </a>
-      </>
-    ),
+    q: "Preciso de cartão de crédito para começar?",
+    a: "Não. Você cria sua conta e seu cardápio sem informar nenhum dado de pagamento. Só pede cartão se você decidir assinar um plano pago.",
   },
   {
-    question: "Preciso baixar algum aplicativo?",
-    answer:
-      "Não! O Bite Menu funciona 100% online. Você pode acessar seu painel pelo navegador de qualquer celular, tablet ou computador, sem precisar instalar nada.",
+    q: "Como o cliente faz o pagamento?",
+    a: "O Bite Menu monta e envia o pedido pelo WhatsApp. O pagamento é combinado direto entre você e o cliente — dinheiro, Pix, maquininha ou o que vocês preferirem. Você não paga taxa por venda para a gente.",
   },
   {
-    question: "Como compartilho meu cardápio?",
-    answer:
-      "Cada cardápio criado no Bite Menu gera automaticamente um link único. Você pode copiar esse link e divulgar nas redes sociais, no WhatsApp ou até imprimir um QR Code para deixar nas mesas do seu estabelecimento.",
+    q: "Como recebo o pedido na prática?",
+    a: "O cliente escolhe os produtos no seu cardápio, preenche informações necessárias e finaliza. O WhatsApp dele abre com o pedido todo formatado e envia direto para o seu número. Você só confirma e prepara.",
   },
   {
-    question: "Como recebo os pedidos dos meus clientes?",
-    answer:
-      "Você pode configurar o recebimento de pedidos pelo WhatsApp, direto do seu link do Bite Menu. Também é possível receber e gerenciar pedidos pelo site.",
+    q: "Meus clientes precisam baixar algum aplicativo?",
+    a: "Não. Seu cliente abre o cardápio direto no navegador, pelo link ou QR Code. Funciona em qualquer celular, sem instalação.",
   },
   {
-    question: "Posso personalizar o visual do meu cardápio?",
-    answer:
-      "Sim! Você pode escolher cores, enviar logotipo, banners e imagens de produtos para deixar seu cardápio com a identidade do seu negócio.",
+    q: "Funciona pro meu tipo de negócio?",
+    a: "Sim. Lanchonete, pizzaria, hamburgueria, açaiteria, restaurante, doceria, food truck, marmitaria — qualquer estabelecimento que vende comida ou bebida usa o Bite Menu. Você adapta categorias, produtos e visual ao seu negócio.",
   },
   {
-    question: "Como faço para alterar ou cancelar meu plano?",
-    answer: (
-      <>
-        Se você estiver no plano gratuito, basta acessar o{" "}
-        <a
-          href="https://www.bitemenu.com.br/pricing"
-          target="_blank"
-          className="underline text-blue-500 hover:text-blue-700"
-        >
-          painel de planos
-        </a>{" "}
-        e escolher o plano desejado. Se você estiver usando outro plano e quiser trocar, primeiro cancele o plano atual e
-        depois faça a troca de plano. Você pode cancelar quando quiser — sua conta volta automaticamente ao plano gratuito e
-        seus dados permanecem salvos.
-      </>
-    ),
+    q: "Tem limite de pedidos?",
+    a: "Não. Você pode receber quantos pedidos quiser, em qualquer plano. O que muda entre os planos é a quantidade de itens e categorias do cardápio e funcionalidades extra, não o volume de vendas.",
   },
   {
-    question: "O Bite Menu oferece teste grátis?",
-    answer: (
-      <>
-        Sim! O Bite Menu pode oferecer um período de teste gratuito em alguns planos, como 7 dias no plano{" "}
-        <strong>Pro</strong>. Durante esse período, você pode usar todas as funcionalidades do plano sem cobrança.
-        <br />
-        <br />
-        Após o término do teste, a assinatura é convertida automaticamente em paga e o valor do plano passa a ser cobrado
-        mensalmente. Caso não queira continuar, você pode cancelar a qualquer momento antes do fim do período de teste.
-      </>
-    ),
+    q: "Quanto tempo leva para deixar o cardápio pronto?",
+    a: "Menos de 5 minutos. Você cria a conta, responde algumas perguntas rápidas sobre o estabelecimento e já pode começar a adicionar produtos.",
   },
   {
-    question: "Preciso cancelar o teste grátis?",
-    answer: (
-      <>
-        Sim. Caso você não queira continuar com o plano pago após o período de teste, é necessário cancelar antes do fim do
-        teste gratuito.
-        <br />
-        <br />
-        Caso contrário, a assinatura será iniciada automaticamente e o valor do plano será cobrado mensalmente.
-      </>
-    ),
-  },
-  {
-    question: "Como entro em contato com o suporte?",
-    answer: (
-      <>
-        Caso precise de ajuda, entre em contato pela{" "}
-        <a href="https://www.bitemenu.com.br/support" className="underline text-blue-500 hover:text-blue-700">
-          página de suporte
-        </a>
-        .
-      </>
-    ),
+    q: "Posso cancelar quando quiser?",
+    a: "Sim. Não há fidelidade. Você pode cancelar a assinatura paga a qualquer momento direto no seu dashboard.",
   },
 ];
 
 const page = () => {
-  const [openIndex, setOpenIndex] = useState(null);
-
-  const toggleFAQ = (index) => {
-    setOpenIndex(openIndex === index ? null : index);
-  };
+  const [openFaq, setOpenFaq] = useState(null);
 
   return (
     <div className="flex flex-col items-center">
-      <div className="fixed bg-translucid rounded-lg backdrop-blur-2xl top-2 left-2">
+      <div className="fixed bg-translucid rounded-lg backdrop-blur-2xl top-2 left-2 z-50">
         <Return />
       </div>
-      <div className="max-w-3xl flex flex-col gap-4 p-4 w-full pt-12">
-        <h1 className="default-h1">Perguntas Frequentes (FAQ)</h1>
+      <section className="px-4 py-16 sm:py-20 w-full">
+        <div className="mx-auto max-w-3xl">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl sm:text-4xl font-extrabold">Perguntas que todo dono de restaurante faz</h2>
+          </div>
 
-        <div className="divide-y divide-gray-200">
-          {faqs.map((faq, index) => (
-            <div key={index} className="py-3">
-              <button className="flex justify-between items-center w-full text-left" onClick={() => toggleFAQ(index)}>
-                <span className="font-medium">{faq.question}</span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className={`h-5 w-5 transition-transform duration-300 ${openIndex === index ? "rotate-180" : "rotate-0"}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+          <div className="flex flex-col gap-3">
+            {faqs.map((item, i) => {
+              const isOpen = openFaq === i;
+              return (
+                <div
+                  key={item.q}
+                  className="rounded-xl border border-[var(--translucid)] bg-[var(--translucid)] overflow-hidden"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              <div
-                className={`overflow-hidden transition-all duration-300 ${
-                  openIndex === index ? "max-h-96 mt-2" : "max-h-0"
-                }`}
-              >
-                <p className="color-gray text-sm leading-relaxed">{faq.answer}</p>
-              </div>
-            </div>
-          ))}
+                  <button
+                    onClick={() => setOpenFaq(isOpen ? null : i)}
+                    className="w-full flex items-center justify-between gap-4 p-4 sm:p-5 text-left cursor-pointer"
+                  >
+                    <span className="font-semibold text-base sm:text-lg">{item.q}</span>
+                    <span className="text-[var(--red)] shrink-0">{isOpen ? <FaMinus /> : <FaPlus />}</span>
+                  </button>
+                  <div
+                    className={`grid transition-all duration-300 ${
+                      isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                    }`}
+                  >
+                    <div className="overflow-hidden">
+                      <p className="px-4 sm:px-5 pb-5 text-sm sm:text-base text-[var(--gray)] leading-relaxed">{item.a}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-
-        <p className="text-sm color-gray mt-6 text-center">Última atualização: 25/03/2026</p>
-      </div>
+      </section>
     </div>
   );
 };

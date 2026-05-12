@@ -9,7 +9,7 @@ export async function GET() {
     { url: "https://bitemenu.com.br/politica-de-privacidade", lastmod: "2026-04-21" },
     { url: "https://bitemenu.com.br/pricing", lastmod: "2026-03-25" },
     { url: "https://bitemenu.com.br/about", lastmod: "2025-10-29" },
-    { url: "https://bitemenu.com.br/faqs", lastmod: "2026-03-25" },
+    { url: "https://bitemenu.com.br/faqs", lastmod: "2026-05-12" },
   ];
 
   // 🌐 Busca todos os menus registrados
