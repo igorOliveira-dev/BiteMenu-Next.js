@@ -81,6 +81,7 @@ const page = () => {
         <ul className="docs-paragraph list-disc pl-6">
           <li>Limite de 50 itens no cardápio</li>
           <li>Limite de 10 categorias no cardápio</li>
+          <li>Diferentes layouts para o cardápio</li>
           <li>Função de preços promocionais, onde é possível definir descontos e ofertas em seus produtos</li>
           <li>Lista de produtos em destaque, os produtos selecionados aparecerão em destaque no começo do cardápio</li>
           <li>Opção de taxas de entrega diferentes para cada bairro</li>
@@ -97,6 +98,7 @@ const page = () => {
           <li>Limite de 200 itens no cardápio</li>
           <li>Limite de 20 categorias no cardápio</li>
           <li>Dashboard de vendas para análise de desempenho</li>
+          <li>Download de relatório de vendas em CSV</li>
           <li>Acesso ao aplicativo Bite Menu para não precisar acessar o site</li>
           <li>Prioridade no suporte</li>
         </ul>
