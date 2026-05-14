@@ -12,6 +12,8 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { FaBolt } from "react-icons/fa";
 import PrivacyAcceptModal from "@/components/PrivacyAcceptModal";
 import { CURRENT_PRIVACY_VERSION } from "@/lib/privacy";
+import useStrategicPlanModal from "@/hooks/useStrategicPlanModal";
+import UpdatePlanModal from "@/app/dashboard/tabs/components/UpdatePlanModal";
 
 export default function DashboardLayoutClient({ children }) {
   const router = useRouter();
@@ -21,6 +23,7 @@ export default function DashboardLayoutClient({ children }) {
   const [showPlanButton, setShowPlanButton] = useState(false);
   const [showDownloadButton, setShowDownloadButton] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const strategicModal = useStrategicPlanModal(profile);
 
   useEffect(() => {
     const checkUserMenu = async () => {
@@ -147,6 +150,15 @@ export default function DashboardLayoutClient({ children }) {
       <main>{children}</main>
       {showPrivacyModal && user && (
         <PrivacyAcceptModal userId={user.id} onAccepted={() => setShowPrivacyModal(false)} onClose={() => setShowPrivacyModal(false)} />
+      )}
+      {strategicModal.show && !showPrivacyModal && (
+        <UpdatePlanModal
+          title={strategicModal.suggestion.title}
+          text={strategicModal.suggestion.text}
+          ctaText={strategicModal.suggestion.ctaText}
+          onClose={strategicModal.onClose}
+          onCta={strategicModal.onCta}
+        />
       )}
     </>
   );

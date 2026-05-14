@@ -17,6 +17,7 @@ import GenericModal from "@/components/GenericModal";
 import QrCodeModal from "./tabs/components/menu/QrCodeModal";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import { FaUtensils, FaShoppingBag, FaChartLine, FaUser, FaLifeRing, FaShieldAlt } from "react-icons/fa";
+import { trackAction } from "@/utils/userActions";
 
 const Dashboard = ({
   menuState: externalMenuState,
@@ -80,6 +81,16 @@ const Dashboard = ({
   useEffect(() => {
     if (menu?.slug) setSlug(menu.slug);
   }, [menu?.slug]);
+
+  useEffect(() => {
+    const map = {
+      menu: "accessedMenu",
+      orders: "accessedOrders",
+      sales: "accessedSales",
+      configMenu: "accessedConfigMenu",
+    };
+    if (map[selectedTab]) trackAction(map[selectedTab]);
+  }, [selectedTab]);
 
   // Modal de compartilhamento (hamburger) fecha com botão "Voltar"
   useModalBackHandler(isOpen, () => setIsOpen(false));

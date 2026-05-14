@@ -17,7 +17,11 @@
       "Bash(git -C \"c:/vs-code/projetos_principais/bitemenu\" log --all --source --grep=\"schema\\\\|table\\\\|migration\\\\|profile\\\\|CREATE\" --oneline)",
       "Bash(npm run *)",
       "Bash(Get-ChildItem -Path \"c:\\\\vs-code\\\\projetos_principais\\\\bitemenu\" -Directory)",
-      "Bash(Select-Object Name)"
+      "Bash(Select-Object Name)",
+      "Read(//c/Users/igorv/.claude/projects/c--vs-code-projetos-principais-bitemenu/memory//**)",
+      "Read(//c/Users/igorv/.claude/projects/c--vs-code-projetos-principais-bitemenu/memory/**)",
+      "Bash(Get-ChildItem -Path \"C:\\\\vs-code\\\\projetos_principais\\\\bitemenu\\\\app\" -Recurse -Filter \"*dashboard*\")",
+      "Bash(Select-Object -Property FullName)"
     ]
   }
 }

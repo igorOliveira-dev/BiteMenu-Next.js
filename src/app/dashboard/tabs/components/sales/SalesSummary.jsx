@@ -7,6 +7,7 @@ import Loading from "@/components/Loading";
 import { supabase } from "@/lib/supabaseClient";
 import { FaBolt } from "react-icons/fa";
 import UpdatePlanModal from "../UpdatePlanModal";
+import { trackAction } from "@/utils/userActions";
 
 const SalesSummary = ({ setSelectedTab, refreshSignal }) => {
   const alert = useAlert();
@@ -86,9 +87,14 @@ const SalesSummary = ({ setSelectedTab, refreshSignal }) => {
       </div>
 
       <button
-        onClick={() =>
-          ownerRole === "free" || ownerRole === "plus" ? setShowUpdatePlanModal(true) : setSelectedTab("salesDashboard")
-        }
+        onClick={() => {
+          if (ownerRole === "free" || ownerRole === "plus") {
+            trackAction("triedSalesDashboard");
+            setShowUpdatePlanModal(true);
+          } else {
+            setSelectedTab("salesDashboard");
+          }
+        }}
         className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-blue-700"
       >
         Ver dashboard completo
