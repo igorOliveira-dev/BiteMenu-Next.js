@@ -4,6 +4,8 @@
 
 O Bite Menu é um SaaS que permite a qualquer estabelecimento criar um cardápio digital profissional em minutos — sem precisar de conhecimento técnico. O cliente acessa pelo link ou QR code, faz o pedido, e o restaurante recebe diretamente no WhatsApp.
 
+Hoje, **mais de 300 estabelecimentos** já usam o Bite Menu no dia a dia.
+
 🌐 [bitemenu.com.br](https://www.bitemenu.com.br)
 
 ---
@@ -53,18 +55,3 @@ Para ver mais detalhes dos planos, acesse: [Documentação de planos](https://ww
 - [Stripe](https://stripe.com/) — assinaturas e pagamentos
 - [Tailwind CSS](https://tailwindcss.com/)
 - PWA via `next-pwa`
-
----
-
-## Rodando localmente
-
-```bash
-npm install
-npm run dev
-```
-
-Acesse [http://localhost:3000](http://localhost:3000).
-
----
-
-> Projeto solo. Mais de 300 estabelecimentos ativos.
