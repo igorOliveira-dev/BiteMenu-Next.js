@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Bite Menu
 
-## Getting Started
+**Cardápio digital para restaurantes, integrado com WhatsApp.**
 
-First, run the development server:
+O Bite Menu é um SaaS que permite a qualquer estabelecimento criar um cardápio digital profissional em minutos — sem precisar de conhecimento técnico. O cliente acessa pelo link ou QR code, faz o pedido, e o restaurante recebe diretamente no WhatsApp.
+
+🌐 [bitemenu.com.br](https://www.bitemenu.com.br)
+
+---
+
+## Como funciona
+
+1. O dono do estabelecimento cria uma conta e monta o cardápio (categorias, produtos, imagens, preços)
+2. O Bite Menu gera um link exclusivo e um QR code para o cardápio
+3. O cliente acessa pelo celular, navega pelo cardápio e faz o pedido
+4. O pedido é enviado automaticamente para o WhatsApp do restaurante
+
+Sem instalação de app. Funciona em qualquer navegador mobile.
+
+---
+
+## Funcionalidades
+
+- Criação de cardápio com categorias, produtos, imagens e preços
+- Personalização de cores, logo e banner
+- Link exclusivo e QR code por estabelecimento
+- Recebimento de pedidos via WhatsApp
+- Painel de pedidos e controle de vendas
+- Atualização instantânea do cardápio
+- Zonas de entrega (planos pagos)
+- Analytics de vendas (plano Pro)
+
+---
+
+## Planos
+
+| Plano | Preço        | Produtos | Categorias |
+| ----- | ------------ | -------- | ---------- |
+| Free  | Grátis       | 20       | 4          |
+| Plus  | R$ 24,90/mês | 50       | 10         |
+| Pro   | R$ 44,90/mês | 200      | 20         |
+
+Sem taxas por transação. O pagamento acontece diretamente entre o cliente e o estabelecimento.
+
+Para ver mais detalhes dos planos, acesse: [Documentação de planos](https://www.bitemenu.com.br/docs/planos)
+
+---
+
+## Tech Stack
+
+- [Next.js](https://nextjs.org/) (App Router)
+- [Supabase](https://supabase.com/) — banco de dados, autenticação e storage
+- [Stripe](https://stripe.com/) — assinaturas e pagamentos
+- [Tailwind CSS](https://tailwindcss.com/)
+- PWA via `next-pwa`
+
+---
+
+## Rodando localmente
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Acesse [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+> Projeto solo. Mais de 300 estabelecimentos ativos.

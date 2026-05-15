@@ -26,7 +26,8 @@
       "Bash(Get-ChildItem -Path \"c:\\\\vs-code\\\\projetos_principais\\\\bitemenu\\\\src\\\\app\\\\dashboard\" -Recurse -Directory)",
       "Bash(Select-Object FullName)",
       "PowerShell(npx eslint src/app/dashboard/tabs/Account.jsx)",
-      "PowerShell(npm run lint)"
+      "PowerShell(npm run lint)",
+      "WebFetch(domain:www.bitemenu.com.br)"
     ]
   }
 }
