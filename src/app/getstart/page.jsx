@@ -8,6 +8,9 @@ import useUser from "@/hooks/useUser";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import { COLOR_PALETTES } from "@/consts/colorPallets";
+import { COUNTRY_TO_CURRENCY } from "@/consts/currencies";
+import { getCurrencySymbol } from "@/lib/formatCurrency";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { fileToWebp } from "@/app/utils/imageToWebp";
 import { useAlert } from "@/providers/AlertProvider";
 
@@ -110,6 +113,7 @@ export default function GetStart() {
   const bannerInputRef = useRef(null);
 
   const [creatingMenu, setCreatingMenu] = useState(false);
+  const [previewCurrency, setPreviewCurrency] = useState("BRL");
   const { user, loading } = useUser();
   const router = useRouter();
   const confirm = useConfirm();
@@ -120,6 +124,28 @@ export default function GetStart() {
   const [backgroundColor, setBackgroundColor] = useState(DEFAULT_BACKGROUND);
   const [titleColor, setTitleColor] = useState(DEFAULT_TITLE);
   const [detailsColor, setDetailsColor] = useState(DEFAULT_DETAILS);
+
+  // Detecta a moeda pelo país do telefone cadastrado (só para o preview).
+  // A mesma detecção é refeita no submit ao criar o cardápio.
+  useEffect(() => {
+    if (!user?.id) return;
+    let active = true;
+    (async () => {
+      try {
+        const { data: profile } = await supabase.from("profiles").select("phone").eq("id", user.id).single();
+        if (!active || !profile?.phone) return;
+        const pn = parsePhoneNumberFromString("+" + String(profile.phone).replace(/^\+/, ""));
+        if (pn?.country && COUNTRY_TO_CURRENCY[pn.country]) {
+          setPreviewCurrency(COUNTRY_TO_CURRENCY[pn.country]);
+        }
+      } catch {
+        // mantém BRL como padrão
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [user?.id]);
 
   // ✅ gera/revoga preview do logo
   useEffect(() => {
@@ -309,6 +335,21 @@ export default function GetStart() {
 
       const safeTitle = rawName || "Meu estabelecimento";
 
+      // Moeda inicial detectada pelo país do telefone cadastrado (DDI).
+      // É só uma sugestão — o usuário pode trocar nas configurações.
+      let detectedCurrency = "BRL";
+      try {
+        const { data: profile } = await supabase.from("profiles").select("phone").eq("id", user.id).single();
+        if (profile?.phone) {
+          const pn = parsePhoneNumberFromString("+" + String(profile.phone).replace(/^\+/, ""));
+          if (pn?.country && COUNTRY_TO_CURRENCY[pn.country]) {
+            detectedCurrency = COUNTRY_TO_CURRENCY[pn.country];
+          }
+        }
+      } catch (e) {
+        console.warn("Não foi possível detectar a moeda pelo telefone:", e);
+      }
+
       const insertObj = {
         owner_id: user.id,
         slug,
@@ -320,6 +361,7 @@ export default function GetStart() {
         background_color: backgroundColor || null,
         title_color: titleColor || null,
         details_color: detailsColor || null,
+        currency: detectedCurrency,
       };
 
       const MAX_INSERT_ATTEMPTS = 5;
@@ -637,7 +679,7 @@ export default function GetStart() {
                         className="text-2xl font-semibold transition-colors duration-500 ease-in-out"
                         style={{ color: getContrastTextColor(backgroundColor) }}
                       >
-                        R${item.price}
+                        {getCurrencySymbol(previewCurrency)} {item.price}
                       </p>
 
                       <button

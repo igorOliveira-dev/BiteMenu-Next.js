@@ -208,6 +208,7 @@ export default function StatesManager({
     "minimumOrderValue",
     "pixKey",
     "hours",
+    "currency",
   ],
   onSave,
   defaultFolderPrefix,
@@ -273,6 +274,7 @@ export default function StatesManager({
           : "",
       pixKey: menuFromServer.pix_key ?? null,
       hours: menuFromServer.hours ?? null,
+      currency: menuFromServer.currency ?? "BRL",
     };
     setServerState(normalized);
     setLocalState(normalized);
@@ -400,6 +402,7 @@ export default function StatesManager({
 
         pix_key: localState.pixKey || null,
         hours: localState.hours,
+        currency: localState.currency || "BRL",
       };
 
       // folderPrefix: use prop defaultFolderPrefix se fornecida, senão userId/menuId
@@ -478,6 +481,7 @@ export default function StatesManager({
               : "",
           pixKey: data.pix_key ?? null,
           hours: data.hours ?? null,
+          currency: data.currency ?? "BRL",
         };
 
         setServerState(normalized);
@@ -510,6 +514,7 @@ export default function StatesManager({
           deliveryFee: data.delivery_fee ?? 0,
           pixKey: data.pix_key ?? null,
           hours: data.hours ?? null,
+          currency: data.currency ?? "BRL",
           minimumOrderValue:
             data.minimum_order_value !== undefined && data.minimum_order_value !== null
               ? String(data.minimum_order_value)
@@ -621,6 +626,7 @@ export default function StatesManager({
                     deliveryFeeMode: "Modo do frete",
                     pixKey: "Chave PIX",
                     hours: "Horário",
+                    currency: "Moeda",
                   };
 
                   const displayName = displayNameMap[key] || key;

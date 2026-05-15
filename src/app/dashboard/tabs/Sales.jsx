@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import useMenu from "@/hooks/useMenu";
+import { formatCurrency } from "@/lib/formatCurrency";
 import { useAlert } from "@/providers/AlertProvider";
 import { supabase } from "@/lib/supabaseClient";
 import Loading from "@/components/Loading";
@@ -369,7 +370,7 @@ const Sales = ({ setSelectedTab }) => {
                     <p className="text-sm color-gray text-start mt-0.5">{group.count} venda(s)</p>
                   </div>
                   <div className="text-right flex items-center gap-3">
-                    <p className="font-bold">R$ {Number(group.total || 0).toFixed(2)}</p>
+                    <p className="font-bold">{formatCurrency(group.total || 0, menu?.currency)}</p>
                     {isOpen ? <FaChevronDown /> : <FaChevronRight />}
                   </div>
                 </button>
@@ -443,7 +444,7 @@ const Sales = ({ setSelectedTab }) => {
                               </div>
                               <div className="text-right shrink-0">
                                 <p className="text-xs uppercase tracking-wide color-gray">Total</p>
-                                <p className="text-2xl font-bold">R$ {computeSaleTotal(sale).toFixed(2)}</p>
+                                <p className="text-2xl font-bold">{formatCurrency(computeSaleTotal(sale), menu?.currency)}</p>
                               </div>
                             </div>
 
@@ -483,7 +484,7 @@ const Sales = ({ setSelectedTab }) => {
                                 <ul>
                                   {sale.items_list?.slice(0, 4).map((item, i) => (
                                     <li key={i} className="line-clamp-1 color-gray">
-                                      {item.qty}x {item.name} — R$ {(item.price * item.qty).toFixed(2)}
+                                      {item.qty}x {item.name} — {formatCurrency(item.price * item.qty, menu?.currency)}
                                     </li>
                                   ))}
                                   {sale.items_list?.length > 4 && (
@@ -696,7 +697,7 @@ const Sales = ({ setSelectedTab }) => {
                         <div className="col-span-2 sm:col-span-1">
                           <label className="mb-1 block text-sm color-gray">Subtotal</label>
                           <div className="rounded-xl border border-translucid px-3 py-3 text-sm font-medium">
-                            R$ {((Number(item.qty) || 0) * (Number(item.price) || 0)).toFixed(2)}
+                            {formatCurrency((Number(item.qty) || 0) * (Number(item.price) || 0), menu?.currency)}
                           </div>
                         </div>
                       </div>
@@ -811,10 +812,10 @@ const Sales = ({ setSelectedTab }) => {
                 <div className="mb-3 flex items-center justify-between gap-4">
                   <div>
                     <p className="text-xs uppercase tracking-wide color-gray">Total da venda</p>
-                    <p className="text-2xl font-bold">R$ {modalTotal.toFixed(2)}</p>
+                    <p className="text-2xl font-bold">{formatCurrency(modalTotal, menu?.currency)}</p>
                   </div>
                   {modalFee > 0 && (
-                    <p className="text-sm color-gray">Taxa de entrega: R$ {modalFee.toFixed(2)}</p>
+                    <p className="text-sm color-gray">Taxa de entrega: {formatCurrency(modalFee, menu?.currency)}</p>
                   )}
                 </div>
 

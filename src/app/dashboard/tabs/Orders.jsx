@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useMemo } from "react";
 import useMenu from "@/hooks/useMenu";
+import { formatCurrency } from "@/lib/formatCurrency";
 import { useAlert } from "@/providers/AlertProvider";
 import { supabase } from "@/lib/supabaseClient";
 import Loading from "@/components/Loading";
@@ -558,7 +559,7 @@ const Orders = ({ setSelectedTab }) => {
 
                             <div className="text-right">
                               <p className="text-xs uppercase tracking-wide color-gray">Total</p>
-                              <p className="text-2xl font-bold">R$ {total.toFixed(2)}</p>
+                              <p className="text-2xl font-bold">{formatCurrency(total, menu?.currency)}</p>
                             </div>
                           </div>
 
@@ -580,8 +581,8 @@ const Orders = ({ setSelectedTab }) => {
                               </span>
                               {order.service === "delivery" ? (
                                 <>
-                                  <span>Subtotal: R$ {subtotal.toFixed(2)}</span>
-                                  <span>Entrega: R$ {deliveryFee.toFixed(2)}</span>
+                                  <span>Subtotal: {formatCurrency(subtotal, menu?.currency)}</span>
+                                  <span>Entrega: {formatCurrency(deliveryFee, menu?.currency)}</span>
                                 </>
                               ) : null}
                             </div>
@@ -697,18 +698,22 @@ const Orders = ({ setSelectedTab }) => {
                 <div className="grid grid-cols-1 gap-2">
                   <div className="rounded-2xl border border-translucid bg-translucid p-3">
                     <p className="text-xs color-gray">Total pago</p>
-                    <p className="text-xl font-semibold text-green-500">R$ {summary.paidTotal.toFixed(2)}</p>
+                    <p className="text-xl font-semibold text-green-500">
+                      {formatCurrency(summary.paidTotal, menu?.currency)}
+                    </p>
                   </div>
 
                   <div className="rounded-2xl border border-translucid bg-translucid p-3">
                     <p className="text-xs color-gray">Total pendente</p>
-                    <p className="text-xl font-semibold text-yellow-400">R$ {summary.pendingTotal.toFixed(2)}</p>
+                    <p className="text-xl font-semibold text-yellow-400">
+                      {formatCurrency(summary.pendingTotal, menu?.currency)}
+                    </p>
                     <p className="mt-1 text-xs color-gray">Pendentes: {summary.pendingCount}</p>
                   </div>
 
                   <div className="rounded-2xl border border-translucid bg-translucid p-3">
                     <p className="text-xs color-gray">Ticket médio</p>
-                    <p className="text-lg font-semibold">R$ {summary.avgTicket.toFixed(2)}</p>
+                    <p className="text-lg font-semibold">{formatCurrency(summary.avgTicket, menu?.currency)}</p>
                   </div>
                 </div>
               </>
@@ -899,7 +904,7 @@ const Orders = ({ setSelectedTab }) => {
                         <div className="col-span-2 sm:col-span-1">
                           <label className="mb-1 block text-sm color-gray">Subtotal</label>
                           <div className="rounded-xl border border-translucid px-3 py-3 text-sm font-medium">
-                            R$ {((Number(item.qty) || 0) * (Number(item.price) || 0)).toFixed(2)}
+                            {formatCurrency((Number(item.qty) || 0) * (Number(item.price) || 0), menu?.currency)}
                           </div>
                         </div>
                       </div>
@@ -1016,7 +1021,9 @@ const Orders = ({ setSelectedTab }) => {
                 <div className="mb-3 flex items-center justify-between gap-4">
                   <div>
                     <p className="text-xs uppercase tracking-wide color-gray">Total do pedido</p>
-                    <p className="text-2xl font-bold">R$ {computeTotalWithDelivery(selectedOrder).toFixed(2)}</p>
+                    <p className="text-2xl font-bold">
+                      {formatCurrency(computeTotalWithDelivery(selectedOrder), menu?.currency)}
+                    </p>
                   </div>
                 </div>
 

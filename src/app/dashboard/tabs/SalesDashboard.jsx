@@ -5,6 +5,7 @@ import { FaChevronLeft, FaSyncAlt, FaDownload } from "react-icons/fa";
 import { Line } from "react-chartjs-2";
 import { Chart as ChartJS, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend } from "chart.js";
 import useMenu from "@/hooks/useMenu";
+import { formatCurrency, getCurrencySymbol } from "@/lib/formatCurrency";
 import { supabase } from "@/lib/supabaseClient";
 import Loading from "@/components/Loading";
 import { useAlert } from "@/providers/AlertProvider";
@@ -134,8 +135,8 @@ const SERVICE_LABELS_PT = {
   faceToFace: "Presencial",
 };
 
-function formatBRL(n) {
-  return (Number(n) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+function formatBRL(n, currency) {
+  return formatCurrency(n, currency);
 }
 
 function formatDateTimeBR(iso) {
@@ -369,8 +370,8 @@ const SalesDashboard = ({ setSelectedTab }) => {
       formatItemsList(s.items_list) || "—",
       PAYMENT_LABELS_PT[s.payment_method] || s.payment_method || "—",
       SERVICE_LABELS_PT[s.service] || s.service || "—",
-      formatBRL(s.delivery_fee),
-      formatBRL(s.total),
+      formatBRL(s.delivery_fee, menu?.currency),
+      formatBRL(s.total, menu?.currency),
     ]);
 
     const body = [header, ...rows].map((r) => r.map(csvEscape).join(";")).join("\r\n");
@@ -441,11 +442,13 @@ const SalesDashboard = ({ setSelectedTab }) => {
     );
   }
 
+  const currencySymbol = getCurrencySymbol(menu?.currency);
+
   const chartData = {
     labels: salesData.map((d) => d.label),
     datasets: [
       {
-        label: "Vendas (R$)",
+        label: `Vendas (${currencySymbol})`,
         data: salesData.map((d) => d.total), // número (melhor)
         borderColor: "#4f46e5",
         backgroundColor: "rgba(79, 70, 229, 0.15)",
@@ -489,8 +492,8 @@ const SalesDashboard = ({ setSelectedTab }) => {
       tooltip: {
         callbacks: {
           label: (context) => {
-            if (String(context.dataset.label).includes("R$")) {
-              return `R$ ${Number(context.parsed.y || 0).toFixed(2)}`;
+            if (context.datasetIndex === 0) {
+              return formatCurrency(context.parsed.y || 0, menu?.currency);
             }
             return `${context.parsed.y} vendas`;
           },
@@ -501,7 +504,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
       y: {
         beginAtZero: true,
         position: "left",
-        ticks: { callback: (v) => `R$ ${v}` },
+        ticks: { callback: (v) => `${currencySymbol} ${v}` },
         grid: { color: "rgba(255,255,255,0.06)" },
       },
       y1: {
@@ -644,7 +647,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
         <div className="grid gap-4 sm:grid-cols-3 mb-4">
           <div className="bg-translucid border border-translucid rounded-lg p-4 flex flex-col">
             <p className="text-sm color-gray">Total no período</p>
-            <p className="text-blue-500 text-2xl font-bold mt-1">R$ {totalPeriod.toFixed(2)}</p>
+            <p className="text-blue-500 text-2xl font-bold mt-1">{formatCurrency(totalPeriod, menu?.currency)}</p>
             {renderVariation(calcVariation(totalPeriod, prevTotalPeriod))}
           </div>
 
@@ -656,7 +659,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
           <div className="bg-translucid border border-translucid rounded-lg p-4 flex flex-col">
             <p className="text-sm color-gray">Ticket médio</p>
-            <p className="text-2xl font-bold mt-1">R$ {averageTicket.toFixed(2)}</p>
+            <p className="text-2xl font-bold mt-1">{formatCurrency(averageTicket, menu?.currency)}</p>
             {renderVariation(calcVariation(averageTicket, prevAverageTicket))}
           </div>
         </div>

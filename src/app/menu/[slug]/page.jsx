@@ -34,6 +34,7 @@ const getMenuBySlug = cache(async (slug) => {
       pix_key,
       orders,
       layout,
+      currency,
       categories (
         id,
         name,

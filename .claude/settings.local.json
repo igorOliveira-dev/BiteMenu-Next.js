@@ -27,7 +27,11 @@
       "Bash(Select-Object FullName)",
       "PowerShell(npx eslint src/app/dashboard/tabs/Account.jsx)",
       "PowerShell(npm run lint)",
-      "WebFetch(domain:www.bitemenu.com.br)"
+      "WebFetch(domain:www.bitemenu.com.br)",
+      "Bash(Get-ChildItem -Path \"c:\\\\vs-code\\\\projetos_principais\\\\bitemenu\\\\src\" -Recurse -Filter \"*.tsx\" -o -Filter \"*.ts\")",
+      "Bash(Select-Object -First 30)",
+      "Bash(Format-Table -Property FullName)",
+      "Bash(npx eslint *)"
     ]
   }
 }

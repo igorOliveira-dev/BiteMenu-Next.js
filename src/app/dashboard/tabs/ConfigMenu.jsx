@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   FaChevronLeft,
   FaLightbulb,
@@ -16,6 +17,8 @@ import {
   FaCheck,
 } from "react-icons/fa";
 import { COLOR_PALETTES } from "@/consts/colorPallets";
+import { CURRENCIES } from "@/consts/currencies";
+import { getCurrencySymbol } from "@/lib/formatCurrency";
 import useMenu from "@/hooks/useMenu";
 import Loading from "@/components/Loading";
 import { useAlert } from "@/providers/AlertProvider";
@@ -170,6 +173,110 @@ function TextInput({ className = "", ...props }) {
   );
 }
 
+function CurrencySelect({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [rect, setRect] = useState(null);
+  const btnRef = useRef(null);
+
+  const selected = CURRENCIES.find((c) => c.code === value) || CURRENCIES[0];
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return CURRENCIES;
+    return CURRENCIES.filter((c) => c.label.toLowerCase().includes(q) || c.code.toLowerCase().includes(q));
+  }, [query]);
+
+  const closeMenu = () => {
+    setOpen(false);
+    setQuery("");
+  };
+
+  const openMenu = () => {
+    if (btnRef.current) setRect(btnRef.current.getBoundingClientRect());
+    setOpen(true);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const reposition = () => {
+      if (btnRef.current) setRect(btnRef.current.getBoundingClientRect());
+    };
+    window.addEventListener("resize", reposition);
+    window.addEventListener("scroll", reposition, true);
+    return () => {
+      window.removeEventListener("resize", reposition);
+      window.removeEventListener("scroll", reposition, true);
+    };
+  }, [open]);
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        onClick={() => (open ? closeMenu() : openMenu())}
+        className={cx(
+          "flex h-12 w-full items-center justify-between rounded-2xl border bg-translucid border-[var(--translucid)] px-4 text-[15px] text-[var(--foreground)] outline-none transition",
+          "focus:border-red-500/70",
+        )}
+      >
+        <span>
+          {selected.symbol} — {selected.label}
+        </span>
+        <span className="text-xs opacity-70">▼</span>
+      </button>
+
+      {open &&
+        rect &&
+        createPortal(
+          <>
+            {/* overlay para fechar ao clicar fora */}
+            <div className="fixed inset-0 z-[998]" onMouseDown={closeMenu} />
+            <div
+              className="fixed z-[999] overflow-hidden rounded-2xl border border-[var(--low-gray)] bg-[var(--background)] text-[var(--foreground)] shadow-xl"
+              style={{ left: rect.left, top: rect.bottom + 6, width: rect.width }}
+            >
+              <input
+                type="text"
+                autoFocus
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar moeda..."
+                className="h-11 w-full border-b border-[var(--low-gray)] bg-[var(--background)] px-4 text-[15px] text-[var(--foreground)] outline-none"
+              />
+              <ul className="max-h-60 overflow-y-auto">
+                {filtered.length === 0 ? (
+                  <li className="px-4 py-3 text-sm opacity-70">Nenhuma moeda encontrada</li>
+                ) : (
+                  filtered.map((c) => (
+                    <li key={c.code}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onChange(c.code);
+                          closeMenu();
+                        }}
+                        className={cx(
+                          "flex w-full items-center gap-2 px-4 py-3 text-left text-[15px] transition hover:bg-[var(--translucid)]",
+                          c.code === value ? "bg-[var(--translucid)] font-semibold" : "",
+                        )}
+                      >
+                        <span className="w-12 shrink-0">{c.symbol}</span>
+                        <span>{c.label}</span>
+                      </button>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </div>
+          </>,
+          document.body,
+        )}
+    </>
+  );
+}
+
 function TextArea({ className = "", ...props }) {
   return (
     <textarea
@@ -290,6 +397,7 @@ const ConfigMenu = (props) => {
   const [deliveryZonesLocal, setDeliveryZonesLocal] = useState(normalizeDeliveryZones(menu?.delivery_zones));
   const [deliveryFeeModeLocal, setDeliveryFeeModeLocal] = useState(menu?.delivery_fee_mode ?? null);
   const [pixKeyLocal, setPixKeyLocal] = useState(menu?.pix_key ?? "");
+  const [currencyLocal, setCurrencyLocal] = useState(menu?.currency ?? "BRL");
   const [hoursLocal, setHoursLocal] = useState(() => normalizeHours(menu?.hours));
   const [minimumOrderValueLocal, setMinimumOrderValueLocal] = useState(
     menu?.minimum_order_value !== undefined && menu?.minimum_order_value !== null ? String(menu.minimum_order_value) : "",
@@ -338,6 +446,11 @@ const ConfigMenu = (props) => {
 
   const pixKey = usingExternal ? (externalState?.pixKey ?? "") : pixKeyLocal;
   const setPixKey = usingExternal ? (value) => externalSetState((p) => ({ ...p, pixKey: value })) : setPixKeyLocal;
+
+  const currency = usingExternal ? (externalState?.currency ?? "BRL") : currencyLocal;
+  const setCurrency = usingExternal
+    ? (value) => externalSetState((p) => ({ ...p, currency: value }))
+    : setCurrencyLocal;
 
   const minimumOrderValue = usingExternal ? (externalState?.minimumOrderValue ?? "") : minimumOrderValueLocal;
   const setMinimumOrderValue = usingExternal
@@ -396,6 +509,7 @@ const ConfigMenu = (props) => {
           : "",
       );
       setPixKeyLocal(menu?.pix_key ?? "");
+      setCurrencyLocal(menu?.currency ?? "BRL");
       safeSetHours(menu?.hours);
     }
 
@@ -768,6 +882,13 @@ const ConfigMenu = (props) => {
                 </div>
                 <div className="text-right text-xs ">{(slug || "").length}/20</div>
               </Field>
+
+              <Field
+                label="Moeda"
+                hint="Define apenas o símbolo exibido antes dos valores (no cardápio, pedidos e vendas). Não converte valores."
+              >
+                <CurrencySelect value={currency || "BRL"} onChange={setCurrency} />
+              </Field>
             </div>
           </SectionCard>
 
@@ -816,7 +937,7 @@ const ConfigMenu = (props) => {
 
                   {deliveryFeeMode === "fixed" && (
                     <div className="mt-4 max-w-md">
-                      <Field label="Taxa de entrega (R$)">
+                      <Field label={`Taxa de entrega (${getCurrencySymbol(currency)})`}>
                         <TextInput
                           type="number"
                           min="0"
@@ -876,7 +997,9 @@ const ConfigMenu = (props) => {
                                   </div>
 
                                   <div>
-                                    <label className="mb-2 block text-xs uppercase tracking-[0.14em] ">Taxa (R$)</label>
+                                    <label className="mb-2 block text-xs uppercase tracking-[0.14em] ">
+                                      Taxa ({getCurrencySymbol(currency)})
+                                    </label>
                                     <TextInput
                                       type="number"
                                       min="0"
@@ -910,7 +1033,7 @@ const ConfigMenu = (props) => {
             </div>
             <div className="mt-4">
               <Field
-                label="Valor mínimo de pedido (R$)"
+                label={`Valor mínimo de pedido (${getCurrencySymbol(currency)})`}
                 hint="Pedidos abaixo desse valor não poderão ser finalizados pelo cliente."
               >
                 {hasPlusPermissions ? (

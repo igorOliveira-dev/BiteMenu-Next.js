@@ -6,6 +6,7 @@ import Image from "next/image";
 import GenericModal from "@/components/GenericModal";
 import { useCartContext } from "@/contexts/CartContext";
 import CartDrawer from "./components/CartDrawer";
+import { formatCurrency } from "@/lib/formatCurrency";
 import { useAlert } from "@/providers/AlertProvider";
 import MenuFooter from "./components/MenuFooter";
 import { supabaseImg } from "@/lib/imageUtils";
@@ -540,15 +541,15 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
                       {it.promo_price && canShowPromoPrice ? (
                         <div className="mt-2">
                           <span className="text-xs line-through" style={{ color: grayToUse }}>
-                            {Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                            {formatCurrency(it.price, menu?.currency)}
                           </span>
                           <p className="font-bold text-base" style={{ color: foregroundToUse }}>
-                            {Number(it.promo_price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                            {formatCurrency(it.promo_price, menu?.currency)}
                           </p>
                         </div>
                       ) : (
                         <p className="font-bold text-base mt-2" style={{ color: foregroundToUse }}>
-                          {Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                          {formatCurrency(it.price, menu?.currency)}
                         </p>
                       )}
                     </div>
@@ -607,15 +608,15 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
                             {it.promo_price && canShowPromoPrice ? (
                               <div className="flex items-baseline gap-2">
                                 <span className="text-xs line-through" style={{ color: grayToUse }}>
-                                  {Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                                  {formatCurrency(it.price, menu?.currency)}
                                 </span>
                                 <span className="font-bold text-lg" style={{ color: foregroundToUse }}>
-                                  {Number(it.promo_price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                                  {formatCurrency(it.promo_price, menu?.currency)}
                                 </span>
                               </div>
                             ) : (
                               <span className="font-bold text-lg" style={{ color: foregroundToUse }}>
-                                {Number(it.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                                {formatCurrency(it.price, menu?.currency)}
                               </span>
                             )}
                           </div>
@@ -767,17 +768,17 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
                 {selectedItem.promo_price && canShowPromoPrice ? (
                   <div className="flex flex-col">
                     <span className="text-xs font-semibold line-through" style={{ color: grayToUse }}>
-                      {Number(selectedItem.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                      {formatCurrency(selectedItem.price, menu?.currency)}
                     </span>
                     <span className="text-2xl font-semibold" style={{ color: foregroundToUse }}>
-                      {Number(selectedItem.promo_price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                      {formatCurrency(selectedItem.promo_price, menu?.currency)}
                     </span>
                   </div>
                 ) : (
                   <>
                     {selectedItem.price ? (
                       <span className="text-3xl font-semibold" style={{ color: foregroundToUse }}>
-                        {Number(selectedItem.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                        {formatCurrency(selectedItem.price, menu?.currency)}
                       </span>
                     ) : null}
                   </>
@@ -834,7 +835,7 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
                             <div className="font-medium truncate">
                               {a.name}{" "}
                               <span className="text-sm" style={{ color: grayToUse }}>
-                                {Number(a.price).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                                {formatCurrency(a.price, menu?.currency)}
                               </span>
                             </div>
                           </button>
@@ -860,7 +861,7 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
                     <FaPlus />
                   </button>
                   <span style={{ color: grayToUse }}>
-                    ({totalPrice.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })})
+                    ({formatCurrency(totalPrice, menu?.currency)})
                   </span>
                 </div>
                 <button

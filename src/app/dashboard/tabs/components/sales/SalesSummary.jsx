@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import useMenu from "@/hooks/useMenu";
+import { formatCurrency } from "@/lib/formatCurrency";
 import { useAlert } from "@/providers/AlertProvider";
 import Loading from "@/components/Loading";
 import { supabase } from "@/lib/supabaseClient";
@@ -78,11 +79,11 @@ const SalesSummary = ({ setSelectedTab, refreshSignal }) => {
         </div>
         <div className="rounded-2xl border border-translucid bg-translucid p-3">
           <p className="text-xs uppercase tracking-wide color-gray">Total faturado</p>
-          <p className="text-2xl font-bold mt-1">R$ {salesTotal.toFixed(2)}</p>
+          <p className="text-2xl font-bold mt-1">{formatCurrency(salesTotal, menu?.currency)}</p>
         </div>
         <div className="rounded-2xl border border-translucid bg-translucid p-3">
           <p className="text-xs uppercase tracking-wide color-gray">Ticket médio</p>
-          <p className="text-2xl font-bold mt-1">R$ {averageTicket.toFixed(2)}</p>
+          <p className="text-2xl font-bold mt-1">{formatCurrency(averageTicket, menu?.currency)}</p>
         </div>
       </div>
 

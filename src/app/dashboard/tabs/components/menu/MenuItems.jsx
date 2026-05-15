@@ -21,6 +21,7 @@ import GenericModal from "@/components/GenericModal";
 import { useCartContext } from "@/contexts/CartContext";
 import { supabase } from "@/lib/supabaseClient";
 import useMenu from "@/hooks/useMenu";
+import { formatCurrency, getCurrencySymbol } from "@/lib/formatCurrency";
 import { FaPen, FaTrash, FaChevronRight, FaChevronUp, FaChevronDown } from "react-icons/fa";
 import { useAlert } from "@/providers/AlertProvider";
 import { useConfirm } from "@/providers/ConfirmProvider";
@@ -52,6 +53,7 @@ function SortableMenuItem({
   grayToUse,
   canShowPromoPrice,
   getContrastTextColor,
+  currency,
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
@@ -118,26 +120,15 @@ function SortableMenuItem({
               {item.promo_price && canShowPromoPrice ? (
                 <div>
                   <span className="text-sm line-through" style={{ color: grayToUse }}>
-                    {Number(item.price).toLocaleString("pt-BR", {
-                      style: "currency",
-                      currency: "BRL",
-                    })}
+                    {formatCurrency(item.price, currency)}
                   </span>
                   <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
-                    {Number(item.promo_price).toLocaleString("pt-BR", {
-                      style: "currency",
-                      currency: "BRL",
-                    })}
+                    {formatCurrency(item.promo_price, currency)}
                   </div>
                 </div>
               ) : (
                 <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
-                  {item.price
-                    ? Number(item.price).toLocaleString("pt-BR", {
-                        style: "currency",
-                        currency: "BRL",
-                      })
-                    : "-"}
+                  {item.price ? formatCurrency(item.price, currency) : "-"}
                 </div>
               )}
             </div>
@@ -1360,24 +1351,15 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                       {it.promo_price && canShowPromoPrice ? (
                         <div>
                           <span className="text-sm line-through" style={{ color: grayToUse }}>
-                            {Number(it.price).toLocaleString("pt-BR", {
-                              style: "currency",
-                              currency: "BRL",
-                            })}
+                            {formatCurrency(it.price, menu?.currency)}
                           </span>
                           <div className="font-bold text-2xl" style={{ color: foregroundToUse }}>
-                            {Number(it.promo_price).toLocaleString("pt-BR", {
-                              style: "currency",
-                              currency: "BRL",
-                            })}
+                            {formatCurrency(it.promo_price, menu?.currency)}
                           </div>
                         </div>
                       ) : (
                         <div className="font-bold text-2xl" style={{ color: foregroundToUse }}>
-                          {Number(it.price).toLocaleString("pt-BR", {
-                            style: "currency",
-                            currency: "BRL",
-                          })}
+                          {formatCurrency(it.price, menu?.currency)}
                         </div>
                       )}
                       <button
@@ -1454,6 +1436,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                       grayToUse={grayToUse}
                       canShowPromoPrice={canShowPromoPrice}
                       getContrastTextColor={getContrastTextColor}
+                      currency={menu?.currency}
                     />
                   ))}
                 </div>
@@ -1589,7 +1572,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                     <label className="block mb-2 w-[75px] xs:w-[100px]">
                       <div className="text-sm color-gray">Preço:</div>
                       <div className="flex items-center mb-2">
-                        <span className="absolute text-sm p-1 xs:text-base xs:p-2">R$</span>
+                        <span className="absolute text-sm p-1 xs:text-base xs:p-2">{getCurrencySymbol(menu?.currency)}</span>
                         <input
                           type="text"
                           value={modalPayload.data.price}
@@ -1610,7 +1593,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                     <label className="block mb-2 w-[75px] xs:w-[100px]">
                       <div className="text-sm color-gray">Promoção:</div>
                       <div className="flex items-center mb-2">
-                        <span className="absolute text-sm p-1 xs:text-base xs:p-2">R$</span>
+                        <span className="absolute text-sm p-1 xs:text-base xs:p-2">{getCurrencySymbol(menu?.currency)}</span>
                         <input
                           type="text"
                           value={canShowPromoPrice ? (modalPayload.data.promo_price ?? "") : ""}

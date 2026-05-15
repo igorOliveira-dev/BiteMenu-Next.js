@@ -9,6 +9,7 @@ import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { supabase } from "@/lib/supabaseClient";
+import { formatCurrency } from "@/lib/formatCurrency";
 import { useAlert } from "@/providers/AlertProvider";
 
 function getContrastTextColor(hex) {
@@ -90,7 +91,7 @@ export default function CartDrawer({
     {
       id: "delivery",
       label: !canUseZones
-        ? `Entrega ${normalizeMoney(menu.delivery_fee) > 0 ? `(R$ ${normalizeMoney(menu.delivery_fee).toFixed(2)})` : ""}`
+        ? `Entrega ${normalizeMoney(menu.delivery_fee) > 0 ? `(${formatCurrency(normalizeMoney(menu.delivery_fee), menu?.currency)})` : ""}`
         : "Entrega",
     },
     { id: "pickup", label: "Retirada" },
@@ -463,9 +464,9 @@ ${selectedService === "delivery" ? `📍 Endereço: ${costumerAddress}\n` : ""}
 ${itemsList}
 
 ————————————
-Subtotal: ${subtotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-${selectedService === "delivery" ? `Frete: ${deliveryFee.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}` : ""}
-💰 Total: ${total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+Subtotal: ${formatCurrency(subtotal, menu?.currency)}
+${selectedService === "delivery" ? `Frete: ${formatCurrency(deliveryFee, menu?.currency)}` : ""}
+💰 Total: ${formatCurrency(total, menu?.currency)}
 
 ${customerInfo}`;
 
@@ -593,7 +594,7 @@ ${customerInfo}`;
                   </div>
                   <div className="flex items-end justify-between mt-4 gap-2">
                     <p className="font-bold text-xl">
-                      {((it.price + addonsTotal) * it.qty).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                      {formatCurrency((it.price + addonsTotal) * it.qty, menu?.currency)}
                     </p>
                     <button
                       onClick={() => cart.remove(menu.id, idx)}
@@ -614,7 +615,7 @@ ${customerInfo}`;
             <div className="flex items-center justify-between mb-2">
               <div className="font-semibold">Total</div>
               <div className="text-xl font-bold">
-                {drawerTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                {formatCurrency(drawerTotal, menu?.currency)}
               </div>
             </div>
             <div className="flex gap-2">
@@ -627,12 +628,9 @@ ${customerInfo}`;
                   if (hasPlusPermissions) {
                     if (menu.minimum_order_value && drawerSubtotal < menu.minimum_order_value) {
                       customAlert(
-                        `O valor mínimo para pedidos neste estabelecimento é de ${menu.minimum_order_value.toLocaleString(
-                          "pt-BR",
-                          {
-                            style: "currency",
-                            currency: "BRL",
-                          },
+                        `O valor mínimo para pedidos neste estabelecimento é de ${formatCurrency(
+                          menu.minimum_order_value,
+                          menu?.currency,
                         )}`,
                       );
                       return;
@@ -790,10 +788,7 @@ ${customerInfo}`;
                                     style={{ color: foregroundToUse }}
                                   >
                                     {zone.name} —{" "}
-                                    {zone.shipping_fee.toLocaleString("pt-BR", {
-                                      style: "currency",
-                                      currency: "BRL",
-                                    })}
+                                    {formatCurrency(zone.shipping_fee, menu?.currency)}
                                   </div>
                                 ))
                               )}
@@ -805,10 +800,7 @@ ${customerInfo}`;
                           <p className="text-sm mb-2" style={{ color: grayToUse }}>
                             Taxa de entrega:{" "}
                             <strong style={{ color: foregroundToUse }}>
-                              {deliveryFeeValue.toLocaleString("pt-BR", {
-                                style: "currency",
-                                currency: "BRL",
-                              })}
+                              {formatCurrency(deliveryFeeValue, menu?.currency)}
                             </strong>
                           </p>
                         )}
@@ -861,12 +853,7 @@ ${customerInfo}`;
                 </div>
                 <p className="mt-2">
                   Valor final:{" "}
-                  <strong>
-                    {drawerTotal.toLocaleString("pt-BR", {
-                      style: "currency",
-                      currency: "BRL",
-                    })}
-                  </strong>
+                  <strong>{formatCurrency(drawerTotal, menu?.currency)}</strong>
                 </p>
                 <button
                   onClick={() => {
@@ -900,7 +887,7 @@ ${customerInfo}`;
                   {menu.pix_key}
                 </div>
                 <p className="text-center mt-2">
-                  Valor final: <strong className="text-2xl">R${finalValue.toFixed(2)}</strong>
+                  Valor final: <strong className="text-2xl">{formatCurrency(finalValue, menu?.currency)}</strong>
                 </p>
                 <p className="text-center p-2" style={{ color: grayToUse }}>
                   Após fazer o PIX, envie o comprovante pelo WhatsApp!
