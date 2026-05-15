@@ -21,7 +21,12 @@
       "Read(//c/Users/igorv/.claude/projects/c--vs-code-projetos-principais-bitemenu/memory//**)",
       "Read(//c/Users/igorv/.claude/projects/c--vs-code-projetos-principais-bitemenu/memory/**)",
       "Bash(Get-ChildItem -Path \"C:\\\\vs-code\\\\projetos_principais\\\\bitemenu\\\\app\" -Recurse -Filter \"*dashboard*\")",
-      "Bash(Select-Object -Property FullName)"
+      "Bash(Select-Object -Property FullName)",
+      "Bash(Get-ChildItem -Path \"C:\\\\vs-code\\\\projetos_principais\\\\bitemenu\" -Force)",
+      "Bash(Get-ChildItem -Path \"c:\\\\vs-code\\\\projetos_principais\\\\bitemenu\\\\src\\\\app\\\\dashboard\" -Recurse -Directory)",
+      "Bash(Select-Object FullName)",
+      "PowerShell(npx eslint src/app/dashboard/tabs/Account.jsx)",
+      "PowerShell(npm run lint)"
     ]
   }
 }

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import useUser from "@/hooks/useUser";
-import { FaChevronLeft, FaPen } from "react-icons/fa";
+import { FaChevronLeft, FaPen, FaChevronRight } from "react-icons/fa";
 import Loading from "@/components/Loading";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
@@ -112,8 +112,8 @@ const Account = ({ setSelectedTab }) => {
 
   return (
     <>
-      <div className="p-2">
-        <div className="flex items-center pb-5">
+      <div className="p-2 max-w-[720px]">
+        <div className="flex items-center mb-4">
           <button
             type="button"
             className="p-2 rounded hover:bg-[var(--translucid)] transition cursor-pointer"
@@ -122,74 +122,78 @@ const Account = ({ setSelectedTab }) => {
           >
             <FaChevronLeft />
           </button>
-          <h2 className="ml-2 xs:font-semibold">Conta</h2>
+          <h2 className="ml-2 text-xl font-semibold">Conta</h2>
         </div>
 
-        <div className="bg-translucid border-2 border-[var(--translucid)] rounded-lg p-4 max-w-[720px]">
-          <div className="px-2 ">
-            <div className="border-b-2 border-[var(--translucid)] pb-4">
-              <div className="flex items-center gap-2">
-                <p className="default-h1 font-bold line-clamp-1">{name}</p>
-                <div onClick={() => setNameModalOpen(true)} className="cursor-pointer px-2">
-                  <FaPen />
-                </div>
-              </div>
-
-              {/* email */}
-              <p className="color-gray">{profile?.email}</p>
+        <div className="bg-translucid border-2 border-[var(--translucid)] rounded-2xl divide-y divide-[var(--translucid)]">
+          {/* Perfil */}
+          <div className="flex items-center justify-between gap-3 p-4">
+            <div className="min-w-0">
+              <p className="default-h1 font-bold line-clamp-1">{name}</p>
+              <p className="color-gray text-sm break-all">{profile?.email}</p>
             </div>
-
-            <div className="flex gap-4 border-b-2 border-[var(--translucid)] xs:items-center pb-4 mt-4 flex-col xs:flex-row">
-              {/* plano */}
-              <div className="mt-4 min-w-[170px] xs:text-center flex flex-col xs:items-center xs:border-r-2 xs:pr-4 border-r-0 pr-0 border-b-2 xs:border-b-0 pb-4 xs:pb-0 border-[var(--translucid)]">
-                <p className="color-gray text-sm">Plano atual:</p>
-                <p className="capitalize default-h1">{profile?.role}</p>
-                <p
-                  className="text-sm mt-1 bg-translucid cursor-pointer p-2 rounded-lg border-2 border-translucid max-w-[180px] text-center hover:opacity-80 transition"
-                  onClick={() => setSelectedTab("planDetails")}
-                >
-                  Detalhes do plano
-                </p>
-              </div>
-
-              {/* Telefone */}
-              <div className="mt-4">
-                <label className="block text-sm color-gray mb-1">Telefone:</label>
-                <div className="flex gap-2 items-center">
-                  <div className="flex-shrink">
-                    <PhoneInput
-                      country="br"
-                      value={phone}
-                      onChange={(value) => setPhone(value)}
-                      inputProps={{ required: true }}
-                      inputClass="!w-[220px] !px-3 !py-2 !bg-[var(--translucid)] !border !border-[var(--low-gray)] !rounded !focus:outline-none !focus:ring-2 !focus:ring-blue-400 !pl-14"
-                      buttonClass="!border-r !border-[var(--low-gray)] !bg-[transparent] !rounded-l !hover:bg-[var(--low-gray)]"
-                      containerClass="!flex !items-center"
-                    />
-                  </div>
-                  {phone !== originalPhone && (
-                    <button
-                      onClick={handleSavePhone}
-                      disabled={saving}
-                      className="cursor-pointer px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-                    >
-                      {saving ? "Salvando..." : "Salvar"}
-                    </button>
-                  )}
-                </div>
-                <p className="text-sm color-gray pt-1">Este é o número em que você receberá os pedidos.</p>
-              </div>
-            </div>
-
-            {/* sair */}
             <button
-              className="mt-4 text-white cursor-pointer bg-red-600/70 hover:bg-red-600/90 border-2 border-[var(--translucid)] rounded-lg p-2 transition"
+              type="button"
+              onClick={() => setNameModalOpen(true)}
+              aria-label="Editar nome"
+              className="flex shrink-0 items-center gap-2 rounded-lg border border-[var(--translucid)] bg-translucid px-3 py-2 text-sm cursor-pointer transition hover:opacity-80"
+            >
+              <FaPen /> <span className="hidden xs:inline">Editar</span>
+            </button>
+          </div>
+
+          {/* Plano */}
+          <button
+            type="button"
+            onClick={() => setSelectedTab("planDetails")}
+            className="flex w-full items-center justify-between gap-3 p-4 text-left cursor-pointer transition hover:bg-[var(--translucid)]"
+          >
+            <div>
+              <p className="text-sm color-gray">Plano atual</p>
+              <p className="capitalize text-lg font-semibold">{profile?.role}</p>
+            </div>
+            <span className="flex items-center gap-2 text-sm color-gray">
+              Detalhes do plano <FaChevronRight />
+            </span>
+          </button>
+
+          {/* Telefone */}
+          <div className="p-4">
+            <label className="block text-sm color-gray mb-2">Telefone</label>
+            <div className="flex flex-wrap gap-2 items-center">
+              <div className="flex-shrink">
+                <PhoneInput
+                  country="br"
+                  value={phone}
+                  onChange={(value) => setPhone(value)}
+                  inputProps={{ required: true }}
+                  inputClass="!w-[220px] !px-3 !py-2 !bg-[var(--translucid)] !border !border-[var(--low-gray)] !rounded !focus:outline-none !focus:ring-2 !focus:ring-blue-400 !pl-14"
+                  buttonClass="!border-r !border-[var(--low-gray)] !bg-[transparent] !rounded-l !hover:bg-[var(--low-gray)]"
+                  containerClass="!flex !items-center"
+                />
+              </div>
+              {phone !== originalPhone && (
+                <button
+                  onClick={handleSavePhone}
+                  disabled={saving}
+                  className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded-lg transition hover:bg-green-700 disabled:opacity-50"
+                >
+                  {saving ? "Salvando..." : "Salvar"}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Sair */}
+          <div className="flex items-center gap-3 p-4">
+            <button
+              className="text-white cursor-pointer bg-red-600/70 hover:bg-red-600/90 border-2 border-[var(--translucid)] rounded-lg px-4 py-2 transition"
               onClick={handleLogout}
             >
               Sair da conta
             </button>
             {profile?.role === "admin" && (
-              <a href="/admin" className="ml-2 underline color-gray">
+              <a href="/admin" className="underline color-gray">
                 Admin page
               </a>
             )}
@@ -204,7 +208,7 @@ const Account = ({ setSelectedTab }) => {
             value={tempName ?? ""}
             maxLength={40}
             onChange={(e) => setTempName(e.target.value)}
-            className="w-full p-2 rounded border bg-translucid mb-4"
+            className="w-full p-3 rounded-lg border border-[var(--translucid)] bg-translucid mb-4 outline-none transition focus:border-red-500/70"
           />
           <div className="flex justify-end gap-2">
             <button
@@ -212,11 +216,14 @@ const Account = ({ setSelectedTab }) => {
                 setTempName(name);
                 setNameModalOpen(false);
               }}
-              className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded"
+              className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded-lg transition hover:opacity-80"
             >
               Cancelar
             </button>
-            <button onClick={handleSaveName} className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded">
+            <button
+              onClick={handleSaveName}
+              className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded-lg transition hover:bg-green-700"
+            >
               {saving ? "Salvando..." : "Salvar"}
             </button>
           </div>
