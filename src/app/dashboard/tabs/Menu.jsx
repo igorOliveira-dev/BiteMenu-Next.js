@@ -361,7 +361,7 @@ const Menu = (props) => {
         <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[812px] min-h-[calc(100dvh-110px)]">
           {/* ESPAÇO PARA BANNER!!! */}
           <SurveyBanner />
-          <div style={{ backgroundColor }}>
+          <div className="min-h-[calc(100dvh-110px)] pb-2" style={{ backgroundColor }}>
             {/* Banner */}
             <div className="relative w-full max-w-full h-[18dvh] sm:h-[25dvh]">
               {bannerPreview ? (
@@ -439,8 +439,12 @@ const Menu = (props) => {
               className="px-4 flex items-center mb-2"
               style={{ color: getContrastTextColor(backgroundColor) === "white" ? "#ccc" : "#333" }}
             >
-              <FaMapMarkerAlt className="inline mr-2" />
-              {address}
+              {address && address !== "" && (
+                <>
+                  <FaMapMarkerAlt className="inline mr-2" />
+                  {address}
+                </>
+              )}
             </p>
 
             <p
