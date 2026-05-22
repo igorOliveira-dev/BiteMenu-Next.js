@@ -79,7 +79,7 @@ function SortableMenuItem({
         }}
       >
         <div
-          className="flex-1 min-w-0 p-2 sm:p-3"
+          className="flex-1 min-w-0 p-2 sm:p-3 min-h-[148px] flex flex-col justify-between"
           style={{
             backgroundColor: getContrastTextColor(backgroundColor) === "white" ? "#ffffff10" : "#00000010",
           }}
