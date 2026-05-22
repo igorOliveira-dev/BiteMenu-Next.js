@@ -627,6 +627,7 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
                           {isSafeImageUrl(it.image_url) && (
                             <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden">
                               <Image
+                                unoptimized
                                 src={supabaseImg(it.image_url, { width: 160, quality: 75 })}
                                 alt={it.name}
                                 width={96}
@@ -860,9 +861,7 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
                   >
                     <FaPlus />
                   </button>
-                  <span style={{ color: grayToUse }}>
-                    ({formatCurrency(totalPrice, menu?.currency)})
-                  </span>
+                  <span style={{ color: grayToUse }}>({formatCurrency(totalPrice, menu?.currency)})</span>
                 </div>
                 <button
                   onClick={handleAddToCart}

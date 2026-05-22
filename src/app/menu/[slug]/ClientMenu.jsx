@@ -678,6 +678,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole }) {
                               onClick={() => handleItemClick(it)}
                             >
                               <Image
+                                unoptimized
                                 src={supabaseImg(it.image_url, { width: 160, quality: 75 })}
                                 alt={it.name}
                                 width={72}
@@ -950,9 +951,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole }) {
                   >
                     <FaPlus />
                   </button>
-                  <span style={{ color: grayToUse }}>
-                    ({formatCurrency(totalPrice, menu?.currency)})
-                  </span>
+                  <span style={{ color: grayToUse }}>({formatCurrency(totalPrice, menu?.currency)})</span>
                 </div>
 
                 <button
