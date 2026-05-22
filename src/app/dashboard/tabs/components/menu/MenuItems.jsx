@@ -1913,7 +1913,14 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
               try {
                 const { error } = await supabase.from("menu_items").update(patch).eq("id", modalPayload.itemId);
 
-                if (error) throw error;
+                if (error) {
+                  if (error.code === "22P02") {
+                    setAdditionalsCfgOpen(false);
+                  } else {
+                    alert?.("Erro ao salvar configurações de adicionais", "error");
+                    console.error("Erro ao salvar adicionais:", error);
+                  }
+                }
 
                 setModalPayload((p) => ({
                   ...p,
@@ -1938,7 +1945,6 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                 setAdditionalsCfgDraft(null);
               } catch (err) {
                 console.error("Erro ao salvar adicionais:", err);
-                alert?.("Erro ao salvar configurações", "error");
               }
             }}
           >
