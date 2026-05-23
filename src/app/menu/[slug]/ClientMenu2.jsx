@@ -368,11 +368,11 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
         {isSafeImageUrl(menu.banner_url) && (
           <div className="relative w-full h-[22dvh] sm:h-[30dvh]">
             <Image
+              unoptimized // ao voltar a usar otimização, substituir 'unoptimized' por 'priority'
               alt="Banner do estabelecimento"
               src={supabaseImg(menu.banner_url, { width: 1200, quality: 70 })}
               fill
               className="object-cover"
-              priority
               sizes="100vw"
             />
             <div
@@ -390,6 +390,7 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
           {isSafeImageUrl(menu.logo_url) && (
             <div className="mb-3 -mt-10 relative z-10">
               <Image
+                unoptimized
                 alt="Logo do estabelecimento"
                 src={supabaseImg(menu.logo_url, { width: 160, quality: 80 })}
                 width={90}

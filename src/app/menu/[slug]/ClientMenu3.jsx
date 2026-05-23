@@ -372,11 +372,11 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole }) {
           {isSafeImageUrl(menu.banner_url) ? (
             <>
               <Image
+                unoptimized // ao voltar a usar otimização, substituir 'unoptimized' por 'priority'
                 alt="Banner do estabelecimento"
                 src={supabaseImg(menu.banner_url, { width: 1200, quality: 70 })}
                 fill
                 className="object-cover"
-                priority
                 sizes="100vw"
               />
               <div
@@ -396,6 +396,7 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole }) {
             <div className="flex items-end gap-3">
               {isSafeImageUrl(menu.logo_url) && (
                 <Image
+                  unoptimized
                   alt="Logo do estabelecimento"
                   src={supabaseImg(menu.logo_url, { width: 160, quality: 80 })}
                   width={70}
