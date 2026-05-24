@@ -6,14 +6,23 @@ import { formatCurrency } from "@/lib/formatCurrency";
 import { useAlert } from "@/providers/AlertProvider";
 import { supabase } from "@/lib/supabaseClient";
 import Loading from "@/components/Loading";
-import { FaTrash, FaChevronLeft, FaChevronDown, FaChevronRight, FaChevronUp, FaSyncAlt, FaPhoneAlt, FaClipboardList } from "react-icons/fa";
+import {
+  FaTrash,
+  FaChevronLeft,
+  FaChevronDown,
+  FaChevronRight,
+  FaChevronUp,
+  FaSyncAlt,
+  FaPhoneAlt,
+  FaClipboardList,
+} from "react-icons/fa";
 import GenericModal from "@/components/GenericModal";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import SalesSummary from "./components/sales/SalesSummary";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 
 const SectionCard = ({ title, subtitle, children, icon = null }) => (
-  <section className="rounded-2xl border border-translucid bg-translucid/70 p-4 shadow-sm">
+  <section className="rounded-2xl border border-translucid bg-[var(--low-translucid)] p-4 shadow-sm">
     <div className="mb-3 flex items-start gap-3">
       {icon ? <div className="mt-0.5 opacity-80">{icon}</div> : null}
       <div>
@@ -444,7 +453,9 @@ const Sales = ({ setSelectedTab }) => {
                               </div>
                               <div className="text-right shrink-0">
                                 <p className="text-xs uppercase tracking-wide color-gray">Total</p>
-                                <p className="text-2xl font-bold">{formatCurrency(computeSaleTotal(sale), menu?.currency)}</p>
+                                <p className="text-2xl font-bold">
+                                  {formatCurrency(computeSaleTotal(sale), menu?.currency)}
+                                </p>
                               </div>
                             </div>
 
@@ -583,7 +594,7 @@ const Sales = ({ setSelectedTab }) => {
                     <label className="mb-1 block text-sm font-medium">Nome do cliente</label>
                     <input
                       type="text"
-                      className="input w-full rounded-xl bg-black/10 p-3"
+                      className="input w-full rounded-xl bg-translucid p-3"
                       value={selectedSale.costumer_name || ""}
                       onChange={(e) => setSelectedSale({ ...selectedSale, costumer_name: e.target.value })}
                     />
@@ -592,7 +603,7 @@ const Sales = ({ setSelectedTab }) => {
                     <label className="mb-1 block text-sm font-medium">Telefone</label>
                     <input
                       type="text"
-                      className="input w-full rounded-xl bg-black/10 p-3"
+                      className="input w-full rounded-xl bg-translucid p-3"
                       value={selectedSale.costumer_phone || ""}
                       onChange={(e) => setSelectedSale({ ...selectedSale, costumer_phone: e.target.value })}
                     />
@@ -605,27 +616,43 @@ const Sales = ({ setSelectedTab }) => {
                   <div>
                     <label className="mb-1 block text-sm font-medium">Serviço</label>
                     <select
-                      className="input w-full rounded-xl bg-black/10 p-3"
+                      className="input w-full rounded-xl bg-translucid p-3"
                       value={selectedSale.service || ""}
                       onChange={(e) => setSelectedSale({ ...selectedSale, service: e.target.value })}
                     >
-                      <option className="text-black" value="delivery">Entrega</option>
-                      <option className="text-black" value="pickup">Retirada</option>
-                      <option className="text-black" value="dinein">No local</option>
-                      <option className="text-black" value="faceToFace">Atendimento presencial</option>
+                      <option className="text-black" value="delivery">
+                        Entrega
+                      </option>
+                      <option className="text-black" value="pickup">
+                        Retirada
+                      </option>
+                      <option className="text-black" value="dinein">
+                        No local
+                      </option>
+                      <option className="text-black" value="faceToFace">
+                        Atendimento presencial
+                      </option>
                     </select>
                   </div>
                   <div>
                     <label className="mb-1 block text-sm font-medium">Método de pagamento</label>
                     <select
-                      className="input w-full rounded-xl bg-black/10 p-3"
+                      className="input w-full rounded-xl bg-translucid p-3"
                       value={selectedSale.payment_method || ""}
                       onChange={(e) => setSelectedSale({ ...selectedSale, payment_method: e.target.value })}
                     >
-                      <option className="text-black" value="pix">Pix</option>
-                      <option className="text-black" value="debit">Débito</option>
-                      <option className="text-black" value="credit">Crédito</option>
-                      <option className="text-black" value="cash">Dinheiro</option>
+                      <option className="text-black" value="pix">
+                        Pix
+                      </option>
+                      <option className="text-black" value="debit">
+                        Débito
+                      </option>
+                      <option className="text-black" value="credit">
+                        Crédito
+                      </option>
+                      <option className="text-black" value="cash">
+                        Dinheiro
+                      </option>
                     </select>
                   </div>
                 </div>
@@ -634,7 +661,7 @@ const Sales = ({ setSelectedTab }) => {
               <SectionCard title="Itens" subtitle="Edite rapidamente o conteúdo da venda">
                 <div className="space-y-4">
                   {(selectedSale.items_list || []).map((item, i) => (
-                    <div key={i} className="rounded-2xl border border-translucid bg-black/10 p-4">
+                    <div key={i} className="rounded-2xl border border-translucid bg-[var(--low-translucid)] p-4">
                       <div className="mb-3 flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
                           <p className="mb-1 text-xs uppercase tracking-wide color-gray">Item</p>

@@ -39,7 +39,7 @@ const serviceLabels = {
 };
 
 const SectionCard = ({ title, subtitle, children, icon = null }) => (
-  <section className="rounded-2xl border border-translucid bg-translucid/70 p-4 shadow-sm">
+  <section className="rounded-2xl border border-translucid bg-[var(--low-translucid)] p-4 shadow-sm">
     <div className="mb-3 flex items-start gap-3">
       {icon ? <div className="mt-0.5 opacity-80">{icon}</div> : null}
       <div>
@@ -765,7 +765,7 @@ const Orders = ({ setSelectedTab }) => {
                     <label className="mb-1 block text-sm font-medium">Nome do cliente</label>
                     <input
                       type="text"
-                      className="input w-full rounded-xl bg-black/10 p-3"
+                      className="input w-full rounded-xl bg-translucid p-3"
                       value={selectedOrder.costumer_name || ""}
                       onChange={(e) => setSelectedOrder({ ...selectedOrder, costumer_name: e.target.value })}
                     />
@@ -775,7 +775,7 @@ const Orders = ({ setSelectedTab }) => {
                     <label className="mb-1 block text-sm font-medium">Telefone</label>
                     <input
                       type="text"
-                      className="input w-full rounded-xl bg-black/10 p-3"
+                      className="input w-full rounded-xl bg-translucid p-3"
                       value={selectedOrder.costumer_phone || ""}
                       onChange={(e) => setSelectedOrder({ ...selectedOrder, costumer_phone: e.target.value })}
                     />
@@ -787,7 +787,7 @@ const Orders = ({ setSelectedTab }) => {
                     <label className="mb-1 block text-sm font-medium">Endereço</label>
                     <input
                       type="text"
-                      className="input w-full rounded-xl bg-black/10 p-3"
+                      className="input w-full rounded-xl bg-translucid p-3"
                       value={selectedOrder.address || ""}
                       onChange={(e) => setSelectedOrder({ ...selectedOrder, address: e.target.value })}
                     />
@@ -800,7 +800,7 @@ const Orders = ({ setSelectedTab }) => {
                   <div>
                     <label className="mb-1 block text-sm font-medium">Serviço</label>
                     <select
-                      className="input w-full rounded-xl bg-black/10 p-3"
+                      className="input w-full rounded-xl bg-translucid p-3"
                       value={selectedOrder.service || ""}
                       onChange={(e) => setSelectedOrder({ ...selectedOrder, service: e.target.value })}
                     >
@@ -822,7 +822,7 @@ const Orders = ({ setSelectedTab }) => {
                   <div>
                     <label className="mb-1 block text-sm font-medium">Método de pagamento</label>
                     <select
-                      className="input w-full rounded-xl bg-black/10 p-3"
+                      className="input w-full rounded-xl bg-translucid p-3"
                       value={selectedOrder.payment_method || ""}
                       onChange={(e) => setSelectedOrder({ ...selectedOrder, payment_method: e.target.value })}
                     >
@@ -846,7 +846,7 @@ const Orders = ({ setSelectedTab }) => {
               <SectionCard title="Itens" subtitle="Edite rapidamente o conteúdo do pedido">
                 <div className="space-y-4">
                   {(selectedOrder.items_list || []).map((item, i) => (
-                    <div key={i} className="rounded-2xl border border-translucid bg-black/10 p-4">
+                    <div key={i} className="rounded-2xl border border-translucid bg-[var(--low-translucid)] p-4">
                       <div className="mb-3 flex items-start justify-between gap-3">
                         <div className="flex min-w-0 gap-3">
                           {item.image_url ? (

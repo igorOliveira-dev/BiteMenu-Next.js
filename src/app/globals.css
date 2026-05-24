@@ -12,6 +12,7 @@
   --low-gray: #cdcdcd;
   --dark-gray-90: #22222290;
   --medium-gray: #aaa;
+  --low-translucid: #00000005;
   --translucid: #00000012;
   --high-translucid: #00000032;
   --red: #d41010;
@@ -28,6 +29,7 @@
     --gray: #ccc;
     --low-gray: #222;
     --medium-gray: #111;
+    --low-translucid: #ffffff05;
     --translucid: #ffffff10;
     --high-translucid: #ffffff32;
     --red: #d41010;
@@ -45,6 +47,7 @@
   --low-gray: #cdcdcd;
   --dark-gray-90: #22222290;
   --medium-gray: #aaa;
+  --low-translucid: #00000005;
   --translucid: #00000012;
   --high-translucid: #00000032;
   --red: #d41010;
@@ -60,6 +63,7 @@
   --gray: #ccc;
   --low-gray: #222;
   --medium-gray: #111;
+  --low-translucid: #ffffff05;
   --translucid: #ffffff10;
   --high-translucid: #ffffff32;
   --red: #d41010;
