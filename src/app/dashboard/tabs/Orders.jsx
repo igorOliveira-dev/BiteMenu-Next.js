@@ -21,6 +21,8 @@ import GenericModal from "@/components/GenericModal";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import OrdersFilter from "./components/orders/OrdersFilter";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
+import useUser from "@/hooks/useUser";
+import { useReactToPrint } from "react-to-print";
 
 const PAGE_SIZE = 10;
 
@@ -53,6 +55,7 @@ const SectionCard = ({ title, subtitle, children, icon = null }) => (
 
 const Orders = ({ setSelectedTab }) => {
   const { menu, loading } = useMenu();
+  const { profile, loadingProfile } = useUser();
   const customAlert = useAlert();
   const confirm = useConfirm();
 
@@ -64,12 +67,15 @@ const Orders = ({ setSelectedTab }) => {
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [filters, setFilters] = useState({});
   const [orderModalOpen, setOrderModalOpen] = useState(false);
-  const [printModalOpen, setPrintModalOpen] = useState(false);
-  const [printMode, setPrintMode] = useState("full");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [receiveOrders, setReceiveOrders] = useState(menu?.orders || "all");
   const [deliveryFeeOnSales, setDeliveryFeeOnSales] = useState(false);
   const [enabledOrders, setEnabledOrders] = useState(false);
+
+  const [printMode, setPrintMode] = useState("full");
+  const [printModalOpen, setPrintModalOpen] = useState(false);
+  const [paperSize, setPaperSize] = useState("paper-80mm");
+  const printRef = useRef(null);
 
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [summary, setSummary] = useState({
@@ -378,6 +384,17 @@ const Orders = ({ setSelectedTab }) => {
     updated.splice(i, 1);
     setSelectedOrder({ ...selectedOrder, items_list: updated });
   };
+
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: `pedido-${selectedOrder?.costumer_name || "cliente"}`,
+    pageStyle: `
+@page {
+  size: ${paperSize === "paper-58mm" ? "58mm auto" : paperSize === "paper-80mm" ? "80mm auto" : "A4 portrait"};
+  margin: 5mm;
+}
+`,
+  });
 
   const openOrderModal = (order) => {
     setSelectedOrder(order);
@@ -1068,7 +1085,7 @@ const Orders = ({ setSelectedTab }) => {
       {printModalOpen && selectedOrder ? (
         <GenericModal title="Imprimir Pedido" onClose={() => setPrintModalOpen(false)} size="sm">
           <div className="space-y-4">
-            {/* <div>
+            <div>
               <label className="mb-2 block text-sm font-medium">Tipo da impressão</label>
 
               <select
@@ -1082,35 +1099,77 @@ const Orders = ({ setSelectedTab }) => {
                 <option className="text-black" value="kitchen">
                   Via da cozinha
                 </option>
+                <option className="text-black" value="counter">
+                  Comanda de balcão
+                </option>
               </select>
             </div>
 
             <div className="rounded-xl border border-translucid bg-translucid p-3 text-sm">
-              {printMode === "full" ? (
+              {printMode === "full" && (
                 <>
-                  <p className="font-medium mb-1">Pedido completo</p>
+                  <p className="mb-1 font-medium">Pedido completo</p>
 
                   <p className="color-gray">
-                    Inclui cliente, telefone, endereço, forma de pagamento, itens, observações e valores.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="font-medium mb-1">Via da cozinha</p>
-
-                  <p className="color-gray">
-                    Mostra apenas os itens, adicionais e observações, sem dados do cliente nem valores.
+                    Via administrativa para conferência e entrega. Exibe todas as informações do pedido, incluindo cliente,
+                    pagamento, itens e valores.
                   </p>
                 </>
               )}
+
+              {printMode === "kitchen" && (
+                <>
+                  <p className="mb-1 font-medium">Via da cozinha</p>
+
+                  <p className="color-gray">
+                    Utilizada para preparo. Exibe apenas os itens solicitados, adicionais e observações, sem dados do cliente
+                    ou valores.
+                  </p>
+                </>
+              )}
+
+              {printMode === "counter" && (
+                <>
+                  <p className="mb-1 font-medium">Comanda de balcão</p>
+
+                  <p className="color-gray">
+                    Utilizada para identificação e retirada do pedido. Exibe número do pedido, cliente, itens e valor total,
+                    ocultando dados de contato e pagamento.
+                  </p>
+                </>
+              )}
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium">Formato do papel</label>
+
+              <select
+                value={paperSize}
+                onChange={(e) => setPaperSize(e.target.value)}
+                className="input w-full rounded-xl bg-translucid p-2"
+              >
+                <option className="text-black" value="paper-80mm">
+                  Bobina 80mm
+                </option>
+                <option className="text-black" value="paper-58mm">
+                  Bobina 58mm
+                </option>
+                <option className="text-black" value="paper-a4">
+                  Folha A4
+                </option>
+              </select>
             </div>
 
             <div className="flex flex-col gap-2 sm:flex-row">
               <button
                 type="button"
                 onClick={() => {
-                  handlePrint();
-                  setPrintModalOpen(false);
+                  if (profile?.role === "pro" || profile?.role === "admin") {
+                    handlePrint();
+                    setPrintModalOpen(false);
+                  } else {
+                    customAlert("Recurso disponível apenas para o plano Pro", "error");
+                  }
                 }}
                 className="w-full cursor-pointer rounded-xl bg-green-600 py-2 text-white transition hover:bg-green-700"
               >
@@ -1124,11 +1183,198 @@ const Orders = ({ setSelectedTab }) => {
               >
                 Cancelar
               </button>
-            </div> */}
-            em desenvolvimento, em breve estará disponível!
+            </div>
           </div>
         </GenericModal>
       ) : null}
+
+      <div
+        style={{
+          position: "absolute",
+          left: "-99999px",
+          top: 0,
+        }}
+      >
+        <div ref={printRef} className={`print-layout ${paperSize}`}>
+          {printMode === "full" && (
+            <>
+              <h1>PEDIDO</h1>
+
+              <p>
+                <strong>Pedido:</strong> #{selectedOrder?.id?.slice(0, 6)}
+              </p>
+
+              <p>{new Date(selectedOrder?.created_at).toLocaleString("pt-BR")}</p>
+
+              <hr />
+
+              <p>
+                <strong>Cliente:</strong> {selectedOrder?.costumer_name}
+              </p>
+
+              <p>
+                <strong>Telefone:</strong> {selectedOrder?.costumer_phone}
+              </p>
+
+              {selectedOrder?.address && (
+                <p>
+                  <strong>Endereço:</strong> {selectedOrder.address}
+                </p>
+              )}
+
+              <p>
+                <strong>Pagamento:</strong> {paymentLabels[selectedOrder?.payment_method]}
+              </p>
+
+              <p>
+                <strong>Serviço:</strong> {serviceLabels[selectedOrder?.service]}
+              </p>
+
+              <hr />
+
+              {selectedOrder?.items_list?.map((item, index) => (
+                <div
+                  key={index}
+                  style={{
+                    breakInside: "avoid",
+                    pageBreakInside: "avoid",
+                  }}
+                >
+                  <strong>
+                    {item.qty}x {item.name}
+                  </strong>
+
+                  {(item.additionals || []).map((add, i) => (
+                    <div key={i}>+ {add.name}</div>
+                  ))}
+
+                  {item.note && <div>Obs: {item.note}</div>}
+                </div>
+              ))}
+
+              <hr />
+
+              <p>
+                <strong>Itens:</strong>{" "}
+                {(selectedOrder?.items_list || []).reduce((acc, item) => acc + (Number(item.qty) || 0), 0)}
+              </p>
+
+              <p>
+                <strong>Subtotal:</strong> {formatCurrency(computeSubtotal(selectedOrder), menu?.currency)}
+              </p>
+
+              {selectedOrder?.service === "delivery" && (
+                <p>
+                  <strong>Entrega:</strong> {formatCurrency(computeDeliveryFee(selectedOrder), menu?.currency)}
+                </p>
+              )}
+
+              <hr />
+
+              <p style={{ fontSize: "18px", fontWeight: "bold" }}>
+                TOTAL: {formatCurrency(computeTotalWithDelivery(selectedOrder), menu?.currency)}
+              </p>
+            </>
+          )}
+
+          {printMode === "kitchen" && (
+            <>
+              <h1>COZINHA</h1>
+
+              <p>
+                <strong>Pedido:</strong> #{selectedOrder?.id?.slice(0, 6)}
+              </p>
+
+              <p>{new Date(selectedOrder?.created_at).toLocaleString("pt-BR")}</p>
+
+              <p>
+                <strong>{serviceLabels[selectedOrder?.service]?.toUpperCase()}</strong>
+              </p>
+
+              {selectedOrder?.costumer_name && (
+                <p>
+                  <strong>Cliente:</strong> {selectedOrder.costumer_name}
+                </p>
+              )}
+
+              <hr />
+
+              {selectedOrder?.items_list?.map((item, index) => (
+                <div
+                  key={index}
+                  style={{
+                    breakInside: "avoid",
+                    pageBreakInside: "avoid",
+                  }}
+                >
+                  <h3>
+                    {item.qty}x {item.name}
+                  </h3>
+
+                  {(item.additionals || []).map((add, i) => (
+                    <div key={i}>+ {add.name}</div>
+                  ))}
+
+                  {item.note && <div style={{ fontWeight: "bold" }}>OBS: {item.note.toUpperCase()}</div>}
+
+                  <hr />
+                </div>
+              ))}
+            </>
+          )}
+
+          {printMode === "counter" && (
+            <>
+              <h1>COMANDA</h1>
+
+              <p>
+                <strong>Nº:</strong> {selectedOrder?.id?.slice(0, 6)}
+              </p>
+
+              <p>{new Date(selectedOrder?.created_at).toLocaleString("pt-BR")}</p>
+
+              {selectedOrder?.costumer_name && (
+                <p>
+                  <strong>Cliente:</strong> {selectedOrder.costumer_name}
+                </p>
+              )}
+
+              <hr />
+
+              {selectedOrder?.items_list?.map((item, index) => (
+                <div
+                  key={index}
+                  style={{
+                    breakInside: "avoid",
+                    pageBreakInside: "avoid",
+                  }}
+                >
+                  <strong>
+                    {item.qty}x {item.name}
+                  </strong>
+
+                  {(item.additionals || []).map((add, i) => (
+                    <div key={i}>+ {add.name}</div>
+                  ))}
+
+                  {item.note && <div>Obs: {item.note}</div>}
+                </div>
+              ))}
+
+              <hr />
+
+              <p>
+                <strong>Itens:</strong>{" "}
+                {(selectedOrder?.items_list || []).reduce((acc, item) => acc + (Number(item.qty) || 0), 0)}
+              </p>
+
+              <p style={{ fontSize: "18px", fontWeight: "bold" }}>
+                TOTAL: {formatCurrency(computeTotalWithDelivery(selectedOrder), menu?.currency)}
+              </p>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

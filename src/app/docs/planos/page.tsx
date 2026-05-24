@@ -97,6 +97,7 @@ const page = () => {
         <ul className="docs-paragraph list-disc pl-6">
           <li>Limite de 200 itens no cardápio</li>
           <li>Limite de 20 categorias no cardápio</li>
+          <li>Impressão de pedidos</li>
           <li>Dashboard de vendas para análise de desempenho</li>
           <li>Download de relatório de vendas em CSV</li>
           <li>Acesso ao aplicativo Bite Menu para não precisar acessar o site</li>
