@@ -557,9 +557,9 @@ const Orders = ({ setSelectedTab }) => {
                               <p className="text-sm color-gray">{orderDate}</p>
                             </div>
 
-                            <div className="text-right">
+                            <div className="text-right min-w-[80px]">
                               <p className="text-xs uppercase tracking-wide color-gray">Total</p>
-                              <p className="text-2xl font-bold">{formatCurrency(total, menu?.currency)}</p>
+                              <p className="font-bold">{formatCurrency(total, menu?.currency)}</p>
                             </div>
                           </div>
 
@@ -592,14 +592,14 @@ const Orders = ({ setSelectedTab }) => {
                         <div className="flex w-full flex-col gap-2 sm:w-[220px]">
                           <button
                             onClick={() => openOrderModal(order)}
-                            className="w-full cursor-pointer rounded-xl border bg-[var(--translucid)] border-translucid px-4 py-3 text-sm font-medium transition hover:opacity-80"
+                            className="w-full cursor-pointer rounded-xl border bg-[var(--translucid)] border-translucid px-3 py-2 text-sm font-medium transition hover:opacity-80"
                           >
                             Ver detalhes
                           </button>
 
                           <button
                             onClick={() => finalizeOrder(order.id)}
-                            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-blue-700"
+                            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
                           >
                             <FaCheck /> Finalizar pedido
                           </button>
