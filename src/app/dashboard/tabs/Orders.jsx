@@ -15,6 +15,7 @@ import {
   FaPhoneAlt,
   FaMapMarkerAlt,
   FaClipboardList,
+  FaPrint,
 } from "react-icons/fa";
 import GenericModal from "@/components/GenericModal";
 import { useConfirm } from "@/providers/ConfirmProvider";
@@ -63,6 +64,8 @@ const Orders = ({ setSelectedTab }) => {
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [filters, setFilters] = useState({});
   const [orderModalOpen, setOrderModalOpen] = useState(false);
+  const [printModalOpen, setPrintModalOpen] = useState(false);
+  const [printMode, setPrintMode] = useState("full");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [receiveOrders, setReceiveOrders] = useState(menu?.orders || "all");
   const [deliveryFeeOnSales, setDeliveryFeeOnSales] = useState(false);
@@ -591,18 +594,29 @@ const Orders = ({ setSelectedTab }) => {
 
                         <div className="flex w-full flex-col gap-2 sm:w-[220px]">
                           <button
-                            onClick={() => openOrderModal(order)}
-                            className="w-full cursor-pointer rounded-xl border bg-[var(--translucid)] border-translucid px-3 py-2 text-sm font-medium transition hover:opacity-80"
-                          >
-                            Ver detalhes
-                          </button>
-
-                          <button
                             onClick={() => finalizeOrder(order.id)}
                             className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
                           >
                             <FaCheck /> Finalizar pedido
                           </button>
+
+                          <div className="grid grid-cols-4 gap-2">
+                            <button
+                              onClick={() => openOrderModal(order)}
+                              className="w-full cursor-pointer rounded-xl border bg-[var(--translucid)] border-translucid px-3 py-2 text-sm font-medium transition hover:opacity-80 col-span-3"
+                            >
+                              Ver detalhes
+                            </button>
+                            <button
+                              onClick={() => {
+                                setPrintModalOpen(true);
+                                setSelectedOrder(order);
+                              }}
+                              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border bg-[var(--translucid)] border-translucid px-3 py-2 text-sm font-medium transition hover:opacity-80"
+                            >
+                              <FaPrint />
+                            </button>
+                          </div>
 
                           <div className="grid grid-cols-4 gap-2">
                             <button
@@ -1047,6 +1061,71 @@ const Orders = ({ setSelectedTab }) => {
                 </div>
               </div>
             </form>
+          </div>
+        </GenericModal>
+      ) : null}
+
+      {printModalOpen && selectedOrder ? (
+        <GenericModal title="Imprimir Pedido" onClose={() => setPrintModalOpen(false)} size="sm">
+          <div className="space-y-4">
+            {/* <div>
+              <label className="mb-2 block text-sm font-medium">Tipo da impressão</label>
+
+              <select
+                value={printMode}
+                onChange={(e) => setPrintMode(e.target.value)}
+                className="input w-full rounded-xl bg-translucid p-2"
+              >
+                <option className="text-black" value="full">
+                  Pedido completo
+                </option>
+                <option className="text-black" value="kitchen">
+                  Via da cozinha
+                </option>
+              </select>
+            </div>
+
+            <div className="rounded-xl border border-translucid bg-translucid p-3 text-sm">
+              {printMode === "full" ? (
+                <>
+                  <p className="font-medium mb-1">Pedido completo</p>
+
+                  <p className="color-gray">
+                    Inclui cliente, telefone, endereço, forma de pagamento, itens, observações e valores.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="font-medium mb-1">Via da cozinha</p>
+
+                  <p className="color-gray">
+                    Mostra apenas os itens, adicionais e observações, sem dados do cliente nem valores.
+                  </p>
+                </>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => {
+                  handlePrint();
+                  setPrintModalOpen(false);
+                }}
+                className="w-full cursor-pointer rounded-xl bg-green-600 py-2 text-white transition hover:bg-green-700"
+              >
+                Imprimir
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPrintModalOpen(false)}
+                className="w-full cursor-pointer rounded-xl border border-translucid bg-[var(--translucid)] py-2 transition hover:opacity-80"
+              >
+                Cancelar
+              </button>
+            </div> */}
+            em desenvolvimento, em breve estará disponível!
           </div>
         </GenericModal>
       ) : null}
