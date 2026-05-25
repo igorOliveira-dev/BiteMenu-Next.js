@@ -1,19 +1,36 @@
 type ToWebpTargetOptions = {
-  maxBytes?: number;
-  maxDimension?: number;
-  minDimension?: number;
-  startQuality?: number;
-  minQuality?: number;
-  maxAttempts?: number;
-  force?: boolean;
+  maxUploadMB?: number;
 };
 
-async function canvasToWebpBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
-  return await new Promise((resolve, reject) => {
+function loadImage(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+
+    const img = new Image();
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Falha ao carregar imagem"));
+    };
+
+    img.src = url;
+  });
+}
+
+function canvasToWebpBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
+  return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
-        if (blob) resolve(blob);
-        else reject(new Error("Falha ao gerar WebP"));
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject(new Error("Falha ao gerar WebP"));
+        }
       },
       "image/webp",
       quality,
@@ -21,104 +38,93 @@ async function canvasToWebpBlob(canvas: HTMLCanvasElement, quality: number): Pro
   });
 }
 
-export async function fileToWebp(
-  file: File,
-  {
-    maxBytes = 1024 * 1024, // 1MB
-    maxDimension = 2000,
-    minDimension = 1200,
-    startQuality = 0.92,
-    minQuality = 0.7,
-    maxAttempts = 12,
-    force = true,
-  }: ToWebpTargetOptions = {},
-): Promise<File> {
-  // Não processa imagens pequenas
-  if (file.size <= maxBytes) {
-    return file;
+export async function fileToWebp(file: File, { maxUploadMB = 20 }: ToWebpTargetOptions = {}): Promise<File> {
+  const sizeMB = file.size / 1024 / 1024;
+
+  if (sizeMB > maxUploadMB) {
+    throw new Error(`A imagem possui ${sizeMB.toFixed(1)} MB. O limite é ${maxUploadMB} MB.`);
   }
 
-  const isWebp = file.type === "image/webp" || file.name.toLowerCase().endsWith(".webp");
+  const img = await loadImage(file);
 
-  if (isWebp && !force && file.size <= maxBytes) {
-    return file;
+  const origW = img.naturalWidth;
+  const origH = img.naturalHeight;
+
+  let width = origW;
+  let height = origH;
+
+  let quality = 0.9;
+  let maxDimension = Infinity;
+
+  // Imagens grandes recebem tratamento leve
+  if (sizeMB > 8) {
+    maxDimension = 2000;
+    quality = 0.85;
+  } else if (sizeMB > 3) {
+    maxDimension = 2500;
+    quality = 0.88;
   }
 
-  const bitmap = await createImageBitmap(file);
+  // Proteção contra resoluções absurdas
+  const MAX_PIXEL_SIDE = 4000;
 
-  const origW = bitmap.width;
-  const origH = bitmap.height;
+  const currentLargestSide = Math.max(width, height);
 
-  let scale = Math.min(1, maxDimension / Math.max(origW, origH));
+  if (currentLargestSide > MAX_PIXEL_SIDE) {
+    const scale = MAX_PIXEL_SIDE / currentLargestSide;
 
-  let quality = startQuality;
+    width = Math.round(width * scale);
+    height = Math.round(height * scale);
+  }
 
-  let bestBlob: Blob | null = null;
+  // Redimensionamento conforme o peso do arquivo
+  const resizedLargestSide = Math.max(width, height);
 
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const w = Math.max(1, Math.round(origW * scale));
-    const h = Math.max(1, Math.round(origH * scale));
+  if (Number.isFinite(maxDimension) && resizedLargestSide > maxDimension) {
+    const scale = maxDimension / resizedLargestSide;
 
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
+    width = Math.round(width * scale);
+    height = Math.round(height * scale);
+  }
 
-    const ctx = canvas.getContext("2d");
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
 
-    if (!ctx) {
-      throw new Error("Canvas 2D não disponível");
-    }
+  const ctx = canvas.getContext("2d");
 
-    ctx.drawImage(bitmap, 0, 0, w, h);
+  if (!ctx) {
+    throw new Error("Canvas 2D não disponível");
+  }
 
-    const blob = await canvasToWebpBlob(canvas, quality);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
 
-    console.log("Compressão:", {
-      tentativa: attempt + 1,
+  ctx.drawImage(img, 0, 0, width, height);
+
+  const blob = await canvasToWebpBlob(canvas, quality);
+
+  console.log("Conversão WebP", {
+    original: {
+      nome: file.name,
+      tipo: file.type,
+      tamanhoKB: Math.round(file.size / 1024),
+      largura: origW,
+      altura: origH,
+    },
+    final: {
       tamanhoKB: Math.round(blob.size / 1024),
-      largura: w,
-      altura: h,
+      largura: width,
+      altura: height,
       qualidade: quality,
-    });
+      tipo: "image/webp",
+    },
+  });
 
-    bestBlob = blob;
+  const baseName = file.name.replace(/\.[^.]+$/, "");
 
-    if (blob.size <= maxBytes) {
-      const baseName = file.name.replace(/\.[^.]+$/, "");
-
-      return new File([blob], `${baseName}.webp`, {
-        type: "image/webp",
-        lastModified: Date.now(),
-      });
-    }
-
-    // Primeiro reduz qualidade
-    if (quality > minQuality) {
-      quality = Math.max(minQuality, quality - 0.05);
-    }
-    // Depois reduz resolução
-    else {
-      const nextScale = scale * 0.92;
-
-      const nextMaxDimension = Math.max(origW, origH) * nextScale;
-
-      if (nextMaxDimension < minDimension) {
-        break;
-      }
-
-      scale = nextScale;
-    }
-  }
-
-  // Retorna o melhor resultado obtido
-  if (bestBlob) {
-    const baseName = file.name.replace(/\.[^.]+$/, "");
-
-    return new File([bestBlob], `${baseName}.webp`, {
-      type: "image/webp",
-      lastModified: Date.now(),
-    });
-  }
-
-  throw new Error("Falha ao processar imagem.");
+  return new File([blob], `${baseName}.webp`, {
+    type: "image/webp",
+    lastModified: Date.now(),
+  });
 }
