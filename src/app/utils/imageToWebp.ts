@@ -1,41 +1,56 @@
 type ToWebpTargetOptions = {
-  maxBytes?: number; // ex: 400 * 1024
-  maxDimension?: number; // ex: 1600 (limite inicial)
-  minDimension?: number; // ex: 720 (não deixa ficar minúscula)
-  startQuality?: number; // ex: 0.82
-  minQuality?: number; // ex: 0.45
-  maxAttempts?: number; // ex: 12
+  maxBytes?: number;
+  maxDimension?: number;
+  minDimension?: number;
+  startQuality?: number;
+  minQuality?: number;
+  maxAttempts?: number;
   force?: boolean;
 };
 
 async function canvasToWebpBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
   return await new Promise((resolve, reject) => {
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Falha ao gerar WebP"))), "image/webp", quality);
+    canvas.toBlob(
+      (blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error("Falha ao gerar WebP"));
+      },
+      "image/webp",
+      quality,
+    );
   });
 }
 
 export async function fileToWebp(
   file: File,
   {
-    maxBytes = 400 * 1024,
-    maxDimension = 1600,
-    minDimension = 720,
-    startQuality = 0.82,
-    minQuality = 0.45,
+    maxBytes = 1024 * 1024, // 1MB
+    maxDimension = 2000,
+    minDimension = 1200,
+    startQuality = 0.92,
+    minQuality = 0.7,
     maxAttempts = 12,
     force = true,
   }: ToWebpTargetOptions = {},
 ): Promise<File> {
+  // Não processa imagens pequenas
+  if (file.size <= maxBytes) {
+    return file;
+  }
+
   const isWebp = file.type === "image/webp" || file.name.toLowerCase().endsWith(".webp");
-  if (isWebp && !force && file.size <= maxBytes) return file;
+
+  if (isWebp && !force && file.size <= maxBytes) {
+    return file;
+  }
 
   const bitmap = await createImageBitmap(file);
 
   const origW = bitmap.width;
   const origH = bitmap.height;
 
-  // escala inicial respeitando maxDimension
   let scale = Math.min(1, maxDimension / Math.max(origW, origH));
+
   let quality = startQuality;
 
   let bestBlob: Blob | null = null;
@@ -49,36 +64,61 @@ export async function fileToWebp(
     canvas.height = h;
 
     const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Canvas 2D não disponível");
+
+    if (!ctx) {
+      throw new Error("Canvas 2D não disponível");
+    }
+
     ctx.drawImage(bitmap, 0, 0, w, h);
 
     const blob = await canvasToWebpBlob(canvas, quality);
 
-    // guarda o melhor (menor) que conseguimos até agora
-    if (!bestBlob || blob.size < bestBlob.size) bestBlob = blob;
+    console.log("Compressão:", {
+      tentativa: attempt + 1,
+      tamanhoKB: Math.round(blob.size / 1024),
+      largura: w,
+      altura: h,
+      qualidade: quality,
+    });
+
+    bestBlob = blob;
 
     if (blob.size <= maxBytes) {
       const baseName = file.name.replace(/\.[^.]+$/, "");
-      return new File([blob], `${baseName}.webp`, { type: "image/webp", lastModified: Date.now() });
+
+      return new File([blob], `${baseName}.webp`, {
+        type: "image/webp",
+        lastModified: Date.now(),
+      });
     }
 
-    // não coube: estratégia
-    // 1) diminui quality até o mínimo
-    // 2) depois diminui dimensão (scale) até minDimension
+    // Primeiro reduz qualidade
     if (quality > minQuality) {
-      quality = Math.max(minQuality, quality - 0.08);
-    } else {
-      const nextScale = scale * 0.85;
-      const nextMaxDim = Math.round(Math.max(origW, origH) * nextScale);
+      quality = Math.max(minQuality, quality - 0.05);
+    }
+    // Depois reduz resolução
+    else {
+      const nextScale = scale * 0.92;
 
-      if (nextMaxDim < minDimension) break; // não vamos reduzir mais que isso
+      const nextMaxDimension = Math.max(origW, origH) * nextScale;
+
+      if (nextMaxDimension < minDimension) {
+        break;
+      }
+
       scale = nextScale;
     }
   }
 
-  // Se falhou em bater o alvo, você decide: bloquear ou aceitar o melhor que deu.
-  // Eu recomendo bloquear e pedir recorte/imagem melhor, porque 400KB é a regra.
-  throw new Error(
-    `Não foi possível comprimir para ≤ ${Math.round(maxBytes / 1024)}KB sem passar do limite mínimo de qualidade/dimensão.`,
-  );
+  // Retorna o melhor resultado obtido
+  if (bestBlob) {
+    const baseName = file.name.replace(/\.[^.]+$/, "");
+
+    return new File([bestBlob], `${baseName}.webp`, {
+      type: "image/webp",
+      lastModified: Date.now(),
+    });
+  }
+
+  throw new Error("Falha ao processar imagem.");
 }
