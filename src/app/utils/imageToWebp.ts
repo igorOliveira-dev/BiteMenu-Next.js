@@ -1,7 +1,3 @@
-type ToWebpTargetOptions = {
-  maxUploadMB?: number;
-};
-
 function loadImage(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
@@ -38,56 +34,34 @@ function canvasToWebpBlob(canvas: HTMLCanvasElement, quality: number): Promise<B
   });
 }
 
-export async function fileToWebp(file: File, { maxUploadMB = 20 }: ToWebpTargetOptions = {}): Promise<File> {
-  const sizeMB = file.size / 1024 / 1024;
-
-  if (sizeMB > maxUploadMB) {
-    throw new Error(`A imagem possui ${sizeMB.toFixed(1)} MB. O limite é ${maxUploadMB} MB.`);
-  }
-
+export async function fileToWebp(file: File): Promise<File> {
   const img = await loadImage(file);
 
-  const origW = img.naturalWidth;
-  const origH = img.naturalHeight;
+  const origWidth = img.naturalWidth;
+  const origHeight = img.naturalHeight;
 
-  let width = origW;
-  let height = origH;
+  let width = origWidth;
+  let height = origHeight;
 
-  let quality = 0.9;
-  let maxDimension = Infinity;
+  /**
+   * Evita canvas gigantescos que podem travar celulares
+   * ou consumir muita memória.
+   *
+   * 4000px é mais do que suficiente para fotos de cardápio.
+   */
+  const MAX_SIDE = 4000;
 
-  // Imagens grandes recebem tratamento leve
-  if (sizeMB > 8) {
-    maxDimension = 2000;
-    quality = 0.85;
-  } else if (sizeMB > 3) {
-    maxDimension = 2500;
-    quality = 0.88;
-  }
+  const largestSide = Math.max(width, height);
 
-  // Proteção contra resoluções absurdas
-  const MAX_PIXEL_SIDE = 4000;
-
-  const currentLargestSide = Math.max(width, height);
-
-  if (currentLargestSide > MAX_PIXEL_SIDE) {
-    const scale = MAX_PIXEL_SIDE / currentLargestSide;
-
-    width = Math.round(width * scale);
-    height = Math.round(height * scale);
-  }
-
-  // Redimensionamento conforme o peso do arquivo
-  const resizedLargestSide = Math.max(width, height);
-
-  if (Number.isFinite(maxDimension) && resizedLargestSide > maxDimension) {
-    const scale = maxDimension / resizedLargestSide;
+  if (largestSide > MAX_SIDE) {
+    const scale = MAX_SIDE / largestSide;
 
     width = Math.round(width * scale);
     height = Math.round(height * scale);
   }
 
   const canvas = document.createElement("canvas");
+
   canvas.width = width;
   canvas.height = height;
 
@@ -102,21 +76,26 @@ export async function fileToWebp(file: File, { maxUploadMB = 20 }: ToWebpTargetO
 
   ctx.drawImage(img, 0, 0, width, height);
 
-  const blob = await canvasToWebpBlob(canvas, quality);
+  /**
+   * 95% mantém qualidade excelente
+   * e ainda reduz bastante o tamanho
+   * comparado ao JPEG original.
+   */
+  const blob = await canvasToWebpBlob(canvas, 0.95);
 
   console.log("Conversão WebP", {
     original: {
       nome: file.name,
       tipo: file.type,
       tamanhoKB: Math.round(file.size / 1024),
-      largura: origW,
-      altura: origH,
+      largura: origWidth,
+      altura: origHeight,
     },
     final: {
       tamanhoKB: Math.round(blob.size / 1024),
       largura: width,
       altura: height,
-      qualidade: quality,
+      qualidade: 0.95,
       tipo: "image/webp",
     },
   });
