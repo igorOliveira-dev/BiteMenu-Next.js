@@ -1532,7 +1532,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                           if (msg.includes("Não foi possível comprimir")) {
                             alert?.("Essa imagem é pesada demais. Tente recortar ou escolher outra.", "error");
                           } else {
-                            alert?.("Erro ao enviar imagem (ver console)", "error");
+                            alert?.("Tipo de imagem não suportado.", "error");
                           }
                         } finally {
                           setUploadingImage(false);
