@@ -319,8 +319,8 @@ export default function GetStart() {
         console.time("bannerConvert+Upload");
         const webpBannerRaw = await fileToWebp(bannerFile, {
           maxBytes: 300 * 1024,
-          maxDimension: 1024,
-          minDimension: 640,
+          maxDimension: 1640,
+          minDimension: 1200,
           startQuality: 0.82,
           minQuality: 0.55,
           force: true,
