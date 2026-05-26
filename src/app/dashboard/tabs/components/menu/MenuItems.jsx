@@ -1517,7 +1517,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
                           const webpFile = await fileToWebp(file, {
                             maxBytes: 900 * 1024,
-                            maxDimension: 1080,
+                            maxDimension: 1600,
                             minDimension: 520,
                             startQuality: 1,
                             minQuality: 0.92,
