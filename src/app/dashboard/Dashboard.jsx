@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import useMenu from "@/hooks/useMenu";
 import Menu from "./tabs/Menu";
 import Orders from "./tabs/Orders";
@@ -18,6 +18,7 @@ import QrCodeModal from "./tabs/components/menu/QrCodeModal";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import { FaUtensils, FaShoppingBag, FaChartLine, FaUser, FaLifeRing, FaShieldAlt } from "react-icons/fa";
 import { trackAction } from "@/utils/userActions";
+import { supabase } from "@/lib/supabaseClient";
 
 const Dashboard = ({
   menuState: externalMenuState,
@@ -78,6 +79,10 @@ const Dashboard = ({
 
   const [slug, setSlug] = useState("");
 
+  const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
+  const previousCountRef = useRef(0);
+  const [reloadOrderTrigger, setReloadOrderTrigger] = useState(0);
+
   useEffect(() => {
     if (menu?.slug) setSlug(menu.slug);
   }, [menu?.slug]);
@@ -91,6 +96,37 @@ const Dashboard = ({
     };
     if (map[selectedTab]) trackAction(map[selectedTab]);
   }, [selectedTab]);
+
+  // identificar novos pedidos
+  useEffect(() => {
+    if (!menu?.id) return;
+
+    const checkOrders = async () => {
+      const { count, error } = await supabase
+        .from("orders")
+        .select("*", {
+          count: "exact",
+          head: true,
+        })
+        .eq("menu_id", menu.id);
+
+      if (error || typeof count !== "number") return;
+
+      if (previousCountRef.current > 0 && count > previousCountRef.current) {
+        customAlert("Novo pedido recebido!", "success");
+        setReloadOrderTrigger((prev) => prev + 1);
+      }
+
+      previousCountRef.current = count;
+      setPendingOrdersCount(count);
+    };
+
+    checkOrders();
+
+    const interval = setInterval(checkOrders, 30000);
+
+    return () => clearInterval(interval);
+  }, [menu?.id]);
 
   // Modal de compartilhamento (hamburger) fecha com botão "Voltar"
   useModalBackHandler(isOpen, () => setIsOpen(false));
@@ -143,7 +179,15 @@ const Dashboard = ({
               className={`w-full px-1 xxs:px-4 py-4 hover-bg-translucid transition-colors border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "orders" ? "bg-translucid" : ""}`}
             >
               <FaShoppingBag className="hidden lg:block text-lg shrink-0" />
-              <span>Pedidos</span>
+
+              <span className="flex items-center gap-2">
+                Pedidos
+                {pendingOrdersCount > 0 && (
+                  <span className="bg-red-500 text-white rounded-full text-xs w-[24px] h-[24px] flex items-center justify-center">
+                    {pendingOrdersCount}
+                  </span>
+                )}
+              </span>
             </button>
 
             <button
@@ -228,7 +272,7 @@ const Dashboard = ({
           />
         </div>
         <div className={selectedTab === "orders" ? "block" : "hidden"}>
-          <Orders />
+          <Orders reloadTrigger={reloadOrderTrigger} />
         </div>
         <div className={selectedTab === "sales" ? "block" : "hidden"}>
           <Sales setSelectedTab={setSelectedTab} />

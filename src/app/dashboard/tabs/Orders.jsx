@@ -53,7 +53,7 @@ const SectionCard = ({ title, subtitle, children, icon = null }) => (
   </section>
 );
 
-const Orders = ({ setSelectedTab }) => {
+const Orders = ({ setSelectedTab, reloadTrigger }) => {
   const { menu, loading } = useMenu();
   const { profile, loadingProfile } = useUser();
   const customAlert = useAlert();
@@ -130,6 +130,12 @@ const Orders = ({ setSelectedTab }) => {
     fetchSummary();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [menu?.id, filtersKey, enabledOrders]);
+
+  useEffect(() => {
+    if (reloadTrigger !== 0) {
+      resetAndFetch();
+    }
+  }, [reloadTrigger]);
 
   const resetAndFetch = async () => {
     setOrders([]);
