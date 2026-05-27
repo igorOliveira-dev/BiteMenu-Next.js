@@ -83,6 +83,31 @@ const Dashboard = ({
   const previousCountRef = useRef(0);
   const [reloadOrderTrigger, setReloadOrderTrigger] = useState(0);
 
+  const audioRef = useRef(null);
+
+  // unlocker de audio para som de pedido novo
+  useEffect(() => {
+    audioRef.current = new Audio("/sounds/new-order.wav");
+
+    const unlockAudio = () => {
+      audioRef.current
+        ?.play()
+        .then(() => {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+        })
+        .catch(() => {});
+
+      window.removeEventListener("click", unlockAudio);
+    };
+
+    window.addEventListener("click", unlockAudio);
+
+    return () => {
+      window.removeEventListener("click", unlockAudio);
+    };
+  }, []);
+
   useEffect(() => {
     if (menu?.slug) setSlug(menu.slug);
   }, [menu?.slug]);
@@ -114,6 +139,9 @@ const Dashboard = ({
 
       if (previousCountRef.current > 0 && count > previousCountRef.current) {
         customAlert("Novo pedido recebido!", "success");
+        if (menu?.sound_new_order) {
+          audioRef.current?.play();
+        }
         setReloadOrderTrigger((prev) => prev + 1);
       }
 

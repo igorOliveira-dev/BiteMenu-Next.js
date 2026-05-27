@@ -77,6 +77,8 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
   const [paperSize, setPaperSize] = useState("paper-80mm");
   const printRef = useRef(null);
 
+  const [soundNewOrder, setSoundNewOrder] = useState(true);
+
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [summary, setSummary] = useState({
     count: 0,
@@ -118,6 +120,12 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
       setEnabledOrders(menu.orders === "site_whatsapp" || menu.orders === "site");
     }
   }, [menu?.orders]);
+
+  useEffect(() => {
+    if (menu?.sound_new_order !== undefined) {
+      setSoundNewOrder(menu.sound_new_order);
+    }
+  }, [menu?.sound_new_order]);
 
   useEffect(() => {
     if (menu?.delivery_fee_on_sales !== undefined) {
@@ -327,6 +335,24 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
       setDeliveryFeeOnSales(!value);
     } else {
       customAlert("Configuração de taxa de entrega atualizada!", "success");
+    }
+  };
+
+  const handleToggleSoundNewOrder = async (value) => {
+    setSoundNewOrder(value);
+
+    const { error } = await supabase
+      .from("menus")
+      .update({
+        sound_new_order: value,
+      })
+      .eq("id", menu.id);
+
+    if (error) {
+      customAlert("Erro ao atualizar som de pedidos.", "error");
+      setSoundNewOrder(!value);
+    } else {
+      customAlert("Configuração de som atualizada!", "success");
     }
   };
 
@@ -543,6 +569,21 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
           <p className="mt-2 text-xs color-gray">
             Se ativado, a taxa de entrega será somada ao total das vendas registradas.
           </p>
+
+          <hr className="my-3 border-translucid" />
+
+          <p className="mb-2 text-sm font-medium">Som de novos pedidos</p>
+
+          <label className="flex items-center gap-2">
+            <span className="switch">
+              <input type="checkbox" checked={soundNewOrder} onChange={(e) => handleToggleSoundNewOrder(e.target.checked)} />
+              <span className="slider"></span>
+            </span>
+
+            <span>Emitir som ao receber pedido</span>
+          </label>
+
+          <p className="mt-2 text-xs color-gray">Quando ativado, o sistema tocará um som ao chegar um novo pedido.</p>
         </div>
 
         {!enabledOrders ? (
