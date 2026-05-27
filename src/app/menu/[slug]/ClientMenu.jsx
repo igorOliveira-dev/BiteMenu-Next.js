@@ -820,7 +820,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole }) {
                     width={120}
                     height={120}
                     className="object-cover w-full h-full"
-                    loading="lazy"
+                    unoptimized
                   />
                 </button>
               )}
@@ -1012,7 +1012,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole }) {
                 width={900}
                 height={900}
                 className="w-full h-full object-cover"
-                loading="lazy"
+                unoptimized
               />
             </button>
           </div>
