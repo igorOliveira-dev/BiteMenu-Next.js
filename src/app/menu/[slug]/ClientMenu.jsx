@@ -602,6 +602,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole }) {
                       {isSafeImageUrl(it.image_url) && (
                         <div className="w-full aspect-square rounded-md mb-2 overflow-hidden">
                           <Image
+                            unoptimized
                             src={supabaseImg(it.image_url, { width: 400, quality: 75 })}
                             alt={it.name}
                             width={400}
