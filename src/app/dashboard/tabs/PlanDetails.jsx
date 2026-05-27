@@ -82,6 +82,20 @@ export default function PlanDetails({ setSelectedTab }) {
 
       {subscription ? (
         <>
+          {["past_due", "unpaid"].includes(subscription.status) && subscription.latest_invoice_url && (
+            <div className="p-4 mb-4 bg-red-300 border border-red-400 text-red-700 rounded max-w-[1024px]">
+              <span>Você tem uma cobrança pendente, isso pode ter removido seu acesso ao plano.</span>
+              <a
+                href={subscription.latest_invoice_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 text-blue-500 hover:text-blue-700 underline transition inline-block"
+              >
+                Regularizar pagamento
+              </a>
+            </div>
+          )}
+
           <div className="flex flex-col xs:flex-row gap-4 max-w-[1024px]">
             <div className="flex flex-col justify-center p-4 bg-translucid border-2 border-[var(--translucid)] rounded-lg text-center w-full">
               <p className="text-sm color-gray">Plano atual:</p>

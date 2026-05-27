@@ -21,7 +21,7 @@ export async function GET(req) {
         {
           status: 200,
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
@@ -29,6 +29,8 @@ export async function GET(req) {
     const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
       expand: ["items.data.price", "latest_invoice", "latest_invoice.payment_intent"],
     });
+
+    const invoice = subscription.latest_invoice;
 
     console.log("Subscription retornada:", subscription);
 
@@ -112,11 +114,14 @@ export async function GET(req) {
         plan_price: planPrice,
         current_period_end: currentPeriodEnd,
         card_info: cardInfo,
+
+        latest_invoice_status: invoice?.status ?? null,
+        latest_invoice_url: invoice?.hosted_invoice_url ?? null,
       }),
       {
         status: 200,
         headers: { "Content-Type": "application/json" },
-      }
+      },
     );
   } catch (error) {
     console.error("[Stripe Subscription] Erro:", error);
@@ -127,7 +132,7 @@ export async function GET(req) {
       {
         status: 500,
         headers: { "Content-Type": "application/json" },
-      }
+      },
     );
   }
 }
