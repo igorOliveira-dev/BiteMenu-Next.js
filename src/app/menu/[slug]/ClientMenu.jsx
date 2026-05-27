@@ -922,6 +922,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole }) {
                               backgroundColor: boxBg,
                               color: foregroundToUse,
                               border: isSelected ? `1px solid #16a34a88` : "1px solid transparent",
+                              display: `${a.hidden ? "none" : "block"}`,
                             }}
                           >
                             <div className="font-medium truncate">

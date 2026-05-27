@@ -1059,7 +1059,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
           alert?.(`O preço do adicional "${a.name || `#${i + 1}`}" não é válido.`, "error");
           return;
         }
-        additionals[i] = { name: String(a.name).trim(), price: p };
+        additionals[i] = { name: String(a.name).trim(), price: p, hidden: !!a.hidden };
       }
       data.additionals = additionals;
     }
@@ -1685,7 +1685,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
                 <div className="space-y-2 mt-2 max-h-[120px] overflow-y-auto">
                   {(modalPayload.data.additionals || []).map((add, idx) => (
-                    <div key={add.id ?? idx} className="flex flex-wrap items-center gap-2 w-full">
+                    <div
+                      key={add.id ?? idx}
+                      className={`flex flex-wrap items-center gap-2 w-full ${add.hidden ? "opacity-50" : ""}`}
+                    >
                       <input
                         type="text"
                         value={add.name}
@@ -1717,6 +1720,33 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                         className="w-16 flex-none p-2 rounded border border-translucid bg-translucid"
                         placeholder="0.00"
                       />
+
+                      <button
+                        onClick={() =>
+                          setModalPayload((p) => {
+                            const next = [...(p.data.additionals || [])];
+
+                            next[idx] = {
+                              ...next[idx],
+                              hidden: !next[idx].hidden,
+                            };
+
+                            return {
+                              ...p,
+                              data: {
+                                ...p.data,
+                                additionals: next,
+                              },
+                            };
+                          })
+                        }
+                        className={`p-2 rounded text-white ${
+                          add.hidden ? "bg-yellow-600 hover:bg-yellow-700" : "bg-green-600 hover:bg-green-700"
+                        }`}
+                        type="button"
+                      >
+                        {add.hidden ? <FaEyeSlash /> : <FaEye />}
+                      </button>
 
                       <button
                         onClick={() =>
