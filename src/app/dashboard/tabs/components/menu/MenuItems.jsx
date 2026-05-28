@@ -1272,8 +1272,28 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       </div>
 
       {categories.length === 0 && (
-        <div className="mb-4 text-sm" style={{ color: grayToUse }}>
-          Nenhuma categoria ainda.
+        <div
+          className="mb-6 flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 text-center"
+          style={{
+            borderColor: "var(--translucid)",
+            backgroundColor: "rgba(255,255,255,0.02)",
+          }}
+        >
+          <div className="mb-2 text-lg font-semibold text-white">Nenhuma categoria criada</div>
+
+          <p className="mb-5 max-w-md text-sm leading-relaxed" style={{ color: grayToUse }}>
+            Organize seu cardápio criando categorias como <span className="text-white">Lanches</span>,{" "}
+            <span className="text-white">Bebidas</span> ou <span className="text-white">Sobremesas</span>.
+          </p>
+
+          <button
+            onClick={() => openCategoryModal("create")}
+            className={`cursor-pointer px-4 py-2 bg-blue-600/80 border-2 border-[var(--translucid)] hover:bg-blue-700/80 text-white rounded-lg font-medium transition-all ${
+              showCatIndicator ? "pulse-btn" : ""
+            }`}
+          >
+            + Criar primeira categoria
+          </button>
         </div>
       )}
 
@@ -1421,25 +1441,50 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
               onDragEnd={(event) => handleItemsDragEnd(cat.id, event)}
             >
               <SortableContext items={(cat.menu_items || []).map((it) => it.id)} strategy={verticalListSortingStrategy}>
-                <div className="flex flex-col gap-2">
-                  {(cat.menu_items || []).map((it) => (
-                    <SortableMenuItem
-                      key={it.id}
-                      item={it}
-                      cat={cat}
-                      openItemModal={openItemModal}
-                      deleteItem={deleteItem}
-                      toggleItemVisibility={toggleItemVisibility}
-                      detailsColor={detailsColor}
-                      backgroundColor={backgroundColor}
-                      foregroundToUse={foregroundToUse}
-                      grayToUse={grayToUse}
-                      canShowPromoPrice={canShowPromoPrice}
-                      getContrastTextColor={getContrastTextColor}
-                      currency={menu?.currency}
-                    />
-                  ))}
-                </div>
+                {(cat.menu_items || []).length === 0 ? (
+                  <div
+                    className="mt-3 flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center"
+                    style={{
+                      borderColor: "var(--translucid)",
+                      backgroundColor: "rgba(255,255,255,0.02)",
+                    }}
+                  >
+                    <div className="mb-2 text-base font-semibold text-white">Essa categoria está vazia</div>
+
+                    <p className="mb-4 max-w-sm text-sm leading-relaxed" style={{ color: grayToUse }}>
+                      Adicione itens para que eles apareçam no cardápio dos clientes.
+                    </p>
+
+                    <button
+                      onClick={() => openItemModal("create", cat.id)}
+                      className={`cursor-pointer px-4 py-2 bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white rounded-lg font-medium transition-all ${
+                        cat.menu_items?.length === 0 ? "pulse-btn" : ""
+                      }`}
+                    >
+                      + Criar primeiro item
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {(cat.menu_items || []).map((it) => (
+                      <SortableMenuItem
+                        key={it.id}
+                        item={it}
+                        cat={cat}
+                        openItemModal={openItemModal}
+                        deleteItem={deleteItem}
+                        toggleItemVisibility={toggleItemVisibility}
+                        detailsColor={detailsColor}
+                        backgroundColor={backgroundColor}
+                        foregroundToUse={foregroundToUse}
+                        grayToUse={grayToUse}
+                        canShowPromoPrice={canShowPromoPrice}
+                        getContrastTextColor={getContrastTextColor}
+                        currency={menu?.currency}
+                      />
+                    ))}
+                  </div>
+                )}
               </SortableContext>
             </DndContext>
           </div>
