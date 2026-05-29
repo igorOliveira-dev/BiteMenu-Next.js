@@ -680,7 +680,6 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole }) {
                               onClick={() => handleItemClick(it)}
                             >
                               <Image
-                                unoptimized
                                 src={supabaseImg(it.image_url, { width: 160, quality: 75 })}
                                 alt={it.name}
                                 width={72}
