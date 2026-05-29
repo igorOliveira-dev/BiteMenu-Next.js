@@ -1275,15 +1275,18 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         <div
           className="mb-6 flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 text-center"
           style={{
-            borderColor: "var(--translucid)",
-            backgroundColor: "rgba(255,255,255,0.02)",
+            borderColor: translucidToUse,
+            backgroundColor: translucidToUse,
           }}
         >
-          <div className="mb-2 text-lg font-semibold text-white">Nenhuma categoria criada</div>
+          <div className="mb-2 text-lg font-semibold" style={{ color: foregroundToUse }}>
+            Nenhuma categoria criada
+          </div>
 
           <p className="mb-5 max-w-md text-sm leading-relaxed" style={{ color: grayToUse }}>
-            Organize seu cardápio criando categorias como <span className="text-white">Lanches</span>,{" "}
-            <span className="text-white">Bebidas</span> ou <span className="text-white">Sobremesas</span>.
+            Organize seu cardápio criando categorias como <span style={{ color: foregroundToUse }}>Lanches</span>,{" "}
+            <span style={{ color: foregroundToUse }}>Bebidas</span> ou{" "}
+            <span style={{ color: foregroundToUse }}>Sobremesas</span>.
           </p>
 
           <button
@@ -1445,11 +1448,13 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                   <div
                     className="mt-3 flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center"
                     style={{
-                      borderColor: "var(--translucid)",
-                      backgroundColor: "rgba(255,255,255,0.02)",
+                      borderColor: translucidToUse,
+                      backgroundColor: translucidToUse,
                     }}
                   >
-                    <div className="mb-2 text-base font-semibold text-white">Essa categoria está vazia</div>
+                    <div className="mb-2 text-base font-semibold" style={{ color: foregroundToUse }}>
+                      Essa categoria está vazia
+                    </div>
 
                     <p className="mb-4 max-w-sm text-sm leading-relaxed" style={{ color: grayToUse }}>
                       Adicione itens para que eles apareçam no cardápio dos clientes.
