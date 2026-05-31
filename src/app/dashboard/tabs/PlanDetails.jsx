@@ -9,6 +9,7 @@ import { useConfirm } from "@/providers/ConfirmProvider";
 export default function PlanDetails({ setSelectedTab }) {
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState(null);
   const confirm = useConfirm();
 
   useEffect(() => {
@@ -23,6 +24,8 @@ export default function PlanDetails({ setSelectedTab }) {
         setLoading(false);
         return;
       }
+
+      setUserId(user.id);
 
       // 2️⃣ Pegar profile com stripe_subscription_id
       const { data: profile, error: profileError } = await supabase
@@ -46,7 +49,9 @@ export default function PlanDetails({ setSelectedTab }) {
 
       // 3️⃣ Buscar detalhes da assinatura via API Route
       try {
-        const res = await fetch(`/api/stripe-subscription?subscriptionId=${profile.stripe_subscription_id}`);
+        const res = await fetch(
+          `/api/stripe-subscription?subscriptionId=${profile.stripe_subscription_id}&userId=${user.id}`,
+        );
         if (!res.ok) throw new Error("Erro ao buscar assinatura");
 
         const data = await res.json();
@@ -150,7 +155,7 @@ export default function PlanDetails({ setSelectedTab }) {
                 );
                 if (!ok) return;
 
-                cancelSubscription(subscription.id);
+                cancelSubscription(subscription.id, userId);
               }}
               className="mt-4 text-white cursor-pointer bg-red-600/70 hover:bg-red-600/90 border-2 border-[var(--translucid)] rounded-lg p-2 transition"
             >
@@ -165,12 +170,12 @@ export default function PlanDetails({ setSelectedTab }) {
   );
 }
 
-async function cancelSubscription(subscriptionId) {
+async function cancelSubscription(subscriptionId, userId) {
   try {
     const res = await fetch("/api/cancel-subscription", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ subscriptionId }),
+      body: JSON.stringify({ subscriptionId, userId }),
     });
 
     const data = await res.json();

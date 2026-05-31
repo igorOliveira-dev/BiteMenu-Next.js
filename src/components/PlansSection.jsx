@@ -99,6 +99,21 @@ const PlansSection = ({ canShowFreeTrialBtn }) => {
 
     try {
       setStripeLoading(true);
+
+      // Verifica se já tem assinatura ativa no Stripe antes de prosseguir
+      if (profile?.stripe_subscription_id) {
+        const res = await fetch(
+          `/api/stripe-subscription?subscriptionId=${profile.stripe_subscription_id}&userId=${profile.id}`,
+        );
+        const data = await res.json();
+
+        const activeStatuses = ["active", "trialing", "past_due"];
+        if (activeStatuses.includes(data.status)) {
+          alert("Você já possui uma assinatura ativa. Cancele o plano atual antes de assinar outro.");
+          return;
+        }
+      }
+
       await planClick(selectedPlan.id, selectedPlanTrial);
     } catch (e) {
       console.error(e);
