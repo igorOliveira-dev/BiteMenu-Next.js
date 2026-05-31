@@ -1,28 +1,39 @@
-import Stripe from "stripe";
+import { stripeCPF, stripeCNPJ } from "@/lib/stripe";
 import { createClient } from "@supabase/supabase-js";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+const webhookSecretCPF = process.env.STRIPE_WEBHOOK_SECRET_CPF;
+const webhookSecretCNPJ = process.env.STRIPE_WEBHOOK_SECRET_CNPJ;
 
 export async function POST(req) {
   const body = await req.text();
   const sig = req.headers.get("stripe-signature");
 
+  // Auto-detecta qual conta originou o evento tentando validar nas duas
   let event;
+  let stripe;
+
   try {
-    event = stripe.webhooks.constructEvent(body, sig, endpointSecret);
-  } catch (err) {
-    console.error("[Webhook] Assinatura inválida:", err.message);
-    return new Response(`Webhook Error: ${err.message}`, { status: 400 });
+    event = stripeCPF.webhooks.constructEvent(body, sig, webhookSecretCPF);
+    stripe = stripeCPF;
+  } catch {
+    try {
+      event = stripeCNPJ.webhooks.constructEvent(body, sig, webhookSecretCNPJ);
+      stripe = stripeCNPJ;
+    } catch (err) {
+      console.error("[Webhook] Assinatura inválida:", err.message);
+      return new Response(`Webhook Error: ${err.message}`, { status: 400 });
+    }
   }
 
   try {
     switch (event.type) {
       // Quando usuário conclui checkout
       case "checkout.session.completed": {
-        const session = await stripe.checkout.sessions.retrieve(event.data.object.id, { expand: ["line_items"] });
+        const session = await stripe.checkout.sessions.retrieve(event.data.object.id, {
+          expand: ["line_items"],
+        });
         const userId = session.metadata?.supabase_user_id;
         const subscriptionId = session.subscription;
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
@@ -71,7 +82,7 @@ export async function POST(req) {
         break;
       }
 
-      // quando pagamento é bem-sucedido
+      // Quando pagamento é bem-sucedido
       case "invoice.paid":
       case "invoice.payment_succeeded":
       case "invoice_payment.paid": {
@@ -124,7 +135,7 @@ export async function POST(req) {
         break;
       }
 
-      // Opcional: quando pagamento falha
+      // Quando pagamento falha
       case "invoice.payment_failed": {
         const invoice = event.data.object;
         const customerId = invoice.customer;
@@ -135,7 +146,7 @@ export async function POST(req) {
           .eq("stripe_customer_id", customerId)
           .maybeSingle();
 
-        if (!profile) break; // se não achar, apenas ignore
+        if (!profile) break;
 
         await supabase.from("profiles").update({ role: "free" }).eq("id", profile.id);
 

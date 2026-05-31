@@ -1,7 +1,6 @@
-import Stripe from "stripe";
+import { getStripeClient } from "@/lib/stripe";
 import { createClient } from "@supabase/supabase-js";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 export async function POST(req) {
@@ -15,18 +14,20 @@ export async function POST(req) {
       });
     }
 
-    // 🔹 Buscar perfil do usuário
+    // Busca perfil completo incluindo stripe_account
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("stripe_customer_id, stripe_subscription_id, role, has_used_trial")
+      .select("stripe_customer_id, stripe_subscription_id, role, has_used_trial, stripe_account")
       .eq("id", userId)
       .maybeSingle();
 
     if (profileError) throw profileError;
 
+    const stripe = getStripeClient(profile?.stripe_account ?? "cpf");
+
     let customerId = profile?.stripe_customer_id;
 
-    // 🔹 Criar cliente no Stripe se ainda não existir
+    // Criar cliente no Stripe se ainda não existir
     if (!customerId) {
       const customer = await stripe.customers.create({
         metadata: { supabase_user_id: userId },
@@ -36,21 +37,18 @@ export async function POST(req) {
       await supabase.from("profiles").update({ stripe_customer_id: customerId }).eq("id", userId);
     }
 
-    // 🔹 NOVO TRECHO: impedir compra se já tiver assinatura ativa
+    // Impede compra se já tiver assinatura ativa
     if (profile?.role !== "free") {
       return new Response(
         JSON.stringify({
           error: "Você já possui um plano ativo. Cancele o atual antes de assinar outro.",
           existing_subscription: true,
         }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        },
+        { status: 400, headers: { "Content-Type": "application/json" } },
       );
     }
 
-    // impedir que usuário que ja usou free trial tente um novo free trial
+    // Impede novo trial se já utilizou
     if (withTrial && profile?.has_used_trial) {
       return new Response(JSON.stringify({ error: "Você já utilizou seu período de teste gratuito." }), {
         status: 400,
@@ -58,7 +56,6 @@ export async function POST(req) {
       });
     }
 
-    // 🔹 Caso não tenha assinatura ainda → criar sessão de checkout normal
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
