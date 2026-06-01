@@ -396,7 +396,6 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole }) {
             <div className="flex items-end gap-3">
               {isSafeImageUrl(menu.logo_url) && (
                 <Image
-                  unoptimized
                   alt="Logo do estabelecimento"
                   src={supabaseImg(menu.logo_url, { width: 160, quality: 80 })}
                   width={70}
@@ -604,7 +603,6 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole }) {
                         {isSafeImageUrl(it.image_url) ? (
                           <div className="w-full aspect-square overflow-hidden">
                             <Image
-                              unoptimized
                               src={supabaseImg(it.image_url, { width: 400, quality: 75 })}
                               alt={it.name}
                               width={200}

@@ -452,7 +452,6 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole }) {
               {isSafeImageUrl(menu.logo_url) && (
                 <div className="mr-2 sm:mr-4">
                   <Image
-                    unoptimized
                     alt="Logo do estabelecimento"
                     src={supabaseImg(menu.logo_url, { width: 160, quality: 80 })}
                     width={80}
@@ -602,7 +601,6 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole }) {
                       {isSafeImageUrl(it.image_url) && (
                         <div className="w-full aspect-square rounded-md mb-2 overflow-hidden">
                           <Image
-                            unoptimized
                             src={supabaseImg(it.image_url, { width: 400, quality: 75 })}
                             alt={it.name}
                             width={400}
@@ -680,7 +678,6 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole }) {
                               onClick={() => handleItemClick(it)}
                             >
                               <Image
-                                unoptimized
                                 src={supabaseImg(it.image_url, { width: 160, quality: 75 })}
                                 alt={it.name}
                                 width={72}
