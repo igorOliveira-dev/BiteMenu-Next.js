@@ -16,12 +16,29 @@ export const planClick = async (plan, withTrial = false) => {
     return;
   }
 
+  // Busca o stripe_account do perfil do usuário
+  const { data: profileData, error: profileError } = await supabase
+    .from("profiles")
+    .select("stripe_account")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError || !profileData?.stripe_account) {
+    console.error("Erro ao buscar perfil:", profileError);
+    alert("Não foi possível identificar o tipo de conta. Tente novamente.");
+    return;
+  }
+
+  // Busca o plano filtrando também pelo stripe_account do perfil
   const { data: planData, error } = await supabase
     .from("plans")
     .select("stripe_price_id")
     .eq("role", plan)
     .eq("active", true)
+    .eq("stripe_account", profileData.stripe_account)
     .maybeSingle();
+
+  console.log(planData, error);
 
   if (error || !planData?.stripe_price_id) {
     console.error("Erro ao buscar plano:", error);
