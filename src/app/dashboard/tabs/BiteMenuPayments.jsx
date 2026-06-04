@@ -2,6 +2,7 @@
 
 import useUser from "@/hooks/useUser";
 import { useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 
 const BiteMenuPayments = () => {
   const { profile } = useUser();
