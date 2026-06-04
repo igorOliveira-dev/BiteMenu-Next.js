@@ -72,15 +72,46 @@ const BiteMenuPayments = () => {
     }
   };
 
+  const handleManageAccount = async () => {
+    const response = await fetch("/api/connect/login-link", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: profile.id,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error);
+    }
+
+    window.location.href = data.url;
+  };
+
   return (
     <div>
       <h1>Pagamentos Bite Menu</h1>
 
-      <button onClick={handleCreateConnect}>Configurar recebimentos</button>
+      <button onClick={handleCreateConnect} className="p-2 m-2 bg-blue-500 text-white rounded">
+        Configurar recebimentos
+      </button>
 
       <hr />
 
-      {profile?.stripe_connect_ready ? <p>Conta conectada</p> : <p>Conta não conectada</p>}
+      {profile?.stripe_connect_ready ? (
+        <div>
+          <p>Conta conectada</p>
+          <button onClick={handleManageAccount} className="p-2 m-2 bg-blue-500 text-white rounded">
+            Gerenciar conta Stripe
+          </button>
+        </div>
+      ) : (
+        <p>Conta não conectada</p>
+      )}
     </div>
   );
 };
