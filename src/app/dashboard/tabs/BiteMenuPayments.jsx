@@ -35,6 +35,7 @@ const BiteMenuPayments = () => {
     console.log(data);
 
     if (data.connected) {
+      window.history.replaceState({}, "", "/dashboard?tab=biteMenuPayments");
       window.location.reload();
     }
   };

@@ -246,7 +246,7 @@ const Dashboard = ({
             {profile?.role === "admin" && (
               <button
                 onClick={() => setSelectedTab("biteMenuPayments")}
-                className={`w-full px-1 xxs:px-4 py-4 hover-bg-translucid transition-colors border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "biteMenuPayments" ? "bg-translucid" : ""}`}
+                className={`w-full px-1 xxs:px-4 py-4 hover-bg-translucid transition-colors border-t-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "biteMenuPayments" ? "bg-translucid" : ""}`}
               >
                 <FaMoneyBill className="hidden lg:block text-lg shrink-0" />
                 <span>Pagamentos Bite Menu</span>
