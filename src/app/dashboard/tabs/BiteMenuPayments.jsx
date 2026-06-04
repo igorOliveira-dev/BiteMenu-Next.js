@@ -1,9 +1,40 @@
 "use client";
 
 import useUser from "@/hooks/useUser";
+import { useSearchParams } from "next/navigation";
 
 const BiteMenuPayments = () => {
   const { profile } = useUser();
+
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const connectSuccess = searchParams.get("connect");
+
+    if (connectSuccess === "success") {
+      syncConnectStatus();
+    }
+  }, []);
+
+  const syncConnectStatus = async () => {
+    const response = await fetch("/api/connect/status", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: profile.id,
+      }),
+    });
+
+    const data = await response.json();
+
+    console.log(data);
+
+    if (data.connected) {
+      window.location.reload();
+    }
+  };
 
   const handleCreateConnect = async () => {
     try {

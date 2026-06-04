@@ -63,8 +63,8 @@ export async function POST(req: Request) {
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
       type: "account_onboarding",
-      refresh_url: `${process.env.APP_URL}/dashboard/payments`,
-      return_url: `${process.env.APP_URL}/dashboard/payments`,
+      refresh_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?tab=biteMenuPayments`,
+      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?tab=biteMenuPayments&connect=success`,
     });
 
     return Response.json({

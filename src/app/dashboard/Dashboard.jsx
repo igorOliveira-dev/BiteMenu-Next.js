@@ -21,6 +21,7 @@ import { trackAction } from "@/utils/userActions";
 import { supabase } from "@/lib/supabaseClient";
 import BiteMenuPayments from "./tabs/BiteMenuPayments";
 import useUser from "@/hooks/useUser";
+import { useSearchParams } from "next/navigation";
 
 const Dashboard = ({
   menuState: externalMenuState,
@@ -54,6 +55,7 @@ const Dashboard = ({
 
   const [showQrCode, setShowQrCode] = useState(false);
 
+  const searchParams = useSearchParams();
   const { profile } = useUser();
 
   // helpers para usar state unificado (se externo, usar externalState, senao usar locais)
@@ -111,6 +113,14 @@ const Dashboard = ({
       window.removeEventListener("click", unlockAudio);
     };
   }, []);
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+
+    if (tab) {
+      setSelectedTab(tab);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (menu?.slug) setSlug(menu.slug);
@@ -229,7 +239,10 @@ const Dashboard = ({
               <FaChartLine className="hidden lg:block text-lg shrink-0" />
               <span>Vendas</span>
             </button>
+          </div>
 
+          {/* Bottom section */}
+          <div className="w-full hidden lg:flex flex-col">
             {profile?.role === "admin" && (
               <button
                 onClick={() => setSelectedTab("biteMenuPayments")}
@@ -239,10 +252,7 @@ const Dashboard = ({
                 <span>Pagamentos Bite Menu</span>
               </button>
             )}
-          </div>
 
-          {/* Bottom section */}
-          <div className="w-full hidden lg:flex flex-col">
             <Link
               href="/support"
               className="w-full px-4 py-4 hover-bg-translucid transition-colors border-t-2 border-[var(--translucid)] flex items-center gap-3 text-left"
