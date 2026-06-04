@@ -7,7 +7,7 @@ import Orders from "./tabs/Orders";
 import Sales from "./tabs/Sales";
 import { useAlert } from "@/providers/AlertProvider";
 import ConfigMenu from "./tabs/ConfigMenu";
-import { FaChevronLeft, FaHeadset, FaQrcode } from "react-icons/fa";
+import { FaChevronLeft, FaHeadset, FaMoneyBill, FaQrcode } from "react-icons/fa";
 import Account from "./tabs/Account";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -19,6 +19,8 @@ import useModalBackHandler from "@/hooks/useModalBackHandler";
 import { FaUtensils, FaShoppingBag, FaChartLine, FaUser, FaLifeRing, FaShieldAlt } from "react-icons/fa";
 import { trackAction } from "@/utils/userActions";
 import { supabase } from "@/lib/supabaseClient";
+import BiteMenuPayments from "./tabs/BiteMenuPayments";
+import useUser from "@/hooks/useUser";
 
 const Dashboard = ({
   menuState: externalMenuState,
@@ -51,6 +53,8 @@ const Dashboard = ({
   const [detailsColorLocal, setDetailsColorLocal] = useState("#28A745");
 
   const [showQrCode, setShowQrCode] = useState(false);
+
+  const { profile } = useUser();
 
   // helpers para usar state unificado (se externo, usar externalState, senao usar locais)
   const title = usingExternal ? externalState.title : titleLocal;
@@ -225,6 +229,16 @@ const Dashboard = ({
               <FaChartLine className="hidden lg:block text-lg shrink-0" />
               <span>Vendas</span>
             </button>
+
+            {profile?.role === "admin" && (
+              <button
+                onClick={() => setSelectedTab("biteMenuPayments")}
+                className={`w-full px-1 xxs:px-4 py-4 hover-bg-translucid transition-colors border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "biteMenuPayments" ? "bg-translucid" : ""}`}
+              >
+                <FaMoneyBill className="hidden lg:block text-lg shrink-0" />
+                <span>Pagamentos Bite Menu</span>
+              </button>
+            )}
           </div>
 
           {/* Bottom section */}
@@ -308,6 +322,11 @@ const Dashboard = ({
         <div className={selectedTab === "salesDashboard" ? "block" : "hidden"}>
           <SalesDashboard setSelectedTab={setSelectedTab} />
         </div>
+        {profile?.role === "admin" && (
+          <div className={selectedTab === "biteMenuPayments" ? "block" : "hidden"}>
+            <BiteMenuPayments />
+          </div>
+        )}
         <div className={selectedTab === "configMenu" ? "block" : "hidden"}>
           <ConfigMenu
             setSelectedTab={setSelectedTab}
