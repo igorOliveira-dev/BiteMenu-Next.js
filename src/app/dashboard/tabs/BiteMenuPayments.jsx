@@ -12,12 +12,14 @@ const BiteMenuPayments = () => {
   useEffect(() => {
     const connectSuccess = searchParams.get("connect");
 
-    if (connectSuccess === "success") {
+    if (connectSuccess === "success" && profile?.id) {
       syncConnectStatus();
     }
-  }, []);
+  }, [profile, searchParams]);
 
   const syncConnectStatus = async () => {
+    if (!profile?.id) return;
+
     const response = await fetch("/api/connect/status", {
       method: "POST",
       headers: {
