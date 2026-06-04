@@ -1,17 +1,37 @@
 import { getStripeClient } from "@/lib/stripe";
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
 export async function POST(req: Request) {
   try {
     const { userId } = await req.json();
 
+    if (!userId) {
+      return Response.json(
+        {
+          error: "userId não informado",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
     const stripe = getStripeClient("cnpj");
 
-    const { data: profile } = await supabase.from("profiles").select("stripe_connect_account_id").eq("id", userId).single();
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("stripe_connect_account_id")
+      .eq("id", userId)
+      .single();
+
+    if (profileError) {
+      throw profileError;
+    }
 
     let accountId = profile?.stripe_connect_account_id;
 
-    // Cria conta Connect caso ainda não exista
     if (!accountId) {
       const account = await stripe.accounts.create({
         type: "express",
@@ -28,12 +48,16 @@ export async function POST(req: Request) {
 
       accountId = account.id;
 
-      await supabase
+      const { error: updateError } = await supabase
         .from("profiles")
         .update({
           stripe_connect_account_id: account.id,
         })
         .eq("id", userId);
+
+      if (updateError) {
+        throw updateError;
+      }
     }
 
     const accountLink = await stripe.accountLinks.create({
@@ -47,9 +71,11 @@ export async function POST(req: Request) {
       url: accountLink.url,
     });
   } catch (error: any) {
+    console.error("CONNECT ERROR:", error);
+
     return Response.json(
       {
-        error: error.message,
+        error: error?.message ?? "Erro desconhecido",
       },
       {
         status: 500,
