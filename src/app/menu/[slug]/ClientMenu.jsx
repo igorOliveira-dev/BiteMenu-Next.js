@@ -115,7 +115,7 @@ function isSafeImageUrl(url) {
   return typeof url === "string" && url.length > 8 && (url.startsWith("http://") || url.startsWith("https://"));
 }
 
-export default function ClientMenu({ menu, ownerPhone, ownerRole }) {
+export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAccount }) {
   const cart = useCartContext();
   const alert = useAlert();
 
@@ -1028,6 +1028,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole }) {
         isOpen={open}
         ownerPhone={ownerPhone}
         ownerRole={ownerRole}
+        ownerStripeAccount={ownerStripeAccount}
       />
 
       {/* Footer */}

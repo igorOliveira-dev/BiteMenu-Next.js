@@ -107,17 +107,19 @@ export default async function MenuPage({ params, searchParams }) {
   // Incluído no cache ISR — não gera egress adicional em visitas repetidas.
   let ownerPhone = null;
   let ownerRole = "free";
+  let ownerStripeAccount = null;
 
   if (menu.owner_id) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("phone, role")
+      .select("phone, role, stripe_connect_account_id")
       .eq("id", menu.owner_id)
       .maybeSingle();
 
     if (profile) {
       ownerPhone = profile.phone || null;
       ownerRole = profile.role || "free";
+      ownerStripeAccount = profile.stripe_connect_account_id || null;
     }
   }
 
@@ -126,13 +128,13 @@ export default async function MenuPage({ params, searchParams }) {
   return (
     <CartProvider>
       {effectiveLayout === "default" ? (
-        <ClientMenu menu={menu} ownerPhone={ownerPhone} ownerRole={ownerRole} />
+        <ClientMenu menu={menu} ownerPhone={ownerPhone} ownerRole={ownerRole} ownerStripeAccount={ownerStripeAccount} />
       ) : effectiveLayout === "list" ? (
-        <ClientMenu2 menu={menu} ownerPhone={ownerPhone} ownerRole={ownerRole} />
+        <ClientMenu2 menu={menu} ownerPhone={ownerPhone} ownerRole={ownerRole} ownerStripeAccount={ownerStripeAccount} />
       ) : effectiveLayout === "grid" ? (
-        <ClientMenu3 menu={menu} ownerPhone={ownerPhone} ownerRole={ownerRole} />
+        <ClientMenu3 menu={menu} ownerPhone={ownerPhone} ownerRole={ownerRole} ownerStripeAccount={ownerStripeAccount} />
       ) : (
-        <ClientMenu menu={menu} ownerPhone={ownerPhone} ownerRole={ownerRole} />
+        <ClientMenu menu={menu} ownerPhone={ownerPhone} ownerRole={ownerRole} ownerStripeAccount={ownerStripeAccount} />
       )}
     </CartProvider>
   );

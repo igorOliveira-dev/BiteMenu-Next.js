@@ -2,7 +2,7 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
-import { FaChevronLeft, FaCopy, FaTimes, FaWhatsapp } from "react-icons/fa";
+import { FaChevronLeft, FaCopy, FaTimes, FaWhatsapp, FaSpinner } from "react-icons/fa";
 import { useCartContext } from "@/contexts/CartContext";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import PhoneInput from "react-phone-input-2";
@@ -11,6 +11,7 @@ import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { supabase } from "@/lib/supabaseClient";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { useAlert } from "@/providers/AlertProvider";
+import { useSearchParams, useRouter } from "next/navigation"; // ← novo
 
 function getContrastTextColor(hex) {
   const cleanHex = (hex || "#ffffff").replace("#", "");
@@ -32,10 +33,13 @@ export default function CartDrawer({
   isOpen,
   ownerPhone,
   ownerRole,
+  ownerStripeAccount, // ← novo: profile.stripe_account (passar da página pai)
 }) {
   const cart = useCartContext();
   const confirm = useConfirm();
   const customAlert = useAlert();
+  const searchParams = useSearchParams(); // ← novo
+  const router = useRouter(); // ← novo
 
   const [whatsappURL, setWhatsappURL] = useState(null);
 
@@ -80,12 +84,21 @@ export default function CartDrawer({
   const [search, setSearch] = useState("");
   const [isOpenDropdown, setIsOpenDropdown] = useState(false);
 
+  // ── Stripe ──────────────────────────────────────────────────────────────
+  const [isStripeLoading, setIsStripeLoading] = useState(false);
+  // Dados do pedido pendente (para construir o WhatsApp após retorno do Stripe)
+  const [pendingOrderData, setPendingOrderData] = useState(null);
+  // ────────────────────────────────────────────────────────────────────────
+
   // delivery_zones é lazy-loaded ao abrir o carrinho (não vem mais na query principal)
   const [deliveryZones, setDeliveryZones] = useState([]);
   const filteredZones = deliveryZones.filter((zone) => zone.name.toLowerCase().includes(search.toLowerCase()));
 
   const hasPlusPermissions = ["plus", "pro", "admin"].includes(ownerRole ?? "free");
   const canUseZones = menu?.delivery_fee_mode === "zones" && hasPlusPermissions && deliveryZones.length > 0;
+
+  // Verifica se este menu usa Stripe Express
+  const usesStripeExpress = Boolean(menu?.use_stripe_express && ownerStripeAccount);
 
   const serviceOptions = [
     {
@@ -180,7 +193,7 @@ export default function CartDrawer({
     }
   }, [selectedService]);
 
-  // limpar bairro se o estabalecimento não receber mais bairro
+  // limpar bairro se o estabelecimento não receber mais bairro
   useEffect(() => {
     if (!(menu?.delivery_fee_mode === "zones" && hasPlusPermissions && deliveryZones.length > 0)) {
       setCostumerNeighborhood("");
@@ -278,6 +291,56 @@ export default function CartDrawer({
     }
   }, [open]);
 
+  // ── Retorno do Stripe: detectar ?order_success=true na URL ──────────────
+  useEffect(() => {
+    if (!searchParams) return;
+
+    const orderSuccess = searchParams.get("order_success");
+    const orderId = searchParams.get("order_id");
+
+    if (orderSuccess !== "true" || !orderId) return;
+
+    // Limpar os query params da URL sem recarregar a página
+    const url = new URL(window.location.href);
+    url.searchParams.delete("order_success");
+    url.searchParams.delete("order_id");
+    window.history.replaceState({}, "", url.toString());
+
+    // Buscar dados do pedido salvo para montar o WhatsApp
+    supabase
+      .from("orders")
+      .select("*")
+      .eq("id", orderId)
+      .maybeSingle()
+      .then(({ data: order }) => {
+        if (!order) return;
+
+        // Reconstruir a URL do WhatsApp com os dados do pedido salvo
+        const builtURL = buildWhatsappURL({
+          items: order.items_list,
+          subtotal: order.total - (order.delivery_fee ?? 0),
+          deliveryFee: order.delivery_fee ?? 0,
+          total: order.total,
+          costumerName: order.costumer_name,
+          costumerPhone: order.costumer_phone,
+          costumerAddress: order.address,
+          costumerNeighborhood: order.neighborhood,
+          selectedService: order.service,
+          selectedPayment: "stripe",
+          paymentLabel: "Stripe (cartão)",
+        });
+
+        setFinalValue(order.total);
+        setWhatsappURL(builtURL);
+        setPurchaseStage("whatsapp");
+        setIsPurchaseModalOpen(true);
+
+        // Limpar o carrinho
+        cart.clear(menu?.id);
+      });
+  }, [searchParams, menu?.id]);
+  // ────────────────────────────────────────────────────────────────────────
+
   // calcular taxa de entrega
   useEffect(() => {
     if (selectedService !== "delivery") {
@@ -372,49 +435,174 @@ export default function CartDrawer({
     setShowWhatsappButtonOnPixStage(false);
     setWhatsappURL(null);
     setDeliveryFeeValue(0);
+    setIsStripeLoading(false);
   };
 
   const handleServiceSelect = (id) => {
     setSelectedService(id);
   };
 
-  const confirmPurchase = () => {
-    saveCustomerInfo();
+  // ── Helper: montar URL do WhatsApp (extraído para reutilização) ──────────
+  function buildWhatsappURL({
+    items,
+    subtotal,
+    deliveryFee,
+    total,
+    costumerName,
+    costumerPhone,
+    costumerAddress,
+    costumerNeighborhood,
+    selectedService,
+    selectedPayment,
+    paymentLabel,
+  }) {
+    const itemsList = (items || [])
+      .map((it) => {
+        const addons = it.additionals?.length > 0 ? `\n   + ${it.additionals.map((a) => a.name).join(", ")}` : "";
+        const note = it.note ? `\n   Obs: ${it.note}` : "";
+        return `• ${it.qty}x ${it.name}${addons}${note}`;
+      })
+      .join("\n\n");
 
+    const customerInfo = `
+👤 Nome: ${costumerName}
+📞 Telefone: ${costumerPhone}
+${selectedService === "delivery" && canUseZones && costumerNeighborhood ? `🏘 Bairro: ${costumerNeighborhood}\n` : ""}
+${selectedService === "delivery" && costumerAddress ? `📍 Endereço: ${costumerAddress}\n` : ""}
+💳 Pagamento: ${paymentLabel || paymentOptions.find((p) => p.id === selectedPayment)?.label || "-"}
+🚚 Serviço: ${serviceOptions.find((s) => s.id === selectedService)?.label || "-"}`;
+
+    const message = `‼️ Pedido de ${menu.title}
+
+${itemsList}
+
+————————————
+Subtotal: ${formatCurrency(subtotal, menu?.currency)}
+${selectedService === "delivery" ? `Frete: ${formatCurrency(deliveryFee, menu?.currency)}` : ""}
+💰 Total: ${formatCurrency(total, menu?.currency)}
+
+${customerInfo}`;
+
+    const rawPhone = establishmentPhone || menu?.owner_phone || menu?.phone || null;
+    if (!rawPhone) return null;
+
+    const normalized = String(rawPhone).replace(/\D/g, "");
+    return `https://wa.me/${normalized}?text=${encodeURIComponent(message)}`;
+  }
+  // ────────────────────────────────────────────────────────────────────────
+
+  // ── Validação comum ──────────────────────────────────────────────────────
+  function validateCustomerFields() {
     if (costumerName.trim().length < 3) {
       customAlert("O nome deve ter pelo menos 3 letras.", "error");
-      return;
+      return false;
     }
 
     if (costumerPhone.length < 5) {
       customAlert("Número de telefone inválido.", "error");
-      return;
+      return false;
     }
 
     if (selectedService === "delivery" && canUseZones) {
       if (costumerNeighborhood.trim().length < 2) {
         customAlert("Selecione seu bairro.", "error");
-        return;
+        return false;
       }
 
       const matchedZone = deliveryZones.find((zone) => normalizeText(zone.name) === normalizeText(costumerNeighborhood));
 
       if (!matchedZone) {
         customAlert("No momento, este bairro não está disponível para entrega.", "error");
-        return;
+        return false;
       }
     }
 
     if (selectedService === "delivery" && costumerAddress.trim().length < 10) {
       customAlert("O endereço deve ter pelo menos 10 letras.", "error");
-      return;
+      return false;
     }
 
     if (!selectedService) {
       customAlert("Erro inesperado", "error");
       resetPurchase();
-      return;
+      return false;
     }
+
+    return true;
+  }
+  // ────────────────────────────────────────────────────────────────────────
+
+  // ── Checkout via Stripe Express ──────────────────────────────────────────
+  const handleStripeCheckout = async () => {
+    saveCustomerInfo();
+
+    if (!validateCustomerFields()) return;
+
+    setIsStripeLoading(true);
+
+    try {
+      const subtotal = (currentItems || []).reduce((acc, item) => {
+        const base = (Number(item.price) || 0) * (Number(item.qty) || 0);
+        const extrasPerItem = (item.additionals || []).reduce((s, a) => s + (Number(a.price) || 0), 0);
+        const extras = extrasPerItem * (Number(item.qty) || 0);
+        return acc + base + extras;
+      }, 0);
+
+      const deliveryFee = selectedService === "delivery" ? deliveryFeeValue : 0;
+      const total = subtotal + deliveryFee;
+
+      const response = await fetch("/api/connect/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          menuId: menu.id,
+          menuTitle: menu.title,
+          menuSlug: menu.slug,
+          ownerId: menu.owner_id,
+          currency: menu.currency,
+          items: (currentItems || []).map((it) => ({
+            name: it.name,
+            qty: it.qty,
+            price: it.price,
+            image_url: it.image_url || null,
+            additionals: it.additionals || [],
+            note: it.note || "",
+          })),
+          subtotal,
+          deliveryFee,
+          total,
+          costumerName,
+          costumerPhone,
+          costumerAddress,
+          costumerNeighborhood: selectedService === "delivery" && canUseZones ? costumerNeighborhood : null,
+          paymentMethod: "stripe",
+          service: selectedService,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.url) {
+        customAlert(data.error || "Erro ao iniciar pagamento. Tente novamente.", "error");
+        setIsStripeLoading(false);
+        return;
+      }
+
+      // Redirecionar para o Stripe Checkout
+      window.location.href = data.url;
+      // Nota: o carrinho será limpo no useEffect que detecta ?order_success=true
+    } catch (err) {
+      console.error("Erro ao criar checkout Stripe:", err);
+      customAlert("Erro ao conectar com o sistema de pagamento.", "error");
+      setIsStripeLoading(false);
+    }
+  };
+  // ────────────────────────────────────────────────────────────────────────
+
+  const confirmPurchase = () => {
+    saveCustomerInfo();
+
+    if (!validateCustomerFields()) return;
 
     if (!selectedPayment) {
       customAlert("Selecione a forma de pagamento", "error");
@@ -431,14 +619,6 @@ export default function CartDrawer({
   };
 
   const whatsappConfirmation = () => {
-    const itemsList = (currentItems || [])
-      .map((it) => {
-        const addons = it.additionals?.length > 0 ? `\n   + ${it.additionals.map((a) => a.name).join(", ")}` : "";
-        const note = it.note ? `\n   Obs: ${it.note}` : "";
-        return `• ${it.qty}x ${it.name}${addons}${note}`;
-      })
-      .join("\n\n");
-
     const subtotal = (currentItems || []).reduce((acc, item) => {
       const base = (Number(item.price) || 0) * (Number(item.qty) || 0);
       const extrasPerItem = (item.additionals || []).reduce((s, a) => s + (Number(a.price) || 0), 0);
@@ -451,52 +631,29 @@ export default function CartDrawer({
 
     setFinalValue(total);
 
-    const customerInfo = `
-👤 Nome: ${costumerName}
-📞 Telefone: ${costumerPhone}
-${selectedService === "delivery" && canUseZones ? `🏘 Bairro: ${costumerNeighborhood}\n` : ""}
-${selectedService === "delivery" ? `📍 Endereço: ${costumerAddress}\n` : ""}
-💳 Pagamento: ${paymentOptions.find((p) => p.id === selectedPayment)?.label || "-"}
-🚚 Serviço: ${serviceOptions.find((s) => s.id === selectedService)?.label || "-"}`;
+    const url = buildWhatsappURL({
+      items: currentItems,
+      subtotal,
+      deliveryFee,
+      total,
+      costumerName,
+      costumerPhone,
+      costumerAddress,
+      costumerNeighborhood,
+      selectedService,
+      selectedPayment,
+    });
 
-    const message = `‼️ Pedido de ${menu.title}
-
-${itemsList}
-
-————————————
-Subtotal: ${formatCurrency(subtotal, menu?.currency)}
-${selectedService === "delivery" ? `Frete: ${formatCurrency(deliveryFee, menu?.currency)}` : ""}
-💰 Total: ${formatCurrency(total, menu?.currency)}
-
-${customerInfo}`;
-
-    const rawPhone = establishmentPhone || menu?.owner_phone || menu?.phone || null;
-
-    if (!rawPhone) {
+    if (!url) {
       customAlert("Telefone do estabelecimento não encontrado.", "error");
       return;
     }
 
-    const normalized = String(rawPhone).replace(/\D/g, "");
-
-    const url = `https://wa.me/${normalized}?text=${encodeURIComponent(message)}`;
-
     setWhatsappURL(url);
 
-    //
     (async () => {
       try {
         if (menu.orders === "site_whatsapp") {
-          const subtotal = (currentItems || []).reduce((acc, item) => {
-            const base = (Number(item.price) || 0) * (Number(item.qty) || 0);
-            const extrasPerItem = (item.additionals || []).reduce((s, a) => s + (Number(a.price) || 0), 0);
-            const extras = extrasPerItem * (Number(item.qty) || 0);
-            return acc + base + extras;
-          }, 0);
-
-          const deliveryFee = selectedService === "delivery" ? deliveryFeeValue : 0;
-          const total = subtotal + deliveryFee;
-
           const payload = {
             menu_id: menu?.id || null,
             costumer_name: costumerName || null,
@@ -593,9 +750,7 @@ ${customerInfo}`;
                     )}
                   </div>
                   <div className="flex items-end justify-between mt-4 gap-2">
-                    <p className="font-bold text-xl">
-                      {formatCurrency((it.price + addonsTotal) * it.qty, menu?.currency)}
-                    </p>
+                    <p className="font-bold text-xl">{formatCurrency((it.price + addonsTotal) * it.qty, menu?.currency)}</p>
                     <button
                       onClick={() => cart.remove(menu.id, idx)}
                       className="cursor-pointer text-white bg-red-600 opacity-75 hover:opacity-100 py-1 px-2 text-sm flex items-center gap-2 rounded-lg"
@@ -614,9 +769,7 @@ ${customerInfo}`;
           <div className="fixed w-full bottom-0 bg-inherit z-10 p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="font-semibold">Total</div>
-              <div className="text-xl font-bold">
-                {formatCurrency(drawerTotal, menu?.currency)}
-              </div>
+              <div className="text-xl font-bold">{formatCurrency(drawerTotal, menu?.currency)}</div>
             </div>
             <div className="flex gap-2">
               <button
@@ -675,7 +828,7 @@ ${customerInfo}`;
                       : purchaseStage === "sendPix"
                         ? "Envio do PIX"
                         : purchaseStage === "whatsapp"
-                          ? "Confirmação no whatsapp"
+                          ? "Confirmação no WhatsApp"
                           : null}
                 </h3>
                 {purchaseStage === "costumerInfos" && (
@@ -787,8 +940,7 @@ ${customerInfo}`;
                                     className="p-2 cursor-pointer hover:opacity-80"
                                     style={{ color: foregroundToUse }}
                                   >
-                                    {zone.name} —{" "}
-                                    {formatCurrency(zone.shipping_fee, menu?.currency)}
+                                    {zone.name} — {formatCurrency(zone.shipping_fee, menu?.currency)}
                                   </div>
                                 ))
                               )}
@@ -823,47 +975,74 @@ ${customerInfo}`;
                     </div>
                   </>
                 )}
-                <div>
-                  <label className="block text-sm font-medium">Forma de pagamento:</label>
-                  <div className="flex flex-wrap gap-4 mt-1 mb-2">
-                    {availablePaymentsOptions.map((option) => (
-                      <label key={option.id} className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="payment"
-                          value={option.id}
-                          checked={selectedPayment === option.id}
-                          onChange={() => setSelectedPayment(option.id)}
-                          className="peer appearance-none w-6 h-6 border-2 rounded-full transition-all duration-150 flex items-center justify-center relative"
-                          style={{
-                            borderColor: grayToUse,
-                            color: grayToUse,
-                            backgroundColor: selectedPayment === option.id ? menu.details_color : "transparent",
-                          }}
-                        />
-                        <span
-                          className="relative after:content-['✓'] after:absolute after:text-sm after:font-bold after:top-[3px] after:left-[-25px] peer-checked:after:opacity-100 after:opacity-0 after:text-[var(--check-color)] transition-opacity duration-150"
-                          style={{ "--check-color": grayToUse }}
-                        >
-                          {option.label}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <p className="mt-2">
-                  Valor final:{" "}
-                  <strong>{formatCurrency(drawerTotal, menu?.currency)}</strong>
-                </p>
-                <button
-                  onClick={() => {
-                    confirmPurchase();
-                  }}
-                  className="cursor-pointer hover:opacity-90 p-2 font-bold transition"
-                  style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
-                >
-                  Confirmar
-                </button>
+
+                {/* ── BOTÃO STRIPE EXPRESS (se habilitado) ────────────────── */}
+                {usesStripeExpress ? (
+                  <>
+                    <p className="mt-2">
+                      Valor final: <strong>{formatCurrency(drawerTotal, menu?.currency)}</strong>
+                    </p>
+                    <button
+                      onClick={handleStripeCheckout}
+                      disabled={isStripeLoading}
+                      className="cursor-pointer hover:opacity-90 p-2 font-bold transition flex items-center justify-center gap-2 rounded disabled:opacity-60"
+                      style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
+                    >
+                      {isStripeLoading ? (
+                        <>
+                          <FaSpinner className="animate-spin" />
+                          Redirecionando...
+                        </>
+                      ) : (
+                        <>💳 Pagar com cartão</>
+                      )}
+                    </button>
+                  </>
+                ) : (
+                  /* ── FLUXO NORMAL (sem Stripe) ─────────────────────────── */
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium">Forma de pagamento:</label>
+                      <div className="flex flex-wrap gap-4 mt-1 mb-2">
+                        {availablePaymentsOptions.map((option) => (
+                          <label key={option.id} className="flex items-center space-x-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="payment"
+                              value={option.id}
+                              checked={selectedPayment === option.id}
+                              onChange={() => setSelectedPayment(option.id)}
+                              className="peer appearance-none w-6 h-6 border-2 rounded-full transition-all duration-150 flex items-center justify-center relative"
+                              style={{
+                                borderColor: grayToUse,
+                                color: grayToUse,
+                                backgroundColor: selectedPayment === option.id ? menu.details_color : "transparent",
+                              }}
+                            />
+                            <span
+                              className="relative after:content-['✓'] after:absolute after:text-sm after:font-bold after:top-[3px] after:left-[-25px] peer-checked:after:opacity-100 after:opacity-0 after:text-[var(--check-color)] transition-opacity duration-150"
+                              style={{ "--check-color": grayToUse }}
+                            >
+                              {option.label}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="mt-2">
+                      Valor final: <strong>{formatCurrency(drawerTotal, menu?.currency)}</strong>
+                    </p>
+                    <button
+                      onClick={() => {
+                        confirmPurchase();
+                      }}
+                      className="cursor-pointer hover:opacity-90 p-2 font-bold transition rounded"
+                      style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
+                    >
+                      Confirmar
+                    </button>
+                  </>
+                )}
               </div>
             ) : purchaseStage === "sendPix" ? (
               <div>
@@ -907,8 +1086,16 @@ ${customerInfo}`;
             ) : purchaseStage === "whatsapp" ? (
               <div>
                 <p className="text-sm" style={{ color: grayToUse }}>
-                  Para confirmar a compra, você deve enviar uma mensagem de confirmação ao WhatsApp de {menu.title}
+                  {/* Mensagem ligeiramente diferente se veio do Stripe (pagamento já confirmado) */}
+                  {whatsappURL && whatsappURL.includes("Stripe")
+                    ? `Pagamento confirmado! Agora envie a confirmação do pedido para ${menu.title} pelo WhatsApp.`
+                    : `Para confirmar a compra, você deve enviar uma mensagem de confirmação ao WhatsApp de ${menu.title}`}
                 </p>
+                {finalValue > 0 && (
+                  <p className="text-center mt-2 font-semibold">
+                    Total pago: <strong>{formatCurrency(finalValue, menu?.currency)}</strong>
+                  </p>
+                )}
                 <a href={whatsappURL || "#"} rel="noopener noreferrer">
                   <span
                     className="cursor-pointer py-2 px-4 rounded font-bold text-white flex items-center justify-center gap-2 mt-2"

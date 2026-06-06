@@ -106,7 +106,7 @@ function darkenColor(hex, amount = 0.85) {
   return `rgb(${r},${g},${b})`;
 }
 
-export default function ClientMenu3({ menu, ownerPhone, ownerRole }) {
+export default function ClientMenu3({ menu, ownerPhone, ownerRole, ownerStripeAccount }) {
   const cart = useCartContext();
   const alert = useAlert();
 
@@ -957,6 +957,7 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole }) {
         isOpen={open}
         ownerPhone={ownerPhone}
         ownerRole={ownerRole}
+        ownerStripeAccount={ownerStripeAccount}
       />
 
       <MenuFooter

@@ -49,6 +49,40 @@ export async function POST(req: Request) {
         break;
       }
 
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const orderId = session.metadata?.order_id;
+
+        if (!orderId) {
+          console.warn("checkout.session.completed sem order_id no metadata.");
+          break;
+        }
+
+        if (session.payment_status === "paid") {
+          const { error } = await supabase
+            .from("orders")
+            .update({
+              is_paid: true,
+              stripe_payment_intent: session.payment_intent ?? null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", orderId);
+
+          if (error) {
+            console.error(`Erro ao atualizar pedido ${orderId} como pago:`, error);
+            // Retornar 500 faz o Stripe retentar automaticamente
+            return new Response(JSON.stringify({ error: "DB update failed" }), {
+              status: 500,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+
+          console.log(`✅ Pedido ${orderId} marcado como pago. PaymentIntent: ${session.payment_intent}`);
+        }
+
+        break;
+      }
+
       default:
         console.log(`Evento ignorado: ${event.type}`);
     }
