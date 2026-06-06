@@ -35,7 +35,7 @@ export async function POST(request) {
     // 1. Buscar o stripe_account e stripe_fee_percentage do dono do menu
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("stripe_account, stripe_fee_percentage")
+      .select("stripe_connect_account_id, stripe_fee_percentage")
       .eq("id", ownerId)
       .single();
 
@@ -43,7 +43,7 @@ export async function POST(request) {
       return NextResponse.json({ error: "Perfil do estabelecimento não encontrado." }, { status: 404 });
     }
 
-    if (!profile.stripe_account) {
+    if (!profile.stripe_connect_account_id) {
       return NextResponse.json({ error: "Estabelecimento sem conta Stripe configurada." }, { status: 400 });
     }
 
@@ -90,7 +90,6 @@ export async function POST(request) {
       neighborhood: costumerNeighborhood ?? null,
       address: costumerAddress ?? null,
       delivery_fee: deliveryFee,
-      subtotal,
       total,
       is_paid: false, // será atualizado para true via webhook
       created_at: new Date().toISOString(),
@@ -112,7 +111,7 @@ export async function POST(request) {
     const orderId = insertedOrder.id;
 
     // 6. URLs de retorno
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://bitemenu.com";
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://bitemenu.com.br";
     const successUrl = `${baseUrl}/menu/${menuSlug}?order_success=true&order_id=${orderId}`;
     const cancelUrl = `${baseUrl}/menu/${menuSlug}?order_cancelled=true`;
 
@@ -141,13 +140,14 @@ export async function POST(request) {
       },
       {
         // Executar em nome da conta conectada (Stripe Connect Express)
-        stripeAccount: profile.stripe_account,
+        stripeAccount: profile.stripe_connect_account_id,
       },
     );
 
     return NextResponse.json({ url: session.url, orderId });
   } catch (err) {
     console.error("Stripe checkout error:", err);
+    console.error("Erro interno na checkout route:", err);
     return NextResponse.json({ error: err.message || "Erro interno ao criar checkout." }, { status: 500 });
   }
 }

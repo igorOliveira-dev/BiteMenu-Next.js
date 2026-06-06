@@ -33,7 +33,7 @@ export default function CartDrawer({
   isOpen,
   ownerPhone,
   ownerRole,
-  ownerStripeAccount, // ← novo: profile.stripe_account (passar da página pai)
+  ownerStripeAccount,
 }) {
   const cart = useCartContext();
   const confirm = useConfirm();
@@ -99,6 +99,12 @@ export default function CartDrawer({
 
   // Verifica se este menu usa Stripe Express
   const usesStripeExpress = Boolean(menu?.use_stripe_express && ownerStripeAccount);
+
+  console.log("Stripe debug:", {
+    use_stripe_express: menu?.use_stripe_express,
+    ownerStripeAccount,
+    usesStripeExpress,
+  });
 
   const serviceOptions = [
     {
@@ -975,74 +981,52 @@ ${customerInfo}`;
                     </div>
                   </>
                 )}
-
-                {/* ── BOTÃO STRIPE EXPRESS (se habilitado) ────────────────── */}
-                {usesStripeExpress ? (
-                  <>
-                    <p className="mt-2">
-                      Valor final: <strong>{formatCurrency(drawerTotal, menu?.currency)}</strong>
-                    </p>
-                    <button
-                      onClick={handleStripeCheckout}
-                      disabled={isStripeLoading}
-                      className="cursor-pointer hover:opacity-90 p-2 font-bold transition flex items-center justify-center gap-2 rounded disabled:opacity-60"
-                      style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
-                    >
-                      {isStripeLoading ? (
-                        <>
-                          <FaSpinner className="animate-spin" />
-                          Redirecionando...
-                        </>
-                      ) : (
-                        <>💳 Pagar com cartão</>
-                      )}
-                    </button>
-                  </>
-                ) : (
-                  /* ── FLUXO NORMAL (sem Stripe) ─────────────────────────── */
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium">Forma de pagamento:</label>
-                      <div className="flex flex-wrap gap-4 mt-1 mb-2">
-                        {availablePaymentsOptions.map((option) => (
-                          <label key={option.id} className="flex items-center space-x-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="payment"
-                              value={option.id}
-                              checked={selectedPayment === option.id}
-                              onChange={() => setSelectedPayment(option.id)}
-                              className="peer appearance-none w-6 h-6 border-2 rounded-full transition-all duration-150 flex items-center justify-center relative"
-                              style={{
-                                borderColor: grayToUse,
-                                color: grayToUse,
-                                backgroundColor: selectedPayment === option.id ? menu.details_color : "transparent",
-                              }}
-                            />
-                            <span
-                              className="relative after:content-['✓'] after:absolute after:text-sm after:font-bold after:top-[3px] after:left-[-25px] peer-checked:after:opacity-100 after:opacity-0 after:text-[var(--check-color)] transition-opacity duration-150"
-                              style={{ "--check-color": grayToUse }}
-                            >
-                              {option.label}
-                            </span>
-                          </label>
-                        ))}
-                      </div>
+                <>
+                  <div>
+                    <label className="block text-sm font-medium">Forma de pagamento:</label>
+                    <div className="flex flex-wrap gap-4 mt-1 mb-2">
+                      {availablePaymentsOptions.map((option) => (
+                        <label key={option.id} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="payment"
+                            value={option.id}
+                            checked={selectedPayment === option.id}
+                            onChange={() => setSelectedPayment(option.id)}
+                            className="peer appearance-none w-6 h-6 border-2 rounded-full transition-all duration-150 flex items-center justify-center relative"
+                            style={{
+                              borderColor: grayToUse,
+                              color: grayToUse,
+                              backgroundColor: selectedPayment === option.id ? menu.details_color : "transparent",
+                            }}
+                          />
+                          <span
+                            className="relative after:content-['✓'] after:absolute after:text-sm after:font-bold after:top-[3px] after:left-[-25px] peer-checked:after:opacity-100 after:opacity-0 after:text-[var(--check-color)] transition-opacity duration-150"
+                            style={{ "--check-color": grayToUse }}
+                          >
+                            {option.label}
+                          </span>
+                        </label>
+                      ))}
                     </div>
-                    <p className="mt-2">
-                      Valor final: <strong>{formatCurrency(drawerTotal, menu?.currency)}</strong>
-                    </p>
-                    <button
-                      onClick={() => {
+                  </div>
+                  <p className="mt-2">
+                    Valor final: <strong>{formatCurrency(drawerTotal, menu?.currency)}</strong>
+                  </p>
+                  <button
+                    onClick={() => {
+                      if (usesStripeExpress && selectedPayment === "credit") {
+                        handleStripeCheckout();
+                      } else {
                         confirmPurchase();
-                      }}
-                      className="cursor-pointer hover:opacity-90 p-2 font-bold transition rounded"
-                      style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
-                    >
-                      Confirmar
-                    </button>
-                  </>
-                )}
+                      }
+                    }}
+                    className="cursor-pointer hover:opacity-90 p-2 font-bold transition rounded"
+                    style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
+                  >
+                    {isStripeLoading ? <>Redirecionando...</> : "Confirmar"}
+                  </button>
+                </>
               </div>
             ) : purchaseStage === "sendPix" ? (
               <div>

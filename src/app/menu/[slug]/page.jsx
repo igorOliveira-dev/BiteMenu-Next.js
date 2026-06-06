@@ -35,6 +35,7 @@ const getMenuBySlug = cache(async (slug) => {
       orders,
       layout,
       currency,
+      use_stripe_express,
       categories (
         id,
         name,
