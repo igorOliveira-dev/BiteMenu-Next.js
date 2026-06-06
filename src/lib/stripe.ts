@@ -1,22 +1,14 @@
 import Stripe from "stripe";
 
-let _stripeCPF: Stripe | null = null;
-let _stripeCNPJ: Stripe | null = null;
+// Por enquanto as duas variáveis apontam pra mesma conta CPF.
+// Quando o CNPJ estiver pronto, basta trocar STRIPE_SECRET_KEY_CNPJ no .env.
+export const stripeCPF = new Stripe(process.env.STRIPE_SECRET_KEY_CPF);
+export const stripeCNPJ = new Stripe(process.env.STRIPE_SECRET_KEY_CNPJ);
 
-export function getStripeClient(account: "cpf" | "cnpj" = "cpf"): Stripe {
-  if (account === "cnpj") {
-    if (!_stripeCNPJ) {
-      const key = process.env.STRIPE_SECRET_KEY_CNPJ;
-      if (!key) throw new Error("STRIPE_SECRET_KEY_CNPJ não definida.");
-      _stripeCNPJ = new Stripe(key);
-    }
-    return _stripeCNPJ;
-  }
-
-  if (!_stripeCPF) {
-    const key = process.env.STRIPE_SECRET_KEY_CPF;
-    if (!key) throw new Error("STRIPE_SECRET_KEY_CPF não definida.");
-    _stripeCPF = new Stripe(key);
-  }
-  return _stripeCPF;
+/**
+ * Retorna o client Stripe correto com base no stripe_account do perfil.
+ * @param {"cpf" | "cnpj"} account
+ */
+export function getStripeClient(account = "cpf") {
+  return account === "cnpj" ? stripeCNPJ : stripeCPF;
 }
