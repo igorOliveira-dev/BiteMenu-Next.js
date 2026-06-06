@@ -100,12 +100,6 @@ export default function CartDrawer({
   // Verifica se este menu usa Stripe Express
   const usesStripeExpress = Boolean(menu?.use_stripe_express && ownerStripeAccount);
 
-  console.log("Stripe debug:", {
-    use_stripe_express: menu?.use_stripe_express,
-    ownerStripeAccount,
-    usesStripeExpress,
-  });
-
   const serviceOptions = [
     {
       id: "delivery",
