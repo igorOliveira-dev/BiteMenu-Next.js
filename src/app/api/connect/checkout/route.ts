@@ -10,6 +10,9 @@ const supabase = createClient(
 );
 
 export async function POST(request) {
+  console.log("STRIPE_SECRET_KEY_CNPJ:", process.env.STRIPE_SECRET_KEY_CNPJ ? "OK ✅" : "UNDEFINED ❌");
+  console.log("STRIPE_SECRET_KEY_CPF:", process.env.STRIPE_SECRET_KEY_CPF ? "OK ✅" : "UNDEFINED ❌");
+
   try {
     const body = await request.json();
     const {
