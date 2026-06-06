@@ -3,9 +3,8 @@ import { headers } from "next/headers";
 import { supabase } from "@/lib/supabaseClient";
 import { getStripeClient } from "@/lib/stripe";
 
-const stripe = getStripeClient("cnpj");
-
 export async function POST(req: Request) {
+  const stripe = getStripeClient("cnpj");
   const body = await req.text();
 
   const signature = (await headers()).get("stripe-signature");

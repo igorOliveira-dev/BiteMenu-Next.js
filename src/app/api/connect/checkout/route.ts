@@ -2,16 +2,13 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getStripeClient } from "@/lib/stripe";
 
-const stripe = getStripeClient("cnpj");
-
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY, // service role para leitura de profiles
 );
 
 export async function POST(request) {
-  console.log("STRIPE_SECRET_KEY_CNPJ:", process.env.STRIPE_SECRET_KEY_CNPJ ? "OK ✅" : "UNDEFINED ❌");
-  console.log("STRIPE_SECRET_KEY_CPF:", process.env.STRIPE_SECRET_KEY_CPF ? "OK ✅" : "UNDEFINED ❌");
+  const stripe = getStripeClient("cnpj");
 
   try {
     const body = await request.json();
@@ -41,6 +38,8 @@ export async function POST(request) {
       .select("stripe_connect_account_id, stripe_fee_percentage")
       .eq("id", ownerId)
       .single();
+
+    console.log("👤 Perfil encontrado:", profile);
 
     if (profileError || !profile) {
       return NextResponse.json({ error: "Perfil do estabelecimento não encontrado." }, { status: 404 });
