@@ -31,14 +31,43 @@ export async function POST(req) {
     switch (event.type) {
       // Quando usuário conclui checkout
       case "checkout.session.completed": {
-        const session = await stripe.checkout.sessions.retrieve(event.data.object.id, {
-          expand: ["line_items"],
-        });
+        const session = event.data.object;
+
+        // ── Pedido via Stripe Connect ──────────────────────────
+        if (session.mode === "payment" && session.metadata?.order_id) {
+          const orderId = session.metadata.order_id;
+
+          if (session.payment_status === "paid") {
+            const { error } = await supabase
+              .from("orders")
+              .update({
+                is_paid: true,
+                stripe_payment_intent: session.payment_intent ?? null,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", orderId);
+
+            if (error) {
+              console.error(`[Webhook] Erro ao atualizar pedido ${orderId}:`, error);
+              return new Response("DB error", { status: 500 });
+            }
+
+            console.log(`[Webhook] ✅ Pedido ${orderId} marcado como pago. PaymentIntent: ${session.payment_intent}`);
+          }
+
+          break;
+        }
+
+        // ── Assinatura ─────────────────────────────────────────
         const userId = session.metadata?.supabase_user_id;
         const subscriptionId = session.subscription;
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
         const isTrial = subscription.status === "trialing";
-        const priceId = session.line_items.data[0].price.id;
+
+        const retrievedSession = await stripe.checkout.sessions.retrieve(session.id, {
+          expand: ["line_items"],
+        });
+        const priceId = retrievedSession.line_items.data[0].price.id;
 
         if (!userId || !priceId) throw new Error("Dados insuficientes");
 
