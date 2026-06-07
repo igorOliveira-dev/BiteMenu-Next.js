@@ -25,6 +25,7 @@ function getContrastTextColor(hex) {
 export default function CartDrawer({
   menu,
   open,
+  onOpen,
   onClose,
   translucidToUse,
   grayToUse,
@@ -333,7 +334,9 @@ export default function CartDrawer({
         setFinalValue(order.total);
         setWhatsappURL(builtURL);
         setPurchaseStage("whatsapp");
-        setIsPurchaseModalOpen(true);
+
+        onOpen?.();
+        setTimeout(() => setIsPurchaseModalOpen(true), 50);
 
         // Limpar o carrinho
         cart.clear(menu?.id);

@@ -926,6 +926,7 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole, ownerStripeAc
       <CartDrawer
         menu={menu}
         open={cartOpen}
+        onOpen={() => setCartOpen(true)}
         bgColor={menu.background_color}
         translucidToUse={translucidToUse}
         grayToUse={grayToUse}
