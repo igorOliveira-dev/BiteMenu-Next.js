@@ -2,10 +2,26 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getStripeClient } from "@/lib/stripe";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY, // service role para leitura de profiles
-);
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+const ZERO_DECIMAL_CURRENCIES = [
+  "bif",
+  "clp",
+  "djf",
+  "gnf",
+  "jpy",
+  "kmf",
+  "krw",
+  "mga",
+  "pyg",
+  "rwf",
+  "ugx",
+  "vnd",
+  "vuv",
+  "xaf",
+  "xof",
+  "xpf",
+];
 
 export async function POST(request) {
   const stripe = getStripeClient("cnpj");
@@ -29,7 +45,6 @@ export async function POST(request) {
       paymentMethod,
       service,
       detailsColor,
-      // metadados extras para reconstruir o pedido no webhook
     } = body;
 
     // 1. Buscar o stripe_account e stripe_fee_percentage do dono do menu
@@ -49,20 +64,20 @@ export async function POST(request) {
       return NextResponse.json({ error: "Estabelecimento sem conta Stripe configurada." }, { status: 400 });
     }
 
-    // 2. Calcular application fee (taxa do Bite Menu)
-    // stripe_fee_percentage é ex: 5 para 5%, armazenado como numeric
+    // 2. Converter total para a menor unidade da moeda
+    const currencyLower = (currency || "brl").toLowerCase();
+    const isZeroDecimal = ZERO_DECIMAL_CURRENCIES.includes(currencyLower);
+    const totalInCents = isZeroDecimal ? Math.round(total) : Math.round(total * 100);
+
+    // 3. Calcular application fee sobre o valor já em centavos
     const feePercentage = Number(profile.stripe_fee_percentage ?? 0);
-    const applicationFeeAmount = Math.round((total * feePercentage) / 100); // em centavos
+    const applicationFeeAmount = Math.round((totalInCents * feePercentage) / 100);
 
-    // 3. Converter total para centavos (Stripe usa a menor unidade)
-    const totalInCents = Math.round(total * 100);
-
-    // 4. Montar line_items — um item consolidado com o nome do pedido
-    //    (opcionalmente pode expandir por item, mas um item único é mais limpo no checkout)
+    // 4. Montar line_items
     const lineItems = [
       {
         price_data: {
-          currency: (currency || "brl").toLowerCase(),
+          currency: currencyLower,
           product_data: {
             name: `Pedido em ${menuTitle}`,
             description: items
@@ -80,8 +95,7 @@ export async function POST(request) {
       },
     ];
 
-    // 5. Serializar metadados do pedido para uso no webhook
-    //    Stripe metadata é key-value string, limite de 500 chars por value
+    // 5. Salvar pedido pendente no Supabase
     const orderPayload = {
       menu_id: menuId,
       costumer_name: costumerName,
@@ -93,12 +107,11 @@ export async function POST(request) {
       address: costumerAddress ?? null,
       delivery_fee: deliveryFee,
       total,
-      is_paid: false, // será atualizado para true via webhook
+      is_paid: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
 
-    // Salvar pedido pendente no Supabase agora e guardar o ID
     const { data: insertedOrder, error: insertError } = await supabase
       .from("orders")
       .insert([orderPayload])
@@ -138,12 +151,10 @@ export async function POST(request) {
       ...(costumerName && { customer_creation: "always" }),
       locale: "pt-BR",
     });
-    // sem o segundo parâmetro { stripeAccount: ... }
 
     return NextResponse.json({ url: session.url, orderId });
   } catch (err) {
     console.error("Stripe checkout error:", err);
-    console.error("Erro interno na checkout route:", err);
     return NextResponse.json({ error: err.message || "Erro interno ao criar checkout." }, { status: 500 });
   }
 }

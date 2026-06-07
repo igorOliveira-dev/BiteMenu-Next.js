@@ -469,7 +469,9 @@ const Sales = ({ setSelectedTab }) => {
                                       ? "Crédito"
                                       : sale.payment_method === "cash"
                                         ? "Dinheiro"
-                                        : "Não informado"}
+                                        : sale.payment_method === "stripe"
+                                          ? "Pagamentos Bite Menu"
+                                          : "Não informado"}
                               </span>
                               <span className="rounded-full border border-translucid px-3 py-1 color-gray bg-[var(--translucid)]">
                                 {sale.service === "delivery"
