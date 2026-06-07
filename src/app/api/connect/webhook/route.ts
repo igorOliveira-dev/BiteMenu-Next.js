@@ -1,7 +1,9 @@
 import Stripe from "stripe";
 import { headers } from "next/headers";
-import { supabase } from "@/lib/supabaseClient";
 import { getStripeClient } from "@/lib/stripe";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
 export async function POST(req: Request) {
   const stripe = getStripeClient("cnpj");
