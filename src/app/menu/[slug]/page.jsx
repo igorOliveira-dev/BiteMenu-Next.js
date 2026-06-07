@@ -17,6 +17,7 @@ const getMenuBySlug = cache(async (slug) => {
       `
       id,
       owner_id,
+      slug,
       title,
       description,
       address,
