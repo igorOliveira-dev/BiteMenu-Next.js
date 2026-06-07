@@ -89,6 +89,8 @@ export default function CartDrawer({
   const [isStripeLoading, setIsStripeLoading] = useState(false);
   // Dados do pedido pendente (para construir o WhatsApp após retorno do Stripe)
   const [pendingOrderData, setPendingOrderData] = useState(null);
+  // Sinaliza que o checkout via Stripe foi concluído com sucesso e que o modal de confirmação deve abrir
+  const [pendingStripeSuccess, setPendingStripeSuccess] = useState(false);
   // ────────────────────────────────────────────────────────────────────────
 
   // delivery_zones é lazy-loaded ao abrir o carrinho (não vem mais na query principal)
@@ -316,7 +318,6 @@ export default function CartDrawer({
       .then(({ data: order }) => {
         if (!order) return;
 
-        // Reconstruir a URL do WhatsApp com os dados do pedido salvo
         const builtURL = buildWhatsappURL({
           items: order.items_list,
           subtotal: order.total - (order.delivery_fee ?? 0),
@@ -334,14 +335,25 @@ export default function CartDrawer({
         setFinalValue(order.total);
         setWhatsappURL(builtURL);
         setPurchaseStage("whatsapp");
-
-        onOpen?.();
-        setTimeout(() => setIsPurchaseModalOpen(true), 50);
-
-        // Limpar o carrinho
         cart.clear(menu?.id);
+
+        onOpen?.(); // abre o drawer
+        setPendingStripeSuccess(true); // sinaliza para abrir o modal depois
       });
   }, [searchParams, menu?.id]);
+
+  // Espera o drawer montar para abrir o modal
+  useEffect(() => {
+    if (!pendingStripeSuccess) return;
+    if (!isMounted) return;
+
+    const timer = setTimeout(() => {
+      setIsPurchaseModalOpen(true);
+      setPendingStripeSuccess(false);
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [pendingStripeSuccess, isMounted]);
   // ────────────────────────────────────────────────────────────────────────
 
   // calcular taxa de entrega
