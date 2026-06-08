@@ -142,6 +142,7 @@ export async function POST(request) {
         transfer_data: {
           destination: profile.stripe_connect_account_id,
         },
+        on_behalf_of: profile.stripe_connect_account_id,
       },
       metadata: {
         order_id: orderId,
