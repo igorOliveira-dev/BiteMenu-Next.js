@@ -131,27 +131,24 @@ export async function POST(request) {
     const cancelUrl = `${baseUrl}/menu/${menuSlug}?order_cancelled=true`;
 
     // 7. Criar Checkout Session no Stripe
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      mode: "payment",
-      line_items: lineItems,
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      payment_intent_data: {
-        application_fee_amount: applicationFeeAmount,
-        transfer_data: {
-          destination: profile.stripe_connect_account_id,
+    const session = await stripe.checkout.sessions.create(
+      {
+        payment_method_types: ["card"],
+        mode: "payment",
+        line_items: lineItems,
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        payment_intent_data: {
+          application_fee_amount: applicationFeeAmount, // só sua % limpa
         },
-        on_behalf_of: profile.stripe_connect_account_id,
+        metadata: { order_id: orderId, menu_id: menuId, menu_slug: menuSlug },
+        ...(costumerName && { customer_creation: "always" }),
+        locale: "pt-BR",
       },
-      metadata: {
-        order_id: orderId,
-        menu_id: menuId,
-        menu_slug: menuSlug,
+      {
+        stripeAccount: profile.stripe_connect_account_id, // ← cria na conta do restaurante
       },
-      ...(costumerName && { customer_creation: "always" }),
-      locale: "pt-BR",
-    });
+    );
 
     return NextResponse.json({ url: session.url, orderId });
   } catch (err) {
