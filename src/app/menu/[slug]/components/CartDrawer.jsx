@@ -35,6 +35,8 @@ export default function CartDrawer({
   ownerPhone,
   ownerRole,
   ownerStripeAccount,
+  pendingStripeOrderId,
+  onPendingStripeOrderResolved,
 }) {
   const cart = useCartContext();
   const confirm = useConfirm();
@@ -66,6 +68,7 @@ export default function CartDrawer({
   const draggingRef = useRef(false);
   const dropdownRef = useRef(null);
   const [dragOffset, setDragOffset] = useState(0);
+  const pendingModalOpenRef = useRef(false);
 
   const [purchaseStage, setPurchaseStage] = useState("services");
 
@@ -87,10 +90,6 @@ export default function CartDrawer({
 
   // ── Stripe ──────────────────────────────────────────────────────────────
   const [isStripeLoading, setIsStripeLoading] = useState(false);
-  // Dados do pedido pendente (para construir o WhatsApp após retorno do Stripe)
-  const [pendingOrderData, setPendingOrderData] = useState(null);
-  // Sinaliza que o checkout via Stripe foi concluído com sucesso e que o modal de confirmação deve abrir
-  const [pendingStripeSuccess, setPendingStripeSuccess] = useState(false);
   // ────────────────────────────────────────────────────────────────────────
 
   // delivery_zones é lazy-loaded ao abrir o carrinho (não vem mais na query principal)
@@ -296,27 +295,22 @@ export default function CartDrawer({
 
   // ── Retorno do Stripe: detectar ?order_success=true na URL ──────────────
   useEffect(() => {
-    if (!searchParams) return;
+    if (!pendingStripeOrderId) return;
+    if (!isVisible) return;
 
-    const orderSuccess = searchParams.get("order_success");
-    const orderId = searchParams.get("order_id");
-
-    if (orderSuccess !== "true" || !orderId) return;
-
-    // Limpar os query params da URL sem recarregar a página
-    const url = new URL(window.location.href);
-    url.searchParams.delete("order_success");
-    url.searchParams.delete("order_id");
-    window.history.replaceState({}, "", url.toString());
-
-    // Buscar dados do pedido salvo para montar o WhatsApp
     supabase
       .from("orders")
       .select("*")
-      .eq("id", orderId)
+      .eq("id", pendingStripeOrderId)
       .maybeSingle()
-      .then(({ data: order }) => {
-        if (!order) return;
+      .then(({ data: order, error }) => {
+        if (error || !order) return;
+
+        setFinalValue(order.total);
+        setPurchaseStage("whatsapp");
+        cart.clear(menu?.id);
+        setIsPurchaseModalOpen(true);
+        onPendingStripeOrderResolved?.();
 
         const builtURL = buildWhatsappURL({
           items: order.items_list,
@@ -331,29 +325,9 @@ export default function CartDrawer({
           selectedPayment: "stripe",
           paymentLabel: "Stripe (cartão)",
         });
-
-        setFinalValue(order.total);
         setWhatsappURL(builtURL);
-        setPurchaseStage("whatsapp");
-        cart.clear(menu?.id);
-
-        onOpen?.(); // abre o drawer
-        setPendingStripeSuccess(true); // sinaliza para abrir o modal depois
       });
-  }, [searchParams, menu?.id]);
-
-  // Espera o drawer montar para abrir o modal
-  useEffect(() => {
-    if (!pendingStripeSuccess) return;
-    if (!isMounted) return;
-
-    const timer = setTimeout(() => {
-      setIsPurchaseModalOpen(true);
-      setPendingStripeSuccess(false);
-    }, 350);
-
-    return () => clearTimeout(timer);
-  }, [pendingStripeSuccess, isMounted]);
+  }, [pendingStripeOrderId, isVisible]);
   // ────────────────────────────────────────────────────────────────────────
 
   // calcular taxa de entrega
@@ -381,8 +355,6 @@ export default function CartDrawer({
     localStorage.setItem("customerInfo", JSON.stringify(customerInfo));
     console.log("💾 LocalStorage salvo no fechamento:", customerInfo);
   };
-
-  if (!isMounted) return null;
 
   const handleTouchStart = (e) => {
     if (isDesktop) return;
@@ -708,6 +680,8 @@ ${customerInfo}`;
       cart.clear(menu.id);
     })();
   };
+
+  if (!isMounted) return null;
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex">

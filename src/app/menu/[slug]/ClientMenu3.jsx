@@ -12,6 +12,7 @@ import MenuFooter from "./components/MenuFooter";
 import { supabaseImg } from "@/lib/imageUtils";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import XButton from "@/components/XButton";
+import { useSearchParams } from "next/navigation";
 
 function getContrastTextColor(hex) {
   const DEFAULT_BACKGROUND = "#ffffff";
@@ -147,6 +148,8 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole, ownerStripeAc
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredCategories, setFilteredCategories] = useState(orderedCategories);
 
+  const searchParams = useSearchParams();
+
   useEffect(() => {
     if (!searchTerm.trim()) {
       setFilteredCategories(orderedCategories);
@@ -206,6 +209,32 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole, ownerStripeAc
     el.addEventListener("scroll", checkScroll);
     return () => el.removeEventListener("scroll", checkScroll);
   }, [selectedItem]);
+
+  const [pendingStripeOrderId, setPendingStripeOrderId] = useState(null);
+
+  // verifica se chegou com query de order_success e order_id para abrir o carrinho automaticamente
+  useEffect(() => {
+    if (!searchParams) return;
+
+    const orderSuccess = searchParams.get("order_success");
+    const orderId = searchParams.get("order_id");
+
+    console.log("🔍 ClientMenu searchParams:", { orderSuccess, orderId });
+
+    if (orderSuccess !== "true" || !orderId) return;
+
+    // Limpa a URL
+    const url = new URL(window.location.href);
+    url.searchParams.delete("order_success");
+    url.searchParams.delete("order_id");
+    window.history.replaceState({}, "", url.toString());
+
+    // Abre o carrinho imediatamente
+    setCartOpen(true);
+
+    // Passa o orderId para o CartDrawer resolver
+    setPendingStripeOrderId(orderId);
+  }, [searchParams]);
 
   const hasPlusPermissions = ownerRole === "plus" || ownerRole === "pro" || ownerRole === "admin";
   const canShowPromoPrice = hasPlusPermissions;
@@ -959,6 +988,8 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole, ownerStripeAc
         ownerPhone={ownerPhone}
         ownerRole={ownerRole}
         ownerStripeAccount={ownerStripeAccount}
+        pendingStripeOrderId={pendingStripeOrderId}
+        onPendingStripeOrderResolved={() => setPendingStripeOrderId(null)}
       />
 
       <MenuFooter
