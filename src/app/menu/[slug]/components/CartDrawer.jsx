@@ -767,6 +767,13 @@ ${customerInfo}`;
                     customAlert(`${menu.title} está fechado no momento!`);
                     return;
                   }
+
+                  // Mínimo fixo do sistema (R$2,00)
+                  if (drawerSubtotal < 2) {
+                    customAlert(`O valor mínimo para realizar um pedido é de ${formatCurrency(2, menu?.currency)}`);
+                    return;
+                  }
+
                   if (hasPlusPermissions) {
                     if (menu.minimum_order_value && drawerSubtotal < menu.minimum_order_value) {
                       customAlert(
