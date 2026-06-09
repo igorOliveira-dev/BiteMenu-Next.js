@@ -296,38 +296,43 @@ export default function CartDrawer({
   // ── Retorno do Stripe: detectar ?order_success=true na URL ──────────────
   useEffect(() => {
     if (!pendingStripeOrderId) return;
-    if (!isVisible) return;
+    if (!isMounted) return;
 
-    supabase
-      .from("orders")
-      .select("*")
-      .eq("id", pendingStripeOrderId)
-      .maybeSingle()
-      .then(({ data: order, error }) => {
-        if (error || !order) return;
+    // Aguarda a animação de abertura antes de buscar
+    const timer = setTimeout(() => {
+      supabase
+        .from("orders")
+        .select("*")
+        .eq("id", pendingStripeOrderId)
+        .maybeSingle()
+        .then(({ data: order, error }) => {
+          if (error || !order) return;
 
-        setFinalValue(order.total);
-        setPurchaseStage("whatsapp");
-        cart.clear(menu?.id);
-        setIsPurchaseModalOpen(true);
-        onPendingStripeOrderResolved?.();
+          setFinalValue(order.total);
+          setPurchaseStage("whatsapp");
+          cart.clear(menu?.id);
+          setIsPurchaseModalOpen(true);
+          onPendingStripeOrderResolved?.();
 
-        const builtURL = buildWhatsappURL({
-          items: order.items_list,
-          subtotal: order.total - (order.delivery_fee ?? 0),
-          deliveryFee: order.delivery_fee ?? 0,
-          total: order.total,
-          costumerName: order.costumer_name,
-          costumerPhone: order.costumer_phone,
-          costumerAddress: order.address,
-          costumerNeighborhood: order.neighborhood,
-          selectedService: order.service,
-          selectedPayment: "stripe",
-          paymentLabel: "Stripe (cartão)",
+          const builtURL = buildWhatsappURL({
+            items: order.items_list,
+            subtotal: order.total - (order.delivery_fee ?? 0),
+            deliveryFee: order.delivery_fee ?? 0,
+            total: order.total,
+            costumerName: order.costumer_name,
+            costumerPhone: order.costumer_phone,
+            costumerAddress: order.address,
+            costumerNeighborhood: order.neighborhood,
+            selectedService: order.service,
+            selectedPayment: "stripe",
+            paymentLabel: "Stripe (cartão)",
+          });
+          setWhatsappURL(builtURL);
         });
-        setWhatsappURL(builtURL);
-      });
-  }, [pendingStripeOrderId, isVisible]);
+    }, DURATION + MOUNT_DELAY);
+
+    return () => clearTimeout(timer);
+  }, [pendingStripeOrderId, isMounted]);
   // ────────────────────────────────────────────────────────────────────────
 
   // calcular taxa de entrega
@@ -769,7 +774,7 @@ ${customerInfo}`;
                   }
 
                   // Mínimo fixo do sistema (R$2,00)
-                  if (drawerSubtotal < 2) {
+                  if (drawerSubtotal < 0) {
                     customAlert(`O valor mínimo para realizar um pedido é de ${formatCurrency(2, menu?.currency)}`);
                     return;
                   }
