@@ -297,38 +297,37 @@ export default function CartDrawer({
   useEffect(() => {
     if (!pendingStripeOrderId) return;
 
-    const delay = DURATION + MOUNT_DELAY + 50; // margem extra para produção
+    const delay = DURATION + MOUNT_DELAY + 50;
 
-    const timer = setTimeout(() => {
-      supabase
-        .from("orders")
-        .select("*")
-        .eq("id", pendingStripeOrderId)
-        .maybeSingle()
-        .then(({ data: order, error }) => {
-          if (error || !order) return;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/orders/${pendingStripeOrderId}`);
+        if (!res.ok) return;
+        const order = await res.json();
 
-          setFinalValue(order.total);
-          setPurchaseStage("whatsapp");
-          cart.clear(menu?.id);
-          setIsPurchaseModalOpen(true);
-          onPendingStripeOrderResolved?.();
+        setFinalValue(order.total);
+        setPurchaseStage("whatsapp");
+        cart.clear(menu?.id);
+        setIsPurchaseModalOpen(true);
+        onPendingStripeOrderResolved?.();
 
-          const builtURL = buildWhatsappURL({
-            items: order.items_list,
-            subtotal: order.total - (order.delivery_fee ?? 0),
-            deliveryFee: order.delivery_fee ?? 0,
-            total: order.total,
-            costumerName: order.costumer_name,
-            costumerPhone: order.costumer_phone,
-            costumerAddress: order.address,
-            costumerNeighborhood: order.neighborhood,
-            selectedService: order.service,
-            selectedPayment: "stripe",
-            paymentLabel: "Stripe (cartão)",
-          });
-          setWhatsappURL(builtURL);
+        const builtURL = buildWhatsappURL({
+          items: order.items_list,
+          subtotal: order.total - (order.delivery_fee ?? 0),
+          deliveryFee: order.delivery_fee ?? 0,
+          total: order.total,
+          costumerName: order.costumer_name,
+          costumerPhone: order.costumer_phone,
+          costumerAddress: order.address,
+          costumerNeighborhood: order.neighborhood,
+          selectedService: order.service,
+          selectedPayment: "stripe",
+          paymentLabel: "Stripe (cartão)",
         });
+        setWhatsappURL(builtURL);
+      } catch (err) {
+        console.error("Erro ao buscar pedido:", err);
+      }
     }, delay);
 
     return () => clearTimeout(timer);
