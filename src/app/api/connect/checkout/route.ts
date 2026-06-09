@@ -126,7 +126,7 @@ export async function POST(request) {
     const orderId = insertedOrder.id;
 
     // 6. URLs de retorno
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://bitemenu.com.br";
+    const baseUrl = process.env.APP_URL || "https://bitemenu.com.br";
     const successUrl = `${baseUrl}/menu/${menuSlug}?order_success=true&order_id=${orderId}`;
     const cancelUrl = `${baseUrl}/menu/${menuSlug}?order_cancelled=true`;
 
