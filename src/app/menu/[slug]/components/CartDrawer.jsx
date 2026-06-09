@@ -296,9 +296,9 @@ export default function CartDrawer({
   // ── Retorno do Stripe: detectar ?order_success=true na URL ──────────────
   useEffect(() => {
     if (!pendingStripeOrderId) return;
-    if (!isMounted) return;
 
-    // Aguarda a animação de abertura antes de buscar
+    const delay = DURATION + MOUNT_DELAY + 50; // margem extra para produção
+
     const timer = setTimeout(() => {
       supabase
         .from("orders")
@@ -329,10 +329,10 @@ export default function CartDrawer({
           });
           setWhatsappURL(builtURL);
         });
-    }, DURATION + MOUNT_DELAY);
+    }, delay);
 
     return () => clearTimeout(timer);
-  }, [pendingStripeOrderId, isMounted]);
+  }, [pendingStripeOrderId]);
   // ────────────────────────────────────────────────────────────────────────
 
   // calcular taxa de entrega
