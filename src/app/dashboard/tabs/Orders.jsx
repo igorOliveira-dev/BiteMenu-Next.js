@@ -152,8 +152,8 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
     setHasMore(true);
     loadingRef.current = false;
     setLoadingOrders(true);
-    await fetchMore(true);
-    await fetchSummary();
+    await fetchMore(true, filters);
+    await fetchSummary(filters);
   };
 
   const buildOrdersQuery = (filters) => {
@@ -175,8 +175,7 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
 
     if (filters.search && filters.search.trim() !== "") {
       const term = filters.search.trim();
-      const ors = [`costumer_name.ilike.%${term}%`, `costumer_phone.ilike.%${term}%`];
-      q = q.or(ors.join(","));
+      q = q.or(`costumer_name.ilike.%${term}%,costumer_phone.ilike.%${term}%,id_text.ilike.${term}%`);
     }
 
     return q.order("updated_at", { ascending: false });
@@ -205,14 +204,13 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
 
     if (filters.search && filters.search.trim() !== "") {
       const term = filters.search.trim();
-      const ors = [`costumer_name.ilike.%${term}%`, `costumer_phone.ilike.%${term}%`];
-      q = q.or(ors.join(","));
+      q = q.or(`costumer_name.ilike.%${term}%,costumer_phone.ilike.%${term}%,id_text.ilike.${term}%`);
     }
 
     return q;
   };
 
-  const fetchMore = async (isReset = false) => {
+  const fetchMore = async (isReset = false, currentFilters = filters) => {
     if (!menu?.id) return;
     if (!hasMoreRef.current && !isReset) return;
     if (loadingRef.current) return;
@@ -223,7 +221,7 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
     const from = (nextPage - 1) * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
-    const { data, error, count } = await buildOrdersQuery(filters).range(from, to);
+    const { data, error, count } = await buildOrdersQuery(currentFilters).range(from, to);
 
     if (error) {
       loadingRef.current = false;
@@ -249,7 +247,7 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
     setLoadingOrders(false);
   };
 
-  const fetchSummary = async () => {
+  const fetchSummary = async (currentFilters = filters) => {
     if (!menu?.id) return;
     setSummaryLoading(true);
 
@@ -260,7 +258,7 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
     try {
       while (true) {
         const to = from + PAGE - 1;
-        const { data, error, count } = await buildSummaryQuery(filters).range(from, to);
+        const { data, error, count } = await buildSummaryQuery(currentFilters).range(from, to);
 
         if (error) throw error;
         if (typeof count === "number") setTotalCount(count);
@@ -608,6 +606,12 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
                       key={order.id}
                       className="rounded-2xl border border-translucid bg-translucid p-4 shadow-sm transition hover:shadow-md"
                     >
+                      <p
+                        className="mb-2 text-sm border-b-2 pb-1 border-[var(--translucid)]"
+                        style={{ color: "var(--gray)" }}
+                      >
+                        <strong>Pedido:</strong> #{order?.id?.slice(0, 6)}
+                      </p>
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div className="min-w-0 flex-1">
                           <div className="mb-3 flex items-start justify-between gap-3">

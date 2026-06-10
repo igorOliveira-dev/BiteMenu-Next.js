@@ -38,14 +38,14 @@ export default function OrdersFilter({ onChange, initial = {} }) {
       search: debouncedSearch,
       sortDir,
     });
-  }, [isPaid, deliveryType, payment, debouncedSearch, sortDir, onChange]);
+  }, [isPaid, deliveryType, payment, debouncedSearch, sortDir]);
 
   const clearAll = () => {
     setIsPaid("all");
     setDeliveryType("all");
     setPayment("all");
     setSearch("");
-    // debouncedSearch vai virar "" em até 2s (ou você pode forçar já, se quiser)
+    setDebouncedSearch(""); // força limpeza imediata sem esperar o debounce
   };
 
   const paymentLabels = {
@@ -76,7 +76,7 @@ export default function OrdersFilter({ onChange, initial = {} }) {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Pesquisar por nome ou telefone"
+              placeholder="Pesquisar por nome, telefone, id..."
               className="border border-2 border-translucid rounded px-3 py-1 text-sm pr-9 w-70 outline-none"
             />
             <FaSearch className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400" />
