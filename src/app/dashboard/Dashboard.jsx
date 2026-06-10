@@ -243,10 +243,10 @@ const Dashboard = ({
 
           {/* Bottom section */}
           <div className="w-full hidden lg:flex flex-col">
-            {profile?.role === "admin" && (
+            {profile?.privileges.includes("stripe-express") && (
               <button
                 onClick={() => setSelectedTab("biteMenuPayments")}
-                className={`w-full px-1 xxs:px-4 py-4 hover-bg-translucid transition-colors border-t-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "biteMenuPayments" ? "bg-translucid" : ""}`}
+                className={`cursor-pointer w-full px-1 xxs:px-4 py-4 hover-bg-translucid transition-colors border-t-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "biteMenuPayments" ? "bg-translucid" : ""}`}
               >
                 <FaMoneyBill className="hidden lg:block text-lg shrink-0" />
                 <span>Pagamentos Bite Menu</span>
@@ -332,7 +332,7 @@ const Dashboard = ({
         <div className={selectedTab === "salesDashboard" ? "block" : "hidden"}>
           <SalesDashboard setSelectedTab={setSelectedTab} />
         </div>
-        {profile?.role === "admin" && (
+        {profile?.privileges.includes("stripe-express") && (
           <div className={selectedTab === "biteMenuPayments" ? "block" : "hidden"}>
             <BiteMenuPayments />
           </div>
