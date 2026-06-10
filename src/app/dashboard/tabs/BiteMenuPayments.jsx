@@ -44,22 +44,6 @@ function SectionCard({ icon, title, description, children, aside }) {
   );
 }
 
-function StatusBadge({ connected }) {
-  return (
-    <span
-      className={cx(
-        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
-        connected
-          ? "bg-green-500/20 text-green-400 border border-green-500/30"
-          : "bg-amber-500/20 text-amber-400 border border-amber-500/30",
-      )}
-    >
-      <span className={cx("h-1.5 w-1.5 rounded-full", connected ? "bg-green-400" : "bg-amber-400")} />
-      {connected ? "Conta conectada" : "Não conectada"}
-    </span>
-  );
-}
-
 function FeatureItem({ icon, title, description }) {
   return (
     <div className="flex items-start gap-3">
@@ -234,8 +218,7 @@ const BiteMenuPayments = () => {
       <div className="md:m-auto lg:m-2 lg:w-[calc(80dvw-256px)] max-w-[1080px] pb-32 pt-3">
         {/* header */}
         <div className="flex items-center gap-3 mb-5">
-          <h2 className="font-semibold text-xl">Stripe Connect</h2>
-          <StatusBadge connected={isConnected} />
+          <h2 className="font-semibold text-xl">Pagamentos Bite Menu</h2>
         </div>
 
         <div className="grid gap-5">

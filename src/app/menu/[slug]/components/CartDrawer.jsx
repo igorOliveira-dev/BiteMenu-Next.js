@@ -101,6 +101,8 @@ export default function CartDrawer({
 
   // Verifica se este menu usa Stripe Express
   const usesStripeExpress = Boolean(menu?.use_stripe_express && ownerStripeAccount);
+  const stripePaymentMethods = Array.isArray(menu?.stripe_payment_methods) ? menu.stripe_payment_methods : [];
+  const shouldUseStripe = (method) => usesStripeExpress && stripePaymentMethods.includes(method);
 
   const serviceOptions = [
     {
@@ -1009,7 +1011,7 @@ ${customerInfo}`;
                   </p>
                   <button
                     onClick={() => {
-                      if (usesStripeExpress && selectedPayment === "credit") {
+                      if (shouldUseStripe(selectedPayment)) {
                         handleStripeCheckout();
                       } else {
                         confirmPurchase();
