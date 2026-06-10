@@ -126,6 +126,7 @@ const PAYMENT_LABELS_PT = {
   debit: "Cartão de débito",
   credit: "Cartão de crédito",
   pix: "Pix",
+  stripe: "Stripe",
 };
 
 const SERVICE_LABELS_PT = {
