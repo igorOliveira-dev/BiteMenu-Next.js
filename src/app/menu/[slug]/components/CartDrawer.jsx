@@ -322,7 +322,7 @@ export default function CartDrawer({
           costumerNeighborhood: order.neighborhood,
           selectedService: order.service,
           selectedPayment: "stripe",
-          paymentLabel: "Stripe (cartão)",
+          paymentLabel: "Stripe",
         });
         setWhatsappURL(builtURL);
       } catch (err) {

@@ -31,7 +31,7 @@ const paymentLabels = {
   debit: "Débito",
   credit: "Crédito",
   cash: "Dinheiro",
-  stripe: "Pagamentos Bite Menu",
+  stripe: "Stripe",
 };
 
 const serviceLabels = {

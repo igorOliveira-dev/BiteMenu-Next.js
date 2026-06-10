@@ -53,6 +53,7 @@ export default function OrdersFilter({ onChange, initial = {} }) {
     debit: "Débito",
     credit: "Crédito",
     pix: "PIX",
+    stripe: "Stripe",
   };
 
   const serviceLabels = {

@@ -12,6 +12,7 @@ export default function SalesCharts({ sales = [] }) {
     debit: "Débito",
     credit: "Crédito",
     pix: "PIX",
+    stripe: "Stripe",
   };
 
   const serviceLabels = {
