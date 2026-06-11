@@ -812,16 +812,31 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
               className="space-y-4"
               onSubmit={async (e) => {
                 e.preventDefault();
+
                 const subtotal = computeSubtotal(selectedOrder);
                 const deliveryFee = computeDeliveryFee(selectedOrder);
-                const payload = {
-                  ...selectedOrder,
-                  delivery_fee: deliveryFee,
-                  total: subtotal + deliveryFee,
-                };
 
-                const { error } = await supabase.from("orders").update(payload).eq("id", selectedOrder.id);
-                if (error) return customAlert("Erro ao atualizar pedido", "error");
+                const { data, error } = await supabase
+                  .from("orders")
+                  .update({
+                    costumer_name: selectedOrder.costumer_name,
+                    costumer_phone: selectedOrder.costumer_phone,
+                    address: selectedOrder.address ?? null,
+                    service: selectedOrder.service,
+                    payment_method: selectedOrder.payment_method,
+                    items_list: selectedOrder.items_list,
+                    delivery_fee: deliveryFee,
+                  })
+                  .eq("id", selectedOrder.id)
+                  .select();
+
+                console.log("DATA:", data);
+                console.log("ERROR:", error);
+
+                if (error) {
+                  customAlert("Erro ao atualizar pedido", "error");
+                  return;
+                }
 
                 customAlert("Pedido atualizado com sucesso!", "success");
                 setOrderModalOpen(false);
