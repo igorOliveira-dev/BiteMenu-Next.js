@@ -146,6 +146,42 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
     }
   }, [reloadTrigger]);
 
+  // detecta pagamento no stripe e atualiza o pedido em tempo real
+  useEffect(() => {
+    if (!menu?.id || !enabledOrders) return;
+
+    const channel = supabase
+      .channel(`orders:menu:${menu.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "orders",
+          filter: `menu_id=eq.${menu.id}`,
+        },
+        (payload) => {
+          const updated = payload.new;
+
+          setOrders((prev) =>
+            prev.map((o) => (o.id === updated.id ? { ...o, is_paid: updated.is_paid, updated_at: updated.updated_at } : o)),
+          );
+
+          setSelectedOrder((prev) => (prev?.id === updated.id ? { ...prev, is_paid: updated.is_paid } : prev));
+
+          if (updated.is_paid) {
+            customAlert(`Pagamento confirmado para ${updated.costumer_name || "cliente"} via Stripe!`, "success");
+            fetchSummary();
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [menu?.id, enabledOrders]);
+
   const resetAndFetch = async () => {
     setOrders([]);
     setPage(0);
