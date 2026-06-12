@@ -192,6 +192,11 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   const [cfgGroupIdx, setCfgGroupIdx] = useState(null);
   const [optionGroupsModalOpen, setOptionGroupsModalOpen] = useState(false);
 
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [importableGroups, setImportableGroups] = useState([]);
+  const [selectedImportIds, setSelectedImportIds] = useState(new Set());
+  const [expandedImportItemId, setExpandedImportItemId] = useState(null);
+
   const closingCrudFromPop = useRef(false);
   const closingPlanFromPop = useRef(false);
   const ignoreNextPop = useRef(false);
@@ -1270,6 +1275,39 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     }
   };
 
+  const fetchAllOptionGroups = async () => {
+    const allItems = categories.flatMap((c) => c.menu_items || []).filter((it) => it.id !== modalPayload.itemId);
+
+    if (allItems.length === 0) return [];
+
+    const allItemIds = allItems.map((it) => it.id);
+
+    const { data } = await supabase
+      .from("option_groups")
+      .select(
+        `id, name, min_choices, max_choices, position, item_id,
+       option_choices ( id, name, price, hidden, position )`,
+      )
+      .in("item_id", allItemIds)
+      .order("position", { ascending: true });
+
+    if (!data?.length) return [];
+
+    // agrupa por item, preservando o nome do item
+    return allItems
+      .map((it) => ({
+        itemId: it.id,
+        itemName: it.name,
+        groups: (data || [])
+          .filter((g) => g.item_id === it.id)
+          .map((g) => ({
+            ...g,
+            option_choices: [...(g.option_choices || [])].sort((a, b) => a.position - b.position),
+          })),
+      }))
+      .filter((entry) => entry.groups.length > 0); // omite itens sem grupos
+  };
+
   const getItemLimitByRole = (role) => {
     if (role === "free") return 20;
     if (role === "plus") return 50;
@@ -2094,31 +2132,47 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
           {/* Rodapé do modal de grupos */}
           <div className="flex justify-between items-center mt-4 gap-2">
-            <button
-              type="button"
-              onClick={() =>
-                setModalPayload((p) => ({
-                  ...p,
-                  data: {
-                    ...p.data,
-                    option_groups: [
-                      ...(p.data.option_groups || []),
-                      {
-                        id: `tmp-${uid()}`,
-                        name: "Novo grupo",
-                        min_choices: 0,
-                        max_choices: 0,
-                        position: (p.data.option_groups || []).length,
-                        option_choices: [],
-                      },
-                    ],
-                  },
-                }))
-              }
-              className="cursor-pointer px-3 py-2 rounded bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white text-sm transition"
-            >
-              + Grupo
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  setModalPayload((p) => ({
+                    ...p,
+                    data: {
+                      ...p.data,
+                      option_groups: [
+                        ...(p.data.option_groups || []),
+                        {
+                          id: `tmp-${uid()}`,
+                          name: "Novo grupo",
+                          min_choices: 0,
+                          max_choices: 0,
+                          position: (p.data.option_groups || []).length,
+                          option_choices: [],
+                        },
+                      ],
+                    },
+                  }))
+                }
+                className="cursor-pointer px-3 py-2 rounded bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white text-sm transition"
+              >
+                + Grupo
+              </button>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  const grouped = await fetchAllOptionGroups();
+                  setImportableGroups(grouped);
+                  setSelectedImportIds(new Set());
+                  setExpandedImportItemId(null); // <- reset
+                  setImportModalOpen(true);
+                }}
+                className="cursor-pointer px-3 py-2 rounded border border-translucid bg-translucid text-sm"
+              >
+                Importar grupos
+              </button>
+            </div>
 
             <button
               type="button"
@@ -2218,6 +2272,108 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                 Confirmar
               </button>
             </div>
+          </div>
+        </GenericModal>
+      )}
+
+      {/* modal de importação */}
+      {modalOpen && importModalOpen && (
+        <GenericModal wfull maxWidth={"420px"} title="Importar grupos de opções" onClose={() => setImportModalOpen(false)}>
+          {importableGroups.length === 0 ? (
+            <p className="text-sm color-gray text-center py-4">Nenhum grupo encontrado em outros itens.</p>
+          ) : (
+            <div className="space-y-2 max-h-[55vh] overflow-y-auto pr-1">
+              {importableGroups.map((entry) => {
+                const isExpanded = expandedImportItemId === entry.itemId;
+                return (
+                  <div key={entry.itemId} className="rounded border border-translucid overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedImportItemId(isExpanded ? null : entry.itemId)}
+                      className="w-full flex items-center justify-between px-3 py-2 bg-translucid hover:opacity-80 transition cursor-pointer"
+                    >
+                      <span className="text-sm font-semibold">{entry.itemName}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs color-gray">{entry.groups.length} grupo(s)</span>
+                        {isExpanded ? <FaChevronUp size={11} /> : <FaChevronDown size={11} />}
+                      </div>
+                    </button>
+
+                    {isExpanded && (
+                      <div className="space-y-1.5 p-2">
+                        {entry.groups.map((g) => (
+                          <label
+                            key={g.id}
+                            className={`flex items-start gap-3 p-2 rounded border cursor-pointer transition
+                        ${selectedImportIds.has(g.id) ? "border-blue-500 bg-blue-500/10" : "border-translucid bg-translucid"}`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="mt-1 flex-shrink-0"
+                              checked={selectedImportIds.has(g.id)}
+                              onChange={() => {
+                                setSelectedImportIds((prev) => {
+                                  const next = new Set(prev);
+                                  next.has(g.id) ? next.delete(g.id) : next.add(g.id);
+                                  return next;
+                                });
+                              }}
+                            />
+                            <div className="min-w-0">
+                              <div className="font-semibold text-sm">{g.name}</div>
+                              <div className="text-xs color-gray">
+                                {g.min_choices > 0 ? `Obrigatório (mín. ${g.min_choices})` : "Opcional"}
+                                {g.max_choices > 0 ? ` · máx. ${g.max_choices}` : " · sem limite"}
+                              </div>
+                              {(g.option_choices || []).length > 0 && (
+                                <div className="text-xs color-gray mt-0.5 truncate">
+                                  {g.option_choices.map((c) => c.name).join(", ")}
+                                </div>
+                              )}
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 mt-4">
+            <button
+              onClick={() => setImportModalOpen(false)}
+              className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded"
+            >
+              Cancelar
+            </button>
+            <button
+              disabled={selectedImportIds.size === 0}
+              onClick={() => {
+                const toImport = importableGroups
+                  .flatMap((e) => e.groups)
+                  .filter((g) => selectedImportIds.has(g.id))
+                  .map((g) => ({
+                    ...g,
+                    id: `tmp-${uid()}`,
+                    option_choices: (g.option_choices || []).map((c) => ({ ...c, id: `tmp-${uid()}` })),
+                  }));
+
+                setModalPayload((p) => ({
+                  ...p,
+                  data: {
+                    ...p.data,
+                    option_groups: [...(p.data.option_groups || []), ...toImport],
+                  },
+                }));
+
+                setImportModalOpen(false);
+              }}
+              className="cursor-pointer px-4 py-2 bg-green-600 disabled:opacity-50 text-white rounded"
+            >
+              Importar ({selectedImportIds.size})
+            </button>
           </div>
         </GenericModal>
       )}
