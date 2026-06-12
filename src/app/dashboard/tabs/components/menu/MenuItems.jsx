@@ -1657,11 +1657,11 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                           setUploadingImage(true);
 
                           const webpFile = await fileToWebp(file, {
-                            maxBytes: 900 * 1024,
-                            maxDimension: 1024,
+                            maxBytes: 700 * 1024,
+                            maxDimension: 720,
                             minDimension: 520,
                             startQuality: 1,
-                            minQuality: 0.92,
+                            minQuality: 0.88,
                           });
 
                           const url = await uploadItemImage(webpFile, menu?.owner_id, modalPayload.data.image_url);
