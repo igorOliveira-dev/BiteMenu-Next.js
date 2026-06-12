@@ -66,7 +66,7 @@ const page = () => {
           <li>Descrição do negócio</li>
           <li>Endereço</li>
           <li>Categorias de produtos</li>
-          <li>Itens com nome, descrição, preço, imagem e adicionais</li>
+          <li>Itens com nome, descrição, preço, imagem e opções</li>
           <li>Itens em destaque, quando disponíveis no plano</li>
           <li>Preços promocionais, quando disponíveis no plano</li>
           <li>Serviços disponíveis, como entrega, retirada ou consumo local</li>

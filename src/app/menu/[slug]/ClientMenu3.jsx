@@ -137,7 +137,7 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole, ownerStripeAc
   const [itemModalOpen, setItemModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [quantity, setQuantity] = useState(1);
-  const [selectedAddons, setSelectedAddons] = useState({});
+  const [selectedOptions, setSelectedOptions] = useState({});
   const [note, setNote] = useState("");
 
   const orderedCategories = useMemo(() => {
@@ -170,28 +170,37 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole, ownerStripeAc
     setSelectedItem(item);
     setItemModalOpen(true);
     setQuantity(1);
-    setSelectedAddons({});
+    setSelectedOptions({});
     setNote("");
   }, []);
 
-  const toggleAddon = (idx) => {
-    if (!selectedItem) return;
-    const key = String(idx);
-    const limit = Number(selectedItem.additionals_limit ?? 0);
-    const currentCount = Object.values(selectedAddons).filter(Boolean).length;
-    const isSelected = !!selectedAddons[key];
-    if (!isSelected && limit > 0 && currentCount >= limit) {
-      alert?.(`Você pode escolher no máximo ${limit} adicional${limit === 1 ? "" : "is"}.`, "error", {
+  const toggleOptionChoice = (group, choice) => {
+    const groupId = group.id;
+    const max = Number(group.max_choices ?? 0);
+    const current = selectedOptions[groupId] || [];
+    const isSelected = current.includes(choice.id);
+
+    if (!isSelected && max > 0 && max !== 1 && current.length >= max) {
+      alert?.(`Você pode escolher no máximo ${max} opç${max === 1 ? "ão" : "ões"} em "${group.name}".`, "error", {
         backgroundColor: `${menu.details_color}90`,
         textColor: getContrastTextColor(menu.details_color),
       });
       return;
     }
-    setSelectedAddons((prev) => {
-      const next = { ...prev };
-      if (next[key]) delete next[key];
-      else next[key] = true;
-      return next;
+
+    setSelectedOptions((prev) => {
+      const current = prev[groupId] || [];
+      const isSelected = current.includes(choice.id);
+
+      if (isSelected) {
+        return { ...prev, [groupId]: current.filter((id) => id !== choice.id) };
+      }
+
+      if (max === 1) {
+        return { ...prev, [groupId]: [choice.id] };
+      }
+
+      return { ...prev, [groupId]: [...current, choice.id] };
     });
   };
 
@@ -236,12 +245,18 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole, ownerStripeAc
   const totalPrice = useMemo(() => {
     if (!selectedItem) return 0;
     const base = Number(selectedItem.promo_price && canShowPromoPrice ? selectedItem.promo_price : selectedItem.price || 0);
-    const addonsPerUnit = (selectedItem.additionals || []).reduce((acc, a, idx) => {
-      if (selectedAddons[String(idx)]) return acc + Number(a.price || 0);
-      return acc;
+
+    const groups = selectedItem.option_groups || [];
+    const optionsTotal = groups.reduce((acc, g) => {
+      const selectedIds = selectedOptions[g.id] || [];
+      const groupSum = (g.option_choices || []).reduce((s, c) => {
+        return selectedIds.includes(c.id) ? s + Number(c.price || 0) : s;
+      }, 0);
+      return acc + groupSum;
     }, 0);
-    return (base + addonsPerUnit) * quantity;
-  }, [selectedItem, quantity, selectedAddons, canShowPromoPrice]);
+
+    return (base + optionsTotal) * quantity;
+  }, [selectedItem, quantity, selectedOptions, canShowPromoPrice]);
 
   const openImagePreview = () => setImagePreviewOpen(true);
   const closeImagePreview = () => {
@@ -251,39 +266,53 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole, ownerStripeAc
 
   const handleAddToCart = async () => {
     if (!selectedItem) return;
-    const selectedCount = Object.values(selectedAddons).filter(Boolean).length;
-    const mandatory = !!selectedItem.mandatory_additional;
-    const limit = Number(selectedItem.additionals_limit ?? 0);
-    if (mandatory && selectedCount < 1) {
-      alert?.("Escolha pelo menos 1 adicional para continuar.", "error", {
-        backgroundColor: `${menu.details_color}90`,
-        textColor: getContrastTextColor(menu.details_color),
-      });
-      return;
+
+    const groups = selectedItem.option_groups || [];
+
+    for (const g of groups) {
+      const selectedIds = selectedOptions[g.id] || [];
+      const min = Number(g.min_choices ?? 0);
+      const max = Number(g.max_choices ?? 0);
+
+      if (min > 0 && selectedIds.length < min) {
+        alert?.(`Escolha pelo menos ${min} opç${min === 1 ? "ão" : "ões"} em "${g.name}".`, "error", {
+          backgroundColor: `${menu.details_color}90`,
+          textColor: getContrastTextColor(menu.details_color),
+        });
+        return;
+      }
+
+      if (max > 0 && selectedIds.length > max) {
+        alert?.(`Você pode escolher no máximo ${max} opç${max === 1 ? "ão" : "ões"} em "${g.name}".`, "error", {
+          backgroundColor: `${menu.details_color}90`,
+          textColor: getContrastTextColor(menu.details_color),
+        });
+        return;
+      }
     }
-    if (limit > 0 && selectedCount > limit) {
-      alert?.(`Você pode escolher no máximo ${limit} adicional${limit === 1 ? "" : "is"}.`, "error", {
-        backgroundColor: `${menu.details_color}90`,
-        textColor: getContrastTextColor(menu.details_color),
-      });
-      return;
-    }
-    const selected = (selectedItem.additionals || [])
-      .map((a, idx) => (selectedAddons[String(idx)] ? { name: a.name, price: Number(a.price) } : null))
-      .filter(Boolean);
+
+    const selected = groups.flatMap((g) => {
+      const selectedIds = selectedOptions[g.id] || [];
+      return (g.option_choices || [])
+        .filter((c) => selectedIds.includes(c.id))
+        .map((c) => ({ group: g.name, name: c.name, price: Number(c.price) }));
+    });
+
     cart.addItem(menu.id, {
       id: selectedItem.id,
       name: selectedItem.name,
       image_url: selectedItem.image_url || null,
       price: Number(selectedItem.promo_price && canShowPromoPrice ? selectedItem.promo_price : selectedItem.price || 0),
       qty: Number(quantity || 1),
-      additionals: selected,
+      additionals: selected, // mantém o nome "additionals" para não quebrar CartDrawer/checkout, ou renomeie em conjunto
       note: note || "",
     });
+
     alert("Item adicionado ao carrinho!", "info", {
       backgroundColor: `${menu.details_color}90`,
       textColor: getContrastTextColor(menu.details_color),
     });
+
     closeItemModal();
   };
 
@@ -313,7 +342,7 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole, ownerStripeAc
     setItemModalOpen(false);
     setSelectedItem(null);
     setQuantity(1);
-    setSelectedAddons({});
+    setSelectedOptions({});
     setNote("");
   };
 
@@ -755,7 +784,7 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole, ownerStripeAc
             setItemModalOpen(false);
             setSelectedItem(null);
             setQuantity(1);
-            setSelectedAddons({});
+            setSelectedOptions({});
             setNote("");
           }}
           title={selectedItem.name}
@@ -842,54 +871,80 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole, ownerStripeAc
               </div>
             ) : null}
 
-            {menu.orders === "none" && Array.isArray(selectedItem.additionals) && selectedItem.additionals.length > 0 ? (
-              <div>
-                <p className="font-bold" style={{ color: foregroundToUse }}>
-                  Adicionais disponíveis:
-                </p>
-                {selectedItem.additionals.map((a, idx) => (
-                  <span key={idx} style={{ color: grayToUse }}>
-                    {a.name}
-                    {idx < selectedItem.additionals.length - 1 && ", "}
-                  </span>
+            {menu.orders === "none" && Array.isArray(selectedItem.option_groups) && selectedItem.option_groups.length > 0 ? (
+              <div className="space-y-3">
+                {selectedItem.option_groups.map((g) => (
+                  <div key={g.id}>
+                    <p className="font-bold">{g.name}:</p>
+                    {(g.option_choices || [])
+                      .filter((c) => !c.hidden)
+                      .map((c, idx, arr) => (
+                        <span key={c.id}>
+                          {c.name}
+                          {idx < arr.length - 1 && ", "}
+                        </span>
+                      ))}
+                  </div>
                 ))}
               </div>
             ) : null}
 
             {menu.orders !== "none" ? (
               <>
-                {Array.isArray(selectedItem.additionals) && selectedItem.additionals.length > 0 && (
-                  <div className="space-y-2">
-                    <div className="font-semibold" style={{ color: foregroundToUse }}>
-                      Selecione adicionais:
-                    </div>
-                    <div className="flex flex-wrap gap-3 max-h-[120px] overflow-auto">
-                      {(selectedItem.additionals || []).map((a, idx) => {
-                        const isSelected = !!selectedAddons[String(idx)];
-                        return (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => toggleAddon(idx)}
-                            className="flex flex-col items-center justify-center rounded-lg cursor-pointer p-2 min-w-[120px] text-center"
-                            style={{
-                              backgroundColor: isSelected ? "#16a34a44" : "rgba(255,255,255,0.07)",
-                              color: foregroundToUse,
-                              border: isSelected ? `1px solid #16a34a88` : "1px solid rgba(255,255,255,0.1)",
-                            }}
-                          >
-                            <div className="font-medium truncate">
-                              {a.name}{" "}
-                              <span className="text-sm" style={{ color: grayToUse }}>
-                                {formatCurrency(a.price, menu?.currency)}
-                              </span>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
+                {Array.isArray(selectedItem.option_groups) && selectedItem.option_groups.length > 0 && (
+                  <div className="space-y-4 max-h-[200px] overflow-auto">
+                    {selectedItem.option_groups.map((g) => {
+                      const min = Number(g.min_choices ?? 0);
+                      const max = Number(g.max_choices ?? 0);
+                      const selectedIds = selectedOptions[g.id] || [];
+
+                      return (
+                        <div key={g.id} className="space-y-2">
+                          <div className="font-semibold flex items-center gap-2" style={{ color: foregroundToUse }}>
+                            <span>{g.name}</span>
+                            <span className="text-xs font-normal" style={{ color: grayToUse }}>
+                              {min > 0 ? `(obrigatório, mín. ${min})` : "(opcional)"}
+                              {max > 0 ? ` · máx. ${max}` : ""}
+                            </span>
+                          </div>
+
+                          <div className="flex flex-wrap gap-3 max-h-[120px] overflow-auto">
+                            {(g.option_choices || [])
+                              .filter((c) => !c.hidden)
+                              .map((c) => {
+                                const isSelected = selectedIds.includes(c.id);
+                                const boxBg = isSelected ? "#16a34a44" : translucidToUse;
+
+                                return (
+                                  <button
+                                    key={c.id}
+                                    type="button"
+                                    onClick={() => toggleOptionChoice(g, c)}
+                                    className="flex flex-col items-center justify-center rounded-lg cursor-pointer p-2 min-w-[120px] text-center"
+                                    style={{
+                                      backgroundColor: boxBg,
+                                      color: foregroundToUse,
+                                      border: isSelected ? `1px solid #16a34a88` : "1px solid transparent",
+                                    }}
+                                  >
+                                    <div className="font-medium truncate">
+                                      {c.name}{" "}
+                                      {Number(c.price) !== 0 && (
+                                        <span className="text-sm" style={{ color: grayToUse }}>
+                                          {formatCurrency(c.price, menu?.currency)}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
+
                 <div className="flex items-center gap-4">
                   <button
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}

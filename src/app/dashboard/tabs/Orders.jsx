@@ -1059,7 +1059,7 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
 
                       <div className="mt-4 rounded-xl border border-translucid p-3">
                         <div className="mb-3 flex items-center justify-between gap-3">
-                          <span className="text-sm font-medium">Adicionais</span>
+                          <span className="text-sm font-medium">Opções</span>
                           <button
                             type="button"
                             onClick={() => {
@@ -1071,12 +1071,12 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
                             }}
                             className="cursor-pointer rounded-xl bg-blue-600 px-3 py-2 text-sm text-white transition hover:bg-blue-700"
                           >
-                            + Adicional
+                            + Opção
                           </button>
                         </div>
 
                         {(item.additionals || []).length === 0 ? (
-                          <p className="text-sm text-[var(--gray)]">Nenhum adicional adicionado.</p>
+                          <p className="text-sm text-[var(--gray)]">Nenhuma opção adicionada.</p>
                         ) : (
                           <div className="space-y-2">
                             {(item.additionals || []).map((add, ai) => (
@@ -1092,7 +1092,7 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
                                     updated[i] = { ...updated[i], additionals: ad };
                                     setSelectedOrder({ ...selectedOrder, items_list: updated });
                                   }}
-                                  placeholder="Nome do adicional"
+                                  placeholder="Nome da opção"
                                 />
 
                                 <input
@@ -1225,8 +1225,8 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
                   <p className="mb-1 font-medium">Via da cozinha</p>
 
                   <p className="color-gray">
-                    Utilizada para preparo. Exibe apenas os itens solicitados, adicionais e observações, sem dados do cliente
-                    ou valores.
+                    Utilizada para preparo. Exibe apenas os itens solicitados, opções e observações, sem dados do cliente ou
+                    valores.
                   </p>
                 </>
               )}

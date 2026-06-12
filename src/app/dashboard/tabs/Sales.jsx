@@ -265,7 +265,7 @@ const Sales = ({ setSelectedTab }) => {
       // Pesquisa pelos itens da venda
       if (s.items_list?.some((item) => item.name?.toLowerCase().includes(queryLower))) return true;
 
-      // Pesquisa pelos adicionais de cada item
+      // Pesquisa pelas opções de cada item
       if (s.items_list?.some((item) => item.additionals?.some((add) => add.name?.toLowerCase().includes(queryLower))))
         return true;
 
@@ -747,7 +747,7 @@ const Sales = ({ setSelectedTab }) => {
 
                       <div className="mt-4 rounded-xl border border-translucid p-3">
                         <div className="mb-3 flex items-center justify-between gap-3">
-                          <span className="text-sm font-medium">Adicionais</span>
+                          <span className="text-sm font-medium">Opções</span>
                           <button
                             type="button"
                             onClick={() => {
@@ -759,12 +759,12 @@ const Sales = ({ setSelectedTab }) => {
                             }}
                             className="cursor-pointer rounded-xl bg-blue-600 px-3 py-2 text-sm text-white transition hover:bg-blue-700"
                           >
-                            + Adicional
+                            + Opção
                           </button>
                         </div>
 
                         {(item.additionals || []).length === 0 ? (
-                          <p className="text-sm color-gray">Nenhum adicional adicionado.</p>
+                          <p className="text-sm color-gray">Nenhuma opção adicionada.</p>
                         ) : (
                           <div className="space-y-2">
                             {(item.additionals || []).map((add, ai) => (
@@ -780,7 +780,7 @@ const Sales = ({ setSelectedTab }) => {
                                     updated[i] = { ...updated[i], additionals: ad };
                                     setSelectedSale({ ...selectedSale, items_list: updated });
                                   }}
-                                  placeholder="Nome do adicional"
+                                  placeholder="Nome da opção"
                                 />
                                 <input
                                   type="number"

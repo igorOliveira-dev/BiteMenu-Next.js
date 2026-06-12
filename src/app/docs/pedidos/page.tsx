@@ -72,7 +72,7 @@ const page = () => {
         <ul className="docs-paragraph list-disc pl-6">
           <li>Itens escolhidos pelo cliente</li>
           <li>Quantidade de cada item</li>
-          <li>Adicionais e observações, quando disponíveis</li>
+          <li>Opções e observações, quando disponíveis</li>
           <li>Valor total do pedido</li>
           <li>Tipo de serviço selecionado, como entrega, retirada ou consumo local</li>
           <li>Forma de pagamento escolhida</li>
@@ -132,7 +132,7 @@ const page = () => {
           <li>Telefone para contato</li>
           <li>Endereço de entrega, quando aplicável</li>
           <li>Itens do pedido</li>
-          <li>Observações adicionais</li>
+          <li>Observações e opções</li>
           <li>Forma de pagamento</li>
           <li>Serviço selecionado</li>
           <li>Valor de cada item</li>

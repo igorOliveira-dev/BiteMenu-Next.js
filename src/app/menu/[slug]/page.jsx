@@ -53,7 +53,21 @@ const getMenuBySlug = cache(async (slug) => {
           starred,
           mandatory_additional,
           additionals_limit,
-          visible
+          visible,
+          option_groups (
+            id,
+            name,
+            min_choices,
+            max_choices,
+            position,
+            option_choices (
+              id,
+              name,
+              price,
+              hidden,
+              position
+            )
+          )
         )
       )
     `,
@@ -61,6 +75,8 @@ const getMenuBySlug = cache(async (slug) => {
     .eq("slug", slug)
     .order("position", { foreignTable: "categories", ascending: true })
     .order("position", { foreignTable: "categories.menu_items", ascending: true })
+    .order("position", { foreignTable: "categories.menu_items.option_groups", ascending: true })
+    .order("position", { foreignTable: "categories.menu_items.option_groups.option_choices", ascending: true })
     .maybeSingle();
 
   if (error) return null;

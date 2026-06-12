@@ -189,6 +189,8 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
   const [additionalsCfgOpen, setAdditionalsCfgOpen] = useState(false);
   const [additionalsCfgDraft, setAdditionalsCfgDraft] = useState(null);
+  const [cfgGroupIdx, setCfgGroupIdx] = useState(null);
+  const [optionGroupsModalOpen, setOptionGroupsModalOpen] = useState(false);
 
   const closingCrudFromPop = useRef(false);
   const closingPlanFromPop = useRef(false);
@@ -341,18 +343,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   useEffect(() => {
     const handlePopState = () => {
       if (additionalsCfgOpen) {
-        if (additionalsCfgDraft) {
-          setModalPayload((p) => ({
-            ...p,
-            data: {
-              ...p.data,
-              mandatory_additional: additionalsCfgDraft.mandatory_additional,
-              additionals_limit: additionalsCfgDraft.additionals_limit,
-            },
-          }));
-        }
         setAdditionalsCfgOpen(false);
         setAdditionalsCfgDraft(null);
+        setCfgGroupIdx(null);
         return;
       }
 
@@ -406,6 +399,8 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   const closeModal = () => {
     setAdditionalsCfgDraft(null);
     setAdditionalsCfgOpen(false);
+    setCfgGroupIdx(null);
+    setOptionGroupsModalOpen(false);
     setModalOpen(false);
     setModalPayload({ type: null, mode: null, categoryId: null, itemId: null, data: {} });
 
@@ -537,16 +532,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   // createItem atualizado para suportar image_url
   const createItem = async (
     categoryId,
-    {
-      name = "Novo item",
-      price = "",
-      promo_price = null,
-      description = "",
-      additionals = [],
-      image_url = "",
-      mandatory_additional = false,
-      additionals_limit = 0,
-    } = {},
+    { name = "Novo item", price = "", promo_price = null, description = "", image_url = "" } = {},
   ) => {
     const safeCategories = Array.isArray(categories) ? categories : [];
     const totalItems = safeCategories.reduce((sum, c) => sum + (c.menu_items?.length || 0), 0);
@@ -575,13 +561,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       price,
       promo_price,
       description,
-      additionals,
       image_url,
       position: newPos,
       visible: true,
       starred: false,
-      mandatory_additional,
-      additionals_limit,
     };
 
     setCategories((prev = []) =>
@@ -599,11 +582,8 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
           price,
           promo_price,
           description,
-          additionals,
           image_url,
           position: newPos,
-          mandatory_additional,
-          additionals_limit,
         })
         .select()
         .single();
@@ -818,7 +798,33 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     setModalOpen(true);
   };
 
-  const openItemModal = (mode = "create", categoryId = null, item = null) => {
+  const openItemModal = async (mode = "create", categoryId = null, item = null) => {
+    let optionGroups = [];
+
+    if (mode === "edit" && item?.id) {
+      try {
+        const { data: groups, error: gErr } = await supabase
+          .from("option_groups")
+          .select(
+            `id, name, min_choices, max_choices, position,
+                 option_choices ( id, name, price, hidden, position )`,
+          )
+          .eq("item_id", item.id)
+          .order("position", { ascending: true });
+
+        if (gErr) throw gErr;
+
+        optionGroups = (groups || []).map((g) => ({
+          ...g,
+          // garante que choices vêm ordenadas por position
+          option_choices: [...(g.option_choices || [])].sort((a, b) => a.position - b.position),
+        }));
+      } catch (err) {
+        console.error("Erro ao buscar option_groups:", err);
+        alert?.("Erro ao carregar grupos de opções", "error");
+      }
+    }
+
     setModalPayload({
       type: "item",
       mode,
@@ -830,13 +836,13 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         promo_price: item?.promo_price ?? "",
         description: item?.description ?? "",
         image_url: item?.image_url ?? "",
-        additionals: Array.isArray(item?.additionals) ? item.additionals.map((a) => ({ ...a, id: uid() })) : [],
-        mandatory_additional: !!item?.mandatory_additional,
-        additionals_limit: Number.isFinite(item?.additionals_limit) ? String(item.additionals_limit) : "",
+        // option_groups substitui additionals/mandatory_additional/additionals_limit
+        option_groups: optionGroups,
       },
     });
     setAdditionalsCfgOpen(false);
     setAdditionalsCfgDraft(null);
+    setCfgGroupIdx(null);
     setModalOpen(true);
   };
 
@@ -1017,14 +1023,6 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         return;
       }
 
-      const limitNum = data.additionals_limit === "" ? 0 : Number(data.additionals_limit ?? 0);
-      data.additionals_limit = limitNum;
-
-      if (data.mandatory_additional && limitNum < 1) {
-        alert?.("Se os adicionais são obrigatórios, defina um limite mínimo de 1.", "error");
-        return;
-      }
-
       const priceNum = parseFloat(String(data.price).replace(",", "."));
       if (isNaN(priceNum)) {
         alert?.("O preço deve ser um número válido.", "error");
@@ -1046,22 +1044,33 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       }
       data.promo_price = promoNum;
 
-      // === Adicionais validation & normalize ===
-      const additionals = Array.isArray(data.additionals) ? data.additionals : [];
-      for (let i = 0; i < additionals.length; i++) {
-        const a = additionals[i];
-        if (!String(a.name || "").trim()) {
-          alert?.(`O nome do adicional #${i + 1} não pode ficar vazio.`, "error");
+      // === Validação dos option_groups ===
+      const groups = Array.isArray(data.option_groups) ? data.option_groups : [];
+      for (let gi = 0; gi < groups.length; gi++) {
+        const g = groups[gi];
+        if (!String(g.name || "").trim()) {
+          alert?.(`O nome do grupo #${gi + 1} não pode ficar vazio.`, "error");
           return;
         }
-        const p = parseFloat(String(a.price).replace(",", "."));
-        if (isNaN(p)) {
-          alert?.(`O preço do adicional "${a.name || `#${i + 1}`}" não é válido.`, "error");
+        const minC = Number(g.min_choices ?? 0);
+        const maxC = Number(g.max_choices ?? 0);
+        if (minC > 0 && maxC > 0 && minC > maxC) {
+          alert?.(`No grupo "${g.name}": mínimo não pode ser maior que o máximo.`, "error");
           return;
         }
-        additionals[i] = { name: String(a.name).trim(), price: p, hidden: !!a.hidden };
+        const choices = Array.isArray(g.option_choices) ? g.option_choices : [];
+        for (let ci = 0; ci < choices.length; ci++) {
+          const c = choices[ci];
+          if (!String(c.name || "").trim()) {
+            alert?.(`No grupo "${g.name}", opção #${ci + 1}: nome não pode ficar vazio.`, "error");
+            return;
+          }
+          const p = parseFloat(String(c.price).replace(",", "."));
+          choices[ci] = { ...c, name: String(c.name).trim(), price: isNaN(p) ? 0 : p };
+        }
+        groups[gi] = { ...g, min_choices: minC, max_choices: maxC, option_choices: choices };
       }
-      data.additionals = additionals;
+      data.option_groups = groups;
     }
 
     const updateCategory = async (categoryId, patch) => {
@@ -1091,28 +1100,25 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       }
     } else if (t === "item") {
       if (mode === "create") {
-        // inclui image_url
-        await createItem(categoryId, {
+        const newItem = await createItem(categoryId, {
           name: data.name,
           price: data.price,
           promo_price: data.promo_price,
           description: data.description,
-          additionals: data.additionals,
           image_url: data.image_url ?? "",
-          mandatory_additional: !!data.mandatory_additional,
-          additionals_limit: data.additionals_limit,
         });
+        if (newItem?.id && data.option_groups?.length > 0) {
+          await saveOptionGroups(newItem.id, data.option_groups);
+        }
       } else if (mode === "edit" && itemId) {
         await updateItem(itemId, {
           name: data.name,
           price: data.price,
           promo_price: data.promo_price,
           description: data.description,
-          additionals: data.additionals,
           image_url: data.image_url ?? "",
-          mandatory_additional: !!data.mandatory_additional,
-          additionals_limit: data.additionals_limit,
         });
+        await saveOptionGroups(itemId, data.option_groups ?? []);
       }
     }
 
@@ -1176,6 +1182,91 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     } catch (err) {
       console.error(err);
       alert("Erro ao destacar item", "error");
+    }
+  };
+
+  // ---------- option groups ----------
+  const saveOptionGroups = async (itemId, groups) => {
+    // 1. Busca grupos existentes para saber quais deletar
+    const { data: existing } = await supabase.from("option_groups").select("id").eq("item_id", itemId);
+
+    const existingIds = new Set((existing || []).map((g) => g.id));
+    const incomingIds = new Set(groups.filter((g) => g.id && !g.id.startsWith("tmp-")).map((g) => g.id));
+
+    // Ids que não vieram mais → deletar (cascade apaga as choices)
+    const toDelete = [...existingIds].filter((id) => !incomingIds.has(id));
+    if (toDelete.length > 0) {
+      await supabase.from("option_groups").delete().in("id", toDelete);
+    }
+
+    for (let gi = 0; gi < groups.length; gi++) {
+      const g = groups[gi];
+      const isNew = !g.id || g.id.startsWith("tmp-");
+
+      let groupId;
+
+      if (isNew) {
+        const { data: inserted, error } = await supabase
+          .from("option_groups")
+          .insert({
+            item_id: itemId,
+            name: g.name,
+            min_choices: g.min_choices ?? 0,
+            max_choices: g.max_choices ?? 0,
+            position: gi,
+          })
+          .select("id")
+          .single();
+
+        if (error) {
+          console.error("Erro ao inserir grupo:", error);
+          continue;
+        }
+        groupId = inserted.id;
+      } else {
+        await supabase
+          .from("option_groups")
+          .update({ name: g.name, min_choices: g.min_choices ?? 0, max_choices: g.max_choices ?? 0, position: gi })
+          .eq("id", g.id);
+        groupId = g.id;
+      }
+
+      // Choices
+      const choices = Array.isArray(g.option_choices) ? g.option_choices : [];
+      const { data: existingChoices } = await supabase.from("option_choices").select("id").eq("group_id", groupId);
+
+      const existingChoiceIds = new Set((existingChoices || []).map((c) => c.id));
+      const incomingChoiceIds = new Set(choices.filter((c) => c.id && !c.id.startsWith("tmp-")).map((c) => c.id));
+
+      const choicesToDelete = [...existingChoiceIds].filter((id) => !incomingChoiceIds.has(id));
+      if (choicesToDelete.length > 0) {
+        await supabase.from("option_choices").delete().in("id", choicesToDelete);
+      }
+
+      for (let ci = 0; ci < choices.length; ci++) {
+        const c = choices[ci];
+        const isNewChoice = !c.id || c.id.startsWith("tmp-");
+
+        if (isNewChoice) {
+          await supabase.from("option_choices").insert({
+            group_id: groupId,
+            name: c.name,
+            price: c.price,
+            hidden: !!c.hidden,
+            position: ci,
+          });
+        } else {
+          await supabase
+            .from("option_choices")
+            .update({
+              name: c.name,
+              price: c.price,
+              hidden: !!c.hidden,
+              position: ci,
+            })
+            .eq("id", c.id);
+        }
+      }
     }
   };
 
@@ -1694,127 +1785,20 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                 />
               </label>
 
-              {/* Adicionais */}
-              <div className="mb-2">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm color-gray">Adicionais (nome + preço)</div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        setAdditionalsCfgDraft({
-                          mandatory_additional: !!modalPayload.data.mandatory_additional,
-                          additionals_limit: String(modalPayload.data.additionals_limit ?? ""),
-                        });
-
-                        setAdditionalsCfgOpen(true);
-                      }}
-                      className="cursor-pointer px-2 py-1 rounded bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white transition w-[35.2px]"
-                      type="button"
-                      title="Configurar regras dos adicionais"
-                    >
-                      <FaCog />
-                    </button>
-
-                    <button
-                      onClick={() =>
-                        setModalPayload((p) => ({
-                          ...p,
-                          data: {
-                            ...p.data,
-                            additionals: [...(p.data.additionals || []), { id: uid(), name: "", price: "" }],
-                          },
-                        }))
-                      }
-                      className="cursor-pointer px-2 py-1 rounded bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white transition w-[35.2px]"
-                      type="button"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-2 mt-2 max-h-[120px] overflow-y-auto">
-                  {(modalPayload.data.additionals || []).map((add, idx) => (
-                    <div
-                      key={add.id ?? idx}
-                      className={`flex flex-wrap items-center gap-2 w-full ${add.hidden ? "opacity-50" : ""}`}
-                    >
-                      <input
-                        type="text"
-                        value={add.name}
-                        onChange={(e) =>
-                          setModalPayload((p) => {
-                            const next = [...(p.data.additionals || [])];
-                            next[idx] = { ...next[idx], name: e.target.value };
-                            return { ...p, data: { ...p.data, additionals: next } };
-                          })
-                        }
-                        className="flex-1 min-w-0 p-2 rounded border border-translucid bg-translucid"
-                        placeholder="Nome do adicional"
-                      />
-
-                      <input
-                        type="text"
-                        value={String(add.price)}
-                        onChange={(e) => {
-                          let value = e.target.value;
-                          value = value.replace(/[^0-9.,-]/g, "");
-                          value = value.replace(",", ".");
-                          setModalPayload((p) => {
-                            const next = [...(p.data.additionals || [])];
-                            next[idx] = { ...next[idx], price: value };
-                            return { ...p, data: { ...p.data, additionals: next } };
-                          });
-                        }}
-                        maxLength={10}
-                        className="w-16 flex-none p-2 rounded border border-translucid bg-translucid"
-                        placeholder="0.00"
-                      />
-
-                      <button
-                        onClick={() =>
-                          setModalPayload((p) => {
-                            const next = [...(p.data.additionals || [])];
-
-                            next[idx] = {
-                              ...next[idx],
-                              hidden: !next[idx].hidden,
-                            };
-
-                            return {
-                              ...p,
-                              data: {
-                                ...p.data,
-                                additionals: next,
-                              },
-                            };
-                          })
-                        }
-                        className={`p-2 rounded text-white ${
-                          add.hidden ? "bg-yellow-600 hover:bg-yellow-700" : "bg-green-600 hover:bg-green-700"
-                        }`}
-                        type="button"
-                      >
-                        {add.hidden ? <FaEyeSlash /> : <FaEye />}
-                      </button>
-
-                      <button
-                        onClick={() =>
-                          setModalPayload((p) => {
-                            const next = [...(p.data.additionals || [])];
-                            next.splice(idx, 1);
-                            return { ...p, data: { ...p.data, additionals: next } };
-                          })
-                        }
-                        className="p-2 rounded bg-red-600 text-white mr-2"
-                        type="button"
-                      >
-                        <FaTrash />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              {/* Option Groups — botão de atalho */}
+              <button
+                type="button"
+                onClick={() => setOptionGroupsModalOpen(true)}
+                className="w-full mb-2 cursor-pointer px-3 py-2 rounded border border-translucid bg-translucid hover:opacity-80 transition flex items-center justify-between"
+              >
+                <span className="text-sm">Grupos de opções</span>
+                <span className="flex items-center gap-2 text-sm color-gray">
+                  {(modalPayload.data.option_groups || []).length > 0
+                    ? `${(modalPayload.data.option_groups || []).length} grupo(s) configurado(s)`
+                    : "Nenhum grupo"}
+                  <FaChevronRight size={11} />
+                </span>
+              </button>
 
               {/* botões plus || pro */}
               <div className="flex h-[40px] items-end justify-end mt-4 gap-4 w-full ">
@@ -1951,123 +1935,245 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         </GenericModal>
       )}
 
-      {modalOpen && additionalsCfgOpen && modalPayload.type === "item" && (
-        <GenericModal
-          backdropDontClose
-          wfull
-          maxWidth={"420px"}
-          title="Configurar adicionais"
-          onClose={() => {
-            if (additionalsCfgDraft) {
-              setModalPayload((p) => ({
-                ...p,
-                data: {
-                  ...p.data,
-                  mandatory_additional: additionalsCfgDraft.mandatory_additional,
-                  additionals_limit: additionalsCfgDraft.additionals_limit,
-                },
-              }));
-            }
-            setAdditionalsCfgOpen(false);
-            setAdditionalsCfgDraft(null);
-          }}
-        >
-          <form
-            className="space-y-4"
-            onSubmit={async (e) => {
-              e.preventDefault();
+      {modalOpen && optionGroupsModalOpen && modalPayload.type === "item" && (
+        <GenericModal wfull maxWidth={"500px"} title="Grupos de opções" onClose={() => setOptionGroupsModalOpen(false)}>
+          <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-1">
+            {(modalPayload.data.option_groups || []).length === 0 && (
+              <p className="text-sm color-gray text-center py-4">Nenhum grupo criado. Clique em "+ Grupo" para começar.</p>
+            )}
 
-              const limitNum =
-                additionalsCfgDraft?.additionals_limit === "" ? 0 : Number(additionalsCfgDraft?.additionals_limit ?? 0);
+            {(modalPayload.data.option_groups || []).map((group, gi) => (
+              <div key={group.id ?? gi} className="rounded-lg border border-translucid p-2 space-y-2">
+                {/* Cabeçalho do grupo */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={group.name}
+                    onChange={(e) =>
+                      setModalPayload((p) => {
+                        const next = [...(p.data.option_groups || [])];
+                        next[gi] = { ...next[gi], name: e.target.value };
+                        return { ...p, data: { ...p.data, option_groups: next } };
+                      })
+                    }
+                    className="flex-1 p-1.5 text-sm rounded border border-translucid bg-translucid font-semibold"
+                    placeholder="Nome do grupo (ex: Borda da pizza)"
+                  />
 
-              if (additionalsCfgDraft?.mandatory_additional && limitNum < 1) {
-                alert?.("Se os adicionais são obrigatórios, defina um limite mínimo de 1.", "error");
-                return;
-              }
+                  <button
+                    type="button"
+                    title="Configurar obrigatoriedade"
+                    onClick={() => {
+                      setAdditionalsCfgDraft({
+                        min_choices: String(group.min_choices ?? 0),
+                        max_choices: String(group.max_choices ?? 0),
+                      });
+                      setCfgGroupIdx(gi);
+                      setAdditionalsCfgOpen(true);
+                    }}
+                    className="cursor-pointer p-1.5 rounded bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white"
+                  >
+                    <FaCog size={12} />
+                  </button>
 
-              const patch = {
-                mandatory_additional: !!additionalsCfgDraft.mandatory_additional,
-                additionals_limit: limitNum,
-              };
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setModalPayload((p) => {
+                        const next = [...(p.data.option_groups || [])];
+                        next.splice(gi, 1);
+                        return { ...p, data: { ...p.data, option_groups: next } };
+                      })
+                    }
+                    className="p-1.5 rounded bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    <FaTrash size={12} />
+                  </button>
+                </div>
 
-              try {
-                const { error } = await supabase.from("menu_items").update(patch).eq("id", modalPayload.itemId);
+                {/* Badge min/max */}
+                <div className="text-xs color-gray">
+                  {group.min_choices > 0 ? `Obrigatório (mín. ${group.min_choices})` : "Opcional"}
+                  {group.max_choices > 0 ? ` · máx. ${group.max_choices}` : " · sem limite"}
+                </div>
 
-                if (error) {
-                  if (error.code === "22P02") {
-                    setAdditionalsCfgOpen(false);
-                  } else {
-                    alert?.("Erro ao salvar configurações de adicionais", "error");
-                    console.error("Erro ao salvar adicionais:", error);
+                {/* Choices */}
+                <div className="space-y-1.5">
+                  {(group.option_choices || []).map((choice, ci) => (
+                    <div key={choice.id ?? ci} className={`flex items-center gap-1.5 ${choice.hidden ? "opacity-50" : ""}`}>
+                      <input
+                        type="text"
+                        value={choice.name}
+                        onChange={(e) =>
+                          setModalPayload((p) => {
+                            const groups = [...(p.data.option_groups || [])];
+                            const choices = [...(groups[gi].option_choices || [])];
+                            choices[ci] = { ...choices[ci], name: e.target.value };
+                            groups[gi] = { ...groups[gi], option_choices: choices };
+                            return { ...p, data: { ...p.data, option_groups: groups } };
+                          })
+                        }
+                        className="flex-1 min-w-0 p-1.5 text-sm rounded border border-translucid bg-translucid"
+                        placeholder="Nome da opção"
+                      />
+                      <input
+                        type="text"
+                        value={String(choice.price)}
+                        onChange={(e) => {
+                          let value = e.target.value.replace(/[^0-9.,-]/g, "").replace(",", ".");
+                          setModalPayload((p) => {
+                            const groups = [...(p.data.option_groups || [])];
+                            const choices = [...(groups[gi].option_choices || [])];
+                            choices[ci] = { ...choices[ci], price: value };
+                            groups[gi] = { ...groups[gi], option_choices: choices };
+                            return { ...p, data: { ...p.data, option_groups: groups } };
+                          });
+                        }}
+                        className="w-16 flex-none p-1.5 text-sm rounded border border-translucid bg-translucid"
+                        placeholder="0.00"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setModalPayload((p) => {
+                            const groups = [...(p.data.option_groups || [])];
+                            const choices = [...(groups[gi].option_choices || [])];
+                            choices[ci] = { ...choices[ci], hidden: !choices[ci].hidden };
+                            groups[gi] = { ...groups[gi], option_choices: choices };
+                            return { ...p, data: { ...p.data, option_groups: groups } };
+                          })
+                        }
+                        className={`p-1.5 rounded text-white ${choice.hidden ? "bg-yellow-600 hover:bg-yellow-700" : "bg-green-600 hover:bg-green-700"}`}
+                      >
+                        {choice.hidden ? <FaEyeSlash size={12} /> : <FaEye size={12} />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setModalPayload((p) => {
+                            const groups = [...(p.data.option_groups || [])];
+                            const choices = [...(groups[gi].option_choices || [])];
+                            choices.splice(ci, 1);
+                            groups[gi] = { ...groups[gi], option_choices: choices };
+                            return { ...p, data: { ...p.data, option_groups: groups } };
+                          })
+                        }
+                        className="p-1.5 rounded bg-red-600 text-white"
+                      >
+                        <FaTrash size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Adicionar opção */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setModalPayload((p) => {
+                      const groups = [...(p.data.option_groups || [])];
+                      const choices = [...(groups[gi].option_choices || [])];
+                      choices.push({
+                        id: `tmp-${uid()}`,
+                        name: "",
+                        price: "",
+                        hidden: false,
+                        position: choices.length,
+                      });
+                      groups[gi] = { ...groups[gi], option_choices: choices };
+                      return { ...p, data: { ...p.data, option_groups: groups } };
+                    })
                   }
-                }
+                  className="w-full text-sm cursor-pointer px-2 py-1 rounded border border-dashed border-translucid color-gray hover:opacity-80 transition"
+                >
+                  + Opção
+                </button>
+              </div>
+            ))}
+          </div>
 
+          {/* Rodapé do modal de grupos */}
+          <div className="flex justify-between items-center mt-4 gap-2">
+            <button
+              type="button"
+              onClick={() =>
                 setModalPayload((p) => ({
                   ...p,
                   data: {
                     ...p.data,
-                    ...patch,
+                    option_groups: [
+                      ...(p.data.option_groups || []),
+                      {
+                        id: `tmp-${uid()}`,
+                        name: "Novo grupo",
+                        min_choices: 0,
+                        max_choices: 0,
+                        position: (p.data.option_groups || []).length,
+                        option_choices: [],
+                      },
+                    ],
                   },
-                }));
-
-                setCategories((prev = []) =>
-                  prev.map((cat) => ({
-                    ...cat,
-                    menu_items: (cat.menu_items || []).map((it) =>
-                      it.id === modalPayload.itemId ? { ...it, ...patch } : it,
-                    ),
-                  })),
-                );
-
-                alert?.("Configurações de adicionais salvas", "success");
-
-                setAdditionalsCfgOpen(false);
-                setAdditionalsCfgDraft(null);
-              } catch (err) {
-                console.error("Erro ao salvar adicionais:", err);
+                }))
               }
-            }}
-          >
-            <label className="flex items-center gap-3 cursor-pointer">
-              <span className="switch">
-                <input
-                  type="checkbox"
-                  checked={!!additionalsCfgDraft?.mandatory_additional}
-                  onChange={(e) =>
-                    setAdditionalsCfgDraft((d) => ({
-                      ...d,
-                      mandatory_additional: e.target.checked,
-                    }))
-                  }
-                />
-                <span className="slider"></span>
-              </span>
+              className="cursor-pointer px-3 py-2 rounded bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white text-sm transition"
+            >
+              + Grupo
+            </button>
 
-              <span>Obrigar o cliente a escolher adicionais</span>
-            </label>
+            <button
+              type="button"
+              onClick={() => setOptionGroupsModalOpen(false)}
+              className="cursor-pointer px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm"
+            >
+              Confirmar
+            </button>
+          </div>
+        </GenericModal>
+      )}
 
+      {modalOpen && additionalsCfgOpen && modalPayload.type === "item" && cfgGroupIdx !== null && (
+        <GenericModal
+          backdropDontClose
+          wfull
+          maxWidth={"420px"}
+          title="Configurar grupo"
+          onClose={() => {
+            setAdditionalsCfgOpen(false);
+            setAdditionalsCfgDraft(null);
+            setCfgGroupIdx(null);
+          }}
+        >
+          <div className="space-y-4">
             <label className="block">
-              <div className="text-sm color-gray mb-1">Limite de adicionais</div>
-
+              <div className="text-sm color-gray mb-1">Mínimo de escolhas</div>
               <input
                 type="text"
                 inputMode="numeric"
                 placeholder="0"
-                value={additionalsCfgDraft?.additionals_limit ?? ""}
+                value={additionalsCfgDraft?.min_choices ?? ""}
                 onChange={(e) => {
                   const raw = e.target.value.replace(/[^0-9]/g, "");
-
-                  setAdditionalsCfgDraft((d) => ({
-                    ...d,
-                    additionals_limit: raw,
-                  }));
+                  setAdditionalsCfgDraft((d) => ({ ...d, min_choices: raw }));
                 }}
                 className="w-full p-2 rounded border border-translucid bg-translucid"
               />
+              <div className="text-xs mt-1 color-gray">0 = opcional; 1 ou mais = obrigatório</div>
+            </label>
 
-              <div className="text-xs mt-1 color-gray">
-                Se você definir 0, não haverá limite para a quantidade de adicionais que o cliente pode escolher.
-              </div>
+            <label className="block">
+              <div className="text-sm color-gray mb-1">Máximo de escolhas</div>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="0"
+                value={additionalsCfgDraft?.max_choices ?? ""}
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/[^0-9]/g, "");
+                  setAdditionalsCfgDraft((d) => ({ ...d, max_choices: raw }));
+                }}
+                className="w-full p-2 rounded border border-translucid bg-translucid"
+              />
+              <div className="text-xs mt-1 color-gray">0 = sem limite</div>
             </label>
 
             <div className="flex justify-end gap-2 mt-4">
@@ -2076,17 +2182,43 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                 onClick={() => {
                   setAdditionalsCfgOpen(false);
                   setAdditionalsCfgDraft(null);
+                  setCfgGroupIdx(null);
                 }}
                 className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded"
               >
                 Cancelar
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const minC = Number(additionalsCfgDraft?.min_choices ?? 0);
+                  const maxC = Number(additionalsCfgDraft?.max_choices ?? 0);
 
-              <button type="submit" className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded">
-                Salvar
+                  if (minC > 0 && maxC > 0 && minC > maxC) {
+                    alert?.("Mínimo não pode ser maior que o máximo.", "error");
+                    return;
+                  }
+
+                  setModalPayload((p) => {
+                    const groups = [...(p.data.option_groups || [])];
+                    groups[cfgGroupIdx] = {
+                      ...groups[cfgGroupIdx],
+                      min_choices: minC,
+                      max_choices: maxC,
+                    };
+                    return { ...p, data: { ...p.data, option_groups: groups } };
+                  });
+
+                  setAdditionalsCfgOpen(false);
+                  setAdditionalsCfgDraft(null);
+                  setCfgGroupIdx(null);
+                }}
+                className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded"
+              >
+                Confirmar
               </button>
             </div>
-          </form>
+          </div>
         </GenericModal>
       )}
 

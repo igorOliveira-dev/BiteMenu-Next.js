@@ -84,7 +84,7 @@ const page = () => {
           <h2 className="xs:font-semibold">Receber pedidos de clientes de forma prática no WhatsApp e/ou no site</h2>
           <p>
             Quando o cliente confirma a compra, você receberá uma mensagem dele organizada no seu WhatsApp, com os itens do
-            pedido, observações, adicionais, forma de pagamento, serviço escolhido, nome do cliente e endereço (caso seja
+            pedido, observações, opções, forma de pagamento, serviço escolhido, nome do cliente e endereço (caso seja
             entrega).
           </p>
           <p>
