@@ -2299,42 +2299,46 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                       </div>
                     </button>
 
-                    {isExpanded && (
-                      <div className="space-y-1.5 p-2">
-                        {entry.groups.map((g) => (
-                          <label
-                            key={g.id}
-                            className={`flex items-start gap-3 p-2 rounded border cursor-pointer transition
+                    <div
+                      className="overflow-hidden transition-all duration-300 ease-in-out"
+                      style={{
+                        maxHeight: isExpanded ? "500px" : "0px",
+                        opacity: isExpanded ? 1 : 0,
+                      }}
+                    >
+                      {entry.groups.map((g) => (
+                        <label
+                          key={g.id}
+                          className={`flex items-start gap-3 p-2 rounded border cursor-pointer transition
                         ${selectedImportIds.has(g.id) ? "border-blue-500 bg-blue-500/10" : "border-translucid bg-translucid"}`}
-                          >
-                            <input
-                              type="checkbox"
-                              className="mt-1 flex-shrink-0"
-                              checked={selectedImportIds.has(g.id)}
-                              onChange={() => {
-                                setSelectedImportIds((prev) => {
-                                  const next = new Set(prev);
-                                  next.has(g.id) ? next.delete(g.id) : next.add(g.id);
-                                  return next;
-                                });
-                              }}
-                            />
-                            <div className="min-w-0">
-                              <div className="font-semibold text-sm">{g.name}</div>
-                              <div className="text-xs color-gray">
-                                {g.min_choices > 0 ? `Obrigatório (mín. ${g.min_choices})` : "Opcional"}
-                                {g.max_choices > 0 ? ` · máx. ${g.max_choices}` : " · sem limite"}
-                              </div>
-                              {(g.option_choices || []).length > 0 && (
-                                <div className="text-xs color-gray mt-0.5 truncate">
-                                  {g.option_choices.map((c) => c.name).join(", ")}
-                                </div>
-                              )}
+                        >
+                          <input
+                            type="checkbox"
+                            className="mt-1 flex-shrink-0"
+                            checked={selectedImportIds.has(g.id)}
+                            onChange={() => {
+                              setSelectedImportIds((prev) => {
+                                const next = new Set(prev);
+                                next.has(g.id) ? next.delete(g.id) : next.add(g.id);
+                                return next;
+                              });
+                            }}
+                          />
+                          <div className="min-w-0">
+                            <div className="font-semibold text-sm">{g.name}</div>
+                            <div className="text-xs color-gray">
+                              {g.min_choices > 0 ? `Obrigatório (mín. ${g.min_choices})` : "Opcional"}
+                              {g.max_choices > 0 ? ` · máx. ${g.max_choices}` : " · sem limite"}
                             </div>
-                          </label>
-                        ))}
-                      </div>
-                    )}
+                            {(g.option_choices || []).length > 0 && (
+                              <div className="text-xs color-gray mt-0.5 truncate">
+                                {g.option_choices.map((c) => c.name).join(", ")}
+                              </div>
+                            )}
+                          </div>
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 );
               })}
