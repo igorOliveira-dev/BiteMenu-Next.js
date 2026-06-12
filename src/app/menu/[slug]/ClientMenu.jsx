@@ -841,7 +841,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
           margin={"12px"}
           wfull
         >
-          <div className="flex flex-col gap-4 sm:min-w-[460px]">
+          <div className="flex flex-col gap-4 sm:min-w-[460px] max-h-[70dvh] overflow-auto scrollbar-none">
             <div className="flex flex-row gap-4 mb-2">
               {isSafeImageUrl(selectedItem.image_url) && (
                 <button
@@ -870,7 +870,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
                     <>
                       <p
                         ref={descRef}
-                        className="min-h-[64px] max-h-[64px] sm:min-h-[80px] sm:max-h-[80px] overflow-auto text-sm pr-1 scrollbar-none"
+                        className="min-h-[64px] max-h-[64px] sm:min-h-[80px] sm:max-h-[80px] overflow-auto text-sm pr-1"
                         style={{
                           color: grayToUse,
                           wordBreak: "normal",
@@ -945,7 +945,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
             {menu.orders !== "none" ? (
               <>
                 {Array.isArray(selectedItem.option_groups) && selectedItem.option_groups.length > 0 && (
-                  <div className="space-y-4 max-h-[200px] overflow-auto">
+                  <div className="space-y-4 mb-2">
                     {selectedItem.option_groups.map((g) => {
                       const min = Number(g.min_choices ?? 0);
                       const max = Number(g.max_choices ?? 0);
@@ -961,7 +961,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
                             </span>
                           </div>
 
-                          <div className="flex flex-wrap gap-3 max-h-[120px] overflow-auto">
+                          <div className="flex flex-wrap gap-3">
                             {(g.option_choices || [])
                               .filter((c) => !c.hidden)
                               .map((c) => {
@@ -997,37 +997,40 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
                     })}
                   </div>
                 )}
-
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    className="cursor-pointer p-2 rounded bg-red-500 hover:bg-red-600 font-bold transition"
-                  >
-                    <FaMinus />
-                  </button>
-                  <span className="text-xl font-semibold" style={{ color: foregroundToUse }}>
-                    {quantity}
-                  </span>
-                  <button
-                    onClick={() => setQuantity((q) => q + 1)}
-                    className="cursor-pointer p-2 rounded bg-green-500 hover:bg-green-600 font-bold transition"
-                  >
-                    <FaPlus />
-                  </button>
-                  <span style={{ color: grayToUse }}>({formatCurrency(totalPrice, menu?.currency)})</span>
-                </div>
-
-                <button
-                  onClick={handleAddToCart}
-                  className="cursor-pointer p-2 gap-2 font-bold flex items-center justify-center rounded hover:opacity-90 transition"
-                  style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
-                >
-                  <span>Adicionar {quantity} ao carrinho</span>
-                  <FaShoppingCart />
-                </button>
               </>
             ) : null}
           </div>
+          {menu.orders !== "none" && (
+            <div className="flex items-center justify-between mt-4">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  className="cursor-pointer p-2 rounded bg-red-500 hover:bg-red-600 font-bold transition"
+                >
+                  <FaMinus />
+                </button>
+                <span className="text-xl font-semibold" style={{ color: foregroundToUse }}>
+                  {quantity}
+                </span>
+                <button
+                  onClick={() => setQuantity((q) => q + 1)}
+                  className="cursor-pointer p-2 rounded bg-green-500 hover:bg-green-600 font-bold transition"
+                >
+                  <FaPlus />
+                </button>
+                <span style={{ color: grayToUse }}>({formatCurrency(totalPrice, menu?.currency)})</span>
+              </div>
+
+              <button
+                onClick={handleAddToCart}
+                className="cursor-pointer p-2 gap-2 font-bold flex items-center justify-center rounded hover:opacity-90 transition"
+                style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
+              >
+                <span>Adicionar {quantity} ao carrinho</span>
+                <FaShoppingCart />
+              </button>
+            </div>
+          )}
         </GenericModal>
       )}
 
