@@ -216,6 +216,8 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   const canShowPromoPrice = hasPlusPermissions;
   const canHighlightItems = hasPlusPermissions;
 
+  const [saving, setSaving] = useState(false);
+
   // modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [modalPayload, setModalPayload] = useState({
@@ -402,6 +404,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   };
 
   const closeModal = () => {
+    setSaving(false);
     setAdditionalsCfgDraft(null);
     setAdditionalsCfgOpen(false);
     setCfgGroupIdx(null);
@@ -967,6 +970,8 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
   // ---------- handleModalSave (reaproveitado para sort) ----------
   const handleModalSave = async () => {
+    setSaving(true);
+
     const type = modalPayload.type;
 
     // --- Caso: salvar ordenação (sort) ---
@@ -1962,11 +1967,34 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
           <div className="flex justify-end gap-2 mt-4">
             <div className="w-[70%] xs:w-[50%] flex gap-2">
-              <button onClick={closeModal} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded w-[50%]">
+              <button
+                onClick={closeModal}
+                disabled={saving}
+                className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded w-[50%] disabled:opacity-60"
+              >
                 Cancelar
               </button>
-              <button onClick={handleModalSave} className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded w-[50%]">
-                Salvar
+              <button
+                onClick={handleModalSave}
+                disabled={saving || uploadingImage}
+                className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded w-[50%] disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {saving ? (
+                  <>
+                    <svg
+                      className="animate-spin h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                    Salvando...
+                  </>
+                ) : (
+                  "Salvar"
+                )}
               </button>
             </div>
           </div>
