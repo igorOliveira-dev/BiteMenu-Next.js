@@ -197,6 +197,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   const [selectedImportIds, setSelectedImportIds] = useState(new Set());
   const [expandedImportItemId, setExpandedImportItemId] = useState(null);
 
+  const closingAdditionalsCfgFromPop = useRef(false);
+  const closingOptionGroupsFromPop = useRef(false);
+  const closingImportFromPop = useRef(false);
   const closingCrudFromPop = useRef(false);
   const closingPlanFromPop = useRef(false);
   const ignoreNextPop = useRef(false);
@@ -346,18 +349,52 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     }
   }, [planModalOpen]);
 
+  useEffect(() => {
+    if (optionGroupsModalOpen) {
+      history.pushState({ optionGroupsModal: true }, "");
+    }
+  }, [optionGroupsModalOpen]);
+
+  useEffect(() => {
+    if (importModalOpen) {
+      history.pushState({ importModal: true }, "");
+    }
+  }, [importModalOpen]);
+
+  useEffect(() => {
+    if (additionalsCfgOpen) {
+      history.pushState({ additionalsCfgModal: true }, "");
+    }
+  }, [additionalsCfgOpen]);
+
   // fechar modal com botão voltar do navegador
   useEffect(() => {
     const handlePopState = () => {
-      if (additionalsCfgOpen) {
-        setAdditionalsCfgOpen(false);
-        setAdditionalsCfgDraft(null);
-        setCfgGroupIdx(null);
+      if (ignoreNextPop.current) {
+        ignoreNextPop.current = false;
         return;
       }
 
-      if (ignoreNextPop.current) {
-        ignoreNextPop.current = false;
+      if (additionalsCfgOpen) {
+        closingAdditionalsCfgFromPop.current = true;
+        setAdditionalsCfgOpen(false);
+        setAdditionalsCfgDraft(null);
+        setCfgGroupIdx(null);
+        queueMicrotask(() => (closingAdditionalsCfgFromPop.current = false));
+        return;
+      }
+
+      if (importModalOpen) {
+        closingImportFromPop.current = true;
+        setImportModalOpen(false);
+        queueMicrotask(() => (closingImportFromPop.current = false));
+        return;
+      }
+
+      if (optionGroupsModalOpen) {
+        closingOptionGroupsFromPop.current = true;
+        setOptionGroupsModalOpen(false);
+        queueMicrotask(() => (closingOptionGroupsFromPop.current = false));
         return;
       }
 
@@ -380,7 +417,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [modalOpen, planModalOpen, additionalsCfgOpen, additionalsCfgDraft]);
+  }, [modalOpen, planModalOpen, additionalsCfgOpen, additionalsCfgDraft, optionGroupsModalOpen, importModalOpen]);
 
   // verifica se existe alguma categoria criada
   useEffect(() => {
@@ -418,6 +455,38 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     }
 
     closingCrudFromPop.current = false;
+  };
+
+  // Fechar modal de grupos de opções
+  const closeOptionGroupsModal = () => {
+    setOptionGroupsModalOpen(false);
+    if (history.state?.optionGroupsModal && !closingOptionGroupsFromPop.current) {
+      ignoreNextPop.current = true;
+      history.back();
+    }
+    closingOptionGroupsFromPop.current = false;
+  };
+
+  // Fechar modal de importação
+  const closeImportModal = () => {
+    setImportModalOpen(false);
+    if (history.state?.importModal && !closingImportFromPop.current) {
+      ignoreNextPop.current = true;
+      history.back();
+    }
+    closingImportFromPop.current = false;
+  };
+
+  // fechar modal de configuração de adicionais
+  const closeAdditionalsCfgModal = () => {
+    setAdditionalsCfgOpen(false);
+    setAdditionalsCfgDraft(null);
+    setCfgGroupIdx(null);
+    if (history.state?.additionalsCfgModal && !closingAdditionalsCfgFromPop.current) {
+      ignoreNextPop.current = true;
+      history.back();
+    }
+    closingAdditionalsCfgFromPop.current = false;
   };
 
   // util: encontra o primeiro ancestor rolável (ou retorna window)
@@ -2002,7 +2071,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       )}
 
       {modalOpen && optionGroupsModalOpen && modalPayload.type === "item" && (
-        <GenericModal wfull maxWidth={"500px"} title="Grupos de opções" onClose={() => setOptionGroupsModalOpen(false)}>
+        <GenericModal wfull maxWidth={"500px"} title="Grupos de opções" onClose={closeOptionGroupsModal}>
           <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-1">
             {(modalPayload.data.option_groups || []).length === 0 && (
               <p className="text-sm color-gray text-center py-4">Nenhum grupo criado. Clique em "+ Grupo" para começar.</p>
@@ -2204,7 +2273,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
             <button
               type="button"
-              onClick={() => setOptionGroupsModalOpen(false)}
+              onClick={closeOptionGroupsModal}
               className="cursor-pointer px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm"
             >
               Confirmar
@@ -2214,17 +2283,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       )}
 
       {modalOpen && additionalsCfgOpen && modalPayload.type === "item" && cfgGroupIdx !== null && (
-        <GenericModal
-          backdropDontClose
-          wfull
-          maxWidth={"420px"}
-          title="Configurar grupo"
-          onClose={() => {
-            setAdditionalsCfgOpen(false);
-            setAdditionalsCfgDraft(null);
-            setCfgGroupIdx(null);
-          }}
-        >
+        <GenericModal backdropDontClose wfull maxWidth={"420px"} title="Configurar grupo" onClose={closeAdditionalsCfgModal}>
           <div className="space-y-4">
             <label className="block">
               <div className="text-sm color-gray mb-1">Mínimo de escolhas</div>
@@ -2261,11 +2320,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
             <div className="flex justify-end gap-2 mt-4">
               <button
                 type="button"
-                onClick={() => {
-                  setAdditionalsCfgOpen(false);
-                  setAdditionalsCfgDraft(null);
-                  setCfgGroupIdx(null);
-                }}
+                onClick={closeAdditionalsCfgModal}
                 className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded"
               >
                 Cancelar
@@ -2291,9 +2346,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                     return { ...p, data: { ...p.data, option_groups: groups } };
                   });
 
-                  setAdditionalsCfgOpen(false);
-                  setAdditionalsCfgDraft(null);
-                  setCfgGroupIdx(null);
+                  closeAdditionalsCfgModal();
                 }}
                 className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded"
               >
@@ -2306,7 +2359,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
       {/* modal de importação */}
       {modalOpen && importModalOpen && (
-        <GenericModal wfull maxWidth={"420px"} title="Importar grupos de opções" onClose={() => setImportModalOpen(false)}>
+        <GenericModal wfull maxWidth={"420px"} title="Importar grupos de opções" onClose={closeImportModal}>
           {importableGroups.length === 0 ? (
             <p className="text-sm color-gray text-center py-4">Nenhum grupo encontrado em outros itens.</p>
           ) : (
@@ -2374,10 +2427,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
           )}
 
           <div className="flex justify-end gap-2 mt-4">
-            <button
-              onClick={() => setImportModalOpen(false)}
-              className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded"
-            >
+            <button onClick={closeImportModal} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded">
               Cancelar
             </button>
             <button
@@ -2400,7 +2450,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                   },
                 }));
 
-                setImportModalOpen(false);
+                closeImportModal();
               }}
               className="cursor-pointer px-4 py-2 bg-green-600 disabled:opacity-50 text-white rounded"
             >
