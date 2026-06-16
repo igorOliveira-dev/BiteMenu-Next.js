@@ -6,7 +6,11 @@ import useMenu from "@/hooks/useMenu";
 export default function OrdersFilter({ onChange, initial = {} }) {
   const { menu } = useMenu();
 
-  const allowedPayments = menu?.payments ?? [];
+  const allowedPayments = useMemo(() => {
+    const base = menu?.payments ?? [];
+    const hasStripe = menu?.use_stripe_express && (menu?.stripe_payment_methods ?? []).length > 0;
+    return hasStripe ? [...base, "stripe"] : base;
+  }, [menu]);
   const allowedServices = menu?.services ?? [];
 
   const [isPaid, setIsPaid] = useState(initial.isPaid ?? "all");

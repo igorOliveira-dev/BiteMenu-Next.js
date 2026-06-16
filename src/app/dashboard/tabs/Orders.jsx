@@ -958,6 +958,9 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
                       <option className="text-black" value="cash">
                         Dinheiro
                       </option>
+                      <option className="text-black" value="stripe">
+                        Stripe
+                      </option>
                     </select>
                   </div>
                 </div>

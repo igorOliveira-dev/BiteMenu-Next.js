@@ -257,7 +257,7 @@ const BiteMenuPayments = () => {
                         BM
                       </div>
                       <div>
-                        <div className="text-sm font-semibold">2% — Bite Menu</div>
+                        <div className="text-sm font-semibold">2% - Bite Menu</div>
                         <p className="mt-0.5 text-xs opacity-60">
                           Taxa cobrada pelo Bite Menu sobre cada transação processada.
                         </p>
@@ -298,7 +298,7 @@ const BiteMenuPayments = () => {
                   </p>
                 </div>
                 <a
-                  href="/docs/pagamentos"
+                  href="/docs/pagamentos-bite-menu"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-[var(--translucid)] bg-translucid px-4 py-2.5 text-sm font-semibold transition hover:opacity-80 cursor-pointer"
