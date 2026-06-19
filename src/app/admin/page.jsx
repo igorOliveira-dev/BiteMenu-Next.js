@@ -16,7 +16,6 @@ const Admin = () => {
   const [avgPerWeekday, setAvgPerWeekday] = useState(null);
 
   const [sortByLastAccess, setSortByLastAccess] = useState(false);
-  const [sortByItemsCount, setSortByItemsCount] = useState(false);
   const [onlyLast7Days, setOnlyLast7Days] = useState(false);
   const [showOnlyPlusPro, setShowOnlyPlusPro] = useState(false);
 
@@ -90,7 +89,7 @@ const Admin = () => {
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [showOnlyPaid, search, sortByLastAccess, sortByItemsCount, onlyLast7Days, showOnlyPlusPro]);
+  }, [showOnlyPaid, search, sortByLastAccess, onlyLast7Days, showOnlyPlusPro]);
 
   if (loading || menusLoading) return <Loading />;
 
@@ -113,16 +112,7 @@ const Admin = () => {
     visibleMenus = visibleMenus.filter((m) => m.last_access_at && new Date(m.last_access_at) >= sevenDaysAgo);
   }
 
-  // ORDENAR POR QUANTIDADE DE ITENS (PRIORIDADE MÁXIMA)
-  if (sortByItemsCount) {
-    visibleMenus.sort((a, b) => {
-      const diff = (b.items_count || 0) - (a.items_count || 0);
-      if (diff !== 0) return diff;
-
-      // desempate elegante
-      return new Date(b.last_access_at || 0) - new Date(a.last_access_at || 0);
-    });
-  } else if (sortByLastAccess) {
+  if (sortByLastAccess) {
     visibleMenus.sort((a, b) => new Date(b.last_access_at || 0) - new Date(a.last_access_at || 0));
   } else {
     // fallback natural: mais recentes primeiro
@@ -174,26 +164,12 @@ const Admin = () => {
           </label>
 
           <label className="flex items-center gap-2 text-sm text-gray-300">
-            Ordenar por quantidade de itens
-            <input
-              type="checkbox"
-              checked={sortByItemsCount}
-              onChange={(e) => {
-                setSortByItemsCount(e.target.checked);
-                if (e.target.checked) setSortByLastAccess(false);
-              }}
-              className="toggle toggle-primary"
-            />
-          </label>
-
-          <label className="flex items-center gap-2 text-sm text-gray-300">
             Ordenar por último acesso
             <input
               type="checkbox"
               checked={sortByLastAccess}
               onChange={(e) => {
                 setSortByLastAccess(e.target.checked);
-                if (e.target.checked) setSortByItemsCount(false);
               }}
               className="toggle toggle-primary"
             />
