@@ -15,7 +15,16 @@ export default function useAllMenus() {
     const fetchMenus = async () => {
       setLoading(true);
 
-      const query = supabase.from("menus").select("*");
+      const query = supabase.from("menus").select(`
+  *,
+  profiles(
+    display_name,
+    role,
+    email,
+    phone,
+    stripe_customer_id
+  )
+`);
 
       const { data, error } = await query;
 
@@ -30,7 +39,7 @@ export default function useAllMenus() {
     };
 
     fetchMenus();
-  }, [user, userLoading]);
+  }, [userLoading]);
 
   return { menus, loading };
 }
