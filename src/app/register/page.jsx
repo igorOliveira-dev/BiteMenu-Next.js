@@ -114,6 +114,7 @@ export default function SignUp() {
         }
 
         // 5. Registro completo
+        window.gtag?.("event", "sign_up");
         router.replace("/getstart");
       }
     } catch (err) {
