@@ -459,6 +459,13 @@ const BiteMenuPayments = () => {
                     </span>
                   </div>
                 )}
+
+                {useStripeExpress && (
+                  <p className="mt-3 text-sm opacity-60">
+                    O Bite Menu Pagamentos está em acesso antecipado. Nesta primeira versão, os pagamentos são realizados
+                    exclusivamente por cartão de crédito. Novos métodos de pagamento serão adicionados futuramente.
+                  </p>
+                )}
               </SectionCard>
             </>
           )}
