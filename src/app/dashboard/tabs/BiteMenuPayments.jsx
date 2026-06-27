@@ -318,7 +318,7 @@ const BiteMenuPayments = () => {
                 </p>
               </div>
               <a
-                href="/docs/pagamentos"
+                href="/docs/pagamentos-bite-menu"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-[var(--translucid)] bg-translucid px-4 py-2.5 text-sm font-semibold transition hover:opacity-80 cursor-pointer"
