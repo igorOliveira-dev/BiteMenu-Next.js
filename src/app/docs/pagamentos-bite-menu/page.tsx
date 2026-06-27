@@ -110,7 +110,7 @@ const page = () => {
         </p>
         <ul className="docs-paragraph list-disc pl-6">
           <li>
-            <strong>2% — Bite Menu:</strong> taxa de plataforma cobrada pelo Bite Menu sobre o valor bruto de cada transação
+            <strong>3% — Bite Menu:</strong> taxa de plataforma cobrada pelo Bite Menu sobre o valor bruto de cada transação
             bem-sucedida. Essa taxa é descontada automaticamente pelo Stripe antes do repasse ao estabelecimento.
           </li>
           <li>
@@ -132,7 +132,7 @@ const page = () => {
           conta bancária cadastrada, sem nenhuma ação manual necessária.
         </p>
         <p className="docs-paragraph">
-          <strong>Importante:</strong> a taxa de 2% do Bite Menu <strong>não é reembolsável</strong> em caso de cancelamento
+          <strong>Importante:</strong> a taxa de 3% do Bite Menu <strong>não é reembolsável</strong> em caso de cancelamento
           ou estorno de pedido, uma vez que a cobrança está vinculada ao processamento da transação e não ao recebimento do
           pedido pelo estabelecimento.
         </p>
@@ -254,7 +254,7 @@ const page = () => {
             cartão do cliente.
           </li>
           <li>
-            A taxa de 2% cobrada pelo Bite Menu sobre a transação original <strong>não é devolvida</strong> em caso de
+            A taxa de 3% cobrada pelo Bite Menu sobre a transação original <strong>não é devolvida</strong> em caso de
             reembolso, pois está vinculada ao processamento da transação e não ao recebimento efetivo do pedido.
           </li>
           <li>
@@ -302,7 +302,7 @@ const page = () => {
         <ul className="docs-paragraph list-disc pl-6">
           <li>Disponibilizar a integração técnica com o Stripe Connect Express</li>
           <li>Manter o cardápio digital funcionando para que os clientes possam realizar pedidos e pagamentos</li>
-          <li>Cobrar a taxa de plataforma de 2% sobre cada transação processada</li>
+          <li>Cobrar a taxa de plataforma de 3% sobre cada transação processada</li>
           <li>
             Garantir a disponibilidade da plataforma, sem responsabilidade sobre falhas no processamento financeiro, que é
             gerenciado integralmente pelo Stripe
@@ -361,7 +361,7 @@ const page = () => {
         <p className="docs-paragraph font-semibold mt-4">O Bite Menu tem acesso ao meu dinheiro?</p>
         <p className="docs-paragraph">
           Não. O modelo Stripe Connect Express garante que os valores pagos pelos clientes vão diretamente para a sua conta
-          Stripe. O Bite Menu recebe apenas a taxa de plataforma de 2%, descontada automaticamente sobre cada transação.
+          Stripe. O Bite Menu recebe apenas a taxa de plataforma de 3%, descontada automaticamente sobre cada transação.
         </p>
 
         <p className="docs-paragraph font-semibold mt-4">

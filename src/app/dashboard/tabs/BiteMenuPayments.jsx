@@ -257,7 +257,7 @@ const BiteMenuPayments = () => {
                         BM
                       </div>
                       <div>
-                        <div className="text-sm font-semibold">2% - Bite Menu</div>
+                        <div className="text-sm font-semibold">3% - Bite Menu</div>
                         <p className="mt-0.5 text-xs opacity-60">
                           Taxa cobrada pelo Bite Menu sobre cada transação processada.
                         </p>
