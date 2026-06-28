@@ -34,7 +34,7 @@ const page = () => {
               que realizam pedidos.
             </li>
             <li>
-              <strong>Compradores finais (Bite Menu Pagamentos):</strong> clientes dos estabelecimentos que realizam
+              <strong>Compradores finais (Pagamentos Bite Menu):</strong> clientes dos estabelecimentos que realizam
               pagamentos online via Stripe Checkout ao finalizar um pedido.
             </li>
           </ul>
@@ -51,7 +51,7 @@ const page = () => {
               esses dados.
             </li>
             <li>
-              <strong>Plataforma tecnológica intermediadora</strong> no contexto do Bite Menu Pagamentos: viabiliza a
+              <strong>Plataforma tecnológica intermediadora</strong> no contexto do Pagamentos Bite Menu: viabiliza a
               integração com o Stripe Connect Express para que os estabelecimentos recebam pagamentos online, sem coletar nem
               ter acesso aos dados de pagamento dos compradores finais nem aos dados de verificação de identidade (KYC)
               submetidos diretamente ao Stripe durante o credenciamento.
@@ -97,12 +97,12 @@ const page = () => {
             <li>Telefone de contato;</li>
             <li>Dados relacionados à assinatura dos planos Bite Menu (processados via Stripe);</li>
             <li>
-              Identificador da conta Stripe conectada (apenas quando o estabelecimento habilita o Bite Menu Pagamentos).
+              Identificador da conta Stripe conectada (apenas quando o estabelecimento habilita o Pagamentos Bite Menu).
             </li>
           </ul>
 
           <p>
-            <strong>Credenciamento no Bite Menu Pagamentos (KYC via Stripe):</strong> Ao aderir ao Bite Menu Pagamentos, o
+            <strong>Credenciamento no Pagamentos Bite Menu (KYC via Stripe):</strong> Ao aderir ao Pagamentos Bite Menu, o
             estabelecimento é redirecionado ao ambiente seguro do Stripe para concluir o processo de credenciamento (
             <em>onboarding</em>). Nesse fluxo, o Stripe coleta diretamente do estabelecimento as informações exigidas para
             verificação de identidade (KYC – <em>Know Your Customer</em>) e prevenção à lavagem de dinheiro (AML –{" "}
@@ -131,7 +131,7 @@ const page = () => {
           <ul className="list-disc ml-6">
             <li>
               <strong>Execução de contrato</strong> (inciso V): para criação e gestão de conta, exibição de cardápios,
-              processamento de pedidos, cobrança da assinatura e habilitação do Bite Menu Pagamentos;
+              processamento de pedidos, cobrança da assinatura e habilitação do Pagamentos Bite Menu;
             </li>
             <li>
               <strong>Cumprimento de obrigação legal ou regulatória</strong> (inciso II): para emissão de notas fiscais e
@@ -146,7 +146,7 @@ const page = () => {
           <p>
             Os dados são armazenados em servidores seguros e criptografados. O Bite Menu compartilha informações dos
             estabelecimentos apenas com fornecedores de infraestrutura necessários ao funcionamento da plataforma (Supabase e
-            Stripe), com o Stripe para fins de processamento de assinaturas e habilitação do Bite Menu Pagamentos, e, quando
+            Stripe), com o Stripe para fins de processamento de assinaturas e habilitação do Pagamentos Bite Menu, e, quando
             legalmente exigido, com autoridades competentes.
           </p>
           <p>
@@ -262,7 +262,7 @@ const page = () => {
               <strong>Supabase</strong> (banco de dados e autenticação) – servidores nos Estados Unidos;
             </li>
             <li>
-              <strong>Stripe</strong> (processamento de assinaturas dos planos e, para usuários do Bite Menu Pagamentos,
+              <strong>Stripe</strong> (processamento de assinaturas dos planos e, para usuários do Pagamentos Bite Menu,
               credenciamento via Stripe Connect Express e processamento de transações online dos clientes dos
               estabelecimentos) – servidores nos Estados Unidos e em outras jurisdições.
             </li>
@@ -357,7 +357,7 @@ const page = () => {
               conforme exigido pela legislação tributária e contábil brasileira;
             </li>
             <li>
-              <strong>Confirmações de transações do Bite Menu Pagamentos:</strong> identificadores e status de transações são
+              <strong>Confirmações de transações do Pagamentos Bite Menu:</strong> identificadores e status de transações são
               retidos pelo mesmo prazo dos dados financeiros, para fins de comprovação fiscal e resolução de disputas;
             </li>
             <li>
@@ -423,23 +423,23 @@ const page = () => {
           </p>
         </section>
 
-        {/* 11. Bite Menu Pagamentos – Recebimentos Online pelos Estabelecimentos */}
+        {/* 11. Pagamentos Bite Menu – Recebimentos Online pelos Estabelecimentos */}
         <section className="flex flex-col gap-2 mb-4">
-          <h2 className="default-h2">11. Bite Menu Pagamentos – Recebimentos Online pelos Estabelecimentos</h2>
+          <h2 className="default-h2">11. Pagamentos Bite Menu – Recebimentos Online pelos Estabelecimentos</h2>
 
           <p>
-            <strong>Funcionalidade em fase de testes:</strong> O Bite Menu Pagamentos está disponível apenas para contas
+            <strong>Funcionalidade em fase de testes:</strong> O Pagamentos Bite Menu está disponível apenas para contas
             selecionadas. Os recursos e condições descritos nesta seção podem ser alterados durante o período de testes, sem
             o aviso prévio previsto na Seção 14, dado o caráter experimental da funcionalidade. Nesses casos, as atualizações
             serão comunicadas diretamente aos usuários participantes.
           </p>
 
           <p>
-            O <strong>Bite Menu Pagamentos</strong> permite que estabelecimentos recebam pagamentos online dos seus clientes
+            O <strong>Pagamentos Bite Menu</strong> permite que estabelecimentos recebam pagamentos online dos seus clientes
             diretamente em sua conta bancária, por meio da integração com o <strong>Stripe Connect Express</strong>. O Bite
             Menu é uma <strong>plataforma de tecnologia</strong> e não atua como instituição financeira, operadora de
             pagamentos ou adquirente. Todo o processamento financeiro é realizado pelo Stripe, empresa devidamente
-            regulamentada para operar serviços de pagamento. Ao aderir ao Bite Menu Pagamentos, o estabelecimento concorda
+            regulamentada para operar serviços de pagamento. Ao aderir ao Pagamentos Bite Menu, o estabelecimento concorda
             com os{" "}
             <a
               href="https://stripe.com/br/legal/connect-account"
@@ -513,7 +513,7 @@ const page = () => {
           </p>
 
           <p>
-            <strong>Base legal:</strong> O tratamento dos dados relativos ao Bite Menu Pagamentos (identificador de conta
+            <strong>Base legal:</strong> O tratamento dos dados relativos ao Pagamentos Bite Menu (identificador de conta
             conectada e confirmações de transação) fundamenta-se na execução de contrato (art. 7º, V da LGPD), necessário
             para viabilizar o recebimento de pagamentos online pelo estabelecimento, e no cumprimento de obrigação legal
             (art. 7º, II da LGPD) para fins fiscais e contábeis.
@@ -628,7 +628,7 @@ const page = () => {
           </ul>
 
           <p>
-            <strong>Responsabilidades adicionais para usuários do Bite Menu Pagamentos:</strong>
+            <strong>Responsabilidades adicionais para usuários do Pagamentos Bite Menu:</strong>
           </p>
           <ul className="list-disc ml-6">
             <li>
