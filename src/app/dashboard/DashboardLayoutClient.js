@@ -60,8 +60,7 @@ export default function DashboardLayoutClient({ children }) {
   useEffect(() => {
     if (loading) return;
     if (!profile) return;
-    const needsAccept =
-      !profile.privacy_accepted_at || profile.privacy_policy_version !== CURRENT_PRIVACY_VERSION;
+    const needsAccept = !profile.privacy_accepted_at || profile.privacy_policy_version !== CURRENT_PRIVACY_VERSION;
     setShowPrivacyModal(needsAccept);
   }, [loading, profile]);
 
@@ -149,7 +148,11 @@ export default function DashboardLayoutClient({ children }) {
       </header>
       <main>{children}</main>
       {showPrivacyModal && user && (
-        <PrivacyAcceptModal userId={user.id} onAccepted={() => setShowPrivacyModal(false)} onClose={() => setShowPrivacyModal(false)} />
+        <PrivacyAcceptModal
+          userId={user.id}
+          onAccepted={() => setShowPrivacyModal(false)}
+          onClose={() => setShowPrivacyModal(false)}
+        />
       )}
       {strategicModal.show && !showPrivacyModal && (
         <UpdatePlanModal

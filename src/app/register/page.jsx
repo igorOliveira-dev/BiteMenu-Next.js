@@ -211,8 +211,17 @@ export default function SignUp() {
                   className="underline text-blue-500 hover:text-blue-700"
                 >
                   Política de Privacidade
+                </Link>{" "}
+                e os{" "}
+                <Link
+                  href="/politica-de-privacidade"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline text-blue-500 hover:text-blue-700"
+                >
+                  Termos de Uso
                 </Link>
-                .
+                do Bite Menu
               </span>
             </label>
           </div>

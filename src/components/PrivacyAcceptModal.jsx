@@ -44,11 +44,11 @@ export default function PrivacyAcceptModal({ userId, onAccepted, onClose }) {
   };
 
   return (
-    <GenericModal title="Atualização da Política de Privacidade" size="md" zIndex={200} onClose={onClose}>
+    <GenericModal title="Atualização da Política de Privacidade e Termos de Uso" size="md" zIndex={200} onClose={onClose}>
       <div className="flex flex-col gap-4">
         <p>
-          Para usar o Bite Menu, pedimos que leia e aceite nossa Política de Privacidade, conforme a LGPD (Lei nº
-          13.709/2018).
+          Para usar o Bite Menu, pedimos que leia e aceite nossa Política de Privacidade e Termos de Uso, conforme a LGPD
+          (Lei nº 13.709/2018).
         </p>
         <p>
           <a
@@ -58,6 +58,15 @@ export default function PrivacyAcceptModal({ userId, onAccepted, onClose }) {
             className="underline text-blue-500 hover:text-blue-700"
           >
             Ler Política de Privacidade
+          </a>
+          <br />
+          <a
+            href="/termos-de-uso"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline text-blue-500 hover:text-blue-700"
+          >
+            Ler Termos de Uso
           </a>
         </p>
         <button
