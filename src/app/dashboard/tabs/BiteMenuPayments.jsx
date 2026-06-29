@@ -217,8 +217,13 @@ const BiteMenuPayments = () => {
     <div className="px-4 sm:px-2">
       <div className="md:m-auto lg:m-2 lg:w-[calc(80dvw-256px)] max-w-[1080px] pb-32 pt-3">
         {/* header */}
-        <div className="flex items-center gap-3 mb-5">
+        <div className="mb-5 flex flex-col sm:flex-row sm:items-center gap-3">
           <h2 className="font-semibold text-xl">Pagamentos Bite Menu</h2>
+          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-2 w-fit">
+            <p className="text-sm">
+              <strong className="text-amber-500">⚠️ Versão em testes</strong>
+            </p>
+          </div>
         </div>
 
         <div className="grid gap-5">
