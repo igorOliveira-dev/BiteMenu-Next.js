@@ -58,7 +58,16 @@ const page = () => {
           >
             Termos de Serviço do Stripe Connect
           </a>{" "}
-          além dos Termos de Uso do Bite Menu.
+          além dos{" "}
+          <a
+            href="https://www.bitemenu.com.br/termos-de-uso"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline text-blue-500 hover:text-blue-700"
+          >
+            Termos de Uso
+          </a>{" "}
+          do Bite Menu.
         </p>
         <p className="docs-paragraph">
           Para aceitar pagamentos online no seu cardápio, é necessário conectar uma conta Stripe à sua conta do Bite Menu. O
