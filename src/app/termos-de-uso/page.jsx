@@ -187,8 +187,8 @@ const page = () => {
             exclusiva do Usuário cancelar o plano dentro do prazo caso não deseje ser cobrado.
           </p>
           <p>
-            <strong>Alteração de preços:</strong> O Bite Menu poderá ajustar os valores dos planos. Os novos valores não
-            serão aplicados a assinaturas ativas, mas apenas a novas assinaturas.
+            <strong>Alteração de preços:</strong> O Bite Menu poderá ajustar os valores dos planos mediante aviso prévio de
+            30 dias. O Usuário poderá cancelar sem ônus antes da entrada em vigor do novo valor.
           </p>
           <p>
             <strong>Falha no pagamento:</strong> Em caso de falha no débito recorrente, o Bite Menu poderá suspender o acesso
