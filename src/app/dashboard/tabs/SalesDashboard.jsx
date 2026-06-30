@@ -185,6 +185,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
   const [salesData, setSalesData] = useState([]);
   const [granularity, setGranularity] = useState("day");
   const [loadingSales, setLoadingSales] = useState(false);
+  const [valueMode, setValueMode] = useState("gross"); // "gross" | "net"
 
   // Datas oficiais (disparam fetch)
   const [startDate, setStartDate] = useState(() => {
@@ -213,6 +214,26 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
     fetchOwnerRole();
   }, [menu?.owner_id]);
+
+  const computeTotal = useCallback((sale) => {
+    const items = sale.items_list || [];
+    return items.reduce((acc, it) => {
+      const qty = Number(it.qty) || 0;
+      const base = (Number(it.price) || 0) * qty;
+      const adds = (it.additionals || []).reduce((sa, a) => sa + (Number(a.price) || 0), 0) * qty;
+      return acc + base + adds;
+    }, 0);
+  }, []);
+
+  const getSaleValue = useCallback(
+    (sale) => {
+      if (valueMode === "net" && sale.net_total != null) {
+        return Number(sale.net_total);
+      }
+      return Number(sale.total ?? computeTotal(sale)) || 0;
+    },
+    [valueMode, computeTotal],
+  );
 
   const isRangeTooLarge = useCallback((start, end) => {
     const days = diffDaysInclusive(start, end);
@@ -250,7 +271,9 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
     const { data, error } = await supabase
       .from("sales")
-      .select("created_at, total, payment_method, service, items_list, delivery_fee, costumer_name, costumer_phone")
+      .select(
+        "created_at, total, net_total, payment_method, service, items_list, delivery_fee, costumer_name, costumer_phone",
+      )
       .eq("menu_id", menu.id)
       .gte("created_at", start.toISOString())
       .lte("created_at", end.toISOString())
@@ -269,25 +292,15 @@ const SalesDashboard = ({ setSelectedTab }) => {
     const chosenGranularity = pickGranularity(start, end, isSameDay);
     setGranularity(chosenGranularity);
 
-    const computeTotal = (sale) => {
-      const items = sale.items_list || [];
-      return items.reduce((acc, it) => {
-        const qty = Number(it.qty) || 0;
-        const base = (Number(it.price) || 0) * qty;
-        const adds = (it.additionals || []).reduce((sa, a) => sa + (Number(a.price) || 0), 0) * qty;
-        return acc + base + adds;
-      }, 0);
-    };
-
     // Agrupar
     const map = {};
     data.forEach((s) => {
       const d = new Date(s.created_at);
       const key = keyFor(d, chosenGranularity);
-      const total = s.total ?? computeTotal(s);
+      const value = getSaleValue(s);
 
       if (!map[key]) map[key] = { total: 0, count: 0 };
-      map[key].total += Number(total) || 0;
+      map[key].total += value;
       map[key].count += 1;
     });
 
@@ -332,7 +345,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
     const { data: prevData } = await supabase
       .from("sales")
-      .select("created_at, total")
+      .select("created_at, total, net_total")
       .eq("menu_id", menu.id)
       .gte("created_at", prevStart.toISOString())
       .lte("created_at", prevEnd.toISOString());
@@ -341,7 +354,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
     setRawSales(data);
     setPrevRawSales(prevData || []);
     setLoadingSales(false);
-  }, [menu?.id, startDate, endDate, singleDate, customAlert, isRangeTooLarge]);
+  }, [menu?.id, startDate, endDate, singleDate, customAlert, isRangeTooLarge, getSaleValue]);
 
   useEffect(() => {
     if (menu?.id) fetchSalesInPeriod();
@@ -361,7 +374,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
       "Forma de pagamento",
       "Tipo de serviço",
       "Taxa de entrega",
-      "Total",
+      valueMode === "net" ? "Total Líquido" : "Total Bruto",
     ];
 
     const rows = rawSales.map((s) => [
@@ -372,7 +385,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
       PAYMENT_LABELS_PT[s.payment_method] || s.payment_method || "—",
       SERVICE_LABELS_PT[s.service] || s.service || "—",
       formatBRL(s.delivery_fee, menu?.currency),
-      formatBRL(s.total, menu?.currency),
+      formatBRL(getSaleValue(s), menu?.currency),
     ]);
 
     const body = [header, ...rows].map((r) => r.map(csvEscape).join(";")).join("\r\n");
@@ -393,26 +406,17 @@ const SalesDashboard = ({ setSelectedTab }) => {
     URL.revokeObjectURL(url);
 
     customAlert("CSV exportado.", "success");
-  }, [rawSales, startDate, endDate, singleDate, customAlert]);
+  }, [rawSales, startDate, endDate, singleDate, customAlert, getSaleValue, valueMode]);
 
   const totalPeriod = useMemo(() => salesData.reduce((sum, d) => sum + d.total, 0), [salesData]);
   const totalSalesCount = useMemo(() => salesData.reduce((sum, d) => sum + d.count, 0), [salesData]);
   const averageTicket = useMemo(() => (totalSalesCount ? totalPeriod / totalSalesCount : 0), [totalPeriod, totalSalesCount]);
 
-  const computeTotal = (sale) => {
-    const items = sale.items_list || [];
-    return items.reduce((acc, it) => {
-      const qty = Number(it.qty) || 0;
-      const base = (Number(it.price) || 0) * qty;
-      const adds = (it.additionals || []).reduce((sa, a) => sa + (Number(a.price) || 0), 0) * qty;
-      return acc + base + adds;
-    }, 0);
-  };
-
   const prevTotalPeriod = useMemo(
-    () => prevRawSales.reduce((sum, s) => sum + Number(s.total ?? computeTotal(s)), 0),
-    [prevRawSales],
+    () => prevRawSales.reduce((sum, s) => sum + getSaleValue(s), 0),
+    [prevRawSales, getSaleValue],
   );
+
   const prevTotalSalesCount = useMemo(() => prevRawSales.length, [prevRawSales]);
   const prevAverageTicket = useMemo(
     () => (prevTotalSalesCount ? prevTotalPeriod / prevTotalSalesCount : 0),
@@ -428,6 +432,10 @@ const SalesDashboard = ({ setSelectedTab }) => {
     });
     const peak = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
     return { hour: Number(peak[0]), count: peak[1] };
+  }, [rawSales]);
+
+  const hasNetValues = useMemo(() => {
+    return rawSales.some((sale) => sale.net_total !== null);
   }, [rawSales]);
 
   if (loading || ownerRole === null || loadingSales) return <Loading />;
@@ -599,6 +607,34 @@ const SalesDashboard = ({ setSelectedTab }) => {
             <span className="hidden xs:inline">Exportar CSV</span>
           </button>
         </div>
+
+        {hasNetValues && (
+          <div className="mb-3 p-3 bg-translucid rounded-lg">
+            <p>Selecione o tipo de valor exibido</p>
+            <p className="text-sm mb-2 text-[var(--gray)]">Bruto inclui taxas; líquido considera os descontos aplicados.</p>
+            <div className="inline-flex rounded-xl bg-translucid">
+              <button
+                type="button"
+                onClick={() => setValueMode("gross")}
+                className={`cursor-pointer min-w-24 rounded-lg px-4 py-2 text-sm font-medium ${
+                  valueMode === "gross" ? "bg-translucid text-gray" : "text-[var(--gray)] hover:text-[var(--foreground)]"
+                }`}
+              >
+                Bruto
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setValueMode("net")}
+                className={`cursor-pointer min-w-24 rounded-lg px-4 py-2 text-sm font-medium ${
+                  valueMode === "net" ? "bg-translucid text-gray" : "text-[var(--gray)] hover:text-[var(--foreground)]"
+                }`}
+              >
+                Líquido
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Filtros (card) */}
         <div className="bg-translucid border border-translucid rounded-lg p-4 mb-4">
