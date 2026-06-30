@@ -5,6 +5,33 @@ import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
+const ZERO_DECIMAL_CURRENCIES = [
+  "bif",
+  "clp",
+  "djf",
+  "gnf",
+  "jpy",
+  "kmf",
+  "krw",
+  "mga",
+  "pyg",
+  "rwf",
+  "ugx",
+  "vnd",
+  "vuv",
+  "xaf",
+  "xof",
+  "xpf",
+];
+
+function calcNetTotal(balanceTransaction: Stripe.BalanceTransaction): number {
+  const isZeroDecimal = balanceTransaction.currency
+    ? ZERO_DECIMAL_CURRENCIES.includes(balanceTransaction.currency.toLowerCase())
+    : false;
+
+  return isZeroDecimal ? balanceTransaction.net : balanceTransaction.net / 100;
+}
+
 export async function POST(req: Request) {
   const stripe = getStripeClient("cnpj");
   const body = await req.text();
@@ -50,10 +77,15 @@ export async function POST(req: Request) {
         break;
       }
 
+      // Responsável por marcar o pedido como pago assim que o checkout é concluído.
+      // O valor líquido (net_total) é tratado separadamente no evento charge.updated,
+      // pois a balance_transaction (que reflete as taxas já descontadas) pode não
+      // estar disponível ainda neste momento — a application fee é criada de forma
+      // assíncrona por padrão pelo Stripe.
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const orderId = session.metadata?.order_id;
-        const connectedAccountId = event.account; // conta conectada que gerou o evento
+        const connectedAccountId = event.account;
 
         if (!orderId) {
           console.warn("checkout.session.completed sem order_id no metadata.");
@@ -61,55 +93,11 @@ export async function POST(req: Request) {
         }
 
         if (session.payment_status === "paid") {
-          let netTotal: number | null = null;
-
-          try {
-            if (session.payment_intent && connectedAccountId) {
-              const paymentIntent = await stripe.paymentIntents.retrieve(
-                session.payment_intent as string,
-                { expand: ["latest_charge.balance_transaction"] },
-                { stripeAccount: connectedAccountId },
-              );
-
-              const charge = paymentIntent.latest_charge as Stripe.Charge | null;
-              const balanceTransaction = charge?.balance_transaction as Stripe.BalanceTransaction | null;
-
-              if (balanceTransaction) {
-                const isZeroDecimal = balanceTransaction.currency
-                  ? [
-                      "bif",
-                      "clp",
-                      "djf",
-                      "gnf",
-                      "jpy",
-                      "kmf",
-                      "krw",
-                      "mga",
-                      "pyg",
-                      "rwf",
-                      "ugx",
-                      "vnd",
-                      "vuv",
-                      "xaf",
-                      "xof",
-                      "xpf",
-                    ].includes(balanceTransaction.currency.toLowerCase())
-                  : false;
-
-                netTotal = isZeroDecimal ? balanceTransaction.net : balanceTransaction.net / 100;
-              }
-            }
-          } catch (netErr: any) {
-            // não bloqueia o fluxo principal se a busca do valor líquido falhar
-            console.error(`Erro ao buscar balance_transaction do pedido ${orderId}:`, netErr.message);
-          }
-
           const { error } = await supabase
             .from("orders")
             .update({
               is_paid: true,
               stripe_payment_intent: session.payment_intent ?? null,
-              net_total: netTotal,
               updated_at: new Date().toISOString(),
             })
             .eq("id", orderId);
@@ -123,8 +111,105 @@ export async function POST(req: Request) {
           }
 
           console.log(
-            `✅ Pedido ${orderId} marcado como pago. PaymentIntent: ${session.payment_intent}. Líquido: ${netTotal}`,
+            `✅ Pedido ${orderId} marcado como pago. PaymentIntent: ${session.payment_intent}. Conta: ${connectedAccountId}`,
           );
+
+          // Tentativa imediata: às vezes a balance_transaction já está disponível
+          // neste momento, então tentamos buscar e salvar de uma vez. Se não
+          // conseguirmos, o evento charge.updated cobre o caso.
+          try {
+            if (session.payment_intent && connectedAccountId) {
+              const paymentIntent = await stripe.paymentIntents.retrieve(
+                session.payment_intent as string,
+                { expand: ["latest_charge.balance_transaction"] },
+                { stripeAccount: connectedAccountId },
+              );
+
+              const charge = paymentIntent.latest_charge as Stripe.Charge | null;
+              const balanceTransaction = charge?.balance_transaction as Stripe.BalanceTransaction | null;
+
+              if (balanceTransaction) {
+                const netTotal = calcNetTotal(balanceTransaction);
+
+                const { error: netError } = await supabase
+                  .from("orders")
+                  .update({ net_total: netTotal, updated_at: new Date().toISOString() })
+                  .eq("id", orderId);
+
+                if (netError) {
+                  console.error(`Erro ao salvar net_total (via checkout.session.completed) do pedido ${orderId}:`, netError);
+                } else {
+                  console.log(`💰 net_total salvo imediatamente para pedido ${orderId}: ${netTotal}`);
+                }
+              } else {
+                console.log(
+                  `[net_total] balance_transaction ainda não disponível para pedido ${orderId}; aguardando evento charge.updated.`,
+                );
+              }
+            }
+          } catch (netErr: any) {
+            console.error(
+              `[net_total] Erro ao tentar buscar balance_transaction antecipadamente para pedido ${orderId} (não bloqueia; charge.updated cobre):`,
+              netErr.message,
+            );
+          }
+        }
+
+        break;
+      }
+
+      // Responsável por salvar o net_total assim que a balance_transaction do
+      // charge estiver disponível. Isso cobre o caso em que checkout.session.completed
+      // chega antes da application fee/balance_transaction serem calculadas.
+      case "charge.updated": {
+        const charge = event.data.object as Stripe.Charge;
+        const orderId = charge.metadata?.order_id;
+        const connectedAccountId = event.account;
+
+        if (!orderId) {
+          // Não é um charge relacionado a um pedido nosso (metadata vem do
+          // payment_intent_data.metadata configurado na criação do checkout).
+          break;
+        }
+
+        const balanceTransactionId =
+          typeof charge.balance_transaction === "string" ? charge.balance_transaction : charge.balance_transaction?.id;
+
+        if (!balanceTransactionId) {
+          // balance_transaction ainda não foi atribuída a este charge; ignoramos
+          // e aguardamos uma futura entrega de charge.updated.
+          console.log(`[charge.updated] Pedido ${orderId} ainda sem balance_transaction; ignorando por enquanto.`);
+          break;
+        }
+
+        try {
+          if (!connectedAccountId) {
+            console.warn(`[charge.updated] Evento sem event.account para pedido ${orderId}; não é possível buscar.`);
+            break;
+          }
+
+          const balanceTransaction = await stripe.balanceTransactions.retrieve(balanceTransactionId, {
+            stripeAccount: connectedAccountId,
+          });
+
+          const netTotal = calcNetTotal(balanceTransaction);
+
+          const { error } = await supabase
+            .from("orders")
+            .update({ net_total: netTotal, updated_at: new Date().toISOString() })
+            .eq("id", orderId);
+
+          if (error) {
+            console.error(`Erro ao salvar net_total (via charge.updated) do pedido ${orderId}:`, error);
+            return new Response(JSON.stringify({ error: "DB update failed" }), {
+              status: 500,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+
+          console.log(`💰 net_total salvo via charge.updated para pedido ${orderId}: ${netTotal}`);
+        } catch (err: any) {
+          console.error(`[charge.updated] Erro ao buscar balance_transaction do pedido ${orderId}:`, err.message);
         }
 
         break;
