@@ -36,57 +36,56 @@ export async function POST(req) {
         // ── Pedido via Stripe Connect ──────────────────────────
         if (session.mode === "payment" && session.metadata?.order_id) {
           const orderId = session.metadata.order_id;
-          const connectedAccountId = event.account; // conta conectada que originou o evento
 
           if (session.payment_status === "paid") {
             let netTotal = null;
 
             try {
-              if (session.payment_intent) {
-                // Busca a conta conectada via o pedido, já que event.account pode não vir preenchido
-                const { data: orderData } = await supabase
-                  .from("orders")
-                  .select("menu_id, menus(owner_id, profiles(stripe_connect_account_id))")
-                  .eq("id", orderId)
-                  .single();
+              // busca a conta conectada que foi salva no momento da criação do pedido
+              const { data: orderRow } = await supabase
+                .from("orders")
+                .select("stripe_connect_account_id")
+                .eq("id", orderId)
+                .single();
 
-                const accountId = connectedAccountId || orderData?.menus?.profiles?.stripe_connect_account_id;
+              const accountId = event.account || orderRow?.stripe_connect_account_id;
 
-                if (accountId) {
-                  const paymentIntent = await stripe.paymentIntents.retrieve(
-                    session.payment_intent,
-                    { expand: ["latest_charge.balance_transaction"] },
-                    { stripeAccount: accountId },
-                  );
+              if (session.payment_intent && accountId) {
+                const paymentIntent = await stripe.paymentIntents.retrieve(
+                  session.payment_intent,
+                  { expand: ["latest_charge.balance_transaction"] },
+                  { stripeAccount: accountId },
+                );
 
-                  const charge = paymentIntent.latest_charge;
-                  const balanceTransaction = charge?.balance_transaction;
+                const charge = paymentIntent.latest_charge;
+                const balanceTransaction = charge?.balance_transaction;
 
-                  if (balanceTransaction) {
-                    const zeroDecimalCurrencies = [
-                      "bif",
-                      "clp",
-                      "djf",
-                      "gnf",
-                      "jpy",
-                      "kmf",
-                      "krw",
-                      "mga",
-                      "pyg",
-                      "rwf",
-                      "ugx",
-                      "vnd",
-                      "vuv",
-                      "xaf",
-                      "xof",
-                      "xpf",
-                    ];
-                    const isZeroDecimal = zeroDecimalCurrencies.includes((balanceTransaction.currency || "").toLowerCase());
-                    netTotal = isZeroDecimal ? balanceTransaction.net : balanceTransaction.net / 100;
-                  }
+                if (balanceTransaction) {
+                  const zeroDecimalCurrencies = [
+                    "bif",
+                    "clp",
+                    "djf",
+                    "gnf",
+                    "jpy",
+                    "kmf",
+                    "krw",
+                    "mga",
+                    "pyg",
+                    "rwf",
+                    "ugx",
+                    "vnd",
+                    "vuv",
+                    "xaf",
+                    "xof",
+                    "xpf",
+                  ];
+                  const isZeroDecimal = zeroDecimalCurrencies.includes((balanceTransaction.currency || "").toLowerCase());
+                  netTotal = isZeroDecimal ? balanceTransaction.net : balanceTransaction.net / 100;
                 } else {
-                  console.warn(`[Webhook] Não foi possível determinar a conta conectada do pedido ${orderId}`);
+                  console.warn(`[Webhook] balance_transaction ausente para pedido ${orderId}`);
                 }
+              } else {
+                console.warn(`[Webhook] Sem accountId para buscar valor líquido do pedido ${orderId}`);
               }
             } catch (netErr) {
               console.error(`[Webhook] Erro ao buscar valor líquido do pedido ${orderId}:`, netErr.message);
