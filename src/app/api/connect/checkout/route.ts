@@ -100,6 +100,7 @@ export async function POST(request) {
     }
 
     const orderId = insertedOrder.id;
+    const shortOrderId = String(orderId).slice(0, 6);
 
     // 5. Montar line_items
     const lineItems = [
@@ -107,7 +108,7 @@ export async function POST(request) {
         price_data: {
           currency: currencyLower,
           product_data: {
-            name: `Pedido #${orderId} - ${menuTitle}`,
+            name: `Pedido #${shortOrderId} - ${menuTitle}`,
             description: items
               .map(
                 (it) =>
