@@ -35,71 +35,9 @@ export async function POST(req) {
 
         // ── Pedido via Stripe Connect ──────────────────────────
         if (session.mode === "payment" && session.metadata?.order_id) {
-          const orderId = session.metadata.order_id;
-          const connectedAccountId = event.account; // conta conectada que originou o evento
-
-          if (session.payment_status === "paid") {
-            let netTotal = null;
-
-            try {
-              if (session.payment_intent && connectedAccountId) {
-                const paymentIntent = await stripe.paymentIntents.retrieve(
-                  session.payment_intent,
-                  { expand: ["latest_charge.balance_transaction"] },
-                  { stripeAccount: connectedAccountId },
-                );
-
-                const charge = paymentIntent.latest_charge;
-                const balanceTransaction = charge?.balance_transaction;
-
-                if (balanceTransaction) {
-                  const zeroDecimalCurrencies = [
-                    "bif",
-                    "clp",
-                    "djf",
-                    "gnf",
-                    "jpy",
-                    "kmf",
-                    "krw",
-                    "mga",
-                    "pyg",
-                    "rwf",
-                    "ugx",
-                    "vnd",
-                    "vuv",
-                    "xaf",
-                    "xof",
-                    "xpf",
-                  ];
-                  const isZeroDecimal = zeroDecimalCurrencies.includes((balanceTransaction.currency || "").toLowerCase());
-
-                  netTotal = isZeroDecimal ? balanceTransaction.net : balanceTransaction.net / 100;
-                }
-              }
-            } catch (netErr) {
-              console.error(`[Webhook] Erro ao buscar valor líquido do pedido ${orderId}:`, netErr.message);
-            }
-
-            const { error } = await supabase
-              .from("orders")
-              .update({
-                is_paid: true,
-                stripe_payment_intent: session.payment_intent ?? null,
-                net_total: netTotal,
-                updated_at: new Date().toISOString(),
-              })
-              .eq("id", orderId);
-
-            if (error) {
-              console.error(`[Webhook] Erro ao atualizar pedido ${orderId}:`, error);
-              return new Response("DB error", { status: 500 });
-            }
-
-            console.log(
-              `[Webhook] ✅ Pedido ${orderId} marcado como pago. PaymentIntent: ${session.payment_intent}. Líquido: ${netTotal}`,
-            );
-          }
-
+          console.log(
+            `[Webhook] Pedido ${session.metadata.order_id} via Connect ignorado neste endpoint (tratado no webhook Connect).`,
+          );
           break;
         }
 
