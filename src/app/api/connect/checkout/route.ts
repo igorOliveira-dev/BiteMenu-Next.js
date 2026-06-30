@@ -71,29 +71,7 @@ export async function POST(request) {
     const feePercentage = Number(profile.stripe_fee_percentage ?? 0);
     const applicationFeeAmount = Math.round((totalInCents * feePercentage) / 100);
 
-    // 4. Montar line_items
-    const lineItems = [
-      {
-        price_data: {
-          currency: currencyLower,
-          product_data: {
-            name: `Pedido em ${menuTitle}`,
-            description: items
-              .map(
-                (it) =>
-                  `${it.qty}x ${it.name}${
-                    it.additionals?.length ? ` (+${it.additionals.map((a) => a.name).join(", ")})` : ""
-                  }`,
-              )
-              .join(" | "),
-          },
-          unit_amount: totalInCents,
-        },
-        quantity: 1,
-      },
-    ];
-
-    // 5. Salvar pedido pendente no Supabase
+    // 4. Salvar pedido pendente no Supabase
     const orderPayload = {
       menu_id: menuId,
       costumer_name: costumerName,
@@ -123,6 +101,28 @@ export async function POST(request) {
 
     const orderId = insertedOrder.id;
 
+    // 5. Montar line_items
+    const lineItems = [
+      {
+        price_data: {
+          currency: currencyLower,
+          product_data: {
+            name: `Pedido #${orderId} - ${menuTitle}`,
+            description: items
+              .map(
+                (it) =>
+                  `${it.qty}x ${it.name}${
+                    it.additionals?.length ? ` (+${it.additionals.map((a) => a.name).join(", ")})` : ""
+                  }`,
+              )
+              .join(" | "),
+          },
+          unit_amount: totalInCents,
+        },
+        quantity: 1,
+      },
+    ];
+
     // 6. URLs de retorno
     const baseUrl = process.env.APP_URL || "https://bitemenu.com.br";
     const successUrl = `${baseUrl}/menu/${menuSlug}?order_success=true&order_id=${orderId}`;
@@ -136,15 +136,22 @@ export async function POST(request) {
         line_items: lineItems,
         success_url: successUrl,
         cancel_url: cancelUrl,
-        payment_intent_data: {
-          application_fee_amount: applicationFeeAmount, // só sua % limpa
+        metadata: {
+          order_id: String(orderId),
         },
-        metadata: { order_id: orderId, menu_id: menuId, menu_slug: menuSlug },
+        payment_intent_data: {
+          application_fee_amount: applicationFeeAmount,
+          metadata: {
+            order_id: String(orderId),
+            menu_id: String(menuId),
+            menu_slug: String(menuSlug),
+          },
+        },
         ...(costumerName && { customer_creation: "always" }),
         locale: "pt-BR",
       },
       {
-        stripeAccount: profile.stripe_connect_account_id, // ← cria na conta do restaurante
+        stripeAccount: profile.stripe_connect_account_id,
       },
     );
 
