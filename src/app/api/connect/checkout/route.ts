@@ -84,7 +84,6 @@ export async function POST(request) {
       delivery_fee: deliveryFee,
       total,
       is_paid: false,
-      stripe_connect_account_id: profile.stripe_connect_account_id,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
