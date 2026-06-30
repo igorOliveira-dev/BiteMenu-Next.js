@@ -375,7 +375,7 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
     const grossTotal = subtotal + deliveryFee;
 
     const isStripeWithNet = order.payment_method === "stripe" && order.net_total != null;
-    const netTotal = isStripeWithNet ? Number(order.net_total) : grossTotal;
+    const netTotal = isStripeWithNet ? Number(order.net_total) : null;
 
     // total principal continua sendo o bruto (mantém compatibilidade com relatórios existentes)
     const { error: insertError } = await supabase.from("sales").insert([

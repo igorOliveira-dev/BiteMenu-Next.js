@@ -452,10 +452,20 @@ const Sales = ({ setSelectedTab }) => {
                                 </p>
                               </div>
                               <div className="text-right shrink-0">
-                                <p className="text-xs uppercase tracking-wide color-gray">Total</p>
-                                <p className="text-2xl font-bold">
-                                  {formatCurrency(computeSaleTotal(sale), menu?.currency)}
+                                <p className="text-xs uppercase tracking-wide color-gray">
+                                  {sale.net_total != null ? "Líquido" : "Total"}
                                 </p>
+                                <p className="text-2xl font-bold">
+                                  {formatCurrency(
+                                    sale.net_total != null ? Number(sale.net_total) : computeSaleTotal(sale),
+                                    menu?.currency,
+                                  )}
+                                </p>
+                                {sale.net_total != null ? (
+                                  <p className="text-xs color-gray mt-0.5">
+                                    Bruto: {formatCurrency(computeSaleTotal(sale), menu?.currency)}
+                                  </p>
+                                ) : null}
                               </div>
                             </div>
 
