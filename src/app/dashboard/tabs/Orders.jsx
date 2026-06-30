@@ -390,7 +390,6 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
         updated_at: new Date().toISOString(),
         total: grossTotal,
         delivery_fee: deliveryFee,
-        gross_total: grossTotal,
         net_total: netTotal,
       },
     ]);
