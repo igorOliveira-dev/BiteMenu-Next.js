@@ -36,25 +36,17 @@ export async function POST(req) {
         // ── Pedido via Stripe Connect ──────────────────────────
         if (session.mode === "payment" && session.metadata?.order_id) {
           const orderId = session.metadata.order_id;
+          const connectedAccountId = event.account; // conta conectada que originou o evento
 
           if (session.payment_status === "paid") {
             let netTotal = null;
 
             try {
-              // busca a conta conectada que foi salva no momento da criação do pedido
-              const { data: orderRow } = await supabase
-                .from("orders")
-                .select("stripe_connect_account_id")
-                .eq("id", orderId)
-                .single();
-
-              const accountId = event.account || orderRow?.stripe_connect_account_id;
-
-              if (session.payment_intent && accountId) {
+              if (session.payment_intent && connectedAccountId) {
                 const paymentIntent = await stripe.paymentIntents.retrieve(
                   session.payment_intent,
                   { expand: ["latest_charge.balance_transaction"] },
-                  { stripeAccount: accountId },
+                  { stripeAccount: connectedAccountId },
                 );
 
                 const charge = paymentIntent.latest_charge;
@@ -80,12 +72,9 @@ export async function POST(req) {
                     "xpf",
                   ];
                   const isZeroDecimal = zeroDecimalCurrencies.includes((balanceTransaction.currency || "").toLowerCase());
+
                   netTotal = isZeroDecimal ? balanceTransaction.net : balanceTransaction.net / 100;
-                } else {
-                  console.warn(`[Webhook] balance_transaction ausente para pedido ${orderId}`);
                 }
-              } else {
-                console.warn(`[Webhook] Sem accountId para buscar valor líquido do pedido ${orderId}`);
               }
             } catch (netErr) {
               console.error(`[Webhook] Erro ao buscar valor líquido do pedido ${orderId}:`, netErr.message);
