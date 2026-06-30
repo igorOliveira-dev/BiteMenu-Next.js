@@ -42,38 +42,50 @@ export async function POST(req) {
             let netTotal = null;
 
             try {
-              if (session.payment_intent && connectedAccountId) {
-                const paymentIntent = await stripe.paymentIntents.retrieve(
-                  session.payment_intent,
-                  { expand: ["latest_charge.balance_transaction"] },
-                  { stripeAccount: connectedAccountId },
-                );
+              if (session.payment_intent) {
+                // Busca a conta conectada via o pedido, já que event.account pode não vir preenchido
+                const { data: orderData } = await supabase
+                  .from("orders")
+                  .select("menu_id, menus(owner_id, profiles(stripe_connect_account_id))")
+                  .eq("id", orderId)
+                  .single();
 
-                const charge = paymentIntent.latest_charge;
-                const balanceTransaction = charge?.balance_transaction;
+                const accountId = connectedAccountId || orderData?.menus?.profiles?.stripe_connect_account_id;
 
-                if (balanceTransaction) {
-                  const zeroDecimalCurrencies = [
-                    "bif",
-                    "clp",
-                    "djf",
-                    "gnf",
-                    "jpy",
-                    "kmf",
-                    "krw",
-                    "mga",
-                    "pyg",
-                    "rwf",
-                    "ugx",
-                    "vnd",
-                    "vuv",
-                    "xaf",
-                    "xof",
-                    "xpf",
-                  ];
-                  const isZeroDecimal = zeroDecimalCurrencies.includes((balanceTransaction.currency || "").toLowerCase());
+                if (accountId) {
+                  const paymentIntent = await stripe.paymentIntents.retrieve(
+                    session.payment_intent,
+                    { expand: ["latest_charge.balance_transaction"] },
+                    { stripeAccount: accountId },
+                  );
 
-                  netTotal = isZeroDecimal ? balanceTransaction.net : balanceTransaction.net / 100;
+                  const charge = paymentIntent.latest_charge;
+                  const balanceTransaction = charge?.balance_transaction;
+
+                  if (balanceTransaction) {
+                    const zeroDecimalCurrencies = [
+                      "bif",
+                      "clp",
+                      "djf",
+                      "gnf",
+                      "jpy",
+                      "kmf",
+                      "krw",
+                      "mga",
+                      "pyg",
+                      "rwf",
+                      "ugx",
+                      "vnd",
+                      "vuv",
+                      "xaf",
+                      "xof",
+                      "xpf",
+                    ];
+                    const isZeroDecimal = zeroDecimalCurrencies.includes((balanceTransaction.currency || "").toLowerCase());
+                    netTotal = isZeroDecimal ? balanceTransaction.net : balanceTransaction.net / 100;
+                  }
+                } else {
+                  console.warn(`[Webhook] Não foi possível determinar a conta conectada do pedido ${orderId}`);
                 }
               }
             } catch (netErr) {
