@@ -470,7 +470,7 @@ const Sales = ({ setSelectedTab }) => {
                                       : sale.payment_method === "cash"
                                         ? "Dinheiro"
                                         : sale.payment_method === "stripe"
-                                          ? "Pagamentos Bite Menu"
+                                          ? "Stripe"
                                           : "Não informado"}
                               </span>
                               <span className="rounded-full border border-translucid px-3 py-1 color-gray bg-[var(--translucid)]">
@@ -654,6 +654,9 @@ const Sales = ({ setSelectedTab }) => {
                       </option>
                       <option className="text-black" value="cash">
                         Dinheiro
+                      </option>
+                      <option className="text-black" value="stripe">
+                        Stripe
                       </option>
                     </select>
                   </div>

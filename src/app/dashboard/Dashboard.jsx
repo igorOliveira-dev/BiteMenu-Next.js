@@ -147,7 +147,8 @@ const Dashboard = ({
           count: "exact",
           head: true,
         })
-        .eq("menu_id", menu.id);
+        .eq("menu_id", menu.id)
+        .or("payment_method.neq.stripe,is_paid.eq.true");
 
       if (error || typeof count !== "number") return;
 

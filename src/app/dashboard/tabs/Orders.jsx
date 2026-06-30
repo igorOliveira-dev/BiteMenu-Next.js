@@ -146,42 +146,6 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
     }
   }, [reloadTrigger]);
 
-  // detecta pagamento no stripe e atualiza o pedido em tempo real
-  useEffect(() => {
-    if (!menu?.id || !enabledOrders) return;
-
-    const channel = supabase
-      .channel(`orders:menu:${menu.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "orders",
-          filter: `menu_id=eq.${menu.id}`,
-        },
-        (payload) => {
-          const updated = payload.new;
-
-          setOrders((prev) =>
-            prev.map((o) => (o.id === updated.id ? { ...o, is_paid: updated.is_paid, updated_at: updated.updated_at } : o)),
-          );
-
-          setSelectedOrder((prev) => (prev?.id === updated.id ? { ...prev, is_paid: updated.is_paid } : prev));
-
-          if (updated.is_paid) {
-            customAlert(`Pagamento confirmado para ${updated.costumer_name || "cliente"} via Stripe!`, "success");
-            fetchSummary();
-          }
-        },
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [menu?.id, enabledOrders]);
-
   const resetAndFetch = async () => {
     setOrders([]);
     setPage(0);
@@ -194,6 +158,9 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
 
   const buildOrdersQuery = (filters) => {
     let q = supabase.from("orders").select("*", { count: "exact" }).eq("menu_id", menu.id);
+
+    // oculta pedidos Stripe enquanto não pagos
+    q = q.or("payment_method.neq.stripe,is_paid.eq.true");
 
     if (filters.isPaid === true) q = q.eq("is_paid", true);
     if (filters.isPaid === false) q = q.eq("is_paid", false);
@@ -223,6 +190,9 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
       .select("is_paid,service,items_list,updated_at,delivery_fee", { count: "exact" })
       .eq("menu_id", menu.id)
       .order("updated_at", { ascending: false });
+
+    // oculta pedidos Stripe enquanto não pagos
+    q = q.or("payment_method.neq.stripe,is_paid.eq.true");
 
     if (filters.isPaid === true) q = q.eq("is_paid", true);
     if (filters.isPaid === false) q = q.eq("is_paid", false);

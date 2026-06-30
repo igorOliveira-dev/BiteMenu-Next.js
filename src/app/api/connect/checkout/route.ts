@@ -54,8 +54,6 @@ export async function POST(request) {
       .eq("id", ownerId)
       .single();
 
-    console.log("👤 Perfil encontrado:", profile);
-
     if (profileError || !profile) {
       return NextResponse.json({ error: "Perfil do estabelecimento não encontrado." }, { status: 404 });
     }
