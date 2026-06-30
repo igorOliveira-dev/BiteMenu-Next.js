@@ -370,10 +370,14 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
       return customAlert("Erro ao localizar pedido", "error");
     }
 
-    const deliveryFee = deliveryFeeOnSales && order.service === "delivery" ? Number(order.delivery_fee) || 0 : 0;
     const subtotal = computeSubtotal(order);
-    const saleTotal = subtotal + deliveryFee;
+    const deliveryFee = deliveryFeeOnSales && order.service === "delivery" ? Number(order.delivery_fee) || 0 : 0;
+    const grossTotal = subtotal + deliveryFee;
 
+    const isStripeWithNet = order.payment_method === "stripe" && order.net_total != null;
+    const netTotal = isStripeWithNet ? Number(order.net_total) : grossTotal;
+
+    // total principal continua sendo o bruto (mantém compatibilidade com relatórios existentes)
     const { error: insertError } = await supabase.from("sales").insert([
       {
         menu_id: order.menu_id,
@@ -384,8 +388,10 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
         items_list: order.items_list,
         created_at: order.created_at,
         updated_at: new Date().toISOString(),
-        total: saleTotal,
+        total: grossTotal,
         delivery_fee: deliveryFee,
+        gross_total: grossTotal,
+        net_total: netTotal,
       },
     ]);
 

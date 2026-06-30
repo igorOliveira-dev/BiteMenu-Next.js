@@ -53,6 +53,7 @@ export async function POST(req: Request) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const orderId = session.metadata?.order_id;
+        const connectedAccountId = event.account; // conta conectada que gerou o evento
 
         if (!orderId) {
           console.warn("checkout.session.completed sem order_id no metadata.");
@@ -60,25 +61,70 @@ export async function POST(req: Request) {
         }
 
         if (session.payment_status === "paid") {
+          let netTotal: number | null = null;
+
+          try {
+            if (session.payment_intent && connectedAccountId) {
+              const paymentIntent = await stripe.paymentIntents.retrieve(
+                session.payment_intent as string,
+                { expand: ["latest_charge.balance_transaction"] },
+                { stripeAccount: connectedAccountId },
+              );
+
+              const charge = paymentIntent.latest_charge as Stripe.Charge | null;
+              const balanceTransaction = charge?.balance_transaction as Stripe.BalanceTransaction | null;
+
+              if (balanceTransaction) {
+                const isZeroDecimal = balanceTransaction.currency
+                  ? [
+                      "bif",
+                      "clp",
+                      "djf",
+                      "gnf",
+                      "jpy",
+                      "kmf",
+                      "krw",
+                      "mga",
+                      "pyg",
+                      "rwf",
+                      "ugx",
+                      "vnd",
+                      "vuv",
+                      "xaf",
+                      "xof",
+                      "xpf",
+                    ].includes(balanceTransaction.currency.toLowerCase())
+                  : false;
+
+                netTotal = isZeroDecimal ? balanceTransaction.net : balanceTransaction.net / 100;
+              }
+            }
+          } catch (netErr: any) {
+            // não bloqueia o fluxo principal se a busca do valor líquido falhar
+            console.error(`Erro ao buscar balance_transaction do pedido ${orderId}:`, netErr.message);
+          }
+
           const { error } = await supabase
             .from("orders")
             .update({
               is_paid: true,
               stripe_payment_intent: session.payment_intent ?? null,
+              net_total: netTotal,
               updated_at: new Date().toISOString(),
             })
             .eq("id", orderId);
 
           if (error) {
             console.error(`Erro ao atualizar pedido ${orderId} como pago:`, error);
-            // Retornar 500 faz o Stripe retentar automaticamente
             return new Response(JSON.stringify({ error: "DB update failed" }), {
               status: 500,
               headers: { "Content-Type": "application/json" },
             });
           }
 
-          console.log(`✅ Pedido ${orderId} marcado como pago. PaymentIntent: ${session.payment_intent}`);
+          console.log(
+            `✅ Pedido ${orderId} marcado como pago. PaymentIntent: ${session.payment_intent}. Líquido: ${netTotal}`,
+          );
         }
 
         break;
