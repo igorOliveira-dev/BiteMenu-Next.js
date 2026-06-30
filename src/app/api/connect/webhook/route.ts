@@ -54,6 +54,15 @@ export async function POST(req: Request) {
     return new Response(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
+  // Log de auditoria: todo evento que passa na verificação de assinatura.
+  // Isso garante visibilidade de TODOS os eventos recebidos neste endpoint,
+  // independente de termos um case pra eles ou não. Ajuda a confirmar se um
+  // tipo de evento (ex: charge.updated) está de fato configurado no Dashboard
+  // e chegando até aqui.
+  console.log(
+    `[connect-webhook] Evento recebido: type=${event.type} id=${event.id} account=${event.account ?? "N/A"} livemode=${event.livemode}`,
+  );
+
   try {
     switch (event.type) {
       case "account.updated": {
@@ -87,8 +96,14 @@ export async function POST(req: Request) {
         const orderId = session.metadata?.order_id;
         const connectedAccountId = event.account;
 
+        console.log(
+          `[checkout.session.completed] session=${session.id} order_id=${orderId ?? "AUSENTE"} payment_status=${session.payment_status} payment_intent=${session.payment_intent} account=${connectedAccountId ?? "AUSENTE"}`,
+        );
+
         if (!orderId) {
-          console.warn("checkout.session.completed sem order_id no metadata.");
+          console.warn(
+            `[checkout.session.completed] sem order_id no metadata. metadata bruto: ${JSON.stringify(session.metadata)}`,
+          );
           break;
         }
 
@@ -126,6 +141,13 @@ export async function POST(req: Request) {
               );
 
               const charge = paymentIntent.latest_charge as Stripe.Charge | null;
+
+              console.log(
+                `[net_total][tentativa imediata] pedido=${orderId} charge_id=${charge?.id ?? "N/A"} charge.balance_transaction=${
+                  charge?.balance_transaction ? JSON.stringify(charge.balance_transaction) : "null"
+                }`,
+              );
+
               const balanceTransaction = charge?.balance_transaction as Stripe.BalanceTransaction | null;
 
               if (balanceTransaction) {
@@ -146,13 +168,25 @@ export async function POST(req: Request) {
                   `[net_total] balance_transaction ainda não disponível para pedido ${orderId}; aguardando evento charge.updated.`,
                 );
               }
+            } else {
+              console.warn(
+                `[net_total][tentativa imediata] pulado: session.payment_intent=${session.payment_intent} connectedAccountId=${connectedAccountId}`,
+              );
             }
           } catch (netErr: any) {
+            // IMPORTANTE: este erro NÃO bloqueia o fluxo (charge.updated cobre o caso),
+            // mas logamos o stack completo para não mascarar problemas reais
+            // (ex: parâmetro inválido, conta sem permissão, etc).
             console.error(
               `[net_total] Erro ao tentar buscar balance_transaction antecipadamente para pedido ${orderId} (não bloqueia; charge.updated cobre):`,
               netErr.message,
+              netErr.stack,
             );
           }
+        } else {
+          console.log(
+            `[checkout.session.completed] payment_status="${session.payment_status}" (não é "paid"); pedido ${orderId} não foi marcado como pago.`,
+          );
         }
 
         break;
@@ -166,9 +200,21 @@ export async function POST(req: Request) {
         const orderId = charge.metadata?.order_id;
         const connectedAccountId = event.account;
 
+        // Log bruto ANTES de qualquer lógica condicional — essencial pra saber
+        // se o evento está chegando, se o metadata veio preenchido, e se a
+        // balance_transaction já está presente neste momento.
+        console.log(
+          `[charge.updated] RAW charge_id=${charge.id} order_id=${orderId ?? "AUSENTE"} status=${charge.status} paid=${charge.paid} balance_transaction=${JSON.stringify(
+            charge.balance_transaction,
+          )} metadata=${JSON.stringify(charge.metadata)} account=${connectedAccountId ?? "AUSENTE"}`,
+        );
+
         if (!orderId) {
           // Não é um charge relacionado a um pedido nosso (metadata vem do
           // payment_intent_data.metadata configurado na criação do checkout).
+          console.log(
+            `[charge.updated] Ignorado: sem order_id no metadata do charge ${charge.id}. Isso é esperado para charges fora do fluxo de pedidos.`,
+          );
           break;
         }
 
@@ -192,6 +238,10 @@ export async function POST(req: Request) {
             stripeAccount: connectedAccountId,
           });
 
+          console.log(
+            `[charge.updated] balance_transaction recuperada: id=${balanceTransaction.id} net=${balanceTransaction.net} currency=${balanceTransaction.currency} fee=${balanceTransaction.fee}`,
+          );
+
           const netTotal = calcNetTotal(balanceTransaction);
 
           const { error } = await supabase
@@ -209,7 +259,7 @@ export async function POST(req: Request) {
 
           console.log(`💰 net_total salvo via charge.updated para pedido ${orderId}: ${netTotal}`);
         } catch (err: any) {
-          console.error(`[charge.updated] Erro ao buscar balance_transaction do pedido ${orderId}:`, err.message);
+          console.error(`[charge.updated] Erro ao buscar balance_transaction do pedido ${orderId}:`, err.message, err.stack);
         }
 
         break;
