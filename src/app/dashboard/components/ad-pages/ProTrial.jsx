@@ -17,7 +17,7 @@ import {
 import { PaymentMethodModal } from "@/components/PlansSection";
 
 const ACCESS_COUNT_KEY = "bitemenu_free_access_count";
-const ACCESS_INTERVAL = 5;
+const ACCESS_INTERVAL = 3;
 
 const PRO_BENEFITS = [
   { icon: FiGrid, title: "Mais itens e categorias", description: "Até 200 itens e 20 categorias no seu cardápio." },
