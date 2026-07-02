@@ -22,6 +22,7 @@ import { supabase } from "@/lib/supabaseClient";
 import BiteMenuPayments from "./tabs/BiteMenuPayments";
 import useUser from "@/hooks/useUser";
 import { useSearchParams } from "next/navigation";
+import ProTrial from "./components/ad-pages/ProTrial";
 
 const Dashboard = ({
   menuState: externalMenuState,
@@ -417,6 +418,8 @@ const Dashboard = ({
         filename={`qrcode-${menu?.slug || slug || "menu"}`}
         onToast={(msg, type) => customAlert(msg, type === "error" ? "error" : undefined)}
       />
+
+      <ProTrial />
     </div>
   );
 };

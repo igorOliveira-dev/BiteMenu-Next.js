@@ -8,7 +8,7 @@ import GenericModal from "./GenericModal";
 import { useAlert } from "@/providers/AlertProvider";
 import useUser from "@/hooks/useUser";
 
-const PaymentMethodModal = ({ open, plan, selectedPlanTrial, onClose, onCredit, stripeLoading }) => {
+export const PaymentMethodModal = ({ open, plan, selectedPlanTrial, onClose, onCredit, stripeLoading }) => {
   const trialEndDate = new Date();
   trialEndDate.setDate(trialEndDate.getDate() + 7);
 
@@ -53,7 +53,6 @@ const PaymentMethodModal = ({ open, plan, selectedPlanTrial, onClose, onCredit, 
           <p className="mt-4 text-sm text-center">
             <span className="font-bold text-lg">7 dias grátis</span> <br /> Depois, R$ {plan?.price} por mês (cobrança
             automática), começando em {trialEndDate.toLocaleDateString("pt-BR")} <br />
-            Cancele antes da data para não ser cobrado.
           </p>
         ) : (
           <p className="mt-4 text-sm text-center">
