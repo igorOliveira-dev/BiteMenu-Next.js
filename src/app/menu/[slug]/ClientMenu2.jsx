@@ -12,6 +12,8 @@ import MenuFooter from "./components/MenuFooter";
 import { supabaseImg } from "@/lib/imageUtils";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import XButton from "@/components/XButton";
+import { useThemeColor } from "@/providers/ThemeColorProvider";
+import { useCookieConsent } from "@/providers/CookieConsentProvider";
 
 function getContrastTextColor(hex) {
   const DEFAULT_BACKGROUND = "#ffffff";
@@ -133,10 +135,22 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole, ownerStripeAc
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState({});
   const [note, setNote] = useState("");
+  const { bannerHeight } = useCookieConsent();
 
   const orderedCategories = useMemo(() => {
     return (menu?.categories || []).slice().sort((a, b) => Number(a.position ?? 0) - Number(b.position ?? 0));
   }, [menu?.categories]);
+
+  const { setColors } = useThemeColor();
+
+  useEffect(() => {
+    setColors({
+      background: menu.background_color,
+      details: menu.details_color,
+    });
+
+    return () => setColors(null); // volta ao padrão ao sair da página
+  }, [menu.background_color, menu.details_color, setColors]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredCategories, setFilteredCategories] = useState(orderedCategories);
@@ -366,6 +380,7 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole, ownerStripeAc
     const cartButton = document.getElementById("cart-button-wrapper");
     const footer = document.querySelector("footer");
     if (!cartButton || !footer) return;
+
     let raf = 0;
     const onScroll = () => {
       if (raf) return;
@@ -373,17 +388,22 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole, ownerStripeAc
         raf = 0;
         const footerRect = footer.getBoundingClientRect();
         const windowHeight = window.innerHeight;
-        if (footerRect.top < windowHeight) cartButton.style.bottom = `${windowHeight - footerRect.top + 20}px`;
-        else cartButton.style.bottom = "20px";
+
+        if (footerRect.top < windowHeight) {
+          cartButton.style.bottom = `${windowHeight - footerRect.top + 20}px`;
+        } else {
+          cartButton.style.bottom = `${20 + bannerHeight}px`;
+        }
       });
     };
+
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
     return () => {
       window.removeEventListener("scroll", onScroll);
       if (raf) cancelAnimationFrame(raf);
     };
-  }, []);
+  }, [bannerHeight]);
 
   useEffect(() => {
     if (imagePreviewOpen) {

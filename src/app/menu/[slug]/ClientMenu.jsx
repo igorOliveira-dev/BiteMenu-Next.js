@@ -12,6 +12,8 @@ import MenuFooter from "./components/MenuFooter";
 import { supabaseImg } from "@/lib/imageUtils";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import XButton from "@/components/XButton";
+import { useThemeColor } from "@/providers/ThemeColorProvider";
+import { useCookieConsent } from "@/providers/CookieConsentProvider";
 
 // util para contraste de cor
 function getContrastTextColor(hex) {
@@ -146,12 +148,24 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState({});
   const [note, setNote] = useState("");
+  const { bannerHeight } = useCookieConsent();
 
   const orderedCategories = useMemo(() => {
     return (menu?.categories || []).slice().sort((a, b) => {
       return Number(a.position ?? 0) - Number(b.position ?? 0);
     });
   }, [menu?.categories]);
+
+  const { setColors } = useThemeColor();
+
+  useEffect(() => {
+    setColors({
+      background: menu.background_color,
+      details: menu.details_color,
+    });
+
+    return () => setColors(null); // volta ao padrão ao sair da página
+  }, [menu.background_color, menu.details_color, setColors]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredCategories, setFilteredCategories] = useState(orderedCategories);
@@ -410,7 +424,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
         if (footerRect.top < windowHeight) {
           cartButton.style.bottom = `${windowHeight - footerRect.top + 20}px`;
         } else {
-          cartButton.style.bottom = "20px";
+          cartButton.style.bottom = `${20 + bannerHeight}px`;
         }
       });
     };
@@ -421,7 +435,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
       window.removeEventListener("scroll", onScroll);
       if (raf) cancelAnimationFrame(raf);
     };
-  }, []);
+  }, [bannerHeight]);
 
   useEffect(() => {
     if (imagePreviewOpen) {

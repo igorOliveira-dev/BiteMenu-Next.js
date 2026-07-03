@@ -4,6 +4,9 @@ import { AlertProvider } from "@/providers/AlertProvider";
 import GA from "@/components/GA";
 import logoMark from "../../public/LogoMarca-sem-fundo.png";
 import PWAGuard from "./PWAGuard";
+import { CookieConsentProvider } from "@/providers/CookieConsentProvider";
+import CookieBanner from "@/components/CookieBanner";
+import { ThemeColorProvider } from "@/providers/ThemeColorProvider";
 
 export const metadata = {
   metadataBase: new URL("https://www.bitemenu.com.br"),
@@ -62,13 +65,18 @@ export default function RootLayout({ children }) {
   return (
     <html lang="pt-br">
       <body className={`antialiased`}>
-        <ConfirmProvider>
-          <AlertProvider>
-            <PWAGuard />
-            {children}
-            <GA />
-          </AlertProvider>
-        </ConfirmProvider>
+        <ThemeColorProvider>
+          <CookieConsentProvider>
+            <ConfirmProvider>
+              <AlertProvider>
+                <PWAGuard />
+                {children}
+                <GA />
+                <CookieBanner />
+              </AlertProvider>
+            </ConfirmProvider>
+          </CookieConsentProvider>
+        </ThemeColorProvider>
       </body>
     </html>
   );

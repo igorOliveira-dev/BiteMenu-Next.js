@@ -3,6 +3,7 @@
 import Script from "next/script";
 import { Suspense, useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
+import { useCookieConsent } from "@/providers/CookieConsentProvider";
 
 function GATracker() {
   const pathname = usePathname();
@@ -20,6 +21,10 @@ function GATracker() {
 }
 
 export default function GA() {
+  const { consent } = useCookieConsent();
+
+  if (consent !== "granted") return null;
+
   return (
     <>
       <Script src="https://www.googletagmanager.com/gtag/js?id=G-8EMPPK3PCK" strategy="afterInteractive" />
@@ -29,15 +34,13 @@ export default function GA() {
         strategy="afterInteractive"
         dangerouslySetInnerHTML={{
           __html: `
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      window.gtag = gtag;
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            window.gtag = gtag;
 
-      gtag('js', new Date());
-
-      gtag('config', 'G-8EMPPK3PCK');
-      gtag('config', 'AW-18270024859');
-    `,
+            gtag('js', new Date());
+            gtag('config', 'G-8EMPPK3PCK', { send_page_view: false });
+          `,
         }}
       />
 
