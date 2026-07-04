@@ -1094,17 +1094,20 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     if (t === "category") {
       if (!data.name.trim()) {
         alert?.("O nome da categoria não pode estar vazio.", "error");
+        setSaving(false);
         return;
       }
     } else if (t === "item") {
       if (!data.name.trim()) {
         alert?.("O nome do item não pode estar vazio.", "error");
+        setSaving(false);
         return;
       }
 
       const priceNum = parseFloat(String(data.price).replace(",", "."));
       if (isNaN(priceNum)) {
         alert?.("O preço deve ser um número válido.", "error");
+        setSaving(false);
         return;
       }
       data.price = priceNum;
