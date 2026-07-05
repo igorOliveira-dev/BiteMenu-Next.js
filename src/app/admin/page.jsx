@@ -5,6 +5,7 @@ import useAllMenus from "@/hooks/useAllMenus";
 import { supabase } from "@/lib/supabaseClient";
 import Loading from "@/components/Loading";
 import Return from "@/components/Return";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const Admin = () => {
   const { menus, loading: menusLoading } = useAllMenus();
@@ -14,6 +15,12 @@ const Admin = () => {
   const [showOnlyPaid, setShowOnlyPaid] = useState(false);
   const [search, setSearch] = useState("");
   const [avgPerWeekday, setAvgPerWeekday] = useState(null);
+  const [monthlyGrowth, setMonthlyGrowth] = useState([]);
+
+  // 🔹 Evolução de assinantes por plano (via Stripe, CPF + CNPJ)
+  const [planGrowth, setPlanGrowth] = useState({ plus: [], pro: [] });
+  const [planGrowthLoading, setPlanGrowthLoading] = useState(true);
+  const [planGrowthError, setPlanGrowthError] = useState(null);
 
   const [sortByLastAccess, setSortByLastAccess] = useState(false);
   const [onlyLast7Days, setOnlyLast7Days] = useState(false);
@@ -87,6 +94,61 @@ const Admin = () => {
     setAvgPerWeekday(averages);
   }, [fullMenus]);
 
+  // 🔹 Crescimento acumulado de clientes por mês (baseado nos menus)
+  useEffect(() => {
+    if (fullMenus.length === 0) {
+      setMonthlyGrowth([]);
+      return;
+    }
+
+    const sorted = [...fullMenus].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+    const monthlyCounts = {};
+    sorted.forEach((m) => {
+      const date = new Date(m.created_at);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      monthlyCounts[key] = (monthlyCounts[key] || 0) + 1;
+    });
+
+    const sortedKeys = Object.keys(monthlyCounts).sort();
+    let cumulative = 0;
+
+    const data = sortedKeys.map((key) => {
+      cumulative += monthlyCounts[key];
+      const [year, month] = key.split("-");
+      const label = new Date(Number(year), Number(month) - 1).toLocaleDateString("pt-BR", {
+        month: "short",
+        year: "2-digit",
+      });
+      return { month: label, total: cumulative };
+    });
+
+    setMonthlyGrowth(data);
+  }, [fullMenus]);
+
+  // 🔹 Buscar evolução de assinantes por plano (Stripe: CPF + CNPJ)
+  useEffect(() => {
+    const fetchPlanGrowth = async () => {
+      setPlanGrowthLoading(true);
+      setPlanGrowthError(null);
+
+      try {
+        const res = await fetch("/api/admin/stripe-subscriptions");
+        if (!res.ok) throw new Error("Falha ao buscar dados do Stripe");
+
+        const data = await res.json();
+        setPlanGrowth({ plus: data.plus || [], pro: data.pro || [] });
+      } catch (err) {
+        console.error("Erro ao buscar evolução por plano:", err);
+        setPlanGrowthError("Não foi possível carregar os dados do Stripe.");
+      } finally {
+        setPlanGrowthLoading(false);
+      }
+    };
+
+    fetchPlanGrowth();
+  }, []);
+
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
   }, [showOnlyPaid, search, sortByLastAccess, onlyLast7Days, showOnlyPlusPro]);
@@ -115,7 +177,6 @@ const Admin = () => {
   if (sortByLastAccess) {
     visibleMenus.sort((a, b) => new Date(b.last_access_at || 0) - new Date(a.last_access_at || 0));
   } else {
-    // fallback natural: mais recentes primeiro
     visibleMenus.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   }
 
@@ -132,6 +193,95 @@ const Admin = () => {
         <Return />
         <h1 className="default-h1 text-center">Admin dashboard</h1>
       </div>
+
+      {/* 🔹 Gráfico de crescimento acumulado de clientes (menus) */}
+      {monthlyGrowth.length > 0 && (
+        <div className="w-full max-w-4xl mx-auto h-64 mb-10">
+          <h3 className="text-sm text-gray-400 mb-2 text-center">Crescimento acumulado de clientes por mês</h3>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={monthlyGrowth}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+              <XAxis dataKey="month" stroke="#999" fontSize={12} />
+              <YAxis stroke="#999" fontSize={12} allowDecimals={false} />
+              <Tooltip
+                contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #333" }}
+                labelStyle={{ color: "#fff" }}
+              />
+              <Area
+                type="monotone"
+                dataKey="total"
+                name="Total de clientes"
+                stroke="#3b82f6"
+                fill="#3b82f6"
+                fillOpacity={0.2}
+                strokeWidth={2}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* 🔹 Gráficos de evolução de assinantes por plano (Stripe: CPF + CNPJ) */}
+      <div className="w-full max-w-6xl mx-auto mb-10">
+        <h3 className="text-sm text-gray-400 mb-4 text-center">Evolução de assinantes por plano (Stripe · CPF + CNPJ)</h3>
+
+        {planGrowthError ? (
+          <p className="text-center text-red-400 text-sm">{planGrowthError}</p>
+        ) : planGrowthLoading ? (
+          <p className="text-center text-gray-500 text-sm">Carregando dados do Stripe...</p>
+        ) : (
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="w-full md:w-1/2 h-64">
+              <p className="text-xs text-blue-400 mb-2 text-center">Plus</p>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={planGrowth.plus}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                  <XAxis dataKey="month" stroke="#999" fontSize={12} />
+                  <YAxis stroke="#999" fontSize={12} allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #333" }}
+                    labelStyle={{ color: "#fff" }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="total"
+                    name="Assinantes Plus"
+                    stroke="#3b82f6"
+                    fill="#3b82f6"
+                    fillOpacity={0.2}
+                    strokeWidth={2}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="w-full md:w-1/2 h-64">
+              <p className="text-xs text-blue-900 mb-2 text-center">Pro</p>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={planGrowth.pro}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                  <XAxis dataKey="month" stroke="#999" fontSize={12} />
+                  <YAxis stroke="#999" fontSize={12} allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #333" }}
+                    labelStyle={{ color: "#fff" }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="total"
+                    name="Assinantes Pro"
+                    stroke="#1e3a8a"
+                    fill="#1e3a8a"
+                    fillOpacity={0.3}
+                    strokeWidth={2}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* 🔹 Filtros */}
       <div className="flex flex-col items-center gap-4 mb-4">
         <input
