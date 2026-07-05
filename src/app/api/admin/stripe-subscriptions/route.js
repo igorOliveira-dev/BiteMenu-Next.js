@@ -1,14 +1,12 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { supabase } from "@/lib/supabaseClient";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-// 🔹 Um client Stripe para cada conta (CPF e CNPJ)
 const stripeClients = {
   cpf: process.env.STRIPE_SECRET_KEY_CPF ? new Stripe(process.env.STRIPE_SECRET_KEY_CPF) : null,
   cnpj: process.env.STRIPE_SECRET_KEY_CNPJ ? new Stripe(process.env.STRIPE_SECRET_KEY_CNPJ) : null,
 };
 
-// 🔹 Busca TODAS as assinaturas de um price_id, paginando
 async function fetchAllSubscriptionsForPrice(stripe, priceId) {
   const all = [];
   let startingAfter;
@@ -17,7 +15,7 @@ async function fetchAllSubscriptionsForPrice(stripe, priceId) {
   while (hasMore) {
     const page = await stripe.subscriptions.list({
       price: priceId,
-      status: "all", // inclui active, trialing, canceled, past_due, etc.
+      status: "all",
       limit: 100,
       starting_after: startingAfter,
     });
@@ -30,32 +28,61 @@ async function fetchAllSubscriptionsForPrice(stripe, priceId) {
   return all;
 }
 
-// 🔹 Agrega uma lista de { created } em contagem mensal cumulativa
-function buildMonthlyGrowth(items) {
-  const sorted = [...items].sort((a, b) => a.created - b.created);
+function monthKey(unixSeconds) {
+  const date = new Date(unixSeconds * 1000);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
 
-  const monthlyCounts = {};
-  sorted.forEach(({ created }) => {
-    const date = new Date(created * 1000);
-    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-    monthlyCounts[key] = (monthlyCounts[key] || 0) + 1;
+function monthLabel(key) {
+  const [year, month] = key.split("-");
+  return new Date(Number(year), Number(month) - 1).toLocaleDateString("pt-BR", {
+    month: "short",
+    year: "2-digit",
+  });
+}
+
+// 🔹 Agora calcula: novos, cancelados, e ativos líquidos acumulados por mês
+function buildMonthlyStats(items) {
+  const newByMonth = {};
+  const canceledByMonth = {};
+
+  items.forEach(({ created, canceled_at, status }) => {
+    const createdKey = monthKey(created);
+    newByMonth[createdKey] = (newByMonth[createdKey] || 0) + 1;
+
+    // Considera cancelado apenas se realmente tem canceled_at
+    // (cobre canceled, e status incomplete_expired não conta como churn real)
+    if (canceled_at && status !== "incomplete_expired") {
+      const cancelKey = monthKey(canceled_at);
+      canceledByMonth[cancelKey] = (canceledByMonth[cancelKey] || 0) + 1;
+    }
   });
 
-  const sortedKeys = Object.keys(monthlyCounts).sort();
-  let cumulative = 0;
+  const allKeys = new Set([...Object.keys(newByMonth), ...Object.keys(canceledByMonth)]);
+  const sortedKeys = [...allKeys].sort();
+
+  let cumulativeActive = 0;
 
   return sortedKeys.map((key) => {
-    cumulative += monthlyCounts[key];
-    const [year, month] = key.split("-");
-    const label = new Date(Number(year), Number(month) - 1).toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
-    return { month: label, total: cumulative };
+    const novos = newByMonth[key] || 0;
+    const cancelados = canceledByMonth[key] || 0;
+    cumulativeActive += novos - cancelados;
+
+    return {
+      month: monthLabel(key),
+      novos,
+      cancelados,
+      saldo: novos - cancelados,
+      total: cumulativeActive, // 🔹 agora é o total LÍQUIDO de ativos, não bruto
+    };
   });
 }
 
 export async function GET() {
   try {
-    // 1. Buscar mapeamento de planos (price_id -> role / conta) no Supabase
-    const { data: plans, error: plansError } = await supabase.from("plans").select("stripe_price_id, role, stripe_account");
+    const { data: plans, error: plansError } = await supabaseAdmin
+      .from("plans")
+      .select("stripe_price_id, role, stripe_account");
 
     if (plansError) throw plansError;
     if (!plans || plans.length === 0) {
@@ -67,7 +94,6 @@ export async function GET() {
       roleByPriceId[p.stripe_price_id] = p.role;
     });
 
-    // 2. Buscar assinaturas de cada price_id, na conta Stripe correta
     const results = await Promise.all(
       plans.map(async (plan) => {
         const stripe = stripeClients[plan.stripe_account];
@@ -81,19 +107,20 @@ export async function GET() {
         return subs.map((sub) => ({
           role: roleByPriceId[plan.stripe_price_id],
           created: sub.created,
+          canceled_at: sub.canceled_at, // 🔹 novo campo capturado
+          status: sub.status,
         }));
       }),
     );
 
     const allSubscriptions = results.flat();
 
-    // 3. Separar por role e agregar mês a mês
     const plusItems = allSubscriptions.filter((s) => s.role === "plus");
     const proItems = allSubscriptions.filter((s) => s.role === "pro");
 
     return NextResponse.json({
-      plus: buildMonthlyGrowth(plusItems),
-      pro: buildMonthlyGrowth(proItems),
+      plus: buildMonthlyStats(plusItems),
+      pro: buildMonthlyStats(proItems),
     });
   } catch (err) {
     console.error("Erro ao buscar assinaturas Stripe:", err);

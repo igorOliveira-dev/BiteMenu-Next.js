@@ -5,7 +5,19 @@ import useAllMenus from "@/hooks/useAllMenus";
 import { supabase } from "@/lib/supabaseClient";
 import Loading from "@/components/Loading";
 import Return from "@/components/Return";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  ComposedChart,
+  Legend,
+  Bar,
+  Line,
+} from "recharts";
 
 const Admin = () => {
   const { menus, loading: menusLoading } = useAllMenus();
@@ -17,7 +29,7 @@ const Admin = () => {
   const [avgPerWeekday, setAvgPerWeekday] = useState(null);
   const [monthlyGrowth, setMonthlyGrowth] = useState([]);
 
-  // 🔹 Evolução de assinantes por plano (via Stripe, CPF + CNPJ)
+  const [showCharts, setShowCharts] = useState(true);
   const [planGrowth, setPlanGrowth] = useState({ plus: [], pro: [] });
   const [planGrowthLoading, setPlanGrowthLoading] = useState(true);
   const [planGrowthError, setPlanGrowthError] = useState(null);
@@ -194,47 +206,19 @@ const Admin = () => {
         <h1 className="default-h1 text-center">Admin dashboard</h1>
       </div>
 
-      {/* 🔹 Gráfico de crescimento acumulado de clientes (menus) */}
-      {monthlyGrowth.length > 0 && (
-        <div className="w-full max-w-4xl mx-auto h-64 mb-10">
-          <h3 className="text-sm text-gray-400 mb-2 text-center">Crescimento acumulado de clientes por mês</h3>
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={monthlyGrowth}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-              <XAxis dataKey="month" stroke="#999" fontSize={12} />
-              <YAxis stroke="#999" fontSize={12} allowDecimals={false} />
-              <Tooltip
-                contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #333" }}
-                labelStyle={{ color: "#fff" }}
-              />
-              <Area
-                type="monotone"
-                dataKey="total"
-                name="Total de clientes"
-                stroke="#3b82f6"
-                fill="#3b82f6"
-                fillOpacity={0.2}
-                strokeWidth={2}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+      <p className="text-center mb-4 text-sm">
+        <button onClick={() => setShowCharts(!showCharts)}>{showCharts ? "Ocultar gráficos" : "Mostrar gráficos"}</button>
+      </p>
 
-      {/* 🔹 Gráficos de evolução de assinantes por plano (Stripe: CPF + CNPJ) */}
-      <div className="w-full max-w-6xl mx-auto mb-10">
-        <h3 className="text-sm text-gray-400 mb-4 text-center">Evolução de assinantes por plano (Stripe · CPF + CNPJ)</h3>
-
-        {planGrowthError ? (
-          <p className="text-center text-red-400 text-sm">{planGrowthError}</p>
-        ) : planGrowthLoading ? (
-          <p className="text-center text-gray-500 text-sm">Carregando dados do Stripe...</p>
-        ) : (
-          <div className="flex flex-col md:flex-row gap-6">
-            <div className="w-full md:w-1/2 h-64">
-              <p className="text-xs text-blue-400 mb-2 text-center">Plus</p>
+      {showCharts && (
+        <>
+          {" "}
+          {/* 🔹 Gráfico de crescimento acumulado de clientes (menus) */}
+          {monthlyGrowth.length > 0 && (
+            <div className="w-full max-w-4xl mx-auto h-64 mb-10">
+              <h3 className="text-sm text-gray-400 mb-2 text-center">Crescimento acumulado de clientes por mês</h3>
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={planGrowth.plus}>
+                <AreaChart data={monthlyGrowth}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                   <XAxis dataKey="month" stroke="#999" fontSize={12} />
                   <YAxis stroke="#999" fontSize={12} allowDecimals={false} />
@@ -245,7 +229,7 @@ const Admin = () => {
                   <Area
                     type="monotone"
                     dataKey="total"
-                    name="Assinantes Plus"
+                    name="Total de clientes"
                     stroke="#3b82f6"
                     fill="#3b82f6"
                     fillOpacity={0.2}
@@ -254,33 +238,56 @@ const Admin = () => {
                 </AreaChart>
               </ResponsiveContainer>
             </div>
+          )}
+          {/* 🔹 Gráficos de evolução de assinantes por plano (Stripe: CPF + CNPJ) */}
+          <div className="w-full max-w-6xl mx-auto mb-10">
+            <h3 className="text-sm text-gray-400 mb-4 text-center">Evolução de assinantes por plano</h3>
 
-            <div className="w-full md:w-1/2 h-64">
-              <p className="text-xs text-blue-900 mb-2 text-center">Pro</p>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={planGrowth.pro}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                  <XAxis dataKey="month" stroke="#999" fontSize={12} />
-                  <YAxis stroke="#999" fontSize={12} allowDecimals={false} />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #333" }}
-                    labelStyle={{ color: "#fff" }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="total"
-                    name="Assinantes Pro"
-                    stroke="#1e3a8a"
-                    fill="#1e3a8a"
-                    fillOpacity={0.3}
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+            {planGrowthError ? (
+              <p className="text-center text-red-400 text-sm">{planGrowthError}</p>
+            ) : planGrowthLoading ? (
+              <p className="text-center text-gray-500 text-sm">Carregando dados do Stripe...</p>
+            ) : (
+              <div className="flex flex-col gap-10">
+                {[
+                  { key: "plus", label: "Plus", color: "#3b82f6" },
+                  { key: "pro", label: "Pro", color: "#1e3a8a" },
+                ].map(({ key, label, color }) => (
+                  <div key={key} className="w-full">
+                    <p className="text-xs mb-2 text-center" style={{ color }}>
+                      {label}
+                    </p>
+                    <div className="w-full h-72">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={planGrowth[key]}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                          <XAxis dataKey="month" stroke="#999" fontSize={12} />
+                          <YAxis stroke="#999" fontSize={12} allowDecimals={false} />
+                          <Tooltip
+                            contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #333" }}
+                            labelStyle={{ color: "#fff" }}
+                          />
+                          <Legend wrapperStyle={{ fontSize: 12 }} />
+                          <Bar dataKey="novos" name="Novos assinantes" fill={color} fillOpacity={0.6} />
+                          <Bar dataKey="cancelados" name="Cancelamentos" fill="#ef4444" fillOpacity={0.6} />
+                          <Line
+                            type="monotone"
+                            dataKey="total"
+                            name="Total líquido acumulado"
+                            stroke="#22c55e"
+                            strokeWidth={2}
+                            dot={false}
+                          />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
 
       {/* 🔹 Filtros */}
       <div className="flex flex-col items-center gap-4 mb-4">
