@@ -29,6 +29,9 @@ import { uploadItemImage } from "@/lib/uploadImage";
 import UpdatePlanModal from "../UpdatePlanModal";
 import { fileToWebp } from "@/app/utils/imageToWebp";
 import { trackAction } from "@/utils/userActions";
+import { FaEllipsisVertical } from "react-icons/fa6";
+import { createPortal } from "react-dom";
+import { useLayoutEffect } from "react";
 
 function getContrastTextColor(hex) {
   const cleanHex = (hex || "").replace("#", "");
@@ -40,6 +43,129 @@ function getContrastTextColor(hex) {
 }
 
 const uid = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `tmp-${Date.now()}`);
+
+function findScrollParent(el) {
+  let parent = el?.parentElement;
+  while (parent) {
+    const style = getComputedStyle(parent);
+    const overflowY = style.overflowY;
+    if ((overflowY === "auto" || overflowY === "scroll") && parent.scrollHeight > parent.clientHeight) {
+      return parent;
+    }
+    parent = parent.parentElement;
+  }
+  return window;
+}
+
+function ItemActionsMenu({ anchorRef, onClose, children, menuBg, borderColor }) {
+  const menuRef = useRef(null);
+  const [pos, setPos] = useState(null);
+  const [ready, setReady] = useState(false);
+
+  useLayoutEffect(() => {
+    function updatePosition() {
+      if (!anchorRef.current || !menuRef.current) return;
+
+      const margin = 8;
+      const gap = 6;
+
+      const anchorRect = anchorRef.current.getBoundingClientRect();
+      const menuRect = menuRef.current.getBoundingClientRect();
+
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      const spaceBelow = viewportHeight - anchorRect.bottom;
+      const spaceAbove = anchorRect.top;
+
+      let top;
+      if (spaceBelow >= menuRect.height + gap || spaceBelow >= spaceAbove) {
+        top = anchorRect.bottom + gap;
+      } else {
+        top = anchorRect.top - menuRect.height - gap;
+      }
+      top = Math.min(Math.max(top, margin), viewportHeight - menuRect.height - margin);
+
+      const spaceRightAligned = anchorRect.right - menuRect.width;
+      const spaceLeftAligned = viewportWidth - (anchorRect.left + menuRect.width);
+
+      let left;
+      if (spaceRightAligned < margin && spaceLeftAligned >= margin) {
+        left = anchorRect.left;
+      } else {
+        left = anchorRect.right - menuRect.width;
+      }
+      left = Math.min(Math.max(left, margin), viewportWidth - menuRect.width - margin);
+
+      setPos({ top, left });
+      setReady(true);
+    }
+
+    updatePosition();
+  }, [anchorRef]);
+
+  useEffect(() => {
+    if (!anchorRef.current) return;
+
+    const scrollParent = findScrollParent(anchorRef.current);
+    const target = scrollParent === window ? window : scrollParent;
+
+    const initialTop = scrollParent === window ? window.scrollY : scrollParent.scrollTop;
+    const initialLeft = scrollParent === window ? window.scrollX : scrollParent.scrollLeft;
+
+    function handleScroll() {
+      const currentTop = scrollParent === window ? window.scrollY : scrollParent.scrollTop;
+      const currentLeft = scrollParent === window ? window.scrollX : scrollParent.scrollLeft;
+
+      const dy = Math.abs(currentTop - initialTop);
+      const dx = Math.abs(currentLeft - initialLeft);
+
+      if (dy > 4 || dx > 4) {
+        onClose();
+      }
+    }
+
+    target.addEventListener("scroll", handleScroll);
+    return () => target.removeEventListener("scroll", handleScroll);
+  }, [anchorRef, onClose]);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(e.target) &&
+        anchorRef.current &&
+        !anchorRef.current.contains(e.target)
+      ) {
+        onClose();
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [anchorRef, onClose]);
+
+  return createPortal(
+    <div
+      ref={menuRef}
+      style={{
+        position: "fixed",
+        top: pos ? pos.top : -9999,
+        left: pos ? pos.left : -9999,
+        visibility: ready ? "visible" : "hidden",
+        backgroundColor: menuBg,
+        border: `1px solid ${borderColor}`,
+        borderRadius: 8,
+        overflow: "hidden",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+        zIndex: 9999,
+        minWidth: 170,
+      }}
+    >
+      {children}
+    </div>,
+    document.body,
+  );
+}
 
 function SortableMenuItem({
   item,
@@ -58,6 +184,15 @@ function SortableMenuItem({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
   });
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuBtnRef = useRef(null);
+
+  const isLightBg = getContrastTextColor(backgroundColor) === "white";
+  const menuBg = isLightBg ? "#2b2b2b" : "#ffffff";
+  const menuBorder = isLightBg ? "#ffffff20" : "#00000015";
+  const menuHover = isLightBg ? "#ffffff10" : "#00000008";
+  const menuText = isLightBg ? "#eaeaea" : "#171717";
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -79,99 +214,123 @@ function SortableMenuItem({
         }}
       >
         <div
-          className="flex-1 min-w-0 p-2 sm:p-3 min-h-[148px] flex flex-col justify-between"
+          className="flex-1 min-w-0 p-2 sm:p-3 min-h-[100px] flex flex-col justify-between relative"
           style={{
-            backgroundColor: getContrastTextColor(backgroundColor) === "white" ? "#ffffff10" : "#00000010",
+            backgroundColor: isLightBg ? "#ffffff10" : "#00000010",
           }}
         >
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex items-start gap-3 min-w-0">
-              {item.image_url && (
-                <div
-                  {...dragHandleProps}
-                  className="cursor-grab active:cursor-grabbing"
-                  style={{ touchAction: "none", flexShrink: 0 }}
-                >
-                  <img
-                    src={item.image_url}
-                    alt={item.name}
-                    loading="lazy"
-                    decoding="async"
-                    draggable={false}
-                    className="w-[54px] h-[54px] object-cover rounded-lg sm:rounded-l-lg"
-                  />
-                </div>
-              )}
+          {/* Botão de ações, flutuante, fora do fluxo do layout */}
+          <button
+            ref={menuBtnRef}
+            type="button"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => setMenuOpen((prev) => !prev)}
+            className="cursor-pointer absolute top-2 right-2 p-2 rounded"
+            style={{
+              backgroundColor: getContrastTextColor(backgroundColor) === "white" ? "#ffffff25" : "#00000025",
+              color: foregroundToUse,
+            }}
+          >
+            <FaEllipsisVertical />
+          </button>
 
-              <div className="min-w-0">
-                <div className="text-xl line-clamp-1" style={{ color: foregroundToUse }}>
-                  {item.name}
-                </div>
+          {menuOpen && (
+            <ItemActionsMenu
+              anchorRef={menuBtnRef}
+              onClose={() => setMenuOpen(false)}
+              menuBg={menuBg}
+              borderColor={menuBorder}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  toggleItemVisibility(item.id, item.visible);
+                  setMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-3 text-sm text-left cursor-pointer transition"
+                style={{ color: menuText }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = menuHover)}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+              >
+                {item.visible === false ? <FaEye size={13} /> : <FaEyeSlash size={13} />}
+                {item.visible === false ? "Exibir item" : "Ocultar item"}
+              </button>
 
-                <div className="text-sm line-clamp-2" style={{ color: grayToUse }}>
-                  {item.description}
-                </div>
+              <button
+                type="button"
+                onClick={() => {
+                  openItemModal("edit", cat.id, item);
+                  setMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-3 text-sm text-left cursor-pointer transition"
+                style={{ color: menuText }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = menuHover)}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+              >
+                <FaPen size={13} />
+                Editar item
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  deleteItem(cat.id, item.id);
+                  setMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left cursor-pointer transition text-red-500"
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = menuHover)}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+              >
+                <FaTrash size={13} />
+                Excluir item
+              </button>
+            </ItemActionsMenu>
+          )}
+
+          <div className="flex items-start gap-3 min-w-0 pr-8">
+            {item.image_url && (
+              <div
+                {...dragHandleProps}
+                className="cursor-grab active:cursor-grabbing"
+                style={{ touchAction: "none", flexShrink: 0 }}
+              >
+                <img
+                  src={item.image_url}
+                  alt={item.name}
+                  loading="lazy"
+                  decoding="async"
+                  draggable={false}
+                  className="w-[54px] h-[54px] object-cover rounded-lg sm:rounded-l-lg"
+                />
+              </div>
+            )}
+
+            <div className="min-w-0">
+              <div className="text-xl line-clamp-1" style={{ color: foregroundToUse }}>
+                {item.name}
+              </div>
+              <div className="text-sm line-clamp-1" style={{ color: grayToUse }}>
+                {item.description}
               </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-between w-full mt-2 gap-2">
-            <div {...dragHandleProps} className="cursor-grab active:cursor-grabbing" style={{ touchAction: "none" }}>
-              {item.promo_price && canShowPromoPrice ? (
-                <div>
-                  <span className="text-sm line-through" style={{ color: grayToUse }}>
-                    {formatCurrency(item.price, currency)}
-                  </span>
-                  <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
-                    {formatCurrency(item.promo_price, currency)}
-                  </div>
-                </div>
-              ) : (
+          <div className="mt-2">
+            {item.promo_price && canShowPromoPrice ? (
+              <div className="flex items-baseline gap-2">
                 <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
-                  {item.price ? formatCurrency(item.price, currency) : "-"}
+                  {formatCurrency(item.promo_price, currency)}
                 </div>
-              )}
-            </div>
-
-            <button
-              type="button"
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => toggleItemVisibility(item.id, item.visible)}
-              className="cursor-pointer mr-2 px-6 py-2 rounded"
-              style={{ backgroundColor: detailsColor }}
-            >
-              {item.visible ? (
-                <FaEyeSlash style={{ color: getContrastTextColor(detailsColor) }} />
-              ) : (
-                <FaEye style={{ color: getContrastTextColor(detailsColor) }} />
-              )}
-            </button>
+                <span className="text-sm line-through" style={{ color: grayToUse }}>
+                  {formatCurrency(item.price, currency)}
+                </span>
+              </div>
+            ) : (
+              <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
+                {item.price ? formatCurrency(item.price, currency) : "-"}
+              </div>
+            )}
           </div>
-        </div>
-
-        <div className="flex flex-col self-stretch w-14">
-          <button
-            type="button"
-            title="Editar item"
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => openItemModal("edit", cat.id, item)}
-            className="flex-1 flex items-center justify-center cursor-pointer p-2 rounded-tr-lg hover:opacity-80 transition"
-            style={{
-              color: foregroundToUse,
-              backgroundColor: getContrastTextColor(backgroundColor) === "white" ? "#ffffff25" : "#00000025",
-            }}
-          >
-            <FaPen />
-          </button>
-
-          <button
-            type="button"
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => deleteItem(cat.id, item.id)}
-            className="flex-1 flex items-center justify-center cursor-pointer p-2 bg-red-600 hover:bg-red-700 text-white rounded-br-lg"
-          >
-            <FaTrash />
-          </button>
         </div>
       </div>
     </div>
@@ -196,6 +355,22 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   const [importableGroups, setImportableGroups] = useState([]);
   const [selectedImportIds, setSelectedImportIds] = useState(new Set());
   const [expandedImportItemId, setExpandedImportItemId] = useState(null);
+
+  const [categoryMenuOpenId, setCategoryMenuOpenId] = useState(null);
+  const categoryMenuBtnRefs = useRef({});
+
+  const [starredMenuOpenId, setStarredMenuOpenId] = useState(null);
+  const starredMenuBtnRefs = useRef({});
+
+  const [collapsedCategories, setCollapsedCategories] = useState({});
+  const toggleCategoryCollapse = (catId) => {
+    setCollapsedCategories((prev) => ({ ...prev, [catId]: !prev[catId] }));
+  };
+
+  const menuBg = getContrastTextColor(backgroundColor) === "white" ? "#2b2b2b" : "#ffffff";
+  const menuBorder = getContrastTextColor(backgroundColor) === "white" ? "#ffffff20" : "#00000015";
+  const menuHover = getContrastTextColor(backgroundColor) === "white" ? "#ffffff10" : "#00000008";
+  const menuText = getContrastTextColor(backgroundColor) === "white" ? "#eaeaea" : "#171717";
 
   const closingAdditionalsCfgFromPop = useRef(false);
   const closingOptionGroupsFromPop = useRef(false);
@@ -1555,24 +1730,78 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
               {starredItems.map((it) => (
                 <div
                   key={it.id}
-                  className="min-w-[65%] max-w-[65%] xxs:min-w-[55%] xxs:max-w-[55%] xs:min-w-[40%] xs:max-w-[40%] sm:min-w-[30%] sm:max-w-[30%] lg:min-w-[40%] lg:max-w-[40%] xl:min-w-[30%] xl:max-w-[30%] snap-start rounded-lg p-2 mb-2"
+                  className="min-w-[55%] max-w-[55%] xxs:min-w-[45%] xxs:max-w-[45%] xs:min-w-[35%] xs:max-w-[35%] sm:min-w-[30%] sm:max-w-[30%] lg:min-w-[35%] lg:max-w-[35%] xl:min-w-[25%] xl:max-w-[25%] snap-start rounded-lg p-2 mb-2"
                   style={{ backgroundColor: translucidToUse }}
                 >
                   <div className="flex flex-col justify-between h-full">
                     <div>
                       {it.image_url && (
-                        <img
-                          src={it.image_url}
-                          alt={it.name}
-                          loading="lazy"
-                          decoding="async"
-                          className="w-full aspect-square object-cover rounded-md mb-2"
-                        />
+                        <div className="relative mb-2">
+                          <img
+                            src={it.image_url}
+                            alt={it.name}
+                            loading="lazy"
+                            decoding="async"
+                            className="w-full aspect-square object-cover rounded-md"
+                          />
+
+                          <button
+                            ref={(el) => (starredMenuBtnRefs.current[it.id] = el)}
+                            type="button"
+                            onClick={() => setStarredMenuOpenId((prev) => (prev === it.id ? null : it.id))}
+                            className="cursor-pointer absolute top-2 right-2 p-2 rounded"
+                            style={{
+                              backgroundColor: "#00000055",
+                              color: "white",
+                            }}
+                          >
+                            <FaEllipsisVertical size={13} />
+                          </button>
+
+                          {starredMenuOpenId === it.id && (
+                            <ItemActionsMenu
+                              anchorRef={{ current: starredMenuBtnRefs.current[it.id] }}
+                              onClose={() => setStarredMenuOpenId(null)}
+                              menuBg={menuBg}
+                              borderColor={menuBorder}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  openItemModal("edit", it.category_id, it);
+                                  setStarredMenuOpenId(null);
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-3 text-sm text-left cursor-pointer transition"
+                                style={{ color: menuText }}
+                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = menuHover)}
+                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                              >
+                                <FaPen size={13} />
+                                Editar item
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  toggleItemStarred(it.id, true);
+                                  setStarredMenuOpenId(null);
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-3 text-sm text-left cursor-pointer transition"
+                                style={{ color: menuText }}
+                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = menuHover)}
+                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                              >
+                                <FaStar size={13} />
+                                Remover destaque
+                              </button>
+                            </ItemActionsMenu>
+                          )}
+                        </div>
                       )}
                       <div className="text-lg font-semibold line-clamp-1" style={{ color: foregroundToUse }}>
                         {it.name}
                       </div>
-                      <div className="text-sm line-clamp-2 mb-1" style={{ color: grayToUse }}>
+                      <div className="text-sm line-clamp-1 mb-1" style={{ color: grayToUse }}>
                         {it.description}
                       </div>
                     </div>
@@ -1591,13 +1820,6 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                           {formatCurrency(it.price, menu?.currency)}
                         </div>
                       )}
-                      <button
-                        onClick={() => toggleItemStarred(it.id, true)}
-                        className="mt-2 py-2 rounded text-sm transition hover:opacity-80 w-full cursor-pointer"
-                        style={{ backgroundColor: detailsColor, color: getContrastTextColor(detailsColor) }}
-                      >
-                        Remover dos destaques
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -1607,18 +1829,24 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         )}
 
         {categories.map((cat) => (
-          <div key={cat.id} id={cat.id.slice(0, 5)} className="mb-6">
+          <div
+            key={cat.id}
+            id={cat.id.slice(0, 5)}
+            className="mb-6 bg-translucid p-2 rounded-lg"
+            style={{ backgroundColor: translucidToUse }}
+          >
             <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-w-0 cursor-pointer" onClick={() => toggleCategoryCollapse(cat.id)}>
                 <button
-                  title="Editar categoria"
-                  onClick={() => openCategoryModal("edit", cat)}
-                  className="cursor-pointer p-2 rounded"
+                  type="button"
+                  className="cursor-pointer p-1 flex-shrink-0"
                   style={{ color: foregroundToUse }}
+                  title={collapsedCategories[cat.id] ? "Expandir categoria" : "Recolher categoria"}
                 >
-                  <FaPen />
+                  {collapsedCategories[cat.id] ? <FaChevronRight size={14} /> : <FaChevronDown size={14} />}
                 </button>
-                <div className="flex items-center flex-wrap gap-x-2">
+
+                <div className="flex items-center flex-wrap gap-x-2 min-w-0">
                   <strong style={{ color: foregroundToUse }} className="line-clamp-1">
                     {cat.name}
                   </strong>
@@ -1628,76 +1856,139 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => openItemModal("create", cat.id)}
-                  className={`min-w-[32px] cursor-pointer px-2 py-1 bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white rounded ${cat.menu_items?.length === 0 ? "pulse-btn" : ""}`}
+              <button
+                ref={(el) => (categoryMenuBtnRefs.current[cat.id] = el)}
+                type="button"
+                onClick={() => setCategoryMenuOpenId((prev) => (prev === cat.id ? null : cat.id))}
+                className="cursor-pointer p-2 mr-2 rounded flex-shrink-0"
+                style={{
+                  backgroundColor: getContrastTextColor(backgroundColor) === "white" ? "#ffffff25" : "#00000025",
+                  color: foregroundToUse,
+                }}
+              >
+                <FaEllipsisVertical />
+              </button>
+
+              {categoryMenuOpenId === cat.id && (
+                <ItemActionsMenu
+                  anchorRef={{ current: categoryMenuBtnRefs.current[cat.id] }}
+                  onClose={() => setCategoryMenuOpenId(null)}
+                  menuBg={menuBg}
+                  borderColor={menuBorder}
                 >
-                  + <span className="hidden xs:inline">Item</span>
-                </button>
-                <button
-                  onClick={() => deleteCategory(cat.id)}
-                  className="cursor-pointer p-2 bg-red-600 hover:bg-red-700 text-white rounded"
-                >
-                  <FaTrash />
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      openCategoryModal("edit", cat);
+                      setCategoryMenuOpenId(null);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-3 text-sm text-left cursor-pointer transition"
+                    style={{ color: menuText }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = menuHover)}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                  >
+                    <FaPen size={13} />
+                    Editar categoria
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      openItemModal("create", cat.id);
+                      setCategoryMenuOpenId(null);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-3 text-sm text-left cursor-pointer transition"
+                    style={{ color: menuText }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = menuHover)}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                  >
+                    <FaPlus size={12} />
+                    Adicionar item
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      deleteCategory(cat.id);
+                      setCategoryMenuOpenId(null);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left cursor-pointer transition text-red-500"
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = menuHover)}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                  >
+                    <FaTrash size={13} />
+                    Excluir categoria
+                  </button>
+                </ItemActionsMenu>
+              )}
             </div>
 
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={(event) => handleItemsDragEnd(cat.id, event)}
-            >
-              <SortableContext items={(cat.menu_items || []).map((it) => it.id)} strategy={verticalListSortingStrategy}>
-                {(cat.menu_items || []).length === 0 ? (
-                  <div
-                    className="mt-3 flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center"
-                    style={{
-                      borderColor: translucidToUse,
-                      backgroundColor: translucidToUse,
-                    }}
+            {!collapsedCategories[cat.id] && (
+              <>
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={(event) => handleItemsDragEnd(cat.id, event)}
+                >
+                  <SortableContext items={(cat.menu_items || []).map((it) => it.id)} strategy={verticalListSortingStrategy}>
+                    {(cat.menu_items || []).length === 0 ? (
+                      <div
+                        className="mt-3 flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center"
+                        style={{
+                          borderColor: translucidToUse,
+                          backgroundColor: translucidToUse,
+                        }}
+                      >
+                        <div className="mb-2 text-base font-semibold" style={{ color: foregroundToUse }}>
+                          Essa categoria está vazia
+                        </div>
+
+                        <p className="mb-4 max-w-sm text-sm leading-relaxed" style={{ color: grayToUse }}>
+                          Adicione itens para que eles apareçam no cardápio dos clientes.
+                        </p>
+
+                        <button
+                          onClick={() => openItemModal("create", cat.id)}
+                          className={`cursor-pointer px-4 py-2 bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white rounded-lg font-medium transition-all ${
+                            cat.menu_items?.length === 0 ? "pulse-btn" : ""
+                          }`}
+                        >
+                          + Criar primeiro item
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        {(cat.menu_items || []).map((it) => (
+                          <SortableMenuItem
+                            key={it.id}
+                            item={it}
+                            cat={cat}
+                            openItemModal={openItemModal}
+                            deleteItem={deleteItem}
+                            toggleItemVisibility={toggleItemVisibility}
+                            detailsColor={detailsColor}
+                            backgroundColor={backgroundColor}
+                            foregroundToUse={foregroundToUse}
+                            grayToUse={grayToUse}
+                            canShowPromoPrice={canShowPromoPrice}
+                            getContrastTextColor={getContrastTextColor}
+                            currency={menu?.currency}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </SortableContext>
+                </DndContext>
+                {cat.menu_items?.length > 0 && (
+                  <button
+                    onClick={() => openItemModal("create", cat.id)}
+                    className="cursor-pointer px-4 py-2 mt-2 w-full border-2 border-[var(--translucid)] text-white rounded-lg font-medium transition-all hover:opacity-80 transition-opacity"
                   >
-                    <div className="mb-2 text-base font-semibold" style={{ color: foregroundToUse }}>
-                      Essa categoria está vazia
-                    </div>
-
-                    <p className="mb-4 max-w-sm text-sm leading-relaxed" style={{ color: grayToUse }}>
-                      Adicione itens para que eles apareçam no cardápio dos clientes.
-                    </p>
-
-                    <button
-                      onClick={() => openItemModal("create", cat.id)}
-                      className={`cursor-pointer px-4 py-2 bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white rounded-lg font-medium transition-all ${
-                        cat.menu_items?.length === 0 ? "pulse-btn" : ""
-                      }`}
-                    >
-                      + Criar primeiro item
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    {(cat.menu_items || []).map((it) => (
-                      <SortableMenuItem
-                        key={it.id}
-                        item={it}
-                        cat={cat}
-                        openItemModal={openItemModal}
-                        deleteItem={deleteItem}
-                        toggleItemVisibility={toggleItemVisibility}
-                        detailsColor={detailsColor}
-                        backgroundColor={backgroundColor}
-                        foregroundToUse={foregroundToUse}
-                        grayToUse={grayToUse}
-                        canShowPromoPrice={canShowPromoPrice}
-                        getContrastTextColor={getContrastTextColor}
-                        currency={menu?.currency}
-                      />
-                    ))}
-                  </div>
+                    + Adicionar item
+                  </button>
                 )}
-              </SortableContext>
-            </DndContext>
+              </>
+            )}
           </div>
         ))}
       </div>
