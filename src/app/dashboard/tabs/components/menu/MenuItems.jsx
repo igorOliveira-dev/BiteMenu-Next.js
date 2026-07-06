@@ -1982,7 +1982,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                 {cat.menu_items?.length > 0 && (
                   <button
                     onClick={() => openItemModal("create", cat.id)}
-                    className="cursor-pointer px-4 py-2 mt-2 w-full border-2 border-[var(--translucid)] text-white rounded-lg font-medium transition-all hover:opacity-80 transition-opacity"
+                    className={`cursor-pointer px-4 py-2 mt-2 w-full border-2 border-dotted ${getContrastTextColor(backgroundColor) === "white" ? "border-[#ffffff40] text-[#ffffff]" : "border-[#00000040] text-[#000000]"} rounded-lg font-medium transition-all hover:opacity-80 transition-opacity`}
                   >
                     + Adicionar item
                   </button>

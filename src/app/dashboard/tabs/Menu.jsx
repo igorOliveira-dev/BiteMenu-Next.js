@@ -352,8 +352,11 @@ const Menu = (props) => {
         <button
           onClick={() => setSelectedTab("configMenu")}
           className={`flex lg:hidden cursor-pointer ${
-            changedFields.length > 0 ? "bottom-56" : "bottom-20"
-          } right-4 p-2 bg-low-gray border-2 border-translucid font-semibold rounded-lg hover:opacity-80 transition items-center justify-center fixed z-90`}
+            changedFields.length > 0 ? "bottom-50" : "bottom-16"
+          } right-4 p-2 bg-low-gray font-semibold rounded-lg hover:opacity-80 transition items-center justify-center fixed z-90`}
+          style={{
+            border: `2px solid ${getContrastTextColor(backgroundColor) === "white" ? "#ffffff50" : "#00000050"}`,
+          }}
         >
           <FiSettings className="text-xl mr-2" />
           Configurar cardápio

@@ -7,7 +7,7 @@ import Orders from "./tabs/Orders";
 import Sales from "./tabs/Sales";
 import { useAlert } from "@/providers/AlertProvider";
 import ConfigMenu from "./tabs/ConfigMenu";
-import { FaChevronLeft, FaHeadset, FaMoneyBill, FaQrcode } from "react-icons/fa";
+import { FaBars, FaChevronLeft, FaHeadset, FaMoneyBill, FaQrcode } from "react-icons/fa";
 import Account from "./tabs/Account";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -207,39 +207,45 @@ const Dashboard = ({
   return (
     <div className="flex w-[100dvw] pt-[85px] items-center lg:items-start lg:h-[calc(100dvh-110px)] lg:flex-row flex-col-reverse items-center">
       <div className="flex items-center">
-        <aside className="m-2 rounded-lg bg-translucid border-2 border-translucid h-full max-w-[720px] w-[calc(100dvw-86px)] lg:w-60 shadow-[0_0_10px_var(--shadow)] flex flex-col justify-between items-stretch overflow-hidden lg:h-[calc(100dvh-110px)]">
+        <aside className="lg:m-2 lg:rounded-lg bg-translucid lg:border-2 border-translucid h-full max-w-[812px] w-[calc(100dvw)] lg:w-60 shadow-[0_0_10px_var(--shadow)] flex flex-col justify-between items-stretch overflow-hidden lg:h-[calc(100dvh-110px)]">
           {/* Top section */}
           <div className="w-full flex lg:flex-col">
             <button
               onClick={() => setSelectedTab("menu")}
-              className={`w-full px-1 xxs:px-4 py-4 hover-bg-translucid transition-colors border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "menu" ? "bg-translucid" : ""}`}
+              className={`w-full px-1 xxs:px-4 py-5 lg:py-4 hover-bg-translucid transition-colors lg:border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "menu" ? "bg-translucid" : ""}`}
             >
-              <FaUtensils className="hidden lg:block text-lg shrink-0" />
-              <span>{changedFields.length > 0 ? "Cardápio *" : "Cardápio"}</span>
+              <FaUtensils className="text-lg shrink-0" />
+              <span className="hidden lg:block">{changedFields.length > 0 ? "Cardápio *" : "Cardápio"}</span>
             </button>
 
             <button
               onClick={() => setSelectedTab("orders")}
-              className={`w-full px-1 xxs:px-4 py-4 hover-bg-translucid transition-colors border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "orders" ? "bg-translucid" : ""}`}
+              className={`w-full px-1 xxs:px-4 py-5 lg:py-4 hover-bg-translucid transition-colors lg:border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "orders" ? "bg-translucid" : ""}`}
             >
-              <FaShoppingBag className="hidden lg:block text-lg shrink-0" />
+              <FaShoppingBag className="text-lg shrink-0" />
 
-              <span className="flex items-center gap-2">
-                Pedidos
-                {pendingOrdersCount > 0 && (
-                  <span className="bg-red-500 text-white rounded-full text-xs w-[24px] h-[24px] flex items-center justify-center">
-                    {pendingOrdersCount}
-                  </span>
-                )}
-              </span>
+              <span className="hidden lg:block flex items-center gap-2">Pedidos</span>
+              {pendingOrdersCount > 0 && (
+                <span className="absolute scale-[0.75] transform-[translate(-50%,50%)] bg-red-500 text-white rounded-full text-xxs sm:text-xs w-[24px] h-[24px] flex items-center justify-center">
+                  {pendingOrdersCount}
+                </span>
+              )}
             </button>
 
             <button
               onClick={() => setSelectedTab("sales")}
-              className={`w-full px-1 xxs:px-4 py-4 hover-bg-translucid transition-colors border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "sales" ? "bg-translucid" : ""}`}
+              className={`w-full px-1 xxs:px-4 py-5 lg:py-4 hover-bg-translucid transition-colors lg:border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "sales" ? "bg-translucid" : ""}`}
             >
-              <FaChartLine className="hidden lg:block text-lg shrink-0" />
-              <span>Vendas</span>
+              <FaChartLine className="text-lg shrink-0" />
+              <span className="hidden lg:block">Vendas</span>
+            </button>
+
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className={`w-full px-1 xxs:px-4 py-5 lg:py-4 hover-bg-translucid transition-colors lg:border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left`}
+            >
+              <FaBars className="text-lg shrink-0" />
+              <span className="hidden lg:block">Vendas</span>
             </button>
           </div>
 
@@ -280,30 +286,10 @@ const Dashboard = ({
             </button>
           </div>
         </aside>
-
-        {/* Hamburger mobile */}
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="lg:hidden relative w-8 h-8 m-2 flex flex-col justify-between items-center group z-50"
-        >
-          <span
-            className={`h-[5px] w-8 bg-[var(--foreground)] rounded transition-all duration-300 ${
-              isOpen ? "rotate-45 translate-y-[13px]" : ""
-            }`}
-          ></span>
-          <span
-            className={`h-[5px] w-8 bg-[var(--foreground)] rounded transition-all duration-300 ${isOpen ? "opacity-0" : ""}`}
-          ></span>
-          <span
-            className={`h-[5px] w-8 bg-[var(--foreground)] rounded transition-all duration-300 ${
-              isOpen ? "-rotate-45 -translate-y-[13px]" : ""
-            }`}
-          ></span>
-        </button>
       </div>
 
       {/* Main content */}
-      <main className="w-[100dvw] lg:w-[calc(100dvw-256px)] h-[calc(100dvh-160px)] lg:h-[calc(100dvh-100px)] overflow-auto scrollbar-none">
+      <main className="w-[100dvw] lg:w-[calc(100dvw-256px)] h-[calc(100dvh-143px)] lg:h-[calc(100dvh-100px)] overflow-auto scrollbar-none">
         <div className={selectedTab === "menu" ? "block" : "hidden"}>
           <Menu
             setSelectedTab={setSelectedTab}
