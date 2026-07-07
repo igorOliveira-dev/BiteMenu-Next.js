@@ -43,7 +43,7 @@ const Menu = (props) => {
     changedFields,
   } = props;
 
-  const { user } = useUser();
+  const { user, profile } = useUser();
 
   const usingExternal = Array.isArray(menuState) && menuState.length === 2;
   const [externalState, externalSetState] = usingExternal ? menuState : [null, null];
@@ -105,6 +105,34 @@ const Menu = (props) => {
   useEffect(() => {
     if (menu?.slug) setSlug(menu.slug);
   }, [menu?.slug]);
+
+  const [subscriptionWarning, setSubscriptionWarning] = useState(null);
+  useEffect(() => {
+    const checkSubscriptionStatus = async () => {
+      if (!user || !profile?.stripe_subscription_id) {
+        setSubscriptionWarning(null);
+        return;
+      }
+
+      try {
+        const res = await fetch(
+          `/api/stripe-subscription?subscriptionId=${profile.stripe_subscription_id}&userId=${user.id}`,
+        );
+        if (!res.ok) return;
+
+        const data = await res.json();
+        if (["past_due", "unpaid"].includes(data.status) && data.latest_invoice_url) {
+          setSubscriptionWarning(data.latest_invoice_url);
+        } else {
+          setSubscriptionWarning(null);
+        }
+      } catch (err) {
+        console.error("Erro ao verificar status da assinatura:", err);
+      }
+    };
+
+    checkSubscriptionStatus();
+  }, [user, profile]);
 
   const anyModalOpen = titleModalOpen || bannerModalOpen || logoModalOpen;
 
@@ -363,6 +391,19 @@ const Menu = (props) => {
         </button>
         <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[812px] min-h-[calc(100dvh-110px)]">
           {/* ESPAÇO PARA BANNER!!! */}
+          {subscriptionWarning && (
+            <div className="top-2 px-2 py-6 w-full bg-red-300 border border-red-400 text-red-700 rounded text-center z-100">
+              <span>Você tem uma cobrança pendente, isso pode ter removido seu acesso ao plano.</span>{" "}
+              <a
+                href={subscriptionWarning}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-700 hover:text-blue-900 underline font-semibold"
+              >
+                Regularizar pagamento
+              </a>
+            </div>
+          )}
           <SurveyBanner />
           <div className="min-h-[calc(100dvh-110px)] pb-2" style={{ backgroundColor }}>
             {/* Banner */}
