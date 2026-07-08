@@ -91,6 +91,7 @@ const Dashboard = ({
   const [reloadOrderTrigger, setReloadOrderTrigger] = useState(0);
 
   const audioRef = useRef(null);
+  const mainRef = useRef(null);
 
   // unlocker de audio para som de pedido novo
   useEffect(() => {
@@ -122,6 +123,12 @@ const Dashboard = ({
       setSelectedTab(tab);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    mainRef.current?.scrollTo({
+      top: 0,
+    });
+  }, [selectedTab]);
 
   useEffect(() => {
     if (menu?.slug) setSlug(menu.slug);
@@ -289,7 +296,10 @@ const Dashboard = ({
       </div>
 
       {/* Main content */}
-      <main className="w-[100dvw] lg:w-[calc(100dvw-256px)] h-[calc(100dvh-143px)] lg:h-[calc(100dvh-100px)] overflow-auto scrollbar-none">
+      <main
+        ref={mainRef}
+        className="w-[100dvw] lg:w-[calc(100dvw-256px)] h-[calc(100dvh-143px)] lg:h-[calc(100dvh-100px)] overflow-auto scrollbar-none"
+      >
         <div className={selectedTab === "menu" ? "block" : "hidden"}>
           <Menu
             setSelectedTab={setSelectedTab}
