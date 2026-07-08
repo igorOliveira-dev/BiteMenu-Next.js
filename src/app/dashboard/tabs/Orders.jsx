@@ -1297,6 +1297,12 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
                 <strong>Telefone:</strong> {selectedOrder?.costumer_phone}
               </p>
 
+              {selectedOrder?.neighborhood && (
+                <p>
+                  <strong>Bairro:</strong> {selectedOrder.neighborhood}
+                </p>
+              )}
+
               {selectedOrder?.address && (
                 <p>
                   <strong>Endereço:</strong> {selectedOrder.address}
