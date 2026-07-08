@@ -996,6 +996,40 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     }
   };
 
+  const categoryHasVisibleItems = (cat) => (cat.menu_items || []).some((it) => it.visible !== false);
+
+  const toggleCategoryVisibility = async (categoryId, makeVisible) => {
+    const cat = categories.find((c) => c.id === categoryId);
+    if (!cat || (cat.menu_items || []).length === 0) return;
+
+    const itemIds = (cat.menu_items || [])
+      .map((it) => it.id)
+      .filter((id) => typeof id === "string" && !id.startsWith("tmp-"));
+
+    if (itemIds.length === 0) return;
+
+    const before = categories;
+
+    // Atualização otimista
+    setCategories((prev = []) =>
+      prev.map((c) =>
+        c.id === categoryId ? { ...c, menu_items: (c.menu_items || []).map((it) => ({ ...it, visible: makeVisible })) } : c,
+      ),
+    );
+
+    try {
+      const { error } = await supabase.from("menu_items").update({ visible: makeVisible }).in("id", itemIds);
+
+      if (error) throw error;
+
+      alert?.(makeVisible ? "Todos os itens foram exibidos" : "Todos os itens foram ocultados", "success");
+    } catch (err) {
+      console.error("toggleCategoryVisibility error:", err);
+      setCategories(before);
+      alert?.("Erro ao alterar visibilidade dos itens", "error");
+    }
+  };
+
   // ---------- helpers FLIP ----------
   const captureRects = () => {
     const map = {};
@@ -1876,6 +1910,21 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                   menuBg={menuBg}
                   borderColor={menuBorder}
                 >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const makeVisible = !categoryHasVisibleItems(cat);
+                      toggleCategoryVisibility(cat.id, makeVisible);
+                      setCategoryMenuOpenId(null);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-3 text-sm text-left cursor-pointer transition"
+                    style={{ color: menuText }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = menuHover)}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                  >
+                    {categoryHasVisibleItems(cat) ? <FaEyeSlash size={13} /> : <FaEye size={13} />}
+                    {categoryHasVisibleItems(cat) ? "Ocultar todos os itens" : "Exibir todos os itens"}
+                  </button>
                   <button
                     type="button"
                     onClick={() => {
