@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   FaChevronLeft,
+  FaChevronDown,
   FaLightbulb,
   FaMapMarkerAlt,
   FaStore,
@@ -87,22 +88,10 @@ function slugify(value) {
 }
 
 const serviceOptions = [
-  {
-    id: "delivery",
-    label: "Entrega",
-  },
-  {
-    id: "pickup",
-    label: "Retirada",
-  },
-  {
-    id: "dinein",
-    label: "Comer no local",
-  },
-  {
-    id: "faceToFace",
-    label: "Atendimento presencial",
-  },
+  { id: "delivery", label: "Entrega" },
+  { id: "pickup", label: "Retirada" },
+  { id: "dinein", label: "Comer no local" },
+  { id: "faceToFace", label: "Atendimento presencial" },
 ];
 
 const paymentOptions = [
@@ -128,22 +117,69 @@ function cx(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
-function SectionCard({ icon, title, description, children, aside }) {
+/* ---------------------------------------------------------
+ * SectionCard agora é um acordeão: recolhido por padrão,
+ * mostra um resumo (summary) da própria seção quando fechado,
+ * e expande com animação ao clicar no cabeçalho inteiro.
+ * ------------------------------------------------------- */
+function SectionCard({ id, icon, title, description, children, aside, open, onToggle, summary, sectionRef }) {
   return (
-    <section className="rounded-3xl border-2 bg-translucid border-[var(--translucid)] backdrop-blur-sm overflow-hidden">
-      <div className="flex flex-col gap-4 border-b border-[var(--translucid)] px-5 py-5 sm:flex-row sm:items-start sm:justify-between sm:px-6">
-        <div className="flex items-start gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[var(--translucid)] bg-translucid ">
+    <section
+      ref={sectionRef}
+      id={id}
+      className="rounded-3xl border-2 bg-translucid backdrop-blur-sm overflow-hidden transition-colors border-[var(--translucid)]"
+    >
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full gap-2 sm:gap-4 px-4 py-4 text-left transition hover:bg-white/[0.02]items-center justify-between sm:px-6 cursor-pointer"
+      >
+        <div className="flex min-w-0 items-center gap-4">
+          <div
+            className={cx(
+              "hidden xxs:flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border transition",
+              open ? "border-red-500/50 bg-red-500/15 text-red-400" : "border-[var(--translucid)] bg-translucid",
+            )}
+          >
             {icon}
           </div>
-          <div>
-            <h3 className="text-lg font-semibold ">{title}</h3>
-            {description ? <p className="mt-1 text-sm ">{description}</p> : null}
+          <div className="min-w-0">
+            <h3 className="text-sm sm:text-lg font-semibold">{title}</h3>
+            {!open && summary ? (
+              <p className="mt-1 truncate text-sm opacity-70">{summary}</p>
+            ) : description ? (
+              <p className="mt-1 text-sm opacity-70">{description}</p>
+            ) : null}
           </div>
         </div>
-        {aside ? <div className="sm:pl-6">{aside}</div> : null}
+
+        <div className="flex items-center sm:pl-6" onClick={(e) => e.stopPropagation()}>
+          <span
+            className={cx(
+              "flex xs:h-9 xs:w-9 shrink-0 items-center justify-center rounded-full xs:border border-[var(--translucid)] xs:bg-[var(--translucid)] transition-transform",
+              open ? "rotate-180" : "rotate-0",
+            )}
+            onClick={onToggle}
+            role="button"
+            aria-label={open ? "Recolher seção" : "Expandir seção"}
+          >
+            <FaChevronDown className="text-xs" />
+          </span>
+        </div>
+      </button>
+
+      <div
+        className={cx(
+          "grid transition-[grid-template-rows] duration-300 ease-in-out",
+          open ? "grid-template-rows-[1fr]" : "grid-template-rows-[0fr]",
+        )}
+        style={{ display: "grid", gridTemplateRows: open ? "1fr" : "0fr" }}
+      >
+        <div className="overflow-hidden">
+          <div className="border-t border-[var(--translucid)] px-2 py-5 xxs:px-5 sm:px-6">{children}</div>
+        </div>
       </div>
-      <div className="px-2 xxs:px-5 py-5 sm:px-6">{children}</div>
     </section>
   );
 }
@@ -231,7 +267,6 @@ function CurrencySelect({ value, onChange }) {
         rect &&
         createPortal(
           <>
-            {/* overlay para fechar ao clicar fora */}
             <div className="fixed inset-0 z-[998]" onMouseDown={closeMenu} />
             <div
               className="fixed z-[999] overflow-hidden rounded-2xl border border-[var(--low-gray)] bg-[var(--background)] text-[var(--foreground)] shadow-xl"
@@ -290,7 +325,7 @@ function TextArea({ className = "", ...props }) {
   );
 }
 
-function SelectionCard({ selected, title, onClick }) {
+function SelectionCard({ selected, title, description, onClick }) {
   return (
     <button
       type="button"
@@ -298,7 +333,7 @@ function SelectionCard({ selected, title, onClick }) {
       className={cx(
         "group flex w-full items-start gap-3 rounded-2xl border p-4 text-left transition cursor-pointer",
         selected
-          ? "border-red-500/70 bg-red-500/20 shadow-[0_0_0_1px_rgba(255, 0, 0, 0.25)]"
+          ? "border-red-500/70 bg-red-500/20 shadow-[0_0_0_1px_rgba(255,0,0,0.25)]"
           : "border-[var(--translucid)] bg-translucid hover:opacity-80 hover:scale-[1.01]",
       )}
     >
@@ -312,6 +347,7 @@ function SelectionCard({ selected, title, onClick }) {
       </div>
       <div>
         <div className="font-semibold">{title}</div>
+        {description ? <p className="mt-0.5 text-sm opacity-70">{description}</p> : null}
       </div>
     </button>
   );
@@ -337,7 +373,6 @@ function ModeOption({ active, title, description, onClick }) {
 
 function timeToMinutes(time) {
   if (!time) return null;
-
   const [hours, minutes] = time.split(":").map(Number);
   return hours * 60 + minutes;
 }
@@ -349,9 +384,7 @@ function normalizeCloseTime(time) {
 function isCloseBeforeOpen(openTime, closeTime) {
   const open = timeToMinutes(openTime);
   const close = timeToMinutes(closeTime);
-
   if (open === null || close === null) return false;
-
   return close < open;
 }
 
@@ -403,6 +436,34 @@ const ConfigMenu = (props) => {
     menu?.minimum_order_value !== undefined && menu?.minimum_order_value !== null ? String(menu.minimum_order_value) : "",
   );
 
+  // ---- Estado de UI: quais seções estão abertas ----
+  const [openSections, setOpenSections] = useState({
+    basico: false,
+    servicos: false,
+    pagamentos: false,
+    aparencia: false,
+    horarios: false,
+  });
+
+  const sectionRefs = {
+    basico: useRef(null),
+    servicos: useRef(null),
+    pagamentos: useRef(null),
+    aparencia: useRef(null),
+    horarios: useRef(null),
+  };
+
+  const toggleSection = (key) => {
+    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const goToSection = (key) => {
+    setOpenSections((prev) => ({ ...prev, [key]: true }));
+    requestAnimationFrame(() => {
+      sectionRefs[key]?.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
   const slug = usingExternal ? externalState?.slug : slugLocal;
   const setSlug = usingExternal ? (value) => externalSetState((p) => ({ ...p, slug: value })) : setSlugLocal;
 
@@ -448,9 +509,7 @@ const ConfigMenu = (props) => {
   const setPixKey = usingExternal ? (value) => externalSetState((p) => ({ ...p, pixKey: value })) : setPixKeyLocal;
 
   const currency = usingExternal ? (externalState?.currency ?? "BRL") : currencyLocal;
-  const setCurrency = usingExternal
-    ? (value) => externalSetState((p) => ({ ...p, currency: value }))
-    : setCurrencyLocal;
+  const setCurrency = usingExternal ? (value) => externalSetState((p) => ({ ...p, currency: value })) : setCurrencyLocal;
 
   const minimumOrderValue = usingExternal ? (externalState?.minimumOrderValue ?? "") : minimumOrderValueLocal;
   const setMinimumOrderValue = usingExternal
@@ -579,7 +638,6 @@ const ConfigMenu = (props) => {
       const doc = iframe.contentDocument;
       if (!win || !doc) return;
 
-      // Bloqueia cliques e navegação dentro do iframe (fase de captura)
       const blockInteraction = (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -589,7 +647,6 @@ const ConfigMenu = (props) => {
       doc.addEventListener("keydown", blockInteraction, true);
       doc.addEventListener("submit", blockInteraction, true);
 
-      // Quando o usuário scrollar manualmente, cancela a animação
       const onUserScroll = () => {
         userTookControl = true;
         cancelAll();
@@ -672,7 +729,6 @@ const ConfigMenu = (props) => {
 
   const updateLayout = async (layout) => {
     const { error } = await supabase.from("menus").update({ layout }).eq("id", menu.id);
-
     if (error) {
       console.error(error);
     }
@@ -790,6 +846,32 @@ const ConfigMenu = (props) => {
 
   if (loading) return <Loading />;
 
+  // ---- Resumos exibidos quando cada seção está fechada ----
+  const basicoSummary = [propTitle || "Sem nome definido", slug ? `/${slug}` : null].filter(Boolean).join(" · ");
+
+  const servicosSummary = (() => {
+    const count = selectedServices?.length || 0;
+    const parts = [`${count} serviço${count === 1 ? "" : "s"} ativo${count === 1 ? "" : "s"}`];
+    if (selectedServices?.includes("delivery")) {
+      parts.push(deliveryFeeMode === "zones" ? "frete por bairro" : "frete fixo");
+    }
+    return parts.join(" · ");
+  })();
+
+  const pagamentosSummary = (() => {
+    const count = selectedPayments?.length || 0;
+    return `${count} forma${count === 1 ? "" : "s"} de pagamento habilitada${count === 1 ? "" : "s"}`;
+  })();
+
+  const aparenciaSummary = `Estilo: ${layout === "default" ? "Padrão" : layout === "list" ? "Lista" : "Grade de itens"}`;
+
+  const horariosSummary = (() => {
+    const closedDays = dayOrder.filter((d) => hours?.[d] === null).length;
+    if (closedDays === 0) return "Aberto todos os dias";
+    if (closedDays === 7) return "Fechado todos os dias";
+    return `Fechado em ${closedDays} dia${closedDays === 1 ? "" : "s"} da semana`;
+  })();
+
   return (
     <div className="w-full max-w-7xl pb-32 pt-3 px-2">
       <div>
@@ -810,9 +892,14 @@ const ConfigMenu = (props) => {
       <div className="grid gap-5 max-w-[1080px]">
         <div className="space-y-5">
           <SectionCard
+            id="basico"
+            sectionRef={sectionRefs.basico}
             icon={<FaStore />}
             title="Informações básicas"
             description="Os dados principais que aparecem para quem acessa seu cardápio."
+            summary={basicoSummary}
+            open={openSections.basico}
+            onToggle={() => toggleSection("basico")}
           >
             <div className="grid gap-4">
               <Field label="Nome do estabelecimento" hint="Use o nome pelo qual seus clientes já conhecem você.">
@@ -893,9 +980,14 @@ const ConfigMenu = (props) => {
           </SectionCard>
 
           <SectionCard
+            id="servicos"
+            sectionRef={sectionRefs.servicos}
             icon={<FaTruck />}
             title="Serviços e entrega"
             description="Defina como os clientes podem fazer pedidos e como o frete será cobrado."
+            summary={servicosSummary}
+            open={openSections.servicos}
+            onToggle={() => toggleSection("servicos")}
           >
             <div className="space-y-5">
               <div>
@@ -906,7 +998,6 @@ const ConfigMenu = (props) => {
                       key={opt.id}
                       selected={selectedServices?.includes(opt.id)}
                       title={opt.label}
-                      description={opt.description}
                       onClick={() => toggleService(opt.id)}
                     />
                   ))}
@@ -1014,7 +1105,7 @@ const ConfigMenu = (props) => {
                                     <button
                                       type="button"
                                       onClick={() => removeDeliveryZone(zone.id)}
-                                      className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/40 px-4 text-sm font-semiboldtransition hover:opacity-90 cursor-pointer w-full"
+                                      className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/40 px-4 text-sm font-semibold transition hover:opacity-90 cursor-pointer w-full"
                                     >
                                       <FaTrash className="text-xs" />
                                       Remover
@@ -1030,35 +1121,41 @@ const ConfigMenu = (props) => {
                   )}
                 </div>
               )}
-            </div>
-            <div className="mt-4">
-              <Field
-                label={`Valor mínimo de pedido (${getCurrencySymbol(currency)})`}
-                hint="Pedidos abaixo desse valor não poderão ser finalizados pelo cliente."
-              >
-                {hasPlusPermissions ? (
-                  <TextInput
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={minimumOrderValue || ""}
-                    onChange={(e) => setMinimumOrderValue(String(e.target.value).replace(",", "."))}
-                    placeholder="Ex.: 15.00"
-                  />
-                ) : (
-                  <div className="rounded-2xl border border-amber-500/20 bg-amber-500/20 p-4 text-sm">
-                    O valor mínimo de pedido está disponível apenas no Plus ou Pro. Enquanto isso, seus clientes poderão
-                    finalizar pedidos de qualquer valor.
-                  </div>
-                )}
-              </Field>
+
+              <div>
+                <Field
+                  label={`Valor mínimo de pedido (${getCurrencySymbol(currency)})`}
+                  hint="Pedidos abaixo desse valor não poderão ser finalizados pelo cliente."
+                >
+                  {hasPlusPermissions ? (
+                    <TextInput
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={minimumOrderValue || ""}
+                      onChange={(e) => setMinimumOrderValue(String(e.target.value).replace(",", "."))}
+                      placeholder="Ex.: 15.00"
+                    />
+                  ) : (
+                    <div className="rounded-2xl border border-amber-500/20 bg-amber-500/20 p-4 text-sm">
+                      O valor mínimo de pedido está disponível apenas no Plus ou Pro. Enquanto isso, seus clientes poderão
+                      finalizar pedidos de qualquer valor.
+                    </div>
+                  )}
+                </Field>
+              </div>
             </div>
           </SectionCard>
 
           <SectionCard
+            id="pagamentos"
+            sectionRef={sectionRefs.pagamentos}
             icon={<FaCreditCard />}
             title="Pagamentos"
             description="Escolha como o cliente poderá pagar ao finalizar o pedido."
+            summary={pagamentosSummary}
+            open={openSections.pagamentos}
+            onToggle={() => toggleSection("pagamentos")}
           >
             <div className="space-y-5">
               <div className="grid gap-3 md:grid-cols-2">
@@ -1090,19 +1187,14 @@ const ConfigMenu = (props) => {
 
         <div className="space-y-5">
           <SectionCard
+            id="aparencia"
+            sectionRef={sectionRefs.aparencia}
             icon={<FaPalette />}
             title="Aparência"
             description="Escolha cores bonitas e consistentes para deixar seu cardápio mais profissional."
-            aside={
-              <button
-                type="button"
-                onClick={suggestRandomPalette}
-                className="inline-flex items-center gap-2 rounded-2xl border border-[var(--translucid)] bg-translucid px-4 py-3 text-sm font-semiboldtransition hover:opacity-90 cursor-pointer"
-              >
-                <FaLightbulb />
-                Sugerir cores
-              </button>
-            }
+            summary={aparenciaSummary}
+            open={openSections.aparencia}
+            onToggle={() => toggleSection("aparencia")}
           >
             <div className="space-y-5">
               <div className="grid gap-4">
@@ -1145,6 +1237,14 @@ const ConfigMenu = (props) => {
                   </div>
                 </Field>
               </div>
+              <button
+                type="button"
+                onClick={suggestRandomPalette}
+                className="inline-flex items-center gap-2 rounded-2xl border border-[var(--translucid)] bg-translucid px-4 py-3 text-sm font-semibold transition hover:opacity-90 cursor-pointer"
+              >
+                <FaLightbulb />
+                Sugerir cores
+              </button>
 
               <div className="mb-4">
                 <div className="text-sm font-semibold">Estilo do menu</div>
@@ -1174,26 +1274,14 @@ const ConfigMenu = (props) => {
           </SectionCard>
 
           <SectionCard
+            id="horarios"
+            sectionRef={sectionRefs.horarios}
             icon={<FaClock />}
             title="Horários de funcionamento"
             description="Defina quando seu estabelecimento está aberto para pedidos."
-            aside={
-              <button
-                type="button"
-                onClick={() => {
-                  safeSetHours((prev) => {
-                    const next = { ...prev };
-                    Object.keys(next).forEach((day) => {
-                      next[day] = "00:00-23:59";
-                    });
-                    return next;
-                  });
-                }}
-                className="inline-flex items-center gap-2 rounded-2xl border border-[var(--translucid)] bg-translucid px-4 py-3 text-sm font-semiboldtransition hover:opacity-90 cursor-pointer"
-              >
-                24h para todos
-              </button>
-            }
+            summary={horariosSummary}
+            open={openSections.horarios}
+            onToggle={() => toggleSection("horarios")}
           >
             <div className="space-y-3">
               {dayOrder.map((day) => {
@@ -1251,6 +1339,21 @@ const ConfigMenu = (props) => {
                 );
               })}
             </div>
+            <button
+              type="button"
+              onClick={() => {
+                safeSetHours((prev) => {
+                  const next = { ...prev };
+                  Object.keys(next).forEach((day) => {
+                    next[day] = "00:00-23:59";
+                  });
+                  return next;
+                });
+              }}
+              className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-[var(--translucid)] bg-translucid px-4 py-3 text-sm font-semibold transition hover:opacity-90 cursor-pointer"
+            >
+              24h para todos
+            </button>
           </SectionCard>
         </div>
       </div>
