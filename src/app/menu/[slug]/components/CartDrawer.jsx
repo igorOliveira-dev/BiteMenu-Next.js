@@ -88,6 +88,9 @@ export default function CartDrawer({
   const [search, setSearch] = useState("");
   const [isOpenDropdown, setIsOpenDropdown] = useState(false);
 
+  const [needsChange, setNeedsChange] = useState(null);
+  const [changeForAmount, setChangeForAmount] = useState("");
+
   // ── Stripe ──────────────────────────────────────────────────────────────
   const [isStripeLoading, setIsStripeLoading] = useState(false);
   // ────────────────────────────────────────────────────────────────────────
@@ -429,6 +432,8 @@ export default function CartDrawer({
     setWhatsappURL(null);
     setDeliveryFeeValue(0);
     setIsStripeLoading(false);
+    setNeedsChange(null);
+    setChangeForAmount("");
   };
 
   const handleServiceSelect = (id) => {
@@ -448,6 +453,8 @@ export default function CartDrawer({
     selectedService,
     selectedPayment,
     paymentLabel,
+    needsChange,
+    changeForAmount,
   }) {
     const itemsList = (items || [])
       .map((it) => {
@@ -457,12 +464,17 @@ export default function CartDrawer({
       })
       .join("\n\n");
 
+    const trocoInfo =
+      selectedPayment === "cash" && needsChange
+        ? `\n💵 Troco para: ${formatCurrency(normalizeMoney(changeForAmount), menu?.currency)}`
+        : "";
+
     const customerInfo = `
 👤 Nome: ${costumerName}
 📞 Telefone: ${costumerPhone}
 ${selectedService === "delivery" && canUseZones && costumerNeighborhood ? `🏘 Bairro: ${costumerNeighborhood}\n` : ""}
 ${selectedService === "delivery" && costumerAddress ? `📍 Endereço: ${costumerAddress}\n` : ""}
-💳 Pagamento: ${paymentLabel || paymentOptions.find((p) => p.id === selectedPayment)?.label || "-"}
+💳 Pagamento: ${paymentLabel || paymentOptions.find((p) => p.id === selectedPayment)?.label || "-"}${trocoInfo}
 🚚 Serviço: ${serviceOptions.find((s) => s.id === selectedService)?.label || "-"}`;
 
     const message = `‼️ Pedido de ${menu.title}
@@ -592,6 +604,28 @@ ${customerInfo}`;
   };
   // ────────────────────────────────────────────────────────────────────────
 
+  const confirmCashChange = () => {
+    if (needsChange === null) {
+      customAlert("Selecione se precisa de troco.", "error");
+      return;
+    }
+
+    if (needsChange) {
+      const amount = normalizeMoney(changeForAmount);
+      if (amount <= drawerTotal) {
+        customAlert("O valor para troco deve ser maior que o total do pedido.", "error");
+        return;
+      }
+    }
+
+    whatsappConfirmation();
+
+    if (menu.pix_key !== null) {
+      // dinheiro nunca usa pix, então sempre vai pro whatsapp
+    }
+    setPurchaseStage("whatsapp");
+  };
+
   const confirmPurchase = () => {
     saveCustomerInfo();
 
@@ -635,6 +669,8 @@ ${customerInfo}`;
       costumerNeighborhood,
       selectedService,
       selectedPayment,
+      needsChange,
+      changeForAmount,
     });
 
     if (!url) {
@@ -652,6 +688,8 @@ ${customerInfo}`;
             costumer_name: costumerName || null,
             costumer_phone: costumerPhone || null,
             payment_method: selectedPayment || null,
+            change_requested: selectedPayment === "cash" ? needsChange : null,
+            change_for_amount: selectedPayment === "cash" && needsChange ? normalizeMoney(changeForAmount) : null,
             service: selectedService || null,
             items_list: (currentItems || []).map((it) => ({
               name: it.name,
@@ -827,11 +865,13 @@ ${customerInfo}`;
                     ? "Como deseja realizar o pedido?"
                     : purchaseStage === "costumerInfos"
                       ? "Confirmar compra"
-                      : purchaseStage === "sendPix"
-                        ? "Envio do PIX"
-                        : purchaseStage === "whatsapp"
-                          ? "Confirmação no WhatsApp"
-                          : null}
+                      : purchaseStage === "cashChange"
+                        ? "Pagamento em dinheiro"
+                        : purchaseStage === "sendPix"
+                          ? "Envio do PIX"
+                          : purchaseStage === "whatsapp"
+                            ? "Confirmação no WhatsApp"
+                            : null}
                 </h3>
                 {purchaseStage === "costumerInfos" && (
                   <p style={{ color: grayToUse }} className="text-sm">
@@ -1013,9 +1053,21 @@ ${customerInfo}`;
                     onClick={() => {
                       if (shouldUseStripe(selectedPayment)) {
                         handleStripeCheckout();
-                      } else {
-                        confirmPurchase();
+                        return;
                       }
+
+                      if (selectedPayment === "cash") {
+                        saveCustomerInfo();
+                        if (!validateCustomerFields()) return;
+                        if (!selectedPayment) {
+                          customAlert("Selecione a forma de pagamento", "error");
+                          return;
+                        }
+                        setPurchaseStage("cashChange"); // ← nova etapa
+                        return;
+                      }
+
+                      confirmPurchase();
                     }}
                     className="cursor-pointer hover:opacity-90 p-2 font-bold transition rounded"
                     style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
@@ -1023,6 +1075,63 @@ ${customerInfo}`;
                     {isStripeLoading ? <>Redirecionando...</> : "Confirmar"}
                   </button>
                 </>
+              </div>
+            ) : purchaseStage === "cashChange" ? (
+              <div className="flex flex-col gap-3">
+                <p style={{ color: grayToUse }} className="text-sm">
+                  Total do pedido:{" "}
+                  <strong style={{ color: foregroundToUse }}>{formatCurrency(drawerTotal, menu?.currency)}</strong>
+                </p>
+
+                <label className="block text-sm font-medium">Precisa de troco?</label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setNeedsChange(true)}
+                    className="flex-1 py-2 rounded font-semibold cursor-pointer transition"
+                    style={{
+                      backgroundColor: needsChange === true ? menu.details_color : translucidToUse,
+                      color: needsChange === true ? getContrastTextColor(menu.details_color) : foregroundToUse,
+                    }}
+                  >
+                    Sim
+                  </button>
+                  <button
+                    onClick={() => {
+                      setNeedsChange(false);
+                      setChangeForAmount("");
+                    }}
+                    className="flex-1 py-2 rounded font-semibold cursor-pointer transition"
+                    style={{
+                      backgroundColor: needsChange === false ? menu.details_color : translucidToUse,
+                      color: needsChange === false ? getContrastTextColor(menu.details_color) : foregroundToUse,
+                    }}
+                  >
+                    Não
+                  </button>
+                </div>
+
+                {needsChange === true && (
+                  <div>
+                    <label className="block text-sm font-medium">Troco para quanto?</label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="Ex: 50,00"
+                      value={changeForAmount}
+                      onChange={(e) => setChangeForAmount(e.target.value)}
+                      className="w-full p-2 rounded"
+                      style={{ backgroundColor: translucidToUse }}
+                    />
+                  </div>
+                )}
+
+                <button
+                  onClick={confirmCashChange}
+                  className="cursor-pointer hover:opacity-90 p-2 font-bold transition rounded mt-2"
+                  style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
+                >
+                  Confirmar
+                </button>
               </div>
             ) : purchaseStage === "sendPix" ? (
               <div>

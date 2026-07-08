@@ -653,6 +653,11 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
                             <span className="rounded-full border border-translucid px-3 py-1 color-gray bg-[var(--translucid)]">
                               {paymentLabels[order.payment_method] || "Não informado"}
                             </span>
+                            {order.change_requested && (
+                              <span className="rounded-full border border-translucid px-3 py-1 color-gray bg-[var(--translucid)]">
+                                Troco para: {formatCurrency(order.change_for_amount, menu?.currency)}
+                              </span>
+                            )}
                           </div>
 
                           <div className="mt-12 rounded-xl">
@@ -832,6 +837,7 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
                   .update({
                     costumer_name: selectedOrder.costumer_name,
                     costumer_phone: selectedOrder.costumer_phone,
+                    neighborhood: selectedOrder.neighborhood ?? null,
                     address: selectedOrder.address ?? null,
                     service: selectedOrder.service,
                     payment_method: selectedOrder.payment_method,
@@ -877,12 +883,26 @@ const Orders = ({ setSelectedTab, reloadTrigger }) => {
                   </div>
                 </div>
 
-                {selectedOrder.address ? (
+                {selectedOrder.neighborhood != null ? (
+                  <div className="mt-3">
+                    <label className="mb-1 block text-sm font-medium">Bairro</label>
+                    <input
+                      type="text"
+                      className="input w-full rounded-xl bg-translucid p-3"
+                      placeholder="Informe o bairro"
+                      value={selectedOrder.neighborhood || ""}
+                      onChange={(e) => setSelectedOrder({ ...selectedOrder, neighborhood: e.target.value })}
+                    />
+                  </div>
+                ) : null}
+
+                {selectedOrder.address != null ? (
                   <div className="mt-3">
                     <label className="mb-1 block text-sm font-medium">Endereço</label>
                     <input
                       type="text"
                       className="input w-full rounded-xl bg-translucid p-3"
+                      placeholder="Informe o endereço"
                       value={selectedOrder.address || ""}
                       onChange={(e) => setSelectedOrder({ ...selectedOrder, address: e.target.value })}
                     />
