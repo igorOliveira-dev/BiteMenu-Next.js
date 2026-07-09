@@ -98,9 +98,21 @@ export async function POST(req) {
       case "invoice.paid":
       case "invoice.payment_succeeded":
       case "invoice_payment.paid": {
-        const invoice = event.data.object;
-        const customerId = invoice.customer;
-        const subscriptionId = invoice.subscription;
+        let invoiceObj = event.data.object;
+
+        if (event.type === "invoice_payment.paid") {
+          const invoiceId = typeof invoiceObj.invoice === "string" ? invoiceObj.invoice : invoiceObj.invoice?.id;
+
+          if (!invoiceId) {
+            console.log("[Webhook] invoice_payment.paid sem invoice id; ignorando");
+            break;
+          }
+
+          invoiceObj = await stripe.invoices.retrieve(invoiceId);
+        }
+
+        const customerId = invoiceObj.customer;
+        const subscriptionId = invoiceObj.subscription ?? invoiceObj.parent?.subscription_details?.subscription ?? null;
 
         if (!customerId || !subscriptionId) {
           console.log("[Webhook] paid sem customer/subscription; ignorando");
