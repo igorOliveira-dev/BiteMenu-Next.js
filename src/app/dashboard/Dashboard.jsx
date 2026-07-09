@@ -249,10 +249,9 @@ const Dashboard = ({
 
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className={`w-full px-1 xxs:px-4 py-5 lg:py-4 hover-bg-translucid transition-colors lg:border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left`}
+              className={`w-full lg:hidden px-1 xxs:px-4 py-5 lg:py-4 hover-bg-translucid transition-colors lg:border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left`}
             >
               <FaBars className="text-lg shrink-0" />
-              <span className="hidden lg:block">Vendas</span>
             </button>
           </div>
 
