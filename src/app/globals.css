@@ -6,7 +6,7 @@
 }
 
 :root {
-  --background: #feffee;
+  --background: #f8ecec;
   --foreground: #171717;
   --gray: #333;
   --low-gray: #cdcdcd;
@@ -15,7 +15,7 @@
   --low-translucid: #00000005;
   --translucid: #00000012;
   --high-translucid: #00000032;
-  --red: #d41010;
+  --red: #d42020;
   --shadow: #00000070;
   --theme-red: #ce0000;
   --theme-yellow: #ed8a00;
@@ -32,7 +32,7 @@
     --low-translucid: #ffffff05;
     --translucid: #ffffff10;
     --high-translucid: #ffffff32;
-    --red: #d41010;
+    --red: #d42020;
     --shadow: #000000;
     --theme-red: #ff3535;
     --theme-yellow: #ffff30;
@@ -41,7 +41,7 @@
 }
 
 [data-theme="light"] {
-  --background: #feffee;
+  --background: #f8ecec;
   --foreground: #171717;
   --gray: #333;
   --low-gray: #cdcdcd;
@@ -50,7 +50,7 @@
   --low-translucid: #00000005;
   --translucid: #00000012;
   --high-translucid: #00000032;
-  --red: #d41010;
+  --red: #d42020;
   --shadow: #00000070;
   --theme-red: #ce0000;
   --theme-yellow: #ed8a00;
@@ -66,7 +66,7 @@
   --low-translucid: #ffffff05;
   --translucid: #ffffff10;
   --high-translucid: #ffffff32;
-  --red: #d41010;
+  --red: #d42020;
   --shadow: #000000;
   --theme-red: #ff3535;
   --theme-yellow: #ffff30;
