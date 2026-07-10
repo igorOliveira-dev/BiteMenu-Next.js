@@ -90,6 +90,8 @@ const Dashboard = ({
   const previousCountRef = useRef(0);
   const [reloadOrderTrigger, setReloadOrderTrigger] = useState(0);
 
+  const [orderQuantityChangeTrigger, setOrderQuantityChangeTrigger] = useState(0);
+
   const audioRef = useRef(null);
   const mainRef = useRef(null);
 
@@ -177,7 +179,7 @@ const Dashboard = ({
     const interval = setInterval(checkOrders, 30000);
 
     return () => clearInterval(interval);
-  }, [menu?.id]);
+  }, [menu?.id, orderQuantityChangeTrigger]);
 
   // Modal de compartilhamento (hamburger) fecha com botão "Voltar"
   useModalBackHandler(isOpen, () => setIsOpen(false));
@@ -321,7 +323,7 @@ const Dashboard = ({
           />
         </div>
         <div className={selectedTab === "orders" ? "block" : "hidden"}>
-          <Orders reloadTrigger={reloadOrderTrigger} />
+          <Orders reloadTrigger={reloadOrderTrigger} setOrderQuantityChangeTrigger={setOrderQuantityChangeTrigger} />
         </div>
         <div className={selectedTab === "sales" ? "block" : "hidden"}>
           <Sales setSelectedTab={setSelectedTab} />

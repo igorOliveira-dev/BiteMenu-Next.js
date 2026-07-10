@@ -21,16 +21,43 @@ import { useConfirm } from "@/providers/ConfirmProvider";
 import SalesSummary from "./components/sales/SalesSummary";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 
-const SectionCard = ({ title, subtitle, children, icon = null }) => (
-  <section className="rounded-2xl border border-translucid bg-[var(--low-translucid)] p-4 shadow-sm">
-    <div className="mb-3 flex items-start gap-3">
-      {icon ? <div className="mt-0.5 opacity-80">{icon}</div> : null}
-      <div>
-        <h3 className="text-base font-semibold leading-tight">{title}</h3>
-        {subtitle ? <p className="mt-1 text-xs color-gray">{subtitle}</p> : null}
+const SectionCard = ({ title, subtitle, children, icon = null, open, onToggle, summary }) => (
+  <section className="rounded-2xl border border-translucid bg-[var(--low-translucid)] overflow-hidden shadow-sm">
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={open}
+      className="flex w-full items-center justify-between gap-3 p-4 text-left transition hover:bg-white/[0.02] cursor-pointer"
+    >
+      <div className="flex min-w-0 items-start gap-3">
+        {icon ? <div className="mt-0.5 opacity-80">{icon}</div> : null}
+        <div className="min-w-0">
+          <h3 className="text-base font-semibold leading-tight">{title}</h3>
+          {!open && summary ? (
+            <p className="mt-1 truncate text-xs color-gray">{summary}</p>
+          ) : subtitle ? (
+            <p className="mt-1 text-xs color-gray">{subtitle}</p>
+          ) : null}
+        </div>
+      </div>
+
+      <span
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-translucid bg-translucid transition-transform ${
+          open ? "rotate-180" : "rotate-0"
+        }`}
+      >
+        <FaChevronDown className="text-xs" />
+      </span>
+    </button>
+
+    <div
+      className="grid transition-[grid-template-rows] duration-300 ease-in-out"
+      style={{ display: "grid", gridTemplateRows: open ? "1fr" : "0fr" }}
+    >
+      <div className="overflow-hidden">
+        <div className="border-t border-translucid p-4">{children}</div>
       </div>
     </div>
-    {children}
   </section>
 );
 
@@ -47,6 +74,14 @@ const Sales = ({ setSelectedTab }) => {
   const [selectedSale, setSelectedSale] = useState(null);
   const [expandedMonths, setExpandedMonths] = useState({});
   const [monthsList, setMonthsList] = useState([]);
+
+  const [openSaleSections, setOpenSaleSections] = useState({
+    cliente: false,
+    venda: false,
+    itens: false,
+  });
+
+  const [openItemIndexes, setOpenItemIndexes] = useState(() => new Set());
 
   const PAGE_SIZE = 20;
 
@@ -189,6 +224,42 @@ const Sales = ({ setSelectedTab }) => {
   const openSaleModal = (sale) => {
     setSelectedSale(sale);
     setSaleModalOpen(true);
+    setOpenSaleSections({ cliente: false, venda: false, itens: false });
+    setOpenItemIndexes(new Set());
+  };
+
+  const toggleSaleSection = (key) => {
+    setOpenSaleSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const toggleItemOpen = (i) => {
+    setOpenItemIndexes((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
+  };
+
+  const deleteSaleItem = async (i) => {
+    const ok = await confirm("Quer mesmo remover esse item?");
+    if (!ok) return;
+
+    const updated = [...(selectedSale.items_list || [])];
+    updated.splice(i, 1);
+    setSelectedSale({ ...selectedSale, items_list: updated });
+
+    setOpenItemIndexes((prev) => {
+      const next = new Set();
+      prev.forEach((idx) => {
+        if (idx < i) next.add(idx);
+        else if (idx > i) next.add(idx - 1);
+        // idx === i é o item removido, não entra
+      });
+      return next;
+    });
+
+    customAlert("Item removido da venda", "success");
   };
 
   useEffect(() => {
@@ -357,7 +428,7 @@ const Sales = ({ setSelectedTab }) => {
         <SalesSummary setSelectedTab={setSelectedTab} refreshSignal={refreshSummary} />
 
         <h3 className="mb-3 text-base font-semibold">Histórico de vendas</h3>
-        <div className="space-y-3">
+        <div className="space-y-3 mb-4">
           {!monthsList || monthsList.length === 0 ? (
             <p className="p-6 text-center color-gray">Nenhuma venda encontrada.</p>
           ) : null}
@@ -527,7 +598,7 @@ const Sales = ({ setSelectedTab }) => {
                             </button>
                             <button
                               onClick={() => deleteSale(sale.id, key)}
-                              className="flex-1 cursor-pointer px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition"
+                              className="flex-1 cursor-pointer px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm font-medium border border-red-500/20 bg-red-500/40 hover:opacity-90 transition"
                             >
                               <FaTrash /> Excluir
                             </button>
@@ -600,7 +671,13 @@ const Sales = ({ setSelectedTab }) => {
                 setSaleModalOpen(false);
               }}
             >
-              <SectionCard title="Cliente" subtitle="Dados básicos da venda" icon={<FaPhoneAlt />}>
+              <SectionCard
+                title="Cliente"
+                subtitle="Dados básicos da venda"
+                icon={<FaPhoneAlt />}
+                open={openSaleSections.cliente}
+                onToggle={() => toggleSaleSection("cliente")}
+              >
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-sm font-medium">Nome do cliente</label>
@@ -623,7 +700,13 @@ const Sales = ({ setSelectedTab }) => {
                 </div>
               </SectionCard>
 
-              <SectionCard title="Venda" subtitle="Tipo de atendimento e pagamento" icon={<FaClipboardList />}>
+              <SectionCard
+                title="Venda"
+                subtitle="Tipo de atendimento e pagamento"
+                icon={<FaClipboardList />}
+                open={openSaleSections.venda}
+                onToggle={() => toggleSaleSection("venda")}
+              >
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-sm font-medium">Serviço</label>
@@ -673,177 +756,249 @@ const Sales = ({ setSelectedTab }) => {
                 </div>
               </SectionCard>
 
-              <SectionCard title="Itens" subtitle="Edite rapidamente o conteúdo da venda">
+              <SectionCard
+                title="Itens"
+                subtitle="Edite rapidamente o conteúdo da venda"
+                open={openSaleSections.itens}
+                onToggle={() => toggleSaleSection("itens")}
+              >
                 <div className="space-y-4">
-                  {(selectedSale.items_list || []).map((item, i) => (
-                    <div key={i} className="rounded-2xl border border-translucid bg-[var(--low-translucid)] p-4">
-                      <div className="mb-3 flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <p className="mb-1 text-xs uppercase tracking-wide color-gray">Item</p>
-                          <input
-                            type="text"
-                            className="input w-full rounded-xl bg-translucid p-3 text-sm"
-                            value={item.name}
-                            onChange={(e) => {
-                              const updated = [...selectedSale.items_list];
-                              updated[i] = { ...updated[i], name: e.target.value };
-                              setSelectedSale({ ...selectedSale, items_list: updated });
-                            }}
-                            placeholder="Nome do item"
-                          />
-                        </div>
+                  {(selectedSale.items_list || []).map((item, i) => {
+                    const isItemOpen = openItemIndexes.has(i);
+                    const additionalsNames = (item.additionals || [])
+                      .map((a) => a.name)
+                      .filter(Boolean)
+                      .join(", ");
+                    const itemSubtotal = (Number(item.qty) || 0) * (Number(item.price) || 0);
+
+                    return (
+                      <div
+                        key={i}
+                        className="rounded-2xl border border-translucid bg-[var(--low-translucid)] overflow-hidden"
+                      >
                         <button
                           type="button"
-                          onClick={() => {
-                            const updated = [...(selectedSale.items_list || [])];
-                            updated.splice(i, 1);
-                            setSelectedSale({ ...selectedSale, items_list: updated });
-                          }}
-                          className="rounded-xl bg-red-600 p-3 text-white transition hover:opacity-90 cursor-pointer mt-5"
+                          onClick={() => toggleItemOpen(i)}
+                          aria-expanded={isItemOpen}
+                          className="flex w-full items-center justify-between gap-3 p-4 text-left transition hover:bg-white/[0.02] cursor-pointer"
                         >
-                          <FaTrash />
-                        </button>
-                      </div>
+                          <div className="flex min-w-0 flex-1 items-center gap-3">
+                            {item.image_url ? (
+                              <img
+                                src={item.image_url}
+                                alt={item.name}
+                                className="hidden xs:block h-12 w-12 flex-shrink-0 rounded-xl object-cover"
+                              />
+                            ) : null}
 
-                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                        <div>
-                          <label className="mb-1 block text-sm color-gray">Quantidade</label>
-                          <input
-                            type="number"
-                            min="1"
-                            className="input w-full rounded-xl bg-translucid p-3 text-sm"
-                            value={item.qty}
-                            onChange={(e) => {
-                              const updated = [...selectedSale.items_list];
-                              updated[i] = { ...updated[i], qty: Number(e.target.value) || 0 };
-                              setSelectedSale({ ...selectedSale, items_list: updated });
-                            }}
-                          />
-                        </div>
-                        <div>
-                          <label className="mb-1 block text-sm color-gray">Preço unidade</label>
-                          <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            className="input w-full rounded-xl bg-translucid p-3 text-sm"
-                            value={item.price}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              const updated = [...selectedSale.items_list];
-                              updated[i] = { ...updated[i], price: value === "" ? null : Number(value) };
-                              setSelectedSale({ ...selectedSale, items_list: updated });
-                            }}
-                          />
-                        </div>
-                        <div className="col-span-2 sm:col-span-1">
-                          <label className="mb-1 block text-sm color-gray">Subtotal</label>
-                          <div className="rounded-xl border border-translucid px-3 py-3 text-sm font-medium">
-                            {formatCurrency((Number(item.qty) || 0) * (Number(item.price) || 0), menu?.currency)}
+                            <div className="min-w-0">
+                              <p className="truncate font-medium">
+                                {item.qty}x {item.name || "Item sem nome"}
+                              </p>
+                              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm color-gray">
+                                <span>{formatCurrency(itemSubtotal, menu?.currency)}</span>
+                                {additionalsNames ? <span className="truncate">{additionalsNames}</span> : null}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
 
-                      <div className="mt-3">
-                        <label className="mb-1 block text-sm color-gray">Observações</label>
-                        <textarea
-                          className="input w-full rounded-xl bg-translucid p-3 text-sm"
-                          value={item.note || ""}
-                          onChange={(e) => {
-                            const updated = [...selectedSale.items_list];
-                            updated[i] = { ...updated[i], note: e.target.value };
-                            setSelectedSale({ ...selectedSale, items_list: updated });
-                          }}
-                          placeholder="Observações do item"
-                        />
-                      </div>
+                          <div className="flex shrink-0 items-center gap-2">
+                            <span
+                              role="button"
+                              aria-label="Remover item"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteSaleItem(i);
+                              }}
+                              className="flex items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/40 h-8 w-8 text-sm font-semibold transition hover:opacity-90 cursor-pointer"
+                            >
+                              <FaTrash />
+                            </span>
+                            <span
+                              className={`flex h-8 w-8 items-center justify-center rounded-full border border-translucid bg-translucid transition-transform ${
+                                isItemOpen ? "rotate-180" : "rotate-0"
+                              }`}
+                            >
+                              <FaChevronDown className="text-xs" />
+                            </span>
+                          </div>
+                        </button>
 
-                      <div className="mt-4 rounded-xl border border-translucid p-3">
-                        <div className="mb-3 flex items-center justify-between gap-3">
-                          <span className="text-sm font-medium">Opções</span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const updated = [...(selectedSale.items_list || [])];
-                              const additionals = updated[i].additionals ? [...updated[i].additionals] : [];
-                              additionals.push({ name: "", price: 0 });
-                              updated[i] = { ...updated[i], additionals };
-                              setSelectedSale({ ...selectedSale, items_list: updated });
-                            }}
-                            className="cursor-pointer rounded-xl bg-blue-600 px-3 py-2 text-sm text-white transition hover:bg-blue-700"
-                          >
-                            + Opção
-                          </button>
-                        </div>
-
-                        {(item.additionals || []).length === 0 ? (
-                          <p className="text-sm color-gray">Nenhuma opção adicionada.</p>
-                        ) : (
-                          <div className="space-y-2">
-                            {(item.additionals || []).map((add, ai) => (
-                              <div key={ai} className="grid grid-cols-[1fr_110px_48px] gap-2">
+                        <div
+                          className="grid transition-[grid-template-rows] duration-300 ease-in-out"
+                          style={{ display: "grid", gridTemplateRows: isItemOpen ? "1fr" : "0fr" }}
+                        >
+                          <div className="overflow-hidden">
+                            <div className="border-t border-translucid p-4">
+                              <div className="mb-3">
+                                <p className="mb-1 text-xs uppercase tracking-wide color-gray">Item</p>
                                 <input
                                   type="text"
-                                  className="input rounded-xl bg-translucid p-3 text-sm"
-                                  value={add.name}
+                                  className="input w-full rounded-xl bg-translucid p-3 text-sm"
+                                  value={item.name}
                                   onChange={(e) => {
                                     const updated = [...selectedSale.items_list];
-                                    const ad = updated[i].additionals ? [...updated[i].additionals] : [];
-                                    ad[ai] = { ...ad[ai], name: e.target.value };
-                                    updated[i] = { ...updated[i], additionals: ad };
+                                    updated[i] = { ...updated[i], name: e.target.value };
                                     setSelectedSale({ ...selectedSale, items_list: updated });
                                   }}
-                                  placeholder="Nome da opção"
+                                  placeholder="Nome do item"
                                 />
-                                <input
-                                  type="number"
-                                  step="0.01"
-                                  min="0"
-                                  className="input rounded-xl bg-translucid p-3 text-sm"
-                                  value={add.price ?? ""}
-                                  onChange={(e) => {
-                                    const value = e.target.value;
-                                    const updated = [...selectedSale.items_list];
-                                    const ad = updated[i].additionals ? [...updated[i].additionals] : [];
-                                    ad[ai] = { ...ad[ai], price: value === "" ? null : Number(value) };
-                                    updated[i] = { ...updated[i], additionals: ad };
-                                    setSelectedSale({ ...selectedSale, items_list: updated });
-                                  }}
-                                  placeholder="Preço"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const updated = [...selectedSale.items_list];
-                                    const ad = updated[i].additionals ? [...updated[i].additionals] : [];
-                                    ad.splice(ai, 1);
-                                    updated[i] = { ...updated[i], additionals: ad };
-                                    setSelectedSale({ ...selectedSale, items_list: updated });
-                                  }}
-                                  className="cursor-pointer rounded-xl bg-red-600 p-2 flex justify-center items-center text-white hover:opacity-90 transition"
-                                >
-                                  <FaTrash />
-                                </button>
                               </div>
-                            ))}
+
+                              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                                <div>
+                                  <label className="mb-1 block text-sm color-gray">Quantidade</label>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    className="input w-full rounded-xl bg-translucid p-3 text-sm"
+                                    value={item.qty}
+                                    onChange={(e) => {
+                                      const updated = [...selectedSale.items_list];
+                                      updated[i] = { ...updated[i], qty: Number(e.target.value) || 0 };
+                                      setSelectedSale({ ...selectedSale, items_list: updated });
+                                    }}
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="mb-1 block text-sm color-gray">Preço unidade</label>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    className="input w-full rounded-xl bg-translucid p-3 text-sm"
+                                    value={item.price}
+                                    onChange={(e) => {
+                                      const value = e.target.value;
+                                      const updated = [...selectedSale.items_list];
+                                      updated[i] = { ...updated[i], price: value === "" ? null : Number(value) };
+                                      setSelectedSale({ ...selectedSale, items_list: updated });
+                                    }}
+                                  />
+                                </div>
+
+                                <div className="col-span-2 sm:col-span-1">
+                                  <label className="mb-1 block text-sm color-gray">Subtotal</label>
+                                  <div className="rounded-xl border border-translucid px-3 py-3 text-sm font-medium">
+                                    {formatCurrency(itemSubtotal, menu?.currency)}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="mt-3">
+                                <label className="mb-1 block text-sm color-gray">Observações</label>
+                                <textarea
+                                  className="input w-full rounded-xl bg-translucid p-3 text-sm"
+                                  value={item.note || ""}
+                                  onChange={(e) => {
+                                    const updated = [...selectedSale.items_list];
+                                    updated[i] = { ...updated[i], note: e.target.value };
+                                    setSelectedSale({ ...selectedSale, items_list: updated });
+                                  }}
+                                  placeholder="Observações do item"
+                                />
+                              </div>
+
+                              <div className="mt-4 rounded-xl">
+                                <div className="mb-3 flex items-center justify-between gap-3">
+                                  <span className="text-sm font-medium">Opções</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = [...(selectedSale.items_list || [])];
+                                      const additionals = updated[i].additionals ? [...updated[i].additionals] : [];
+                                      additionals.push({ name: "", price: 0 });
+                                      updated[i] = { ...updated[i], additionals };
+                                      setSelectedSale({ ...selectedSale, items_list: updated });
+                                    }}
+                                    className="cursor-pointer rounded-xl bg-blue-600 px-3 py-2 text-sm text-white transition hover:bg-blue-700"
+                                  >
+                                    + Opção
+                                  </button>
+                                </div>
+
+                                {(item.additionals || []).length === 0 ? (
+                                  <p className="text-sm color-gray">Nenhuma opção adicionada.</p>
+                                ) : (
+                                  <div className="space-y-2">
+                                    {(item.additionals || []).map((add, ai) => (
+                                      <div
+                                        key={ai}
+                                        className="grid grid-cols-[minmax(0,1fr)_52px_36px] xxs:grid-cols-[minmax(0,1fr)_64px_36px] items-center gap-1.5 sm:grid-cols-[minmax(0,1fr)_110px_44px] sm:gap-2"
+                                      >
+                                        <input
+                                          type="text"
+                                          className="input rounded-xl bg-translucid p-3 text-sm"
+                                          value={add.name}
+                                          onChange={(e) => {
+                                            const updated = [...selectedSale.items_list];
+                                            const ad = updated[i].additionals ? [...updated[i].additionals] : [];
+                                            ad[ai] = { ...ad[ai], name: e.target.value };
+                                            updated[i] = { ...updated[i], additionals: ad };
+                                            setSelectedSale({ ...selectedSale, items_list: updated });
+                                          }}
+                                          placeholder="Nome da opção"
+                                        />
+
+                                        <input
+                                          type="number"
+                                          step="0.01"
+                                          min="0"
+                                          className="input rounded-xl bg-translucid p-3 text-sm"
+                                          value={add.price ?? ""}
+                                          onChange={(e) => {
+                                            const value = e.target.value;
+                                            const updated = [...selectedSale.items_list];
+                                            const ad = updated[i].additionals ? [...updated[i].additionals] : [];
+                                            ad[ai] = { ...ad[ai], price: value === "" ? null : Number(value) };
+                                            updated[i] = { ...updated[i], additionals: ad };
+                                            setSelectedSale({ ...selectedSale, items_list: updated });
+                                          }}
+                                          placeholder="Preço"
+                                        />
+
+                                        <button
+                                          type="button"
+                                          onClick={async () => {
+                                            const ok = await confirm("Quer mesmo remover esta opção?");
+                                            if (!ok) return;
+
+                                            const updated = [...selectedSale.items_list];
+                                            const ad = updated[i].additionals ? [...updated[i].additionals] : [];
+                                            ad.splice(ai, 1);
+                                            updated[i] = { ...updated[i], additionals: ad };
+                                            setSelectedSale({ ...selectedSale, items_list: updated });
+
+                                            customAlert("Opção removida do item", "success");
+                                          }}
+                                          className="flex w-full h-full items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/40 text-sm font-semibold transition hover:opacity-90 cursor-pointer"
+                                        >
+                                          <FaTrash />
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                        )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setSelectedSale({
-                      ...selectedSale,
-                      items_list: [
-                        ...(selectedSale.items_list || []),
-                        { name: "", qty: 1, price: 0, note: "", additionals: [] },
-                      ],
-                    })
-                  }
+                  onClick={() => {
+                    const updatedItems = [
+                      ...(selectedSale.items_list || []),
+                      { name: "", qty: 1, price: 0, note: "", additionals: [] },
+                    ];
+                    setSelectedSale({ ...selectedSale, items_list: updatedItems });
+                    setOpenItemIndexes((prev) => new Set(prev).add(updatedItems.length - 1));
+                  }}
                   className="mt-4 cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-white transition hover:bg-blue-700"
                 >
                   + Adicionar item
@@ -856,9 +1011,6 @@ const Sales = ({ setSelectedTab }) => {
                     <p className="text-xs uppercase tracking-wide color-gray">Total da venda</p>
                     <p className="text-2xl font-bold">{formatCurrency(modalTotal, menu?.currency)}</p>
                   </div>
-                  {modalFee > 0 && (
-                    <p className="text-sm color-gray">Taxa de entrega: {formatCurrency(modalFee, menu?.currency)}</p>
-                  )}
                 </div>
 
                 <div className="flex flex-col gap-2 sm:flex-row">
