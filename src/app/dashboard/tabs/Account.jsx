@@ -11,6 +11,8 @@ import { supabase } from "@/lib/supabaseClient";
 import { useAlert } from "@/providers/AlertProvider";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import GenericModal from "@/components/GenericModal";
+import ActionMenu from "@/components/ActionMenu";
+import ActionsMenu from "@/components/ActionMenu";
 
 const Account = ({ setSelectedTab }) => {
   const { profile, loading } = useUser();
@@ -25,16 +27,22 @@ const Account = ({ setSelectedTab }) => {
   const [originalPhone, setOriginalPhone] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [tempEmail, setTempEmail] = useState(profile?.email);
+
   // quando o profile carregar, preenche o telefone
   useEffect(() => {
     if (profile?.phone) {
       const phoneStr = String(profile.phone);
       setPhone(phoneStr);
-      setOriginalPhone(phoneStr); // valor inicial
+      setOriginalPhone(phoneStr);
     }
     if (profile?.display_name) {
       setName(profile.display_name);
       setTempName(profile.display_name);
+    }
+    if (profile?.email) {
+      setTempEmail(profile.email); // adicionado
     }
   }, [profile]);
 
@@ -106,6 +114,40 @@ const Account = ({ setSelectedTab }) => {
     }
   };
 
+  const handleSaveEmail = async () => {
+    const trimmed = tempEmail.trim();
+
+    // validação simples de formato
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmed)) {
+      customAlert("Digite um email válido.", "error");
+      return;
+    }
+
+    if (trimmed === profile.email) {
+      setEmailModalOpen(false);
+      return;
+    }
+
+    setSaving(true);
+
+    const { error } = await supabase.auth.updateUser({ email: trimmed });
+
+    if (error) {
+      console.error(error.message);
+      if (error.message.toLowerCase().includes("already registered")) {
+        customAlert("Esse email já está em uso.", "error");
+      } else {
+        customAlert("Não foi possível atualizar o email.", "error");
+      }
+    } else {
+      customAlert("Verifique sua caixa de entrada para confirmar o novo email.", "success");
+      setEmailModalOpen(false);
+    }
+
+    setSaving(false);
+  };
+
   if (loading) {
     return <Loading />;
   }
@@ -132,14 +174,20 @@ const Account = ({ setSelectedTab }) => {
               <p className="default-h1 font-bold line-clamp-1">{name}</p>
               <p className="color-gray text-sm break-all">{profile?.email}</p>
             </div>
-            <button
-              type="button"
-              onClick={() => setNameModalOpen(true)}
-              aria-label="Editar nome"
-              className="flex shrink-0 items-center gap-2 rounded-lg border border-[var(--translucid)] bg-translucid px-3 py-2 text-sm cursor-pointer transition hover:opacity-80"
-            >
-              <FaPen /> <span className="hidden xs:inline">Editar</span>
-            </button>
+            <ActionsMenu
+              options={[
+                {
+                  label: "Alterar nome",
+                  icon: <FaPen size={13} />,
+                  onClick: () => setNameModalOpen(true),
+                },
+                {
+                  label: "Alterar email",
+                  icon: <FaPen size={13} />,
+                  onClick: () => setEmailModalOpen(true),
+                },
+              ]}
+            />
           </div>
 
           {/* Plano */}
@@ -223,6 +271,36 @@ const Account = ({ setSelectedTab }) => {
             <button
               onClick={handleSaveName}
               className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded-lg transition hover:bg-green-700"
+            >
+              {saving ? "Salvando..." : "Salvar"}
+            </button>
+          </div>
+        </GenericModal>
+      )}
+      {emailModalOpen && (
+        <GenericModal title="Alterar email" onClose={() => setEmailModalOpen(false)} maxWidth={"420px"} wfull>
+          <input
+            type="email"
+            placeholder="Novo email"
+            value={tempEmail ?? ""}
+            onChange={(e) => setTempEmail(e.target.value)}
+            className="w-full p-3 rounded-lg border border-[var(--translucid)] bg-translucid mb-2 outline-none transition focus:border-red-500/70"
+          />
+          <p className="text-xs color-gray mb-4">Você precisará confirmar a alteração pelo link enviado ao novo email.</p>
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => {
+                setTempEmail(profile.email);
+                setEmailModalOpen(false);
+              }}
+              className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded-lg transition hover:opacity-80"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleSaveEmail}
+              disabled={saving}
+              className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded-lg transition hover:bg-green-700 disabled:opacity-50"
             >
               {saving ? "Salvando..." : "Salvar"}
             </button>
