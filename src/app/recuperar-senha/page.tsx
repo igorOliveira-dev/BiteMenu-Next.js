@@ -15,7 +15,7 @@ export default function ForgotPasswordPage() {
     setMessage("");
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: "https://www.bitemenu.com.br/update-password",
+      redirectTo: "https://www.bitemenu.com.br/login",
     });
 
     if (error) {

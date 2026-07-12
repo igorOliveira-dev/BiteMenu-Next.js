@@ -131,7 +131,10 @@ const Account = ({ setSelectedTab }) => {
 
     setSaving(true);
 
-    const { error } = await supabase.auth.updateUser({ email: trimmed });
+    const { error } = await supabase.auth.updateUser(
+      { email: trimmed },
+      { emailRedirectTo: "https://www.bitemenu.com.br/dashboard" },
+    );
 
     if (error) {
       console.error(error.message);
