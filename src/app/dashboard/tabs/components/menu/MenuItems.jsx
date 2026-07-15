@@ -5,6 +5,7 @@ import {
   FaBullhorn,
   FaChevronLeft,
   FaCog,
+  FaCopy,
   FaEye,
   FaEyeSlash,
   FaMinus,
@@ -40,6 +41,24 @@ function getContrastTextColor(hex) {
   const b = parseInt(cleanHex.substring(4, 6), 16);
   const yiq = (r * 299 + g * 587 + b * 114) / 1000;
   return yiq >= 128 ? "black" : "white";
+}
+
+function buildCopyName(originalName, existingNames = []) {
+  // remove sufixo "(cópia)" ou "(cópia N)" já existente no final do nome
+  const baseName = String(originalName || "")
+    .replace(/\s*\(cópia(?:\s+\d+)?\)\s*$/i, "")
+    .trim();
+
+  // gera "Nome (cópia)", e se já existir, "Nome (cópia 2)", "Nome (cópia 3)"...
+  let candidate = `${baseName} (cópia)`;
+  let counter = 2;
+
+  while (existingNames.includes(candidate)) {
+    candidate = `${baseName} (cópia ${counter})`;
+    counter++;
+  }
+
+  return candidate.slice(0, 25); // respeita o maxLength do campo nome
 }
 
 const uid = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `tmp-${Date.now()}`);
@@ -172,6 +191,7 @@ function SortableMenuItem({
   cat,
   openItemModal,
   deleteItem,
+  duplicateItem,
   toggleItemVisibility,
   detailsColor,
   backgroundColor,
@@ -269,6 +289,21 @@ function SortableMenuItem({
               >
                 <FaPen size={13} />
                 Editar item
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  duplicateItem(cat.id, item);
+                  setMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-3 text-sm text-left cursor-pointer transition"
+                style={{ color: menuText }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = menuHover)}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+              >
+                <FaCopy size={13} />
+                Duplicar item
               </button>
 
               <button
@@ -946,6 +981,80 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       alert?.("Erro ao remover item", "error");
       return false;
     }
+  };
+
+  const duplicateItem = async (categoryId, item) => {
+    const safeCategories = Array.isArray(categories) ? categories : [];
+    const totalItems = safeCategories.reduce((sum, c) => sum + (c.menu_items?.length || 0), 0);
+    const itemLimit = getItemLimitByRole(ownerRole);
+
+    if (totalItems >= itemLimit) {
+      openItemsLimitModal();
+      return null;
+    }
+
+    const targetCat = safeCategories.find((c) => c.id === categoryId);
+    const existingNames = (targetCat?.menu_items || []).map((it) => it.name);
+
+    const newName = buildCopyName(item.name, existingNames);
+
+    const newItem = await createItem(categoryId, {
+      name: newName,
+      price: item.price,
+      promo_price: item.promo_price,
+      description: item.description,
+      image_url: item.image_url,
+    });
+
+    if (!newItem?.id) return null;
+
+    // busca os option_groups do item original e duplica também
+    try {
+      const { data: groups, error } = await supabase
+        .from("option_groups")
+        .select(
+          `id, name, min_choices, max_choices, position,
+               option_choices ( id, name, price, hidden, position )`,
+        )
+        .eq("item_id", item.id)
+        .order("position", { ascending: true });
+
+      if (error) throw error;
+
+      if (groups?.length > 0) {
+        const clonedGroups = groups.map((g) => ({
+          id: `tmp-${uid()}`,
+          name: g.name,
+          min_choices: g.min_choices,
+          max_choices: g.max_choices,
+          option_choices: (g.option_choices || []).map((c) => ({
+            id: `tmp-${uid()}`,
+            name: c.name,
+            price: c.price,
+            hidden: c.hidden,
+          })),
+        }));
+
+        await saveOptionGroups(newItem.id, clonedGroups);
+
+        // atualiza o estado local pra refletir os grupos duplicados sem precisar refetch
+        setCategories((prev = []) =>
+          prev.map((c) =>
+            c.id === categoryId
+              ? {
+                  ...c,
+                  menu_items: (c.menu_items || []).map((it) => (it.id === newItem.id ? { ...it } : it)),
+                }
+              : c,
+          ),
+        );
+      }
+    } catch (err) {
+      console.error("Erro ao duplicar grupos de opções:", err);
+    }
+
+    alert?.("Item duplicado", "success");
+    return newItem;
   };
 
   const toggleItemVisibility = async (itemId, currentVisible) => {
@@ -2014,6 +2123,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                             cat={cat}
                             openItemModal={openItemModal}
                             deleteItem={deleteItem}
+                            duplicateItem={duplicateItem}
                             toggleItemVisibility={toggleItemVisibility}
                             detailsColor={detailsColor}
                             backgroundColor={backgroundColor}
