@@ -58,17 +58,27 @@ export async function POST(req) {
 
         if (!planData) throw new Error("Plano não encontrado");
 
+        // Métodos assíncronos (boleto, pix) podem completar o Checkout
+        // antes do pagamento em si ser confirmado. Nesses casos a assinatura
+        // fica "incomplete" até o invoice.paid chegar — só liberamos o role
+        // quando a assinatura já está ativa (cartão) ou em trial.
+        const isPaymentConfirmed = ["active", "trialing"].includes(subscription.status);
+
         await supabase
           .from("profiles")
           .update({
-            role: planData.role,
             stripe_subscription_id: subscriptionId,
             stripe_price_id: priceId,
+            ...(isPaymentConfirmed && { role: planData.role }),
             ...(isTrial && { has_used_trial: true }),
           })
           .eq("id", userId);
 
-        console.log("[Webhook] Role atualizado para:", planData.role);
+        console.log(
+          isPaymentConfirmed
+            ? `[Webhook] Role atualizado para: ${planData.role}`
+            : `[Webhook] Checkout completo, aguardando confirmação de pagamento (status: ${subscription.status})`,
+        );
         break;
       }
 

@@ -58,7 +58,12 @@ export async function POST(req) {
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
-      payment_method_types: ["card"],
+      payment_method_types: ["card", "boleto"],
+      payment_method_options: {
+        boleto: {
+          expires_after_days: 3,
+        },
+      },
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
       metadata: { supabase_user_id: userId },
