@@ -2222,9 +2222,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                           setUploadingImage(true);
 
                           const webpFile = await fileToWebp(file, {
-                            maxBytes: 180 * 1024,
-                            maxDimension: 480,
-                            minDimension: 360,
+                            maxBytes: 250 * 1024,
+                            maxDimension: 720,
+                            minDimension: 520,
                             startQuality: 0.9,
                             minQuality: 0.75,
                           });
