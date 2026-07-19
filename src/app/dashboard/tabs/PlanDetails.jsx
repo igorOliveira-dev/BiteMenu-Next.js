@@ -101,18 +101,21 @@ export default function PlanDetails({ setSelectedTab }) {
             </div>
           )}
 
-          {subscription.status === "open" && subscription.payment_method_type === "boleto" && subscription.boleto_url && (
-            <div className="p-4 mb-4 bg-yellow-200 border border-yellow-400 text-yellow-800 rounded max-w-[1024px]">
+          {subscription.status === "incomplete" && (subscription.boleto_url || subscription.latest_invoice_url) && (
+            <div className="text-center rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 w-full max-w-[1024px] mb-4">
               <span>
-                Seu boleto ainda não foi confirmado. O acesso ao plano será liberado assim que o pagamento for compensado.
+                {subscription.payment_method_type === "boleto"
+                  ? "Seu boleto ainda não foi confirmado. O acesso ao plano será liberado assim que o pagamento for compensado."
+                  : "Sua assinatura está com o pagamento pendente. Finalize o pagamento para ativar seu plano."}
               </span>
+              <br />
               <a
-                href={subscription.boleto_url}
+                href={subscription.boleto_url || subscription.latest_invoice_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 text-blue-500 hover:text-blue-700 underline transition inline-block"
               >
-                Visualizar boleto
+                {subscription.payment_method_type === "boleto" ? "Visualizar boleto" : "Finalizar pagamento"}
               </a>
             </div>
           )}

@@ -158,9 +158,12 @@ const Menu = (props) => {
           setSubscriptionWarning(null);
         }
 
-        // Boleto aguardando confirmação (status "open" + método boleto)
-        if (data.status === "open" && data.payment_method_type === "boleto" && data.boleto_url) {
-          setBoletoPending({ url: data.boleto_url });
+        // Boleto aguardando confirmação (status "incomplete" + método boleto)
+        if (data.status === "incomplete" && (data.boleto_url || data.latest_invoice_url)) {
+          setBoletoPending({
+            url: data.boleto_url || data.latest_invoice_url,
+            isBoleto: data.payment_method_type === "boleto",
+          });
         } else {
           setBoletoPending(null);
         }
@@ -443,17 +446,20 @@ const Menu = (props) => {
             </div>
           )}
           {boletoPending && (
-            <div className="top-2 px-2 py-6 w-full bg-yellow-200 border border-yellow-400 text-yellow-800 rounded text-center z-100">
+            <div className="text-center rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 w-full">
               <span>
-                Seu boleto ainda não foi confirmado. O acesso ao plano será liberado assim que o pagamento for compensado.
-              </span>{" "}
+                {boletoPending.isBoleto
+                  ? "Seu boleto ainda não foi confirmado. O acesso ao plano será liberado assim que o pagamento for compensado."
+                  : "Sua assinatura está com o pagamento pendente. Finalize o pagamento para ativar seu plano."}
+              </span>
+              <br />
               <a
                 href={boletoPending.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-700 hover:text-blue-900 underline font-semibold"
+                className="text-blue-500 hover:text-blue-700 underline"
               >
-                Visualizar boleto
+                {boletoPending.isBoleto ? "Visualizar boleto" : "Finalizar pagamento"}
               </a>
             </div>
           )}
