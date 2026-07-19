@@ -35,10 +35,16 @@ export async function GET(req) {
 
     // 1️⃣ Buscar a assinatura completa
     const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
-      expand: ["items.data.price", "latest_invoice", "latest_invoice.payment_intent"],
+      expand: [
+        "items.data.price",
+        "latest_invoice",
+        "latest_invoice.payment_intent",
+        "latest_invoice.payment_intent.payment_method",
+      ],
     });
 
     const invoice = subscription.latest_invoice;
+    const paymentIntent = invoice?.payment_intent ?? null;
 
     // 2️⃣ Determinar data de cobrança
     let currentPeriodEnd = subscription.current_period_end || null;
@@ -94,7 +100,7 @@ export async function GET(req) {
       }
     }
 
-    // 4️⃣ Buscar método de pagamento principal
+    // 4️⃣ Buscar método de pagamento principal (cartão salvo, se houver)
     const paymentMethods = await stripe.paymentMethods.list({
       customer: subscription.customer,
       type: "card",
@@ -111,7 +117,12 @@ export async function GET(req) {
       };
     }
 
-    // 5️⃣ Retornar tudo pro frontend
+    // 5️⃣ Detectar boleto pendente (fatura aberta, aguardando compensação)
+    const paymentMethodType = paymentIntent?.payment_method?.type ?? null;
+    const boletoUrl =
+      paymentIntent?.next_action?.boleto_display_details?.hosted_voucher_url ?? invoice?.hosted_invoice_url ?? null;
+
+    // 6️⃣ Retornar tudo pro frontend
     return new Response(
       JSON.stringify({
         id: subscription.id,
@@ -122,6 +133,8 @@ export async function GET(req) {
         card_info: cardInfo,
         latest_invoice_status: invoice?.status ?? null,
         latest_invoice_url: invoice?.hosted_invoice_url ?? null,
+        payment_method_type: paymentMethodType,
+        boleto_url: paymentMethodType === "boleto" ? boletoUrl : null,
       }),
       { status: 200, headers: { "Content-Type": "application/json" } },
     );

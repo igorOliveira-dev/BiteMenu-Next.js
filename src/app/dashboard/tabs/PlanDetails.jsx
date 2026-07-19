@@ -101,6 +101,22 @@ export default function PlanDetails({ setSelectedTab }) {
             </div>
           )}
 
+          {subscription.status === "open" && subscription.payment_method_type === "boleto" && subscription.boleto_url && (
+            <div className="p-4 mb-4 bg-yellow-200 border border-yellow-400 text-yellow-800 rounded max-w-[1024px]">
+              <span>
+                Seu boleto ainda não foi confirmado. O acesso ao plano será liberado assim que o pagamento for compensado.
+              </span>
+              <a
+                href={subscription.boleto_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 text-blue-500 hover:text-blue-700 underline transition inline-block"
+              >
+                Visualizar boleto
+              </a>
+            </div>
+          )}
+
           <div className="flex flex-col xs:flex-row gap-4 max-w-[1024px]">
             <div className="flex flex-col justify-center p-4 bg-translucid border-2 border-[var(--translucid)] rounded-lg text-center w-full">
               <p className="text-sm color-gray">Plano atual:</p>

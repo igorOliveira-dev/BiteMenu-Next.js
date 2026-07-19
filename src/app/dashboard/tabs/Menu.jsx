@@ -134,6 +134,44 @@ const Menu = (props) => {
     checkSubscriptionStatus();
   }, [user, profile]);
 
+  const [boletoPending, setBoletoPending] = useState(null); // { url } | null
+  useEffect(() => {
+    const checkSubscriptionStatus = async () => {
+      if (!user || !profile?.stripe_subscription_id) {
+        setSubscriptionWarning(null);
+        setBoletoPending(null);
+        return;
+      }
+
+      try {
+        const res = await fetch(
+          `/api/stripe-subscription?subscriptionId=${profile.stripe_subscription_id}&userId=${user.id}`,
+        );
+        if (!res.ok) return;
+
+        const data = await res.json();
+
+        // Assinatura atrasada/não paga
+        if (["past_due", "unpaid"].includes(data.status) && data.latest_invoice_url) {
+          setSubscriptionWarning(data.latest_invoice_url);
+        } else {
+          setSubscriptionWarning(null);
+        }
+
+        // Boleto aguardando confirmação (status "open" + método boleto)
+        if (data.status === "open" && data.payment_method_type === "boleto" && data.boleto_url) {
+          setBoletoPending({ url: data.boleto_url });
+        } else {
+          setBoletoPending(null);
+        }
+      } catch (err) {
+        console.error("Erro ao verificar status da assinatura:", err);
+      }
+    };
+
+    checkSubscriptionStatus();
+  }, [user, profile]);
+
   const anyModalOpen = titleModalOpen || bannerModalOpen || logoModalOpen;
 
   const shareUrl = useMemo(() => {
@@ -401,6 +439,21 @@ const Menu = (props) => {
                 className="text-blue-700 hover:text-blue-900 underline font-semibold"
               >
                 Regularizar pagamento
+              </a>
+            </div>
+          )}
+          {boletoPending && (
+            <div className="top-2 px-2 py-6 w-full bg-yellow-200 border border-yellow-400 text-yellow-800 rounded text-center z-100">
+              <span>
+                Seu boleto ainda não foi confirmado. O acesso ao plano será liberado assim que o pagamento for compensado.
+              </span>{" "}
+              <a
+                href={boletoPending.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-700 hover:text-blue-900 underline font-semibold"
+              >
+                Visualizar boleto
               </a>
             </div>
           )}
