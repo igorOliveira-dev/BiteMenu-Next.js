@@ -85,6 +85,7 @@ const page = () => {
           <li>Função de preços promocionais, onde é possível definir descontos e ofertas em seus produtos</li>
           <li>Lista de produtos em destaque, os produtos selecionados aparecerão em destaque no começo do cardápio</li>
           <li>Opção de taxas de entrega diferentes para cada bairro</li>
+          <li>Criação de combos que aplicam descontos automaticamente</li>
         </ul>
       </section>
 

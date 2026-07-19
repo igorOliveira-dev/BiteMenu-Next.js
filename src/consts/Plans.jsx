@@ -7,7 +7,14 @@ export const plans = [
   },
   {
     name: "Plus",
-    features: ["Inclui tudo do Free", "50 Itens", "10 Categorias", "Maior personalização", "Taxa por bairro"],
+    features: [
+      "Inclui tudo do Free",
+      "50 Itens",
+      "10 Categorias",
+      "Maior personalização",
+      "Taxa por bairro",
+      "Criação de combos",
+    ],
     price: "24,90",
     id: "plus",
   },
