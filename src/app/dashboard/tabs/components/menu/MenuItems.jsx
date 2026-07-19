@@ -2008,31 +2008,33 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       <div className="mb-4">
         <div className="flex gap-2">
           {categories.length > 0 && (
-            <button
-              onClick={openSortModal}
-              className="cursor-pointer px-3 py-1 hover:opacity-75 rounded"
-              style={{
-                backgroundColor: translucidToUse,
-                color: foregroundToUse,
-                border: "2px solid",
-                borderColor: translucidToUse,
-              }}
-            >
-              Ordenar itens
-            </button>
+            <>
+              <button
+                onClick={openSortModal}
+                className="cursor-pointer px-3 py-1 hover:opacity-75 rounded"
+                style={{
+                  backgroundColor: translucidToUse,
+                  color: foregroundToUse,
+                  border: "2px solid",
+                  borderColor: translucidToUse,
+                }}
+              >
+                Ordenar itens
+              </button>
+              <button
+                onClick={() => setCombosModalOpen(true)}
+                className="cursor-pointer px-3 py-1 hover:opacity-75 rounded font-bold"
+                style={{
+                  backgroundColor: translucidToUse,
+                  color: foregroundToUse,
+                  border: "2px solid",
+                  borderColor: translucidToUse,
+                }}
+              >
+                + Criar combo
+              </button>
+            </>
           )}
-          <button
-            onClick={() => setCombosModalOpen(true)}
-            className="cursor-pointer px-3 py-1 hover:opacity-75 rounded font-bold"
-            style={{
-              backgroundColor: translucidToUse,
-              color: foregroundToUse,
-              border: "2px solid",
-              borderColor: translucidToUse,
-            }}
-          >
-            + Criar combo
-          </button>
         </div>
       </div>
 
