@@ -186,6 +186,90 @@ function ItemActionsMenu({ anchorRef, onClose, children, menuBg, borderColor }) 
   );
 }
 
+function SearchableSelect({ value, onChange, options, placeholder = "Selecione...", emptyLabel = "Nenhum resultado" }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const wrapperRef = useRef(null);
+
+  const selectedOption = options.find((opt) => opt.value === value);
+
+  const filteredOptions = useMemo(() => {
+    if (!search.trim()) return options;
+    const q = search.toLowerCase();
+    return options.filter((opt) => opt.label.toLowerCase().includes(q));
+  }, [options, search]);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setOpen(false);
+        setSearch("");
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className="w-full p-2 rounded border border-translucid bg-translucid text-left flex items-center justify-between gap-2 cursor-pointer"
+      >
+        <span className={`truncate ${!selectedOption ? "color-gray" : ""}`}>
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        <FaChevronDown size={11} className="flex-shrink-0 opacity-60" />
+      </button>
+
+      {open && (
+        <div
+          className="absolute z-50 -top-1 mt-1 w-full rounded border border-translucid bg-[var(--low-gray)] shadow-lg overflow-hidden"
+          style={{ maxHeight: 260 }}
+        >
+          <div className="border-b bg-[var(--translucid)] border-[var(--translucid)]">
+            <input
+              type="text"
+              autoFocus
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Pesquisar..."
+              className="py-2.5 w-full p-1.5 text-sm rounded-t border border-[var(--translucid)] outline-none"
+            />
+          </div>
+
+          <div
+            className="overflow-y-auto bg-[var(--translucid)] border border-[var(--translucid)] scrollbar-none"
+            style={{ maxHeight: 200 }}
+          >
+            {filteredOptions.length === 0 ? (
+              <div className="p-3 text-sm color-gray text-center">{emptyLabel}</div>
+            ) : (
+              filteredOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(opt.value);
+                    setOpen(false);
+                    setSearch("");
+                  }}
+                  className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition ${
+                    opt.value === value ? "bg-blue-600/30" : "hover:bg-white/10"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SortableMenuItem({
   item,
   cat,
@@ -462,6 +546,42 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       },
     }),
   );
+
+  const [combos, setCombos] = useState(null);
+  const [combosModalOpen, setCombosModalOpen] = useState(false);
+  const [comboFormOpen, setComboFormOpen] = useState(false);
+  const [comboDraft, setComboDraft] = useState(null);
+
+  useEffect(() => {
+    if (!menu?.id) return;
+    let mounted = true;
+    (async () => {
+      const { data, error } = await supabase
+        .from("combos")
+        .select("*")
+        .eq("menu_id", menu.id)
+        .order("position", { ascending: true });
+      if (!mounted) return;
+      if (error) {
+        console.error("fetch combos error:", error);
+        setCombos([]);
+        return;
+      }
+      setCombos(data || []);
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [menu?.id]);
+
+  const allItemsFlat = useMemo(
+    () => (categories || []).flatMap((c) => (c.menu_items || []).map((it) => ({ ...it, categoryName: c.name }))),
+    [categories],
+  );
+
+  const getItemName = (itemId) => allItemsFlat.find((it) => it.id === itemId)?.name ?? "Item removido";
+
+  const getCategoryName = (categoryId) => (categories || []).find((c) => c.id === categoryId)?.name ?? "Categoria removida";
 
   // fetch categories/items
   useEffect(() => {
@@ -750,6 +870,27 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   }
 
   // CRUD helpers
+  const describeCombo = (combo) => {
+    const target =
+      combo.scope === "item"
+        ? getItemName(combo.item_id)
+        : combo.scope === "category"
+          ? `Categoria: ${getCategoryName(combo.category_id)}`
+          : "Carrinho inteiro";
+
+    const trigger =
+      combo.trigger_type === "quantity"
+        ? `${combo.trigger_value}+ unidades`
+        : `A partir de ${formatCurrency(combo.trigger_value, menu?.currency)}`;
+
+    const discount =
+      combo.discount_type === "percentage"
+        ? `${combo.discount_value}% de desconto`
+        : `${formatCurrency(combo.discount_value, menu?.currency)} de desconto`;
+
+    return { target, trigger, discount };
+  };
+
   const createCategory = async ({ name = "Nova categoria" } = {}) => {
     const catCount = categories?.length ?? 0;
     const categoryLimit = getCategoryLimitByRole(ownerRole);
@@ -1136,6 +1277,100 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       console.error("toggleCategoryVisibility error:", err);
       setCategories(before);
       alert?.("Erro ao alterar visibilidade dos itens", "error");
+    }
+  };
+
+  const openCombosModal = () => setCombosModalOpen(true);
+  const closeCombosModal = () => setCombosModalOpen(false);
+
+  const openComboForm = (combo = null) => {
+    setComboDraft(
+      combo
+        ? {
+            ...combo,
+            trigger_value: String(combo.trigger_value),
+            discount_value: String(combo.discount_value),
+          }
+        : {
+            id: null,
+            scope: "item",
+            item_id: "",
+            category_id: "",
+            trigger_type: "quantity",
+            trigger_value: "6",
+            discount_type: "percentage",
+            discount_value: "",
+          },
+    );
+    setComboFormOpen(true);
+  };
+
+  const saveCombo = async () => {
+    const { scope, trigger_type } = comboDraft;
+
+    if (scope === "item" && !comboDraft.item_id) return alert?.("Selecione um item.", "error");
+    if (scope === "category" && !comboDraft.category_id) return alert?.("Selecione uma categoria.", "error");
+
+    const triggerVal = parseFloat(String(comboDraft.trigger_value).replace(",", "."));
+    if (isNaN(triggerVal) || triggerVal <= 0) {
+      return alert?.(
+        trigger_type === "quantity" ? "Informe uma quantidade válida." : "Informe um valor mínimo válido.",
+        "error",
+      );
+    }
+    if (trigger_type === "quantity" && triggerVal < 2) {
+      return alert?.("A quantidade mínima deve ser 2 ou mais.", "error");
+    }
+
+    const discountVal = parseFloat(String(comboDraft.discount_value).replace(",", "."));
+    if (isNaN(discountVal) || discountVal <= 0) return alert?.("Informe um valor de desconto válido.", "error");
+    if (comboDraft.discount_type === "percentage" && discountVal > 100) {
+      return alert?.("Desconto percentual não pode passar de 100%.", "error");
+    }
+
+    const payload = {
+      menu_id: menu.id,
+      scope,
+      item_id: scope === "item" ? comboDraft.item_id : null,
+      category_id: scope === "category" ? comboDraft.category_id : null,
+      trigger_type,
+      trigger_value: triggerVal,
+      discount_type: comboDraft.discount_type,
+      discount_value: discountVal,
+    };
+
+    try {
+      if (comboDraft.id) {
+        const { data, error } = await supabase.from("combos").update(payload).eq("id", comboDraft.id).select().single();
+        if (error) throw error;
+        setCombos((prev) => prev.map((c) => (c.id === data.id ? data : c)));
+      } else {
+        const { data, error } = await supabase.from("combos").insert(payload).select().single();
+        if (error) throw error;
+        setCombos((prev) => [...(prev || []), data]);
+      }
+      alert?.("Combo salvo", "success");
+      setComboFormOpen(false);
+      setComboDraft(null);
+    } catch (err) {
+      console.error("saveCombo error:", err);
+      alert?.("Erro ao salvar combo", "error");
+    }
+  };
+
+  const deleteCombo = async (comboId) => {
+    const ok = await confirm("Remover este combo?");
+    if (!ok) return;
+    const before = combos;
+    setCombos((prev) => prev.filter((c) => c.id !== comboId));
+    try {
+      const { error } = await supabase.from("combos").delete().eq("id", comboId);
+      if (error) throw error;
+      alert?.("Combo removido", "success");
+    } catch (err) {
+      console.error("deleteCombo error:", err);
+      setCombos(before);
+      alert?.("Erro ao remover combo", "error");
     }
   };
 
@@ -1772,16 +2007,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     <div className={`p-4 ${changedFields.length > 0 ? "pb-48 lg:pb-34" : "pb-12 lg:pb-0"}`}>
       <div className="mb-4">
         <div className="flex gap-2">
-          <button
-            onClick={() => openCategoryModal("create")}
-            className={`cursor-pointer px-3 py-1 bg-blue-600/80 border-2 border-[var(--translucid)] hover:bg-blue-700/80 text-white rounded ${showCatIndicator ? "pulse-btn" : ""}`}
-          >
-            + Categoria
-          </button>
           {categories.length > 0 && (
             <button
               onClick={openSortModal}
-              className="cursor-pointer px-3 py-1 opacity-75 hover:opacity-100 rounded"
+              className="cursor-pointer px-3 py-1 hover:opacity-75 rounded"
               style={{
                 backgroundColor: translucidToUse,
                 color: foregroundToUse,
@@ -1792,6 +2021,18 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
               Ordenar itens
             </button>
           )}
+          <button
+            onClick={() => setCombosModalOpen(true)}
+            className="cursor-pointer px-3 py-1 hover:opacity-75 rounded font-bold"
+            style={{
+              backgroundColor: translucidToUse,
+              color: foregroundToUse,
+              border: "2px solid",
+              borderColor: translucidToUse,
+            }}
+          >
+            + Criar combo
+          </button>
         </div>
       </div>
 
@@ -1826,9 +2067,15 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
       {categories.length > 0 && (
         <div
-          className="flex sticky -top-1 border-y-2 overflow-x-auto whitespace-nowrap scrollbar-none z-50 mb-2"
+          className="flex sticky -top-1 border-y-2 overflow-x-auto whitespace-nowrap scrollbar-none z-50 mb-2 items-center"
           style={{ backgroundColor: backgroundColor, borderColor: translucidToUse, color: foregroundToUse }}
         >
+          <button
+            onClick={() => openCategoryModal("create")}
+            className={`cursor-pointer px-3 py-1 bg-blue-600/80 border-2 border-[var(--translucid)] hover:bg-blue-700/80 text-white rounded ${showCatIndicator ? "pulse-btn" : ""}`}
+          >
+            + Categoria
+          </button>
           {hasStarred && (
             <button
               className="cursor-pointer p-4 font-semibold"
@@ -2909,6 +3156,232 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
             >
               Importar ({selectedImportIds.size})
             </button>
+          </div>
+        </GenericModal>
+      )}
+
+      {combosModalOpen && (
+        <GenericModal wfull maxWidth={"480px"} title="Combos" onClose={closeCombosModal}>
+          <p className="text-sm color-gray mb-3">
+            Configure descontos automáticos por quantidade ou valor gasto, aplicados a um item, categoria ou ao carrinho
+            todo.
+          </p>
+
+          {hasPlusPermissions ? (
+            <>
+              <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+                {(combos || []).length === 0 && (
+                  <p className="text-sm color-gray text-center py-4">Nenhum combo criado ainda.</p>
+                )}
+                {(combos || []).map((combo) => {
+                  const { target, trigger, discount } = describeCombo(combo);
+                  return (
+                    <div
+                      key={combo.id}
+                      className="flex items-center justify-between p-2 rounded border border-translucid bg-translucid"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold line-clamp-1">{target}</div>
+                        <div className="text-xs color-gray">
+                          {trigger} → {discount}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button onClick={() => openComboForm(combo)} className="p-2 cursor-pointer">
+                          <FaPen size={13} />
+                        </button>
+                        <button onClick={() => deleteCombo(combo.id)} className="p-2 cursor-pointer text-red-500">
+                          <FaTrash size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => openComboForm(null)}
+                className="w-full mt-3 cursor-pointer px-3 py-2 rounded bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white text-sm"
+              >
+                + Novo combo
+              </button>
+            </>
+          ) : (
+            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/20 p-4 text-sm">
+              Criar combos é uma função exclusiva do Bite Menu Plus ou Pro. Faça upgrade para criar os seus!
+            </div>
+          )}
+        </GenericModal>
+      )}
+
+      {comboFormOpen && comboDraft && (
+        <GenericModal
+          backdropDontClose
+          wfull
+          maxWidth={"420px"}
+          title={comboDraft.id ? "Editar combo" : "Novo combo"}
+          onClose={() => {
+            setComboFormOpen(false);
+            setComboDraft(null);
+          }}
+        >
+          <div className="space-y-3">
+            {/* Escopo */}
+            <label className="block">
+              <div className="text-sm color-gray mb-1">Aplicar em</div>
+              <div className="flex gap-2">
+                {[
+                  { value: "item", label: "Item" },
+                  { value: "category", label: "Categoria" },
+                  { value: "cart", label: "Carrinho todo" },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() =>
+                      setComboDraft((d) => ({
+                        ...d,
+                        scope: opt.value,
+                        item_id: opt.value === "item" ? d.item_id : "",
+                        category_id: opt.value === "category" ? d.category_id : "",
+                        // carrinho só faz sentido por valor, mas deixamos livre pra escolher também por quantidade total
+                      }))
+                    }
+                    className={`flex-1 p-2 rounded border cursor-pointer text-sm ${comboDraft.scope === opt.value ? "bg-blue-600/80 text-white border-transparent" : "border-translucid bg-translucid"}`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </label>
+
+            {/* Alvo: item ou categoria */}
+            {comboDraft.scope === "item" && (
+              <label className="block">
+                <div className="text-sm color-gray mb-1">Item</div>
+                <SearchableSelect
+                  value={comboDraft.item_id}
+                  onChange={(val) => setComboDraft((d) => ({ ...d, item_id: val }))}
+                  placeholder="Selecione um item"
+                  emptyLabel="Nenhum item encontrado"
+                  options={allItemsFlat.map((it) => ({
+                    value: it.id,
+                    label: `${it.categoryName} — ${it.name}`,
+                  }))}
+                />
+              </label>
+            )}
+
+            {comboDraft.scope === "category" && (
+              <label className="block">
+                <div className="text-sm color-gray mb-1">Categoria</div>
+                <SearchableSelect
+                  value={comboDraft.category_id}
+                  onChange={(val) => setComboDraft((d) => ({ ...d, category_id: val }))}
+                  placeholder="Selecione uma categoria"
+                  emptyLabel="Nenhuma categoria encontrada"
+                  options={(categories || []).map((c) => ({
+                    value: c.id,
+                    label: c.name,
+                  }))}
+                />
+              </label>
+            )}
+
+            {/* Tipo de gatilho */}
+            <label className="block">
+              <div className="text-sm color-gray mb-1">Condição</div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setComboDraft((d) => ({ ...d, trigger_type: "quantity" }))}
+                  className={`flex-1 p-2 rounded border cursor-pointer text-sm ${comboDraft.trigger_type === "quantity" ? "bg-blue-600/80 text-white border-transparent" : "border-translucid bg-translucid"}`}
+                >
+                  Por quantidade
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setComboDraft((d) => ({ ...d, trigger_type: "value" }))}
+                  className={`flex-1 p-2 rounded border cursor-pointer text-sm ${comboDraft.trigger_type === "value" ? "bg-blue-600/80 text-white border-transparent" : "border-translucid bg-translucid"}`}
+                >
+                  Por valor gasto
+                </button>
+              </div>
+            </label>
+
+            <label className="block">
+              <div className="text-sm color-gray mb-1">
+                {comboDraft.trigger_type === "quantity" ? "Quantidade mínima" : "Valor mínimo"}
+              </div>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={comboDraft.trigger_value}
+                onChange={(e) => {
+                  let value = e.target.value;
+                  if (comboDraft.trigger_type === "quantity") {
+                    value = value.replace(/[^0-9]/g, "");
+                  } else {
+                    value = value.replace(/[^0-9.,]/g, "").replace(",", ".");
+                  }
+                  setComboDraft((d) => ({ ...d, trigger_value: value }));
+                }}
+                className="w-full p-2 rounded border border-translucid bg-translucid"
+                placeholder={comboDraft.trigger_type === "quantity" ? "Ex: 6" : "Ex: 100.00"}
+              />
+            </label>
+
+            {/* Tipo de desconto */}
+            <label className="block">
+              <div className="text-sm color-gray mb-1">Tipo de desconto</div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setComboDraft((d) => ({ ...d, discount_type: "percentage" }))}
+                  className={`flex-1 p-2 rounded border cursor-pointer text-sm ${comboDraft.discount_type === "percentage" ? "bg-blue-600/80 text-white border-transparent" : "border-translucid bg-translucid"}`}
+                >
+                  Porcentagem (%)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setComboDraft((d) => ({ ...d, discount_type: "fixed" }))}
+                  className={`flex-1 p-2 rounded border cursor-pointer text-sm ${comboDraft.discount_type === "fixed" ? "bg-blue-600/80 text-white border-transparent" : "border-translucid bg-translucid"}`}
+                >
+                  Valor fixo ({getCurrencySymbol(menu?.currency)})
+                </button>
+              </div>
+            </label>
+
+            <label className="block">
+              <div className="text-sm color-gray mb-1">
+                {comboDraft.discount_type === "percentage" ? "Percentual de desconto" : "Valor do desconto"}
+              </div>
+              <input
+                type="text"
+                value={comboDraft.discount_value}
+                onChange={(e) =>
+                  setComboDraft((d) => ({ ...d, discount_value: e.target.value.replace(/[^0-9.,]/g, "").replace(",", ".") }))
+                }
+                className="w-full p-2 rounded border border-translucid bg-translucid"
+                placeholder={comboDraft.discount_type === "percentage" ? "15" : "20.00"}
+              />
+            </label>
+
+            <div className="flex justify-end gap-2 mt-2">
+              <button
+                onClick={() => {
+                  setComboFormOpen(false);
+                  setComboDraft(null);
+                }}
+                className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded"
+              >
+                Cancelar
+              </button>
+              <button onClick={saveCombo} className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded">
+                Salvar
+              </button>
+            </div>
           </div>
         </GenericModal>
       )}

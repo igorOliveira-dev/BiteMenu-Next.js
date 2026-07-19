@@ -1,6 +1,6 @@
 // src/components/components/CartDrawer.jsx
 "use client";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { FaChevronLeft, FaCopy, FaTimes, FaWhatsapp, FaSpinner } from "react-icons/fa";
 import { useCartContext } from "@/contexts/CartContext";
@@ -11,7 +11,8 @@ import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { supabase } from "@/lib/supabaseClient";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { useAlert } from "@/providers/AlertProvider";
-import { useSearchParams, useRouter } from "next/navigation"; // ← novo
+import { useSearchParams, useRouter } from "next/navigation";
+import { calculateComboDiscount } from "@/lib/comboDiscount";
 
 function getContrastTextColor(hex) {
   const cleanHex = (hex || "#ffffff").replace("#", "");
@@ -24,6 +25,7 @@ function getContrastTextColor(hex) {
 
 export default function CartDrawer({
   menu,
+  combos = [],
   open,
   onOpen,
   onClose,
@@ -50,6 +52,24 @@ export default function CartDrawer({
   const currentItems = cart.getItems(menu?.id);
   const currentTotalItems = cart.totalItems(menu?.id);
   const currentTotalPrice = cart.totalPrice(menu?.id);
+
+  const categoryByItemId = useMemo(() => {
+    const map = {};
+    (menu?.categories || []).forEach((cat) => {
+      (cat.menu_items || []).forEach((it) => {
+        map[it.id] = cat.id;
+      });
+    });
+    return map;
+  }, [menu?.categories]);
+
+  // mova esta linha para ANTES do useMemo do discountAmount
+  const hasPlusPermissions = ["plus", "pro", "admin"].includes(ownerRole ?? "free");
+
+  const { totalDiscount: discountAmount } = useMemo(() => {
+    if (!hasPlusPermissions) return { totalDiscount: 0 };
+    return calculateComboDiscount({ items: currentItems, combos, categoryByItemId });
+  }, [currentItems, combos, categoryByItemId, hasPlusPermissions]);
 
   const establishmentPhone = ownerPhone ?? null;
 
@@ -99,7 +119,6 @@ export default function CartDrawer({
   const [deliveryZones, setDeliveryZones] = useState([]);
   const filteredZones = deliveryZones.filter((zone) => zone.name.toLowerCase().includes(search.toLowerCase()));
 
-  const hasPlusPermissions = ["plus", "pro", "admin"].includes(ownerRole ?? "free");
   const canUseZones = menu?.delivery_fee_mode === "zones" && hasPlusPermissions && deliveryZones.length > 0;
 
   // Verifica se este menu usa Stripe Express
@@ -318,7 +337,8 @@ export default function CartDrawer({
 
         const builtURL = buildWhatsappURL({
           items: order.items_list,
-          subtotal: order.total - (order.delivery_fee ?? 0),
+          subtotal: order.total - (order.delivery_fee ?? 0) + (order.discount ?? 0),
+          discount: order.discount ?? 0,
           deliveryFee: order.delivery_fee ?? 0,
           total: order.total,
           costumerName: order.costumer_name,
@@ -351,7 +371,8 @@ export default function CartDrawer({
   }, [menu, selectedService, costumerNeighborhood, hasPlusPermissions, deliveryZones]);
 
   const drawerSubtotal = cart.totalPrice(menu?.id) || 0;
-  const drawerTotal = drawerSubtotal + (selectedService === "delivery" ? deliveryFeeValue : 0);
+  const drawerSubtotalAfterDiscount = Math.max(0, drawerSubtotal - discountAmount);
+  const drawerTotal = drawerSubtotalAfterDiscount + (selectedService === "delivery" ? deliveryFeeValue : 0);
 
   // guardar no local storage
   const saveCustomerInfo = () => {
@@ -444,6 +465,7 @@ export default function CartDrawer({
   function buildWhatsappURL({
     items,
     subtotal,
+    discount = 0,
     deliveryFee,
     total,
     costumerName,
@@ -483,7 +505,7 @@ ${itemsList}
 
 ————————————
 Subtotal: ${formatCurrency(subtotal, menu?.currency)}
-${selectedService === "delivery" ? `Frete: ${formatCurrency(deliveryFee, menu?.currency)}` : ""}
+${discount > 0 ? `Desconto: -${formatCurrency(discount, menu?.currency)}\n` : ""}${selectedService === "delivery" ? `Frete: ${formatCurrency(deliveryFee, menu?.currency)}` : ""}
 💰 Total: ${formatCurrency(total, menu?.currency)}
 
 ${customerInfo}`;
@@ -540,7 +562,6 @@ ${customerInfo}`;
   // ── Checkout via Stripe Express ──────────────────────────────────────────
   const handleStripeCheckout = async () => {
     saveCustomerInfo();
-
     if (!validateCustomerFields()) return;
 
     setIsStripeLoading(true);
@@ -554,7 +575,7 @@ ${customerInfo}`;
       }, 0);
 
       const deliveryFee = selectedService === "delivery" ? deliveryFeeValue : 0;
-      const total = subtotal + deliveryFee;
+      const total = Math.max(0, subtotal - discountAmount) + deliveryFee;
 
       const response = await fetch("/api/connect/checkout", {
         method: "POST",
@@ -574,6 +595,7 @@ ${customerInfo}`;
             note: it.note || "",
           })),
           subtotal,
+          discount: discountAmount,
           deliveryFee,
           total,
           costumerName,
@@ -653,14 +675,16 @@ ${customerInfo}`;
       return acc + base + extras;
     }, 0);
 
+    const discountedSubtotal = Math.max(0, subtotal - discountAmount);
     const deliveryFee = selectedService === "delivery" ? deliveryFeeValue : 0;
-    const total = subtotal + deliveryFee;
+    const total = discountedSubtotal + deliveryFee;
 
     setFinalValue(total);
 
     const url = buildWhatsappURL({
       items: currentItems,
       subtotal,
+      discount: discountAmount,
       deliveryFee,
       total,
       costumerName,
@@ -800,6 +824,18 @@ ${customerInfo}`;
         {/* FOOTER */}
         {currentItems && currentItems.length > 0 && (
           <div className="fixed w-full bottom-0 bg-inherit z-10 p-4">
+            {discountAmount > 0 && (
+              <>
+                <div className="flex items-center justify-between text-sm mb-1" style={{ color: grayToUse }}>
+                  <span>Subtotal</span>
+                  <span>{formatCurrency(drawerSubtotal, menu?.currency)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm mb-1" style={{ color: menu.details_color }}>
+                  <span>Desconto</span>
+                  <span>-{formatCurrency(discountAmount, menu?.currency)}</span>
+                </div>
+              </>
+            )}
             <div className="flex items-center justify-between mb-2">
               <div className="font-semibold">Total</div>
               <div className="text-xl font-bold">{formatCurrency(drawerTotal, menu?.currency)}</div>

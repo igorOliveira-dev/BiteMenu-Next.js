@@ -10,6 +10,7 @@ import { formatCurrency } from "@/lib/formatCurrency";
 import { useAlert } from "@/providers/AlertProvider";
 import MenuFooter from "./components/MenuFooter";
 import { supabaseImg } from "@/lib/imageUtils";
+import { supabase } from "@/lib/supabaseClient";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import XButton from "@/components/XButton";
 import { useThemeColor } from "@/providers/ThemeColorProvider";
@@ -102,6 +103,36 @@ function formatHours(hours) {
   });
 }
 
+function describeCombos(combos, currency) {
+  if (!combos || combos.length === 0) return [];
+
+  const byType = { quantity: [], value: [] };
+  combos.forEach((c) => {
+    if (byType[c.trigger_type]) byType[c.trigger_type].push(c);
+  });
+
+  const lines = [];
+
+  Object.entries(byType).forEach(([type, list]) => {
+    if (list.length === 0) return;
+
+    const sorted = [...list].sort((a, b) => Number(a.trigger_value) - Number(b.trigger_value));
+
+    const parts = sorted.map((c) => {
+      const trigger = type === "quantity" ? `${c.trigger_value}un+ ` : ` ${formatCurrency(c.trigger_value, currency)}+ `;
+      const discount =
+        c.discount_type === "percentage"
+          ? ` ${c.discount_value}% OFF`
+          : ` ${formatCurrency(c.discount_value, currency)} OFF`;
+      return `${trigger}=${discount}`;
+    });
+
+    lines.push(parts.join(" | "));
+  });
+
+  return lines;
+}
+
 function isSafeImageUrl(url) {
   return typeof url === "string" && url.length > 8 && (url.startsWith("http://") || url.startsWith("https://"));
 }
@@ -173,6 +204,28 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole, ownerStripeAc
       .filter((cat) => cat.menu_items.length > 0);
     setFilteredCategories(filtered);
   }, [searchTerm, orderedCategories]);
+
+  const [combos, setCombos] = useState([]);
+
+  useEffect(() => {
+    if (!menu?.id) return;
+    let mounted = true;
+    supabase
+      .from("combos")
+      .select("*")
+      .eq("menu_id", menu.id)
+      .then(({ data, error }) => {
+        if (!mounted) return;
+        if (error) {
+          console.error("Erro ao buscar combos:", error);
+          return;
+        }
+        setCombos(data || []);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [menu?.id]);
 
   const handleItemClick = useCallback((item) => {
     setSelectedItem(item);
@@ -433,6 +486,34 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole, ownerStripeAc
     );
   }, [filteredCategories]);
 
+  const itemCombos = useMemo(() => {
+    if (!hasPlusPermissions) {
+      return {};
+    }
+    const map = {};
+    combos
+      .filter((c) => c.scope === "item")
+      .forEach((c) => {
+        if (!map[c.item_id]) map[c.item_id] = [];
+        map[c.item_id].push(c);
+      });
+    return map;
+  }, [combos, hasPlusPermissions]);
+
+  const categoryCombos = useMemo(() => {
+    if (!hasPlusPermissions) {
+      return {};
+    }
+    const map = {};
+    combos
+      .filter((c) => c.scope === "category")
+      .forEach((c) => {
+        if (!map[c.category_id]) map[c.category_id] = [];
+        map[c.category_id].push(c);
+      });
+    return map;
+  }, [combos, hasPlusPermissions]);
+
   return (
     <>
       <div className="min-h-screen w-full relative pb-18" style={{ backgroundColor: menu.background_color }}>
@@ -646,12 +727,15 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole, ownerStripeAc
               return (
                 <div key={cat.id} id={cat.id.slice(0, 5)}>
                   {/* Título de categoria com ornamento */}
-                  <div className="flex items-center gap-3 mb-4 pt-4">
-                    <div className="flex-1 h-px" style={{ backgroundColor: contrast }} />
-                    <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: grayToUse }}>
-                      {cat.name}
-                    </p>
-                    <div className="flex-1 h-px" style={{ backgroundColor: contrast }} />
+                  <div className="flex items-center gap-3 flex-wrap pt-6 mb-2">
+                    <strong style={{ color: foregroundToUse }}>{cat.name}</strong>
+                    {categoryCombos[cat.id]?.length > 0 && (
+                      <span className="text-xs font-semibold flex flex-wrap gap-x-2" style={{ color: menu.details_color }}>
+                        {describeCombos(categoryCombos[cat.id], menu?.currency).map((line, idx) => (
+                          <span key={idx}>{line}</span>
+                        ))}
+                      </span>
+                    )}
                   </div>
 
                   <div>
@@ -675,6 +759,15 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole, ownerStripeAc
                               {it.description?.replace(/,\s*/g, ", ")}
                             </p>
                           )}
+
+                          {itemCombos[it.id]?.length > 0 && (
+                            <div className="text-xs font-semibold mt-1 space-y-0.5" style={{ color: menu.details_color }}>
+                              {describeCombos(itemCombos[it.id], menu?.currency).map((line, idx) => (
+                                <div key={idx}>{line}</div>
+                              ))}
+                            </div>
+                          )}
+
                           {/* Preço abaixo da descrição */}
                           <div className="mt-2">
                             {it.promo_price && canShowPromoPrice ? (
@@ -1037,6 +1130,7 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole, ownerStripeAc
 
       <CartDrawer
         menu={menu}
+        combos={combos}
         open={cartOpen}
         onOpen={() => setCartOpen(true)}
         bgColor={menu.background_color}
