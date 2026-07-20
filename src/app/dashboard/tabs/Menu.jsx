@@ -450,7 +450,7 @@ const Menu = (props) => {
               <span>
                 {boletoPending.isBoleto
                   ? "Seu boleto ainda não foi confirmado. O acesso ao plano será liberado assim que o pagamento for compensado."
-                  : "Sua assinatura está com o pagamento pendente. Finalize o pagamento para ativar seu plano."}
+                  : "Sua assinatura está com o pagamento pendente. O acesso ao plano será liberado assim que o pagamento for confirmado."}
               </span>
               <br />
               <a
