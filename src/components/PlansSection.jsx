@@ -107,8 +107,15 @@ const PlansSection = ({ canShowFreeTrialBtn }) => {
         const data = await res.json();
 
         const activeStatuses = ["active", "trialing", "past_due"];
+        const pendingStatus = ["incomplete"];
         if (activeStatuses.includes(data.status)) {
           alert("Você já possui uma assinatura ativa. Cancele o plano atual antes de assinar outro.");
+          return;
+        }
+        if (pendingStatus.includes(data.status)) {
+          alert(
+            "Você possui uma assinatura pendente. Finalize a assinatura para obter acesso ao plano ou cancele a assinatura para assinar outro plano.",
+          );
           return;
         }
       }

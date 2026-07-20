@@ -100,15 +100,12 @@ export async function GET(req) {
       }
     }
 
-    // 4️⃣ Buscar método de pagamento principal (cartão salvo, se houver)
-    const paymentMethods = await stripe.paymentMethods.list({
-      customer: subscription.customer,
-      type: "card",
-    });
+    // 4️⃣ Buscar método de pagamento usado na ÚLTIMA cobrança (não qualquer cartão salvo)
+    const paymentMethodType = paymentIntent?.payment_method?.type ?? null;
 
     let cardInfo = null;
-    if (paymentMethods.data.length > 0) {
-      const card = paymentMethods.data[0].card;
+    if (paymentMethodType === "card" && paymentIntent?.payment_method?.card) {
+      const card = paymentIntent.payment_method.card;
       cardInfo = {
         brand: card.brand,
         last4: card.last4,
@@ -118,7 +115,6 @@ export async function GET(req) {
     }
 
     // 5️⃣ Detectar boleto pendente (fatura aberta, aguardando compensação)
-    const paymentMethodType = paymentIntent?.payment_method?.type ?? null;
     const boletoUrl =
       paymentIntent?.next_action?.boleto_display_details?.hosted_voucher_url ?? invoice?.hosted_invoice_url ?? null;
 

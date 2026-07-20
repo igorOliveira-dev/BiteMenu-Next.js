@@ -148,7 +148,7 @@ export default function PlanDetails({ setSelectedTab }) {
             ) : null}
           </div>
 
-          {subscription.card_info && (
+          {subscription.payment_method_type === "card" && subscription.card_info && (
             <div className="mt-4 p-4 flex items-center justify-between flex-col xs:flex-row bg-translucid border-2 border-[var(--translucid)] rounded-lg w-full max-w-[1024px]">
               <div>
                 <p className="text-sm color-gray text-center">Forma de pagamento:</p>
