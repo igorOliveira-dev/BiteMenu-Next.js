@@ -33,6 +33,7 @@ import { trackAction } from "@/utils/userActions";
 import { FaEllipsisVertical } from "react-icons/fa6";
 import { createPortal } from "react-dom";
 import { useLayoutEffect } from "react";
+import { supabaseImg } from "@/lib/imageUtils";
 
 function getContrastTextColor(hex) {
   const cleanHex = (hex || "").replace("#", "");
@@ -414,7 +415,7 @@ function SortableMenuItem({
                 style={{ touchAction: "none", flexShrink: 0 }}
               >
                 <img
-                  src={item.image_url}
+                  src={supabaseImg(item.image_url, { width: 120, height: 120, quality: 75 })}
                   alt={item.name}
                   loading="lazy"
                   decoding="async"
@@ -2130,7 +2131,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                       {it.image_url && (
                         <div className="relative mb-2">
                           <img
-                            src={it.image_url}
+                            src={supabaseImg(it.image_url, { height: 320, width: 320, quality: 80 })}
                             alt={it.name}
                             loading="lazy"
                             decoding="async"
@@ -2449,7 +2450,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                   <label className="text-center flex flex-col items-center justify-center w-30 h-30 border-2 border-dashed border-translucid rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
                     {modalPayload.data.image_url ? (
                       <img
-                        src={modalPayload.data.image_url}
+                        src={supabaseImg(modalPayload.data.image_url, { width: 200, height: 200, quality: 75 })}
                         alt="Prévia"
                         className="object-cover w-full h-full"
                         loading="lazy"

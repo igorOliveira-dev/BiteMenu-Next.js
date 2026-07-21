@@ -571,7 +571,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
             <Image
               unoptimized // ao voltar a usar otimização, substituir 'unoptimized' por 'priority'
               alt="Banner do estabelecimento"
-              src={supabaseImg(menu.banner_url, { width: 1200, quality: 70 })}
+              src={supabaseImg(menu.banner_url, { quality: 70 })}
               fill
               className="object-cover"
               sizes="100vw"
@@ -588,7 +588,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
                 <div className="mr-2 sm:mr-4">
                   <Image
                     alt="Logo do estabelecimento"
-                    src={supabaseImg(menu.logo_url, { width: 160, quality: 80 })}
+                    src={supabaseImg(menu.logo_url, { width: 120, height: 120, quality: 80 })}
                     width={80}
                     height={80}
                     className="w-[45px] xxs:w-[55px] sm:w-[80px] aspect-square object-cover rounded-lg"
@@ -736,7 +736,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
                       {isSafeImageUrl(it.image_url) && (
                         <div className="w-full aspect-square rounded-md mb-2 overflow-hidden">
                           <Image
-                            src={supabaseImg(it.image_url, { width: 400, quality: 75 })}
+                            src={supabaseImg(it.image_url, { width: 400, height: 400, quality: 85 })}
                             alt={it.name}
                             width={400}
                             height={400}
@@ -825,7 +825,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
                             >
                               <Image
                                 unoptimized
-                                src={supabaseImg(it.image_url, { width: 160, quality: 75 })}
+                                src={supabaseImg(it.image_url, { width: 72, height: 72, quality: 75 })}
                                 alt={it.name}
                                 width={72}
                                 height={72}
@@ -967,7 +967,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
                   aria-label="Ampliar imagem do produto"
                 >
                   <Image
-                    src={supabaseImg(selectedItem.image_url, { width: 240, quality: 80 })}
+                    src={supabaseImg(selectedItem.image_url, { width: 160, height: 160, quality: 80 })}
                     alt={selectedItem.name}
                     width={120}
                     height={120}
@@ -1185,7 +1185,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
               className="w-full h-full block rounded-2xl overflow-hidden shadow-2xl cursor-zoom-out"
             >
               <Image
-                src={supabaseImg(selectedItem.image_url, { width: 900, quality: 85 })}
+                src={supabaseImg(selectedItem.image_url, { width: 900, height: 900, quality: 100 })}
                 alt={selectedItem.name}
                 width={900}
                 height={900}
