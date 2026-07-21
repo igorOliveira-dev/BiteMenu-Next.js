@@ -793,7 +793,7 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole, ownerStripeAc
                             <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden">
                               <Image
                                 unoptimized
-                                src={supabaseImg(it.image_url, { width: 96, height: 96, quality: 85 })}
+                                src={supabaseImg(it.image_url, { width: 120, height: 120, quality: 85 })}
                                 alt={it.name}
                                 width={96}
                                 height={96}

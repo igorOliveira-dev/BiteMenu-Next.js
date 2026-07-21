@@ -825,7 +825,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
                             >
                               <Image
                                 unoptimized
-                                src={supabaseImg(it.image_url, { width: 72, height: 72, quality: 75 })}
+                                src={supabaseImg(it.image_url, { width: 120, height: 120, quality: 80 })}
                                 alt={it.name}
                                 width={72}
                                 height={72}
