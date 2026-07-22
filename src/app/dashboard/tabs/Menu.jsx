@@ -89,6 +89,7 @@ const Menu = (props) => {
   const [titleModalOpen, setTitleModalOpen] = useState(false);
   const [bannerModalOpen, setBannerModalOpen] = useState(false);
   const [logoModalOpen, setLogoModalOpen] = useState(false);
+  const [watermarkModalOpen, setWatermarkModalOpen] = useState(false);
 
   const [showQrCode, setShowQrCode] = useState(false);
 
@@ -187,12 +188,14 @@ const Menu = (props) => {
   // função de fechar modais
   const closeAllModals = () => {
     setTitleModalOpen(false);
+    setWatermarkModalOpen(false);
     setBannerModalOpen(false);
     setLogoModalOpen(false);
   };
 
   // Fecha cada modal com o botão Voltar, sem duplicar lógica de history
   useModalBackHandler(titleModalOpen, () => setTitleModalOpen(false));
+  useModalBackHandler(watermarkModalOpen, () => setWatermarkModalOpen(false));
   useModalBackHandler(bannerModalOpen, () => setBannerModalOpen(false));
   useModalBackHandler(logoModalOpen, () => setLogoModalOpen(false));
 
@@ -526,16 +529,26 @@ const Menu = (props) => {
                 </button>
               </div>
 
-              {/* Título */}
-              <h1 className="text-xl md:text-2xl font-bold ml-4" style={{ color: titleColor }}>
-                {title}
-              </h1>
-              <button
-                onClick={() => setTitleModalOpen(true)}
-                className="border border-2 border-gray-500 p-2 cursor-pointer bg-translucid-50 rounded-lg ml-2 opacity-75 hover:opacity-100"
-              >
-                <FaPen className="font-xl text-white opacity-75" />
-              </button>
+              <div className="ml-4">
+                {/* Título */}
+                <div className="flex items-center">
+                  <h1 className="text-xl md:text-2xl font-bold" style={{ color: titleColor }}>
+                    {title}
+                  </h1>
+                  <button onClick={() => setTitleModalOpen(true)}>
+                    <FaPen className="cursor-pointer font-xl text-white opacity-75 ml-2 hover:opacity-70 transition" />
+                  </button>
+                </div>
+                {profile?.role == "free" && (
+                  <p
+                    onClick={() => setWatermarkModalOpen(true)}
+                    className="cursor-pointer text-[11px] xs:text-xs mt-1 hover:underline"
+                    style={{ color: getContrastTextColor(backgroundColor) === "white" ? "#ccc" : "#333" }}
+                  >
+                    Remover marca d'água ↗
+                  </p>
+                )}
+              </div>
             </div>
 
             <p
@@ -652,6 +665,15 @@ const Menu = (props) => {
               Salvar
             </button>
           </div>
+        </GenericModal>
+      )}
+
+      {watermarkModalOpen && (
+        <GenericModal title="Remover marca d'água" onClose={closeAllModals} wfull size="md">
+          <p className="text-[var(--gray)] mb-8">Utilize qualquer plano pago para remover a marca d'água do seu menu!</p>
+          <a href="/dashboard/pricing" className="block text-center cursor-pointer cta-button glow-red w-full">
+            Ver planos
+          </a>
         </GenericModal>
       )}
 
