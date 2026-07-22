@@ -5,18 +5,18 @@
 export function supabaseImg(url, { width, height, quality = 75, resize = "cover" } = {}) {
   if (!url) return null;
 
-  // só transforma URLs públicas do Supabase Storage
-  if (!url.includes("/storage/v1/object/public/")) return url;
+  return url;
+  // if (!url.includes("/storage/v1/object/public/")) return url;
 
-  const transformedBase = url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/");
+  // const transformedBase = url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/");
 
-  if (!width && !height) return transformedBase;
+  // if (!width && !height) return transformedBase;
 
-  const params = new URLSearchParams();
-  if (width) params.set("width", width);
-  if (height) params.set("height", height);
-  if (quality) params.set("quality", quality);
-  if (resize) params.set("resize", resize);
+  // const params = new URLSearchParams();
+  // if (width) params.set("width", width);
+  // if (height) params.set("height", height);
+  // if (quality) params.set("quality", quality);
+  // if (resize) params.set("resize", resize);
 
-  return `${transformedBase}?${params.toString()}`;
+  // return `${transformedBase}?${params.toString()}`;
 }
