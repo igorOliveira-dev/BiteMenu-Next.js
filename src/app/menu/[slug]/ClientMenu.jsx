@@ -706,84 +706,6 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
           </div>
         )}
 
-        {/* Destaques */}
-        {hasStarred && hasPlusPermissions && searchTerm === "" && (
-          <div className="rounded py-3 px-4" id="starred-section">
-            <div className="flex items-center gap-2 mb-2 pt-4">
-              <strong style={{ color: foregroundToUse }}>Destaques</strong>
-            </div>
-
-            <div
-              className="flex gap-3 overflow-x-auto starred-scroll"
-              style={{
-                scrollSnapType: "x mandatory",
-                "--scrollbar-color": menu.details_color,
-              }}
-            >
-              {starredItems.map((it) => (
-                <div
-                  key={it.id}
-                  className="min-w-[65%] max-w-[65%] 
-                     xxs:min-w-[55%] xxs:max-w-[55%] 
-                     xs:min-w-[40%] xs:max-w-[40%] 
-                     sm:min-w-[30%] sm:max-w-[30%] 
-                     lg:min-w-[28%] lg:max-w-[28%] 
-                     xl:min-w-[24%] xl:max-w-[24%] 
-                     snap-start rounded-lg p-2 cursor-pointer mb-2"
-                  style={{ backgroundColor: translucidToUse }}
-                  onClick={() => handleItemClick(it)}
-                >
-                  <div className="flex flex-col justify-between h-full">
-                    <div>
-                      {isSafeImageUrl(it.image_url) && (
-                        <div className="w-full aspect-square rounded-md mb-2 overflow-hidden">
-                          <Image
-                            src={supabaseImg(it.image_url, { width: 400, height: 400, quality: 85 })}
-                            alt={it.name}
-                            width={400}
-                            height={400}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
-                        </div>
-                      )}
-
-                      <div className="text-lg font-semibold line-clamp-1" style={{ color: foregroundToUse }}>
-                        {it.name}
-                      </div>
-                      <div className="text-sm line-clamp-2 mb-1" style={{ color: grayToUse }}>
-                        {it.description}
-                      </div>
-                      {itemCombos[it.id]?.length > 0 && (
-                        <div className="text-xs font-semibold mt-1 space-y-0.5" style={{ color: menu.details_color }}>
-                          {describeCombos(itemCombos[it.id], menu?.currency).map((line, idx) => (
-                            <div key={idx}>{line}</div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {it.promo_price && canShowPromoPrice ? (
-                      <div>
-                        <span className="text-xs xs:text-sm line-through" style={{ color: grayToUse }}>
-                          {formatCurrency(it.price, menu?.currency)}
-                        </span>
-                        <div className="font-bold text-xl lg:text-2xl" style={{ color: foregroundToUse }}>
-                          {formatCurrency(it.promo_price, menu?.currency)}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="font-bold text-2xl" style={{ color: foregroundToUse }}>
-                        {formatCurrency(it.price, menu?.currency)}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {totalVisibleItems === 0 && (
           <div className="text-center py-8">
             <p style={{ color: grayToUse }}>Nenhum item encontrado.</p>
@@ -792,6 +714,73 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
 
         {/* Lista */}
         <div className="space-y-4 px-4">
+          {/* Destaques */}
+          {hasStarred && hasPlusPermissions && searchTerm === "" && (
+            <div className="py-6 px-" id="starred-section">
+              <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: grayToUse }}>
+                Destaques
+              </p>
+              <div
+                className="flex gap-4 overflow-x-auto pb-2 starred-scroll"
+                style={{
+                  scrollSnapType: "x mandatory",
+                  "--scrollbar-color": menu.details_color,
+                }}
+              >
+                {starredItems.map((it) => (
+                  <div
+                    key={it.id}
+                    className="min-w-[220px] max-w-[220px] snap-start cursor-pointer rounded-xl overflow-hidden"
+                    style={{ backgroundColor: translucidToUse }}
+                    onClick={() => handleItemClick(it)}
+                  >
+                    {isSafeImageUrl(it.image_url) && (
+                      <div className="w-full aspect-square overflow-hidden">
+                        <Image
+                          src={supabaseImg(it.image_url, { width: 400, height: 400, quality: 85 })}
+                          alt={it.name}
+                          width={220}
+                          height={220}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
+                    <div className="p-3">
+                      <p className="font-semibold text-sm line-clamp-1" style={{ color: foregroundToUse }}>
+                        {it.name}
+                      </p>
+                      <p className="text-xs line-clamp-2 mt-0.5" style={{ color: grayToUse }}>
+                        {it.description}
+                      </p>
+                      {itemCombos[it.id]?.length > 0 && (
+                        <div className="text-xs font-semibold mt-1 space-y-0.5" style={{ color: menu.details_color }}>
+                          {describeCombos(itemCombos[it.id], menu?.currency).map((line, idx) => (
+                            <div key={idx}>{line}</div>
+                          ))}
+                        </div>
+                      )}
+                      {it.promo_price && canShowPromoPrice ? (
+                        <div className="mt-2">
+                          <span className="text-xs line-through" style={{ color: grayToUse }}>
+                            {formatCurrency(it.price, menu?.currency)}
+                          </span>
+                          <p className="font-bold text-base" style={{ color: foregroundToUse }}>
+                            {formatCurrency(it.promo_price, menu?.currency)}
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="font-bold text-base mt-2" style={{ color: foregroundToUse }}>
+                          {formatCurrency(it.price, menu?.currency)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {filteredCategories.map((cat) => {
             const visibleItems = (cat.menu_items || []).filter((it) => it.visible);
             if (visibleItems.length === 0) return null;

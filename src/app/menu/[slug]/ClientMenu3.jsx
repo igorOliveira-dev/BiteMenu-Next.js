@@ -689,6 +689,13 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole, ownerStripeAc
                       <p className="text-xs line-clamp-2 mt-0.5" style={{ color: grayToUse }}>
                         {it.description}
                       </p>
+                      {itemCombos[it.id]?.length > 0 && (
+                        <div className="text-xs font-semibold mt-1 space-y-0.5" style={{ color: menu.details_color }}>
+                          {describeCombos(itemCombos[it.id], menu?.currency).map((line, idx) => (
+                            <div key={idx}>{line}</div>
+                          ))}
+                        </div>
+                      )}
                       {it.promo_price && canShowPromoPrice ? (
                         <div>
                           <span className="text-[11px] line-through" style={{ color: grayToUse }}>
