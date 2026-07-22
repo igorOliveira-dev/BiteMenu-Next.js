@@ -545,8 +545,8 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole, ownerStripeAc
           )}
 
           {/* Conteúdo do header sobre o banner */}
-          <div className="absolute inset-0 flex flex-col justify-end px-4 sm:px-8 lg:px-20 xl:px-32 pb-4">
-            <div className="flex items-end gap-3">
+          <div className="absolute inset-0 flex flex-col justify-end px-4 sm:px-8 lg:px-20 xl:px-32">
+            <div className="flex items-center gap-3">
               {isSafeImageUrl(menu.logo_url) && (
                 <Image
                   alt="Logo do estabelecimento"
@@ -557,20 +557,9 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole, ownerStripeAc
                   loading="lazy"
                 />
               )}
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold" style={{ color: menu.title_color || foregroundToUse }}>
-                  {menu.title}
-                </h1>
-                <a
-                  href="https://www.bitemenu.com.br"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[10px] hover:underline mt-0.5 inline-block"
-                  style={{ color: grayToUse }}
-                >
-                  Feito com Bite Menu ↗
-                </a>
-              </div>
+              <h1 className="text-xl sm:text-2xl font-bold" style={{ color: menu.title_color || foregroundToUse }}>
+                {menu.title}
+              </h1>
             </div>
           </div>
 

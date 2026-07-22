@@ -615,15 +615,17 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
                   </div>
                 ) : null}
 
-                <a
-                  href="https://www.bitemenu.com.br"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[10px] xs:text-xs mt-1 hover:underline"
-                  style={{ color: grayToUse }}
-                >
-                  Feito com Bite Menu ↗
-                </a>
+                {ownerRole === "free" ? (
+                  <a
+                    href="https://www.bitemenu.com.br"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] xs:text-xs mt-1 hover:underline"
+                    style={{ color: grayToUse }}
+                  >
+                    Feito com Bite Menu ↗
+                  </a>
+                ) : null}
               </div>
             </div>
 

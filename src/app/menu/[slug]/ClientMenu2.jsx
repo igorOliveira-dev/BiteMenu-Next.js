@@ -587,16 +587,6 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole, ownerStripeAc
               <FaWhatsapp size={13} /> WhatsApp
             </button>
           </div>
-
-          <a
-            href="https://www.bitemenu.com.br"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[10px] mt-2 hover:underline"
-            style={{ color: grayToUse }}
-          >
-            Feito com Bite Menu ↗
-          </a>
         </div>
 
         {/* Busca */}
