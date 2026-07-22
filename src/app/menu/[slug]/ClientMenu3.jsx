@@ -1061,20 +1061,20 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole, ownerStripeAc
             ) : null}
           </div>
           {menu.orders !== "none" && (
-            <div className="flex items-center justify-between mt-4">
-              <div className="flex items-center gap-4">
+            <div className="flex xs:items-center flex-col xs:flex-row gap-4 justify-between mt-4">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="cursor-pointer p-2 rounded bg-red-500 hover:bg-red-600 font-bold transition"
+                  className="cursor-pointer p-2 rounded bg-red-500 hover:bg-red-600 transition"
                 >
                   <FaMinus />
                 </button>
-                <span className="text-xl font-semibold" style={{ color: foregroundToUse }}>
+                <span className="text-xl " style={{ color: foregroundToUse }}>
                   {quantity}
                 </span>
                 <button
                   onClick={() => setQuantity((q) => q + 1)}
-                  className="cursor-pointer p-2 rounded bg-green-500 hover:bg-green-600 font-bold transition"
+                  className="cursor-pointer p-2 rounded bg-green-500 hover:bg-green-600 transition"
                 >
                   <FaPlus />
                 </button>
@@ -1083,7 +1083,7 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole, ownerStripeAc
 
               <button
                 onClick={handleAddToCart}
-                className="cursor-pointer p-2 gap-2 font-bold flex items-center justify-center rounded hover:opacity-90 transition"
+                className="cursor-pointer p-2 gap-2 font-bold flex items-center justify-center rounded w-full xs:w-auto hover:opacity-90 transition"
                 style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
               >
                 <span>Adicionar {quantity} ao carrinho</span>
