@@ -1745,12 +1745,14 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         const g = groups[gi];
         if (!String(g.name || "").trim()) {
           alert?.(`O nome do grupo #${gi + 1} não pode ficar vazio.`, "error");
+          setSaving(false);
           return;
         }
         const minC = Number(g.min_choices ?? 0);
         const maxC = Number(g.max_choices ?? 0);
         if (minC > 0 && maxC > 0 && minC > maxC) {
           alert?.(`No grupo "${g.name}": mínimo não pode ser maior que o máximo.`, "error");
+          setSaving(false);
           return;
         }
         const choices = Array.isArray(g.option_choices) ? g.option_choices : [];
@@ -1758,6 +1760,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
           const c = choices[ci];
           if (!String(c.name || "").trim()) {
             alert?.(`No grupo "${g.name}", opção #${ci + 1}: nome não pode ficar vazio.`, "error");
+            setSaving(false);
             return;
           }
           const p = parseFloat(String(c.price).replace(",", "."));
