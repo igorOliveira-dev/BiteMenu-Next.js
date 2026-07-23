@@ -112,7 +112,7 @@ function ActionsMenuPanel({ anchorRef, onClose, children }) {
         top: pos ? pos.top : -9999,
         left: pos ? pos.left : -9999,
         visibility: ready ? "visible" : "hidden",
-        backgroundColor: "var(--menu-bg, #2b2b2b)",
+        backgroundColor: "var(--low-gray)",
         border: "1px solid var(--translucid)",
         borderRadius: 8,
         overflow: "hidden",
