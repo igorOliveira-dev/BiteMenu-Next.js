@@ -34,6 +34,7 @@ import { FaEllipsisVertical } from "react-icons/fa6";
 import { createPortal } from "react-dom";
 import { useLayoutEffect } from "react";
 import { supabaseImg } from "@/lib/imageUtils";
+import ActionsMenu from "@/components/ActionMenu";
 
 function getContrastTextColor(hex) {
   const cleanHex = (hex || "").replace("#", "");
@@ -494,6 +495,8 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
   const closingAdditionalsCfgFromPop = useRef(false);
   const closingOptionGroupsFromPop = useRef(false);
+  const [menuChoicesIndex, setMenuChoicesIndex] = useState([]);
+  const [menuChoicesIndexLoading, setMenuChoicesIndexLoading] = useState(false);
   const closingImportFromPop = useRef(false);
   const closingCrudFromPop = useRef(false);
   const closingPlanFromPop = useRef(false);
@@ -770,6 +773,62 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
     closingPlanFromPop.current = false;
   };
+
+  // popula o menuChoicesIndex
+  useEffect(() => {
+    if (!optionGroupsModalOpen || !categories) {
+      setMenuChoicesIndex([]);
+      return;
+    }
+
+    let mounted = true;
+
+    (async () => {
+      const allItemIds = categories
+        .flatMap((c) => c.menu_items || [])
+        .map((it) => it.id)
+        .filter(
+          (id) =>
+            id !== modalPayload.itemId && // exclui o item atual
+            typeof id === "string" &&
+            !id.startsWith("tmp-"),
+        );
+
+      if (allItemIds.length === 0) {
+        setMenuChoicesIndex([]);
+        return;
+      }
+
+      setMenuChoicesIndexLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("option_groups")
+          .select("id, name, item_id, option_choices ( id, name )")
+          .in("item_id", allItemIds);
+
+        if (error) throw error;
+        if (!mounted) return;
+
+        const flat = (data || []).flatMap((g) =>
+          (g.option_choices || []).map((c) => ({
+            groupName: (g.name || "").trim().toLowerCase(),
+            choiceName: (c.name || "").trim().toLowerCase(),
+          })),
+        );
+
+        setMenuChoicesIndex(flat);
+      } catch (err) {
+        console.error("fetch menuChoicesIndex error:", err);
+        if (mounted) setMenuChoicesIndex([]);
+      } finally {
+        if (mounted) setMenuChoicesIndexLoading(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [optionGroupsModalOpen, modalPayload.itemId, categories]);
 
   const closeModal = () => {
     setSaving(false);
@@ -1906,6 +1965,151 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     }
   };
 
+  // Oculta/exibe uma opção neste item específico, direto no banco (sem precisar confirmar os modais)
+  const toggleChoiceHiddenNow = async (gi, ci) => {
+    const group = modalPayload.data.option_groups?.[gi];
+    const choice = group?.option_choices?.[ci];
+    if (!group || !choice) return;
+
+    const newHidden = !choice.hidden;
+
+    // Atualização otimista local
+    setModalPayload((p) => {
+      const groups = [...(p.data.option_groups || [])];
+      const choices = [...(groups[gi].option_choices || [])];
+      choices[ci] = { ...choices[ci], hidden: newHidden };
+      groups[gi] = { ...groups[gi], option_choices: choices };
+      return { ...p, data: { ...p.data, option_groups: groups } };
+    });
+
+    // Se a opção ainda não existe no banco (é temporária), não há o que persistir agora;
+    // ela será criada já com o "hidden" correto quando o item for salvo.
+    if (!choice.id || choice.id.startsWith("tmp-")) return;
+
+    try {
+      const { error } = await supabase.from("option_choices").update({ hidden: newHidden }).eq("id", choice.id);
+      if (error) throw error;
+      alert?.(newHidden ? "Opção ocultada neste item" : "Opção exibida neste item", "success");
+    } catch (err) {
+      console.error("toggleChoiceHiddenNow error:", err);
+      alert?.("Erro ao alterar visibilidade da opção", "error");
+
+      // reverte
+      setModalPayload((p) => {
+        const groups = [...(p.data.option_groups || [])];
+        const choices = [...(groups[gi].option_choices || [])];
+        choices[ci] = { ...choices[ci], hidden: choice.hidden };
+        groups[gi] = { ...groups[gi], option_choices: choices };
+        return { ...p, data: { ...p.data, option_groups: groups } };
+      });
+    }
+  };
+
+  // Função que sincroniza no banco (grupo + opção com mesmo nome, em outros itens)
+  const syncChoiceVisibilityAcrossMenu = async (groupName, choiceName, hidden) => {
+    const actionLabel = hidden ? "Ocultar" : "Exibir";
+    const ok = await confirm(
+      `${actionLabel} a opção "${choiceName}" do grupo "${groupName}" em todos os itens do cardápio que a possuem?`,
+    );
+    if (!ok) return;
+
+    try {
+      const allItemIds = categories
+        .flatMap((c) => c.menu_items || [])
+        .map((it) => it.id)
+        .filter((id) => typeof id === "string" && !id.startsWith("tmp-"));
+
+      if (allItemIds.length === 0) return;
+
+      // encontra os grupos com esse nome (em qualquer item, exceto tmp)
+      const { data: groups, error: gErr } = await supabase
+        .from("option_groups")
+        .select("id, item_id")
+        .in("item_id", allItemIds)
+        .ilike("name", groupName.trim());
+
+      if (gErr) throw gErr;
+
+      const groupIds = (groups || []).map((g) => g.id);
+      if (groupIds.length === 0) {
+        alert?.("Nenhum outro grupo com esse nome foi encontrado.", "error");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("option_choices")
+        .update({ hidden })
+        .in("group_id", groupIds)
+        .ilike("name", choiceName.trim());
+
+      if (error) throw error;
+
+      // --- atualiza localmente as choices do item atual que batem no nome ---
+      // (sem isso, a opacidade só refletiria após reload, já que o banco
+      // muda o item aberto também mas o modalPayload não é resincronizado)
+      const gN = groupName.trim().toLowerCase();
+      const cN = choiceName.trim().toLowerCase();
+
+      setModalPayload((p) => {
+        const groups = (p.data.option_groups || []).map((g) => {
+          if ((g.name || "").trim().toLowerCase() !== gN) return g;
+          return {
+            ...g,
+            option_choices: (g.option_choices || []).map((c) =>
+              (c.name || "").trim().toLowerCase() === cN ? { ...c, hidden } : c,
+            ),
+          };
+        });
+        return { ...p, data: { ...p.data, option_groups: groups } };
+      });
+
+      alert?.("Visibilidade sincronizada nos outros itens", "success");
+    } catch (err) {
+      console.error("syncChoiceVisibilityAcrossMenu error:", err);
+      alert?.("Erro ao sincronizar visibilidade", "error");
+    }
+  };
+
+  // Exclui uma opção deste item diretamente no banco (sem precisar confirmar os modais depois)
+  const deleteChoiceNow = async (gi, ci) => {
+    const group = modalPayload.data.option_groups?.[gi];
+    const choice = group?.option_choices?.[ci];
+    if (!group || !choice) return;
+
+    const ok = await confirm("Remover essa opção?");
+    if (!ok) return;
+
+    // Atualização otimista local
+    setModalPayload((p) => {
+      const groups = [...(p.data.option_groups || [])];
+      const choices = [...(groups[gi].option_choices || [])];
+      choices.splice(ci, 1);
+      groups[gi] = { ...groups[gi], option_choices: choices };
+      return { ...p, data: { ...p.data, option_groups: groups } };
+    });
+
+    // Se a opção ainda não existe no banco (é temporária), não há o que deletar
+    if (!choice.id || choice.id.startsWith("tmp-")) return;
+
+    try {
+      const { error } = await supabase.from("option_choices").delete().eq("id", choice.id);
+      if (error) throw error;
+      alert?.("Opção removida", "success");
+    } catch (err) {
+      console.error("deleteChoiceNow error:", err);
+      alert?.("Erro ao remover opção", "error");
+
+      // reverte, reinserindo a opção na posição original
+      setModalPayload((p) => {
+        const groups = [...(p.data.option_groups || [])];
+        const choices = [...(groups[gi].option_choices || [])];
+        choices.splice(ci, 0, choice);
+        groups[gi] = { ...groups[gi], option_choices: choices };
+        return { ...p, data: { ...p.data, option_groups: groups } };
+      });
+    }
+  };
+
   const fetchAllOptionGroups = async () => {
     const allItems = categories.flatMap((c) => c.menu_items || []).filter((it) => it.id !== modalPayload.itemId);
 
@@ -1937,6 +2141,14 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
           })),
       }))
       .filter((entry) => entry.groups.length > 0); // omite itens sem grupos
+  };
+
+  // verifica se há a mesma option em outro item
+  const hasMatchElsewhere = (groupName, choiceName) => {
+    const gN = (groupName || "").trim().toLowerCase();
+    const cN = (choiceName || "").trim().toLowerCase();
+    if (!gN || !cN) return false;
+    return menuChoicesIndex.some((e) => e.groupName === gN && e.choiceName === cN);
   };
 
   const getItemLimitByRole = (role) => {
@@ -2837,71 +3049,68 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
                 {/* Choices */}
                 <div className="space-y-1.5">
-                  {(group.option_choices || []).map((choice, ci) => (
-                    <div key={choice.id ?? ci} className={`flex items-center gap-1.5 ${choice.hidden ? "opacity-50" : ""}`}>
-                      <input
-                        type="text"
-                        value={choice.name}
-                        onChange={(e) =>
-                          setModalPayload((p) => {
-                            const groups = [...(p.data.option_groups || [])];
-                            const choices = [...(groups[gi].option_choices || [])];
-                            choices[ci] = { ...choices[ci], name: e.target.value };
-                            groups[gi] = { ...groups[gi], option_choices: choices };
-                            return { ...p, data: { ...p.data, option_groups: groups } };
-                          })
-                        }
-                        className="flex-1 min-w-0 p-1.5 text-sm rounded border border-translucid bg-translucid"
-                        placeholder="Nome da opção"
-                      />
-                      <input
-                        type="text"
-                        value={String(choice.price)}
-                        onChange={(e) => {
-                          let value = e.target.value.replace(/[^0-9.,-]/g, "").replace(",", ".");
-                          setModalPayload((p) => {
-                            const groups = [...(p.data.option_groups || [])];
-                            const choices = [...(groups[gi].option_choices || [])];
-                            choices[ci] = { ...choices[ci], price: value };
-                            groups[gi] = { ...groups[gi], option_choices: choices };
-                            return { ...p, data: { ...p.data, option_groups: groups } };
-                          });
-                        }}
-                        className="w-16 flex-none p-1.5 text-sm rounded border border-translucid bg-translucid"
-                        placeholder="0.00"
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setModalPayload((p) => {
-                            const groups = [...(p.data.option_groups || [])];
-                            const choices = [...(groups[gi].option_choices || [])];
-                            choices[ci] = { ...choices[ci], hidden: !choices[ci].hidden };
-                            groups[gi] = { ...groups[gi], option_choices: choices };
-                            return { ...p, data: { ...p.data, option_groups: groups } };
-                          })
-                        }
-                        className={`p-1.5 rounded text-white ${choice.hidden ? "bg-yellow-600 hover:bg-yellow-700" : "bg-green-600 hover:bg-green-700"}`}
+                  {(group.option_choices || []).map((choice, ci) => {
+                    const canSyncAcrossMenu = hasMatchElsewhere(group.name, choice.name);
+
+                    return (
+                      <div
+                        key={choice.id ?? ci}
+                        className={`flex items-center gap-1.5 ${choice.hidden ? "opacity-50" : ""}`}
                       >
-                        {choice.hidden ? <FaEyeSlash size={12} /> : <FaEye size={12} />}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setModalPayload((p) => {
-                            const groups = [...(p.data.option_groups || [])];
-                            const choices = [...(groups[gi].option_choices || [])];
-                            choices.splice(ci, 1);
-                            groups[gi] = { ...groups[gi], option_choices: choices };
-                            return { ...p, data: { ...p.data, option_groups: groups } };
-                          })
-                        }
-                        className="p-1.5 rounded bg-red-600 text-white"
-                      >
-                        <FaTrash size={12} />
-                      </button>
-                    </div>
-                  ))}
+                        <input
+                          type="text"
+                          value={choice.name}
+                          onChange={(e) =>
+                            setModalPayload((p) => {
+                              const groups = [...(p.data.option_groups || [])];
+                              const choices = [...(groups[gi].option_choices || [])];
+                              choices[ci] = { ...choices[ci], name: e.target.value };
+                              groups[gi] = { ...groups[gi], option_choices: choices };
+                              return { ...p, data: { ...p.data, option_groups: groups } };
+                            })
+                          }
+                          className="flex-1 min-w-0 p-1.5 text-sm rounded border border-translucid bg-translucid"
+                          placeholder="Nome da opção"
+                        />
+                        <input
+                          type="text"
+                          value={String(choice.price)}
+                          onChange={(e) => {
+                            let value = e.target.value.replace(/[^0-9.,-]/g, "").replace(",", ".");
+                            setModalPayload((p) => {
+                              const groups = [...(p.data.option_groups || [])];
+                              const choices = [...(groups[gi].option_choices || [])];
+                              choices[ci] = { ...choices[ci], price: value };
+                              groups[gi] = { ...groups[gi], option_choices: choices };
+                              return { ...p, data: { ...p.data, option_groups: groups } };
+                            });
+                          }}
+                          className="w-16 flex-none p-1.5 text-sm rounded border border-translucid bg-translucid"
+                          placeholder="0.00"
+                        />
+                        <ActionsMenu
+                          options={[
+                            {
+                              label: choice.hidden ? "Exibir opção neste item" : "Ocultar opção neste item",
+                              icon: choice.hidden ? <FaEye size={12} /> : <FaEyeSlash size={12} />,
+                              onClick: () => toggleChoiceHiddenNow(gi, ci),
+                            },
+                            canSyncAcrossMenu && {
+                              label: choice.hidden ? "Exibir opção em todos os itens" : "Ocultar opção em todos os itens",
+                              icon: choice.hidden ? <FaEye size={12} /> : <FaEyeSlash size={12} />,
+                              onClick: () => syncChoiceVisibilityAcrossMenu(group.name, choice.name, !choice.hidden),
+                            },
+                            {
+                              label: "Excluir opção",
+                              icon: <FaTrash size={12} />,
+                              danger: true,
+                              onClick: () => deleteChoiceNow(gi, ci),
+                            },
+                          ].filter(Boolean)}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {/* Adicionar opção */}
@@ -2922,7 +3131,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                       return { ...p, data: { ...p.data, option_groups: groups } };
                     })
                   }
-                  className="w-full text-sm cursor-pointer px-2 py-1 rounded border border-dashed border-translucid color-gray hover:opacity-80 transition"
+                  className="w-full text-sm cursor-pointer px-2 py-1 rounded border border-dashed border-[var(--gray)] color-gray hover:opacity-80 transition"
                 >
                   + Opção
                 </button>
