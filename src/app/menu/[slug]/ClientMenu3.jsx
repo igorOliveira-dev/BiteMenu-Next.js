@@ -77,6 +77,55 @@ function isOpenNow(hours) {
   return nowMins >= toMinutes(openStr) && nowMins <= toMinutes(closeStr);
 }
 
+function getClosingTime(hours) {
+  const now = new Date();
+  const timeString = now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
+  const localNow = new Date(timeString);
+
+  const day = localNow.toLocaleString("en-US", { weekday: "short" }).toLowerCase();
+  const todayHours = hours?.[day] || null;
+  if (!todayHours) return null;
+
+  const [, closeStr] = todayHours.split("-");
+  return closeStr;
+}
+
+const weekOrder = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+
+function getNextOpenInfo(hours) {
+  if (!hours) return null;
+
+  const now = new Date();
+  const timeString = now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
+  const localNow = new Date(timeString);
+
+  const todayKey = localNow.toLocaleString("en-US", { weekday: "short" }).toLowerCase();
+  const nowMins = localNow.getHours() * 60 + localNow.getMinutes();
+  const todayIndex = weekOrder.indexOf(todayKey);
+
+  // 1. Ainda pode abrir hoje?
+  const todayHours = hours[todayKey];
+  if (todayHours) {
+    const [openStr] = todayHours.split("-");
+    if (toMinutes(openStr) > nowMins) {
+      return { label: "hoje", time: openStr };
+    }
+  }
+
+  // 2. Procura nos próximos dias
+  for (let offset = 1; offset <= 6; offset++) {
+    const dayKey = weekOrder[(todayIndex + offset) % 7];
+    const dayHours = hours[dayKey];
+    if (dayHours) {
+      const [openStr] = dayHours.split("-");
+      const label = offset === 1 ? "amanhã" : dayNames[dayKey];
+      return { label, time: openStr };
+    }
+  }
+
+  return null;
+}
+
 const dayNames = {
   mon: "Segunda-feira",
   tue: "Terça-feira",
@@ -153,6 +202,8 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole, ownerStripeAc
   const establishmentPhone = ownerPhone ?? null;
 
   const open = useMemo(() => isOpenNow(menu.hours), [menu.hours]);
+  const closingTime = useMemo(() => getClosingTime(menu.hours), [menu.hours]);
+  const nextOpenInfo = useMemo(() => getNextOpenInfo(menu.hours), [menu.hours]);
 
   const contrast = useMemo(() => getContrastTextColor(menu.background_color), [menu.background_color]);
   const background = menu.background_color;
@@ -161,6 +212,9 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole, ownerStripeAc
   const translucidToUse = contrast === "white" ? "#ffffff15" : "#00000015";
   const accentColor = menu.details_color;
   const accentContrast = getContrastTextColor(accentColor);
+
+  const openColor = contrast === "white" ? "#4ade80" : "#15803d"; // verde claro / verde escuro
+  const closedColor = contrast === "white" ? "#f87171" : "#b91c1c"; // vermelho claro / vermelho escuro
 
   const now = new Date();
   const timeString = now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
@@ -562,37 +616,44 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole, ownerStripeAc
               </h1>
             </div>
           </div>
-
-          {/* Status + WhatsApp topo direito */}
-          <div className="absolute top-3 right-3 sm:right-8 lg:right-20 xl:right-32 flex items-center gap-2">
-            <button
-              className="text-xs font-semibold px-3 py-1 rounded-full"
-              style={{ backgroundColor: open ? "#16a34a" : "#dc2626", color: "white" }}
-              onClick={() => setHoursModalOpen(true)}
-            >
-              {open ? "● Aberto" : "● Fechado"}
-            </button>
-            <button
-              className="flex items-center gap-1 text-xs px-3 py-1 rounded-full"
-              style={{ backgroundColor: background, color: foregroundToUse }}
-              onClick={() => window.open(`https://wa.me/${establishmentPhone}`, "_blank")}
-            >
-              <FaWhatsapp size={13} />
-            </button>
-          </div>
         </div>
 
-        {menu.address && (
-          <p className="flex gap-2 items-center px-4 sm:px-8 lg:px-20 xl:px-32 pt-3 text-sm" style={{ color: grayToUse }}>
-            <FaMapMarkerAlt size={10} /> {menu.address}
-          </p>
-        )}
+        <div className="flex justify-between px-4 sm:px-8 lg:px-20 xl:px-32 pt-3">
+          <div>
+            <div
+              className=" cursor-pointer flex items-center mr-2 rounded-lg text-sm z-2 mb-2"
+              style={{ color: open ? openColor : closedColor }}
+              onClick={() => setHoursModalOpen(true)}
+            >
+              {open
+                ? closingTime
+                  ? `Aberto até às ${closingTime}h`
+                  : "Aberto agora"
+                : nextOpenInfo
+                  ? `Abre ${nextOpenInfo.label} às ${nextOpenInfo.time}h`
+                  : "Fechado"}
+            </div>
 
-        {menu.description && (
-          <p className="px-4 sm:px-8 lg:px-20 xl:px-32 pt-3 text-sm" style={{ color: grayToUse }}>
-            {menu.description}
-          </p>
-        )}
+            {menu.address && (
+              <p className="flex gap-2 items-center  text-sm" style={{ color: grayToUse }}>
+                <FaMapMarkerAlt size={10} /> {menu.address}
+              </p>
+            )}
+
+            {menu.description && (
+              <p className=" text-sm" style={{ color: grayToUse }}>
+                {menu.description}
+              </p>
+            )}
+          </div>
+
+          <button
+            style={{ color: foregroundToUse }}
+            onClick={() => window.open(`https://wa.me/${establishmentPhone}`, "_blank")}
+          >
+            <FaWhatsapp size={20} />
+          </button>
+        </div>
 
         {/* Busca */}
         <div className="px-4 sm:px-8 lg:px-20 xl:px-32 mt-4 mb-2">

@@ -94,6 +94,55 @@ function isOpenNow(hours) {
   return nowMins >= openMins && nowMins <= closeMins;
 }
 
+function getClosingTime(hours) {
+  const now = new Date();
+  const timeString = now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
+  const localNow = new Date(timeString);
+
+  const day = localNow.toLocaleString("en-US", { weekday: "short" }).toLowerCase();
+  const todayHours = hours?.[day] || null;
+  if (!todayHours) return null;
+
+  const [, closeStr] = todayHours.split("-");
+  return closeStr;
+}
+
+const weekOrder = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+
+function getNextOpenInfo(hours) {
+  if (!hours) return null;
+
+  const now = new Date();
+  const timeString = now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
+  const localNow = new Date(timeString);
+
+  const todayKey = localNow.toLocaleString("en-US", { weekday: "short" }).toLowerCase();
+  const nowMins = localNow.getHours() * 60 + localNow.getMinutes();
+  const todayIndex = weekOrder.indexOf(todayKey);
+
+  // 1. Ainda pode abrir hoje?
+  const todayHours = hours[todayKey];
+  if (todayHours) {
+    const [openStr] = todayHours.split("-");
+    if (toMinutes(openStr) > nowMins) {
+      return { label: "hoje", time: openStr };
+    }
+  }
+
+  // 2. Procura nos próximos dias
+  for (let offset = 1; offset <= 6; offset++) {
+    const dayKey = weekOrder[(todayIndex + offset) % 7];
+    const dayHours = hours[dayKey];
+    if (dayHours) {
+      const [openStr] = dayHours.split("-");
+      const label = offset === 1 ? "amanhã" : dayNames[dayKey];
+      return { label, time: openStr };
+    }
+  }
+
+  return null;
+}
+
 const dayNames = {
   mon: "Segunda-feira",
   tue: "Terça-feira",
@@ -163,11 +212,16 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
   const establishmentPhone = ownerPhone ?? null;
 
   const open = useMemo(() => isOpenNow(menu.hours), [menu.hours]);
+  const closingTime = useMemo(() => getClosingTime(menu.hours), [menu.hours]);
+  const nextOpenInfo = useMemo(() => getNextOpenInfo(menu.hours), [menu.hours]);
 
   const contrast = useMemo(() => getContrastTextColor(menu.background_color), [menu.background_color]);
   const translucidToUse = contrast === "white" ? "#ffffff15" : "#00000015";
   const grayToUse = contrast === "white" ? "#cccccc" : "#333333";
   const foregroundToUse = contrast === "white" ? "#fafafa" : "#171717";
+
+  const openColor = contrast === "white" ? "#4ade80" : "#15803d"; // verde claro / verde escuro
+  const closedColor = contrast === "white" ? "#f87171" : "#b91c1c"; // vermelho claro / vermelho escuro
 
   const now = new Date();
   const timeString = now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
@@ -554,17 +608,6 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
         className="min-h-screen w-full lg:px-20 xl:px-32 relative pb-18"
         style={{ backgroundColor: menu.background_color }}
       >
-        {/* Indicador de status no topo */}
-        {menu.banner_url ? (
-          <div
-            className="cursor-pointer absolute mt-2 flex items-center h-[35px] top-[calc(18dvh-50px)] sm:top-[calc(25dvh-50px)] right-2 lg:right-20 xl:right-32 px-3 py-1 mr-2 rounded-lg font-bold text-sm z-2"
-            style={{ backgroundColor: open ? "#16a34a" : "#dc2626", color: "white" }}
-            onClick={() => setHoursModalOpen(true)}
-          >
-            {open ? "Aberto agora" : "Fechado"}
-          </div>
-        ) : null}
-
         {/* Banner (Next/Image com sizes) */}
         {isSafeImageUrl(menu.banner_url) && (
           <div className="relative w-full h-[18dvh] sm:h-[25dvh]">
@@ -605,27 +648,31 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
                   {menu.title}
                 </h1>
 
-                {!menu.banner_url ? (
-                  <div
-                    className="cursor-pointer flex items-center h-[30px] px-2 mr-2 rounded-lg font-bold text-sm z-2"
-                    style={{ backgroundColor: open ? "#16a34a" : "#dc2626", color: "white" }}
-                    onClick={() => setHoursModalOpen(true)}
-                  >
-                    {open ? "Aberto agora" : "Fechado"}
-                  </div>
-                ) : null}
-
                 {ownerRole === "free" ? (
                   <a
                     href="https://www.bitemenu.com.br"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[10px] xs:text-xs mt-1 hover:underline"
+                    className="text-[10px] xs:text-xs mb-1 hover:underline"
                     style={{ color: grayToUse }}
                   >
                     Feito com Bite Menu ↗
                   </a>
                 ) : null}
+
+                <div
+                  className="cursor-pointer flex items-center mr-2 rounded-lg text-sm z-2"
+                  style={{ color: open ? openColor : closedColor }}
+                  onClick={() => setHoursModalOpen(true)}
+                >
+                  {open
+                    ? closingTime
+                      ? `Aberto até às ${closingTime}h`
+                      : "Aberto agora"
+                    : nextOpenInfo
+                      ? `Abre ${nextOpenInfo.label} às ${nextOpenInfo.time}h`
+                      : "Fechado"}
+                </div>
               </div>
             </div>
 

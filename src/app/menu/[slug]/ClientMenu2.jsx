@@ -83,6 +83,55 @@ function isOpenNow(hours) {
   return nowMins >= openMins && nowMins <= closeMins;
 }
 
+function getClosingTime(hours) {
+  const now = new Date();
+  const timeString = now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
+  const localNow = new Date(timeString);
+
+  const day = localNow.toLocaleString("en-US", { weekday: "short" }).toLowerCase();
+  const todayHours = hours?.[day] || null;
+  if (!todayHours) return null;
+
+  const [, closeStr] = todayHours.split("-");
+  return closeStr;
+}
+
+const weekOrder = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+
+function getNextOpenInfo(hours) {
+  if (!hours) return null;
+
+  const now = new Date();
+  const timeString = now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
+  const localNow = new Date(timeString);
+
+  const todayKey = localNow.toLocaleString("en-US", { weekday: "short" }).toLowerCase();
+  const nowMins = localNow.getHours() * 60 + localNow.getMinutes();
+  const todayIndex = weekOrder.indexOf(todayKey);
+
+  // 1. Ainda pode abrir hoje?
+  const todayHours = hours[todayKey];
+  if (todayHours) {
+    const [openStr] = todayHours.split("-");
+    if (toMinutes(openStr) > nowMins) {
+      return { label: "hoje", time: openStr };
+    }
+  }
+
+  // 2. Procura nos próximos dias
+  for (let offset = 1; offset <= 6; offset++) {
+    const dayKey = weekOrder[(todayIndex + offset) % 7];
+    const dayHours = hours[dayKey];
+    if (dayHours) {
+      const [openStr] = dayHours.split("-");
+      const label = offset === 1 ? "amanhã" : dayNames[dayKey];
+      return { label, time: openStr };
+    }
+  }
+
+  return null;
+}
+
 const dayNames = {
   mon: "Segunda-feira",
   tue: "Terça-feira",
@@ -151,10 +200,16 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole, ownerStripeAc
   const establishmentPhone = ownerPhone ?? null;
 
   const open = useMemo(() => isOpenNow(menu.hours), [menu.hours]);
+  const closingTime = useMemo(() => getClosingTime(menu.hours), [menu.hours]);
+  const nextOpenInfo = useMemo(() => getNextOpenInfo(menu.hours), [menu.hours]);
+
   const contrast = useMemo(() => getContrastTextColor(menu.background_color), [menu.background_color]);
   const translucidToUse = contrast === "white" ? "#ffffff15" : "#00000015";
   const grayToUse = contrast === "white" ? "#cccccc" : "#333333";
   const foregroundToUse = contrast === "white" ? "#fafafa" : "#171717";
+
+  const openColor = contrast === "white" ? "#4ade80" : "#15803d"; // verde claro / verde escuro
+  const closedColor = contrast === "white" ? "#f87171" : "#b91c1c"; // vermelho claro / vermelho escuro
 
   const now = new Date();
   const timeString = now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
@@ -564,21 +619,27 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole, ownerStripeAc
             </p>
           )}
 
+          <div
+            className="cursor-pointer flex items-center mr-2 mb-2 rounded-lg text-sm z-2"
+            style={{ color: open ? openColor : closedColor }}
+            onClick={() => setHoursModalOpen(true)}
+          >
+            {open
+              ? closingTime
+                ? `Aberto até às ${closingTime}h`
+                : "Aberto agora"
+              : nextOpenInfo
+                ? `Abre ${nextOpenInfo.label} às ${nextOpenInfo.time}h`
+                : "Fechado"}
+          </div>
+
           {menu.address && (
             <p className="flex items-center gap-1 mt-1 text-xs" style={{ color: grayToUse }}>
               <FaMapMarkerAlt size={11} /> {menu.address}
             </p>
           )}
 
-          <div className="flex items-center gap-3 mt-3">
-            <button
-              className="text-xs font-semibold px-3 py-1 rounded-full"
-              style={{ backgroundColor: open ? "#16a34a" : "#dc2626", color: "white" }}
-              onClick={() => setHoursModalOpen(true)}
-            >
-              {open ? "Aberto agora" : "Fechado"}
-            </button>
-
+          <div className="flex flex-col items-center gap-3 mt-3">
             <button
               className="flex items-center gap-1 text-xs px-3 py-1 rounded-full border"
               style={{ borderColor: translucidToUse, color: foregroundToUse }}
