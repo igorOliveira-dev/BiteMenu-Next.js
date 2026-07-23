@@ -188,6 +188,32 @@ export async function POST(req) {
         break;
       }
 
+      // verifica assinatura expirada
+      case "customer.subscription.updated": {
+        const subscription = event.data.object;
+
+        if (subscription.status === "incomplete_expired") {
+          const customerId = subscription.customer;
+
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("id, stripe_subscription_id")
+            .eq("stripe_customer_id", customerId)
+            .maybeSingle();
+
+          // só limpa se for realmente essa a assinatura salva no profile
+          if (profile && profile.stripe_subscription_id === subscription.id) {
+            await supabase
+              .from("profiles")
+              .update({ stripe_subscription_id: null, stripe_price_id: null })
+              .eq("id", profile.id);
+
+            console.log("[Webhook] Boleto expirado sem pagamento, assinatura limpa do profile");
+          }
+        }
+        break;
+      }
+
       default:
         console.log(`[Webhook] Evento não tratado: ${event.type}`);
     }
