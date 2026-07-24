@@ -69,7 +69,7 @@ const SalesSummary = ({ setSelectedTab, refreshSignal }) => {
   if (loading || loadingSales) return <Loading />;
 
   return (
-    <div className="sm:p-4 p-3 mb-6 lg:w-[calc(80dvw-256px)] max-w-[1024px] rounded-2xl bg-translucid border border-translucid shadow-sm flex flex-col gap-4">
+    <div className="sm:p-4 p-3 mb-6 max-w-[1024px] rounded-2xl bg-translucid border border-translucid shadow-sm flex flex-col gap-4">
       <h3 className="text-base font-semibold">Resumo das vendas</h3>
 
       <div className="grid text-center sm:grid-cols-3 gap-3">

@@ -408,7 +408,7 @@ const Sales = ({ setSelectedTab }) => {
 
   return (
     <div className="px-4 sm:px-2 lg:grid">
-      <div className="md:m-auto lg:m-2 lg:w-[calc(80dvw-256px)] max-w-[1024px] min-h-[calc(100dvh-110px)] rounded-2xl overflow-y-auto">
+      <div className="md:m-auto lg:m-2 max-w-[812px] lg:max-w-[1024px] min-h-[calc(100dvh-110px)] overflow-y-auto rounded-2xl">
         <div className="flex items-center gap-3 mb-4">
           <h2 className="default-h2 font-semibold">Vendas</h2>
           <button
@@ -428,7 +428,7 @@ const Sales = ({ setSelectedTab }) => {
         <SalesSummary setSelectedTab={setSelectedTab} refreshSignal={refreshSummary} />
 
         <h3 className="mb-3 text-base font-semibold">Histórico de vendas</h3>
-        <div className="space-y-3 mb-4">
+        <div className="space-y-3 mb-4 max-w-[1024px]">
           {!monthsList || monthsList.length === 0 ? (
             <p className="p-6 text-center color-gray">Nenhuma venda encontrada.</p>
           ) : null}

@@ -157,7 +157,7 @@ const Account = ({ setSelectedTab }) => {
 
   return (
     <>
-      <div className="p-2 max-w-[720px]">
+      <div className="pt-2 px-4 md:m-auto lg:m-0 max-w-[812px] min-h-[calc(100dvh-110px)] overflow-y-auto rounded-2xl">
         <div className="flex items-center mb-4">
           <button
             type="button"
@@ -174,7 +174,7 @@ const Account = ({ setSelectedTab }) => {
           {/* Perfil */}
           <div className="flex items-center justify-between gap-3 p-4">
             <div className="min-w-0">
-              <p className="default-h1 font-bold line-clamp-1">{name}</p>
+              <p className="text-xl font-bold line-clamp-1">{name}</p>
               <p className="color-gray text-sm break-all">{profile?.email}</p>
             </div>
             <ActionsMenu
