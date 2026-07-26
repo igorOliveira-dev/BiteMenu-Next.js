@@ -56,6 +56,8 @@ export async function POST(req) {
       });
     }
 
+    const baseUrl = process.env.APP_URL || "https://bitemenu.com.br";
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card", "boleto"],
@@ -68,8 +70,8 @@ export async function POST(req) {
       line_items: [{ price: priceId, quantity: 1 }],
       metadata: { supabase_user_id: userId },
       subscription_data: withTrial ? { trial_period_days: 7 } : {},
-      success_url: `${process.env.APP_URL}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.APP_URL}/billing/cancel`,
+      success_url: `${baseUrl}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/billing/cancel`,
     });
 
     return new Response(JSON.stringify({ url: session.url }), {

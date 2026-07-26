@@ -60,11 +60,13 @@ export async function POST(req: Request) {
       }
     }
 
+    const baseUrl = process.env.APP_URL || "https://bitemenu.com.br";
+
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
       type: "account_onboarding",
-      refresh_url: `${process.env.APP_URL}/dashboard?tab=biteMenuPayments`,
-      return_url: `${process.env.APP_URL}/dashboard?tab=biteMenuPayments&connect=success`,
+      refresh_url: `${baseUrl}/dashboard?tab=biteMenuPayments`,
+      return_url: `${baseUrl}/dashboard?tab=biteMenuPayments&connect=success`,
     });
 
     return Response.json({
