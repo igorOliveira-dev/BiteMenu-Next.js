@@ -7,7 +7,6 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   FaCreditCard,
-  FaCheck,
   FaCheckCircle,
   FaExternalLinkAlt,
   FaInfoCircle,
@@ -58,69 +57,6 @@ function FeatureItem({ icon, title, description }) {
   );
 }
 
-// Same SelectionCard pattern used in ConfigMenu
-function SelectionCard({ selected, title, description, onClick, disabled, badge }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={cx(
-        "group flex w-full items-start gap-3 rounded-2xl border p-4 text-left transition cursor-pointer",
-        disabled
-          ? "cursor-not-allowed opacity-40 border-[var(--translucid)] bg-translucid"
-          : selected
-            ? "border-red-500/70 bg-red-500/20 shadow-[0_0_0_1px_rgba(255,0,0,0.25)]"
-            : "border-[var(--translucid)] bg-translucid hover:opacity-80 hover:scale-[1.01]",
-      )}
-    >
-      <div
-        className={cx(
-          "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition",
-          selected && !disabled ? "border-red-400 bg-red-500" : "border-gray-500 bg-transparent text-transparent",
-        )}
-      >
-        <FaCheck className="text-[10px]" />
-      </div>
-      <div className="flex-1">
-        <div className="flex items-center gap-2 font-semibold">
-          {title}
-          {badge && (
-            <span className="rounded-full border border-[var(--translucid)] px-2 py-0.5 text-[10px] uppercase tracking-wide opacity-60">
-              {badge}
-            </span>
-          )}
-        </div>
-        {description && <p className="mt-0.5 text-sm opacity-60">{description}</p>}
-      </div>
-    </button>
-  );
-}
-
-// Métodos de pagamento que podem ser vinculados ao Stripe.
-// `available` controla se o método já está liberado na plataforma.
-// Basta mudar `available: true` futuramente para ativar novos.
-const STRIPE_PAYMENT_OPTIONS = [
-  {
-    id: "credit",
-    label: "Cartão de crédito",
-    description: "Pagamento via cartão de crédito processado pelo Stripe.",
-    available: true,
-  },
-  {
-    id: "debit",
-    label: "Cartão de débito",
-    description: "Pagamento via cartão de débito processado pelo Stripe.",
-    available: false,
-  },
-  {
-    id: "pix",
-    label: "PIX",
-    description: "Pagamento via PIX processado pelo Stripe.",
-    available: false,
-  },
-];
-
 // ─── main component ───────────────────────────────────────────────────────────
 
 const BiteMenuPayments = () => {
@@ -130,14 +66,12 @@ const BiteMenuPayments = () => {
 
   const [actionLoading, setActionLoading] = useState(false);
   const [useStripeExpress, setUseStripeExpress] = useState(false);
-  const [stripePaymentMethods, setStripePaymentMethods] = useState([]);
 
   const isConnected = !!profile?.stripe_connect_ready;
 
   useEffect(() => {
     if (!menu) return;
     setUseStripeExpress(!!menu.use_stripe_express);
-    setStripePaymentMethods(Array.isArray(menu.stripe_payment_methods) ? menu.stripe_payment_methods : []);
   }, [menu?.id]);
 
   useEffect(() => {
@@ -201,16 +135,6 @@ const BiteMenuPayments = () => {
     await supabase.from("menus").update({ use_stripe_express: next }).eq("id", menu.id);
   };
 
-  const toggleStripeMethod = async (methodId) => {
-    const opt = STRIPE_PAYMENT_OPTIONS.find((o) => o.id === methodId);
-    if (!opt?.available) return;
-    const next = stripePaymentMethods.includes(methodId)
-      ? stripePaymentMethods.filter((m) => m !== methodId)
-      : [...stripePaymentMethods, methodId];
-    setStripePaymentMethods(next);
-    await supabase.from("menus").update({ stripe_payment_methods: next }).eq("id", menu.id);
-  };
-
   if (menuLoading) return <Loading />;
 
   return (
@@ -252,50 +176,8 @@ const BiteMenuPayments = () => {
                 />
               </div>
 
-              {/* taxas e prazo */}
-              <div className="mt-5 rounded-2xl border border-[var(--translucid)] bg-translucid divide-y divide-[var(--translucid)] overflow-hidden">
-                <div className="px-4 py-3">
-                  <div className="text-sm font-semibold mb-2">Taxas por transação</div>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <div className="flex items-start gap-3 rounded-xl border border-[var(--translucid)] bg-translucid p-3">
-                      <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-red-500/20 text-red-400 text-xs font-bold">
-                        BM
-                      </div>
-                      <div>
-                        <div className="text-sm font-semibold">3% - Bite Menu</div>
-                        <p className="mt-0.5 text-xs opacity-60">
-                          Taxa cobrada pelo Bite Menu sobre cada transação processada.
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3 rounded-xl border border-[var(--translucid)] bg-translucid p-3">
-                      <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[var(--translucid)] text-xs font-bold opacity-70">
-                        S
-                      </div>
-                      <div>
-                        <div className="text-sm font-semibold">+ taxa Stripe</div>
-                        <p className="mt-0.5 text-xs opacity-60">
-                          Definida pelo Stripe conforme método e país. Consulte sua conta.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="px-4 py-3 flex items-start gap-3">
-                  <FaInfoCircle className="mt-0.5 shrink-0 text-amber-400 text-sm" />
-                  <div className="text-sm">
-                    <span className="font-semibold text-amber-400">Prazo de repasse variável.</span>{" "}
-                    <span className="opacity-70">
-                      O tempo para o dinheiro chegar na sua conta é definido pelo Stripe e pode levar de alguns dias até
-                      cerca de 30 dias, dependendo do seu perfil, método de pagamento e histórico de transações. O Bite Menu
-                      não controla esse prazo.
-                    </span>
-                  </div>
-                </div>
-              </div>
-
               {/* guia */}
-              <div className="mt-4 rounded-2xl border border-[var(--translucid)] bg-translucid p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="mt-6 rounded-2xl border border-[var(--translucid)] bg-translucid p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
                   <div className="text-sm font-semibold">Quer entender melhor antes de conectar?</div>
                   <p className="mt-0.5 text-sm opacity-60">
@@ -413,66 +295,26 @@ const BiteMenuPayments = () => {
 
           {/* ── configurações do cardápio — só aparece se conta conectada ── */}
           {isConnected && (
-            <>
-              {/* toggle global — usando o mesmo switch/slider do site */}
-              <SectionCard
-                icon={<FaCreditCard />}
-                title="Ativar Stripe no cardápio"
-                description="Quando ativado, os métodos selecionados abaixo redirecionarão o cliente ao Stripe para concluir o pagamento."
-              >
-                <label className="inline-flex cursor-pointer items-center gap-3 rounded-full text-sm">
-                  <span className="switch">
-                    <input type="checkbox" className="hidden" checked={useStripeExpress} onChange={toggleStripeExpress} />
-                    <span className="slider" />
-                  </span>
-                  {useStripeExpress ? "Stripe ativado no cardápio" : "Stripe desativado no cardápio"}
-                </label>
+            <SectionCard
+              icon={<FaCreditCard />}
+              title="Pagamento online"
+              description="Quando ativado, o cliente é redirecionado ao Stripe para pagar online ao fechar o pedido."
+            >
+              <label className="inline-flex cursor-pointer items-center gap-3 rounded-full text-sm">
+                <span className="switch">
+                  <input type="checkbox" className="hidden" checked={useStripeExpress} onChange={toggleStripeExpress} />
+                  <span className="slider" />
+                </span>
+                {useStripeExpress ? "Pagamento online ativado" : "Pagamento online desativado"}
+              </label>
 
-                {useStripeExpress && (
-                  <p className="mt-3 text-sm opacity-60">
-                    Os pagamentos pelos métodos selecionados abaixo serão processados pelo Stripe.
-                  </p>
-                )}
-              </SectionCard>
-
-              {/* métodos vinculados ao stripe — mesmo design que ConfigMenu */}
-              <SectionCard
-                icon={<FaCreditCard />}
-                title="Métodos vinculados ao Stripe"
-                description="Escolha quais formas de pagamento do seu cardápio devem redirecionar o cliente ao Stripe."
-              >
-                <div className="grid gap-3 md:grid-cols-2">
-                  {STRIPE_PAYMENT_OPTIONS.map((opt) => (
-                    <SelectionCard
-                      key={opt.id}
-                      selected={stripePaymentMethods.includes(opt.id)}
-                      title={opt.label}
-                      description={opt.description}
-                      disabled={!opt.available}
-                      badge={!opt.available ? "Em breve" : undefined}
-                      onClick={() => toggleStripeMethod(opt.id)}
-                    />
-                  ))}
-                </div>
-
-                {!useStripeExpress && (
-                  <div className="mt-4 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-3 text-sm">
-                    <span className="font-semibold text-amber-400">Atenção:</span>{" "}
-                    <span className="opacity-80">
-                      o Stripe está desativado no cardápio. Ative o toggle acima para que esses métodos passem a redirecionar
-                      o cliente.
-                    </span>
-                  </div>
-                )}
-
-                {useStripeExpress && (
-                  <p className="mt-3 text-sm opacity-60">
-                    O Pagamentos Bite Menu está em acesso antecipado. Nesta primeira versão, os pagamentos são realizados
-                    exclusivamente por cartão de crédito. Novos métodos de pagamento serão adicionados futuramente.
-                  </p>
-                )}
-              </SectionCard>
-            </>
+              {useStripeExpress && (
+                <p className="mt-3 text-sm opacity-60">
+                  O Pagamentos Bite Menu está em acesso antecipado. Nesta primeira versão, os pagamentos são realizados por
+                  cartão de crédito. Novos métodos podem ser adicionados futuramente.
+                </p>
+              )}
+            </SectionCard>
           )}
         </div>
       </div>

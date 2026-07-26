@@ -1,1 +1,1 @@
-export const CURRENT_PRIVACY_VERSION = "v2.0.1";
+export const CURRENT_PRIVACY_VERSION = "v2.1.0";

@@ -7,14 +7,14 @@ export const metadata = {
     "Saiba como funciona o Stripe Connect Express no Bite Menu: taxas, prazos de repasse, reembolsos, configuração e perguntas frequentes.",
 
   alternates: {
-    canonical: "https://www.bitemenu.com.br/docs/pagamentos",
+    canonical: "https://www.bitemenu.com.br/docs/pagamentos-bite-menu",
   },
 
   openGraph: {
     title: "Pagamentos - Bite Menu",
     description:
       "Saiba como funciona o Stripe Connect Express no Bite Menu: taxas, prazos de repasse, reembolsos, configuração e perguntas frequentes.",
-    url: "https://www.bitemenu.com.br/docs/pagamentos",
+    url: "https://www.bitemenu.com.br/docs/pagamentos-bite-menu",
     siteName: "Bite Menu",
     type: "website",
   },
@@ -29,9 +29,8 @@ const page = () => {
       <section className="mt-4 scroll-mt-[90px]" id="aviso-beta">
         <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
           <p className="text-sm">
-            <strong className="text-amber-500">⚠️ Versão em testes:</strong> Esta funcionalidade está em fase de testes e
-            está disponível apenas em algumas contas selecionadas. Os recursos e condições descritos nesta página podem ser
-            alterados sem aviso prévio durante o período de testes.
+            <strong className="text-amber-500">⚠️ Versão em testes:</strong> Esta funcionalidade está em fase de testes. Os
+            recursos e condições descritos nesta página podem ser alterados sem aviso prévio durante o período de testes.
           </p>
         </div>
       </section>
@@ -70,6 +69,10 @@ const page = () => {
           do Bite Menu.
         </p>
         <p className="docs-paragraph">
+          Nesta primeira versão do Pagamentos Bite Menu, os pagamentos online são processados exclusivamente por cartão de
+          crédito. Novos métodos de pagamento (como Pix) podem ser adicionados futuramente.
+        </p>
+        <p className="docs-paragraph">
           Para aceitar pagamentos online no seu cardápio, é necessário conectar uma conta Stripe à sua conta do Bite Menu. O
           processo é feito inteiramente dentro da plataforma.
         </p>
@@ -102,13 +105,13 @@ const page = () => {
           </li>
           <li>Conclua o onboarding no Stripe e volte ao Bite Menu</li>
           <li>
-            Com a conta conectada, ative o Stripe no cardápio pelo toggle <strong>"Ativar Stripe no cardápio"</strong>
-          </li>
-          <li>
-            Selecione os <strong>métodos de pagamento</strong> que devem redirecionar o cliente ao Stripe
+            Com a conta conectada, ative o Stripe no cardápio pelo toggle <strong>"Pagamento online"</strong>
           </li>
         </ol>
-        <p className="docs-paragraph">Após esses passos, seu cardápio estará pronto para aceitar pagamentos online.</p>
+        <p className="docs-paragraph">
+          Após esses passos, seus clientes poderão selecionar "pagamentos online" como forma de pagamento. Esta forma de
+          pagamento pode ser habilitada ou desabilitada do cardápio quando você quiser.
+        </p>
       </section>
 
       {/* ── Taxas ── */}
@@ -167,26 +170,6 @@ const page = () => {
         </p>
       </section>
 
-      {/* ── Métodos de pagamento ── */}
-      <section className="mt-4 scroll-mt-[90px]" id="metodos-de-pagamento">
-        <h2 className="docs-title">Métodos de pagamento</h2>
-        <p className="docs-paragraph">Atualmente, o Bite Menu suporta os seguintes métodos de pagamento via Stripe:</p>
-        <ul className="docs-paragraph list-disc pl-6">
-          <li>
-            <strong>Cartão de crédito</strong> — disponível. Pode ser ativado imediatamente após a conexão da conta.
-          </li>
-        </ul>
-        <p className="docs-paragraph">
-          Novos métodos serão liberados gradualmente. Assim que estiverem disponíveis, você poderá ativá-los na aba de
-          Pagamentos do seu dashboard sem nenhuma configuração adicional.
-        </p>
-        <p className="docs-paragraph">
-          Se o cliente selecionar no seu cardápio um método de pagamento não ativado no Stripe, o fluxo do pedido continuará
-          normalmente, mas o pagamento não será processado e o cliente final deverá acertar o valor diretamente com o
-          estabelecimento.
-        </p>
-      </section>
-
       {/* ── Fluxo de compra ── */}
       <section className="mt-4 scroll-mt-[90px]" id="fluxo-de-compra">
         <h2 className="docs-title">Fluxo de compra</h2>
@@ -200,13 +183,13 @@ const page = () => {
         </p>
         <ul className="docs-paragraph list-disc pl-6">
           <li>
-            Se a forma de pagamento escolhida <strong>não estiver vinculada ao Stripe</strong>, o pedido segue o fluxo normal
-            do Bite Menu — o estabelecimento recebe o pedido e o pagamento é acertado diretamente com o cliente, sem
+            Se a forma de pagamento escolhida <strong>não for "pagamento online"</strong>, o pedido segue o fluxo normal do
+            Bite Menu — o estabelecimento recebe o pedido e o pagamento é acertado diretamente com o cliente, sem
             envolvimento do Stripe.
           </li>
           <li>
-            Se a forma de pagamento escolhida <strong>estiver vinculada ao Stripe</strong>, o cliente é redirecionado ao
-            checkout do Stripe para concluir o pagamento online.
+            Se a forma de pagamento escolhida <strong>for "pagamento online"</strong>, o cliente é redirecionado ao checkout
+            do Stripe para concluir o pagamento online.
           </li>
         </ul>
 
@@ -223,6 +206,10 @@ const page = () => {
           Assim que o cliente conclui o checkout no Stripe e o pagamento é confirmado, o status do pedido é atualizado
           automaticamente para <strong>"Pago"</strong>. Nenhuma ação manual do estabelecimento é necessária para essa
           atualização.
+        </p>
+
+        <p className="docs-paragraph">
+          Você pode conferir os pagamentos em sua conta stripe, comparando o id do pedido com o id que aparece no Bite Menu.
         </p>
       </section>
 
