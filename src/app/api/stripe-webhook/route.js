@@ -171,20 +171,7 @@ export async function POST(req) {
 
       // Quando pagamento falha
       case "invoice.payment_failed": {
-        const invoice = event.data.object;
-        const customerId = invoice.customer;
-
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("stripe_customer_id", customerId)
-          .maybeSingle();
-
-        if (!profile) break;
-
-        await supabase.from("profiles").update({ role: "free" }).eq("id", profile.id);
-
-        console.log("[Webhook] Pagamento falhou, role revertido para free");
+        console.log("[Webhook] Pagamento falhou, mantendo role até esgotar tentativas/cancelamento");
         break;
       }
 
