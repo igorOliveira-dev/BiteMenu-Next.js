@@ -11,7 +11,7 @@ const page = () => {
       <div className="max-w-2xl flex flex-col gap-6 p-4 pt-12">
         <h1 className="default-h1">Termos de Uso – Bite Menu</h1>
 
-        <p>Última atualização: 28/06/2026</p>
+        <p>Última atualização: 26/07/2026</p>
 
         <p>
           Bem-vindo ao <strong>Bite Menu</strong>. Antes de utilizar a plataforma, leia atentamente estes Termos de Uso. Eles
@@ -348,10 +348,8 @@ const page = () => {
           <h2 className="default-h2">11. Pagamentos Bite Menu (Funcionalidade em Fase de Testes)</h2>
 
           <p>
-            <strong>Funcionalidade em fase de testes:</strong> O Pagamentos Bite Menu está disponível apenas para contas
-            selecionadas. Os recursos, condições e termos descritos nesta seção podem ser alterados sem o aviso prévio de 30
-            dias normalmente aplicável, dado o caráter experimental da funcionalidade. Os usuários participantes serão
-            informados diretamente sobre alterações relevantes.
+            <strong>Funcionalidade em fase de testes:</strong> Os recursos, condições e termos descritos nesta seção podem
+            ser alterados sem o aviso prévio de 30 dias normalmente aplicável, dado o caráter experimental da funcionalidade.
           </p>
 
           <p>
@@ -359,8 +357,10 @@ const page = () => {
             integração entre o cardápio digital do estabelecimento e o <strong>Stripe Connect Express</strong>, permitindo
             que consumidores finais realizem pagamentos online diretamente ao estabelecimento. O Bite Menu é uma{" "}
             <strong>plataforma de tecnologia</strong> e não atua como instituição financeira, operadora de pagamentos,
-            adquirente ou custodiante de valores. Todo o processamento financeiro é de responsabilidade exclusiva do{" "}
-            <strong>Stripe</strong>, empresa devidamente regulamentada para operar serviços de pagamento.
+            adquirente ou custodiante de valores. Todo o processamento financeiro é de responsabilidade do{" "}
+            <strong>Stripe</strong>, empresa devidamente regulamentada para operar serviços de pagamento. Na fase de testes,
+            o Pagamentos Bite Menu processa pagamentos exclusivamente via cartão de crédito, podendo o Bite Menu incluir
+            outros métodos de pagamento futuramente, a seu critério.
           </p>
 
           <p>

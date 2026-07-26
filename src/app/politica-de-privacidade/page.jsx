@@ -11,7 +11,7 @@ const page = () => {
       <div className="max-w-2xl flex flex-col gap-6 p-4 pt-12">
         <h1 className="default-h1">Política de Privacidade – Bite Menu</h1>
 
-        <p>Última atualização: 27/06/2026</p>
+        <p>Última atualização: 26/07/2026</p>
 
         <p>
           O <strong>Bite Menu</strong> valoriza sua privacidade e está comprometido com a proteção dos seus dados pessoais.
@@ -428,10 +428,9 @@ const page = () => {
           <h2 className="default-h2">11. Pagamentos Bite Menu – Recebimentos Online pelos Estabelecimentos</h2>
 
           <p>
-            <strong>Funcionalidade em fase de testes:</strong> O Pagamentos Bite Menu está disponível apenas para contas
-            selecionadas. Os recursos e condições descritos nesta seção podem ser alterados durante o período de testes, sem
-            o aviso prévio previsto na Seção 14, dado o caráter experimental da funcionalidade. Nesses casos, as atualizações
-            serão comunicadas diretamente aos usuários participantes.
+            <strong>Funcionalidade em fase de testes:</strong> Os recursos e condições descritos nesta seção podem ser
+            alterados durante o período de testes, sem o aviso prévio previsto na Seção 14, dado o caráter experimental da
+            funcionalidade.
           </p>
 
           <p>
@@ -449,7 +448,7 @@ const page = () => {
             >
               Termos de Serviço do Stripe Connect
             </a>
-            , celebrando uma relação contratual direta com o Stripe para fins regulatórios e de processamento financeiro.
+            , celebrando uma relação direta com o Stripe para fins regulatórios e de processamento financeiro.
           </p>
 
           <p>
@@ -524,9 +523,9 @@ const page = () => {
         <section className="flex flex-col gap-2 mb-4">
           <h2 className="default-h2">12. Tratamento dos Dados do Comprador Final</h2>
           <p>
-            Quando um cliente de um estabelecimento finaliza um pedido e opta por pagar por um método de pagamento que
-            utiliza Stripe naquele estabelecimento, ele é redirecionado ao <strong>Stripe Checkout</strong>, uma interface
-            segura hospedada e operada diretamente pelo Stripe. Nesse fluxo:
+            Quando um cliente de um estabelecimento finaliza um pedido e opta por pagar via "pagamento online" naquele
+            estabelecimento, ele é redirecionado ao <strong>Stripe Checkout</strong>, uma interface segura hospedada e
+            operada diretamente pelo Stripe. Nesse fluxo:
           </p>
           <ul className="list-disc ml-6">
             <li>
@@ -586,7 +585,7 @@ const page = () => {
           <p>
             <strong>Exercício de direitos pelo comprador:</strong> Para direitos relacionados aos dados de pagamento
             coletados diretamente pelo Stripe (dados de cartão, autenticações e histórico de transações), o comprador deve
-            contatar o Stripe pelo e-mail <strong>dpo@stripe.com</strong> ou pelos canais indicados na{" "}
+            contatar o Stripe pelos canais indicados na{" "}
             <a
               href="https://stripe.com/privacy"
               target="_blank"

@@ -176,50 +176,8 @@ const BiteMenuPayments = () => {
                 />
               </div>
 
-              {/* taxas e prazo */}
-              <div className="mt-5 rounded-2xl border border-[var(--translucid)] bg-translucid divide-y divide-[var(--translucid)] overflow-hidden">
-                <div className="px-4 py-3">
-                  <div className="text-sm font-semibold mb-2">Taxas por transação</div>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <div className="flex items-start gap-3 rounded-xl border border-[var(--translucid)] bg-translucid p-3">
-                      <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-red-500/20 text-red-400 text-xs font-bold">
-                        BM
-                      </div>
-                      <div>
-                        <div className="text-sm font-semibold">3% - Bite Menu</div>
-                        <p className="mt-0.5 text-xs opacity-60">
-                          Taxa cobrada pelo Bite Menu sobre cada transação processada.
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3 rounded-xl border border-[var(--translucid)] bg-translucid p-3">
-                      <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[var(--translucid)] text-xs font-bold opacity-70">
-                        S
-                      </div>
-                      <div>
-                        <div className="text-sm font-semibold">+ taxa Stripe</div>
-                        <p className="mt-0.5 text-xs opacity-60">
-                          Definida pelo Stripe conforme método e país. Consulte sua conta.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="px-4 py-3 flex items-start gap-3">
-                  <FaInfoCircle className="mt-0.5 shrink-0 text-amber-400 text-sm" />
-                  <div className="text-sm">
-                    <span className="font-semibold text-amber-400">Prazo de repasse variável.</span>{" "}
-                    <span className="opacity-70">
-                      O tempo para o dinheiro chegar na sua conta é definido pelo Stripe e pode levar de alguns dias até
-                      cerca de 30 dias, dependendo do seu perfil, método de pagamento e histórico de transações. O Bite Menu
-                      não controla esse prazo.
-                    </span>
-                  </div>
-                </div>
-              </div>
-
               {/* guia */}
-              <div className="mt-4 rounded-2xl border border-[var(--translucid)] bg-translucid p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="mt-6 rounded-2xl border border-[var(--translucid)] bg-translucid p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
                   <div className="text-sm font-semibold">Quer entender melhor antes de conectar?</div>
                   <p className="mt-0.5 text-sm opacity-60">
@@ -352,8 +310,8 @@ const BiteMenuPayments = () => {
 
               {useStripeExpress && (
                 <p className="mt-3 text-sm opacity-60">
-                  O Pagamentos Bite Menu está em acesso antecipado. Nesta primeira versão, os pagamentos são realizados
-                  exclusivamente por cartão de crédito. Novos métodos podem ser adicionados futuramente.
+                  O Pagamentos Bite Menu está em acesso antecipado. Nesta primeira versão, os pagamentos são realizados por
+                  cartão de crédito. Novos métodos podem ser adicionados futuramente.
                 </p>
               )}
             </SectionCard>
