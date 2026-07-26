@@ -127,11 +127,12 @@ export default async function MenuPage({ params, searchParams }) {
   let ownerPhone = null;
   let ownerRole = "free";
   let ownerStripeAccount = null;
+  let ownerCanUseStripeExpress = false; // ← novo
 
   if (menu.owner_id) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("phone, role, stripe_connect_account_id")
+      .select("phone, role, stripe_connect_account_id, privileges")
       .eq("id", menu.owner_id)
       .maybeSingle();
 
@@ -139,6 +140,7 @@ export default async function MenuPage({ params, searchParams }) {
       ownerPhone = profile.phone || null;
       ownerRole = profile.role || "free";
       ownerStripeAccount = profile.stripe_connect_account_id || null;
+      ownerCanUseStripeExpress = (profile.privileges ?? []).includes("stripe-express"); // ← novo
     }
   }
 
@@ -147,13 +149,37 @@ export default async function MenuPage({ params, searchParams }) {
   return (
     <CartProvider>
       {effectiveLayout === "default" ? (
-        <ClientMenu menu={menu} ownerPhone={ownerPhone} ownerRole={ownerRole} ownerStripeAccount={ownerStripeAccount} />
+        <ClientMenu
+          menu={menu}
+          ownerPhone={ownerPhone}
+          ownerRole={ownerRole}
+          ownerStripeAccount={ownerStripeAccount}
+          ownerCanUseStripeExpress={ownerCanUseStripeExpress}
+        />
       ) : effectiveLayout === "list" ? (
-        <ClientMenu2 menu={menu} ownerPhone={ownerPhone} ownerRole={ownerRole} ownerStripeAccount={ownerStripeAccount} />
+        <ClientMenu2
+          menu={menu}
+          ownerPhone={ownerPhone}
+          ownerRole={ownerRole}
+          ownerStripeAccount={ownerStripeAccount}
+          ownerCanUseStripeExpress={ownerCanUseStripeExpress}
+        />
       ) : effectiveLayout === "grid" ? (
-        <ClientMenu3 menu={menu} ownerPhone={ownerPhone} ownerRole={ownerRole} ownerStripeAccount={ownerStripeAccount} />
+        <ClientMenu3
+          menu={menu}
+          ownerPhone={ownerPhone}
+          ownerRole={ownerRole}
+          ownerStripeAccount={ownerStripeAccount}
+          ownerCanUseStripeExpress={ownerCanUseStripeExpress}
+        />
       ) : (
-        <ClientMenu menu={menu} ownerPhone={ownerPhone} ownerRole={ownerRole} ownerStripeAccount={ownerStripeAccount} />
+        <ClientMenu
+          menu={menu}
+          ownerPhone={ownerPhone}
+          ownerRole={ownerRole}
+          ownerStripeAccount={ownerStripeAccount}
+          ownerCanUseStripeExpress={ownerCanUseStripeExpress}
+        />
       )}
     </CartProvider>
   );

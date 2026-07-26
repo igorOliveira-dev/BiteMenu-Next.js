@@ -37,6 +37,7 @@ export default function CartDrawer({
   ownerPhone,
   ownerRole,
   ownerStripeAccount,
+  ownerCanUseStripeExpress,
   pendingStripeOrderId,
   onPendingStripeOrderResolved,
 }) {
@@ -122,7 +123,7 @@ export default function CartDrawer({
   const canUseZones = menu?.delivery_fee_mode === "zones" && hasPlusPermissions && deliveryZones.length > 0;
 
   // Verifica se este menu aceita pagamento online via Stripe
-  const usesStripeExpress = Boolean(menu?.use_stripe_express && ownerStripeAccount);
+  const usesStripeExpress = Boolean(menu?.use_stripe_express && ownerStripeAccount && ownerCanUseStripeExpress);
 
   const serviceOptions = [
     {

@@ -188,7 +188,7 @@ function darkenColor(hex, amount = 0.85) {
   return `rgb(${r},${g},${b})`;
 }
 
-export default function ClientMenu3({ menu, ownerPhone, ownerRole, ownerStripeAccount }) {
+export default function ClientMenu3({ menu, ownerPhone, ownerRole, ownerStripeAccount, ownerCanUseStripeExpress }) {
   const cart = useCartContext();
   const alert = useAlert();
 
@@ -1216,6 +1216,7 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole, ownerStripeAc
         ownerPhone={ownerPhone}
         ownerRole={ownerRole}
         ownerStripeAccount={ownerStripeAccount}
+        ownerCanUseStripeExpress={ownerCanUseStripeExpress}
         pendingStripeOrderId={pendingStripeOrderId}
         onPendingStripeOrderResolved={() => setPendingStripeOrderId(null)}
       />

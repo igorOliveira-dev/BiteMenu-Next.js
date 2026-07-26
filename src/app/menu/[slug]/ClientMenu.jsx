@@ -197,7 +197,7 @@ function isSafeImageUrl(url) {
   return typeof url === "string" && url.length > 8 && (url.startsWith("http://") || url.startsWith("https://"));
 }
 
-export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAccount }) {
+export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAccount, ownerCanUseStripeExpress }) {
   const cart = useCartContext();
   const alert = useAlert();
 
@@ -1250,6 +1250,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
         ownerPhone={ownerPhone}
         ownerRole={ownerRole}
         ownerStripeAccount={ownerStripeAccount}
+        ownerCanUseStripeExpress={ownerCanUseStripeExpress}
         pendingStripeOrderId={pendingStripeOrderId}
         onPendingStripeOrderResolved={() => setPendingStripeOrderId(null)}
       />
