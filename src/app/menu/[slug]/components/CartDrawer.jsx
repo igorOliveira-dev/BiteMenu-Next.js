@@ -121,10 +121,8 @@ export default function CartDrawer({
 
   const canUseZones = menu?.delivery_fee_mode === "zones" && hasPlusPermissions && deliveryZones.length > 0;
 
-  // Verifica se este menu usa Stripe Express
+  // Verifica se este menu aceita pagamento online via Stripe
   const usesStripeExpress = Boolean(menu?.use_stripe_express && ownerStripeAccount);
-  const stripePaymentMethods = Array.isArray(menu?.stripe_payment_methods) ? menu.stripe_payment_methods : [];
-  const shouldUseStripe = (method) => usesStripeExpress && stripePaymentMethods.includes(method);
 
   const serviceOptions = [
     {
@@ -147,7 +145,10 @@ export default function CartDrawer({
     { id: "pix", label: "PIX" },
   ];
 
-  const availablePaymentsOptions = paymentOptions.filter((option) => (menu?.payments || []).includes(option.id));
+  const availablePaymentsOptions = [
+    ...paymentOptions.filter((option) => (menu?.payments || []).includes(option.id)),
+    ...(usesStripeExpress ? [{ id: "stripe_online", label: "Pagamento online" }] : []),
+  ];
 
   function normalizeMoney(value) {
     const num = Number(String(value ?? "").replace(",", "."));
@@ -849,7 +850,7 @@ ${customerInfo}`;
                   }
 
                   // Mínimo fixo do sistema (R$2,00)
-                  if (drawerSubtotal < 0) {
+                  if (drawerSubtotal < 2) {
                     customAlert(`O valor mínimo para realizar um pedido é de ${formatCurrency(2, menu?.currency)}`);
                     return;
                   }
@@ -1087,7 +1088,7 @@ ${customerInfo}`;
                   </p>
                   <button
                     onClick={() => {
-                      if (shouldUseStripe(selectedPayment)) {
+                      if (selectedPayment === "stripe_online") {
                         handleStripeCheckout();
                         return;
                       }
@@ -1099,13 +1100,14 @@ ${customerInfo}`;
                           customAlert("Selecione a forma de pagamento", "error");
                           return;
                         }
-                        setPurchaseStage("cashChange"); // ← nova etapa
+                        setPurchaseStage("cashChange");
                         return;
                       }
 
                       confirmPurchase();
                     }}
-                    className="cursor-pointer hover:opacity-90 p-2 font-bold transition rounded"
+                    disabled={isStripeLoading}
+                    className="cursor-pointer hover:opacity-90 p-2 font-bold transition rounded disabled:opacity-50"
                     style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
                   >
                     {isStripeLoading ? <>Redirecionando...</> : "Confirmar"}
