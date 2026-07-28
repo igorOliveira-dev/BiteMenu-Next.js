@@ -79,17 +79,17 @@ function scrollToCategoryId(id, offset = 15) {
 
 function isOpenNow(hours) {
   const now = new Date();
-  const timeString = now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
-  const localNow = new Date(timeString);
 
-  const day = localNow.toLocaleString("en-US", { weekday: "short" }).toLowerCase();
-  const todayHours = hours?.[day] || null;
+  const day = now.toLocaleString("en-US", { weekday: "short" }).toLowerCase();
+
+  const todayHours = hours?.[day];
   if (!todayHours) return false;
 
   const [openStr, closeStr] = todayHours.split("-");
+
   const openMins = toMinutes(openStr);
   const closeMins = toMinutes(closeStr);
-  const nowMins = localNow.getHours() * 60 + localNow.getMinutes();
+  const nowMins = now.getHours() * 60 + now.getMinutes();
 
   return nowMins >= openMins && nowMins <= closeMins;
 }
