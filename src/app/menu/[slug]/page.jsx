@@ -99,16 +99,39 @@ export async function generateMetadata({ params }) {
   const baseUrl = "https://www.bitemenu.com.br";
   const canonicalUrl = `${baseUrl}/menu/${slug}`;
   const imageUrl = menu.banner_url || menu.logo_url || `${baseUrl}/default-og.jpg`;
+  const description = menu.description || "Confira este cardápio no Bite Menu.";
 
   return {
     title: `${menu.title} | Bite Menu`,
-    description: menu.description || "Confira este cardápio no Bite Menu.",
+    description,
     alternates: {
       canonical: canonicalUrl,
     },
     robots: {
       index: true,
       follow: false,
+    },
+    openGraph: {
+      title: menu.title,
+      description,
+      url: canonicalUrl,
+      siteName: "Bite Menu",
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: `Banner do cardápio ${menu.title}`,
+        },
+      ],
+      locale: "pt_BR",
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: menu.title,
+      description,
+      images: [imageUrl],
     },
   };
 }
