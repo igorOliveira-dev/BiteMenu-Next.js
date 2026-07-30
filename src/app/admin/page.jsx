@@ -55,20 +55,32 @@ const Admin = () => {
 
       const ownerIds = [...new Set(menus.map((menu) => menu.owner_id))];
 
-      const { data: profiles, error } = await supabase
-        .from("profiles")
-        .select("id, display_name, role, email, phone, stripe_customer_id")
-        .in("id", ownerIds);
-
-      if (error) {
-        console.error("Erro ao buscar perfis:", error);
-        setFullMenus(menus);
-        setLoading(false);
-        return;
+      const chunkSize = 100;
+      const allProfiles = [];
+          
+      for (let i = 0; i < ownerIds.length; i += chunkSize) {
+        const chunk = ownerIds.slice(i, i + chunkSize);
+      
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id, display_name, email, role, phone, stripe_customer_id")
+          .in("id", chunk);
+      
+        if (error) {
+          console.error("Erro ao buscar perfis:", error);
+          continue;
+        }
+      
+        allProfiles.push(...data);
       }
-
+      
+      const profilesMap = new Map(
+        allProfiles.map((p) => [p.id, p])
+      );
+      
       const merged = menus.map((menu) => {
-        const ownerProfile = profiles.find((p) => p.id === menu.owner_id);
+        const ownerProfile = profilesMap.get(menu.owner_id);
+      
         return {
           ...menu,
           owner_name: ownerProfile?.display_name || "Sem nome",
@@ -78,7 +90,7 @@ const Admin = () => {
           stripe_costumer_id: ownerProfile?.stripe_customer_id || null,
         };
       });
-
+      
       setFullMenus(merged);
       setLoading(false);
     };
