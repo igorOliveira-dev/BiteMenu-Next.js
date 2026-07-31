@@ -20,8 +20,20 @@ import GenericModal from "@/components/GenericModal";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import SalesSummary from "./components/sales/SalesSummary";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
+import useUser from "@/hooks/useUser";
+import PrintDocumentButton, {
+  normalizeSaleForPrint,
+} from "./components/print/PrintDocumentButton";
 
-const SectionCard = ({ title, subtitle, children, icon = null, open, onToggle, summary }) => (
+const SectionCard = ({
+  title,
+  subtitle,
+  children,
+  icon = null,
+  open,
+  onToggle,
+  summary,
+}) => (
   <section className="rounded-2xl border border-translucid bg-[var(--low-translucid)] overflow-hidden shadow-sm">
     <button
       type="button"
@@ -63,6 +75,7 @@ const SectionCard = ({ title, subtitle, children, icon = null, open, onToggle, s
 
 const Sales = ({ setSelectedTab }) => {
   const { menu, loading } = useMenu();
+  const { profile } = useUser();
   const customAlert = useAlert();
   const confirm = useConfirm();
 
@@ -94,7 +107,11 @@ const Sales = ({ setSelectedTab }) => {
     return items.reduce((acc, it) => {
       const qty = Number(it.qty) || 0;
       const base = (Number(it.price) || 0) * qty;
-      const adds = (it.additionals || []).reduce((sa, a) => sa + (Number(a.price) || 0), 0) * qty;
+      const adds =
+        (it.additionals || []).reduce(
+          (sa, a) => sa + (Number(a.price) || 0),
+          0,
+        ) * qty;
       return acc + base + adds;
     }, 0);
   };
@@ -111,31 +128,45 @@ const Sales = ({ setSelectedTab }) => {
 
   useEffect(() => {
     // Remove meses que ficaram vazios
-    setMonthsList((prev) => prev.filter((m) => monthData[m.key]?.length !== 0 || m.count > 0));
+    setMonthsList((prev) =>
+      prev.filter((m) => monthData[m.key]?.length !== 0 || m.count > 0),
+    );
   }, [monthData]);
 
   useEffect(() => {
     if (!menu?.id) return;
     const channel = supabase
       .channel("sales-changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "sales" }, (payload) => {
-        if (payload.new?.menu_id === menu.id) {
-          // Atualiza apenas o mês da venda modificada
-          const d = new Date(payload.new.created_at);
-          const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
-          const key = d.toLocaleString("pt-BR", { month: "long", year: "numeric" });
-          const end = new Date(monthStart);
-          end.setMonth(end.getMonth() + 1);
-          fetchSalesByMonth(monthStart, end, key, { page: 0, append: false });
-          refreshMonthSummary(monthStart, end, key);
-        }
-      })
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "sales" },
+        (payload) => {
+          if (payload.new?.menu_id === menu.id) {
+            // Atualiza apenas o mês da venda modificada
+            const d = new Date(payload.new.created_at);
+            const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
+            const key = d.toLocaleString("pt-BR", {
+              month: "long",
+              year: "numeric",
+            });
+            const end = new Date(monthStart);
+            end.setMonth(end.getMonth() + 1);
+            fetchSalesByMonth(monthStart, end, key, { page: 0, append: false });
+            refreshMonthSummary(monthStart, end, key);
+          }
+        },
+      )
       .subscribe();
 
     return () => supabase.removeChannel(channel);
   }, [menu?.id]);
 
-  const fetchSalesByMonth = async (monthStart, monthEnd, monthKey, { page = 0, append = false } = {}) => {
+  const fetchSalesByMonth = async (
+    monthStart,
+    monthEnd,
+    monthKey,
+    { page = 0, append = false } = {},
+  ) => {
     if (!menu?.id) return;
 
     setMonthPager((prev) => ({
@@ -169,7 +200,14 @@ const Sales = ({ setSelectedTab }) => {
     setMonthData((prev) => ({
       ...prev,
       [monthKey]: append
-        ? Array.from(new Map([...(prev[monthKey] || []), ...(data || [])].map((s) => [s.id, s])).values())
+        ? Array.from(
+            new Map(
+              [...(prev[monthKey] || []), ...(data || [])].map((s) => [
+                s.id,
+                s,
+              ]),
+            ).values(),
+          )
         : data || [],
     }));
 
@@ -196,7 +234,9 @@ const Sales = ({ setSelectedTab }) => {
     const count = data.length;
     const total = data.reduce((sum, s) => sum + computeSaleTotal(s), 0);
 
-    setMonthsList((prev) => prev.map((m) => (m.key === monthKey ? { ...m, count, total } : m)));
+    setMonthsList((prev) =>
+      prev.map((m) => (m.key === monthKey ? { ...m, count, total } : m)),
+    );
   };
 
   const deleteSale = async (id) => {
@@ -208,11 +248,19 @@ const Sales = ({ setSelectedTab }) => {
     customAlert("Venda excluída.", "success");
 
     // Atualiza o mês afetado de forma segura
-    const monthKey = Object.keys(monthData).find((key) => monthData[key].some((s) => s.id === id));
+    const monthKey = Object.keys(monthData).find((key) =>
+      monthData[key].some((s) => s.id === id),
+    );
 
     if (monthKey) {
-      const monthStartTimestamp = monthData[monthKey][0] ? new Date(monthData[monthKey][0].created_at) : new Date(); // caso o mês fique vazio
-      const start = new Date(monthStartTimestamp.getFullYear(), monthStartTimestamp.getMonth(), 1);
+      const monthStartTimestamp = monthData[monthKey][0]
+        ? new Date(monthData[monthKey][0].created_at)
+        : new Date(); // caso o mês fique vazio
+      const start = new Date(
+        monthStartTimestamp.getFullYear(),
+        monthStartTimestamp.getMonth(),
+        1,
+      );
       const end = new Date(start);
       end.setMonth(end.getMonth() + 1);
 
@@ -281,10 +329,19 @@ const Sales = ({ setSelectedTab }) => {
 
       data.forEach((sale) => {
         const d = new Date(sale.created_at);
-        const key = d.toLocaleString("pt-BR", { month: "long", year: "numeric" });
+        const key = d.toLocaleString("pt-BR", {
+          month: "long",
+          year: "numeric",
+        });
         const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
 
-        if (!monthsMap[key]) monthsMap[key] = { key, monthStart: monthStart.getTime(), count: 0, total: 0 };
+        if (!monthsMap[key])
+          monthsMap[key] = {
+            key,
+            monthStart: monthStart.getTime(),
+            count: 0,
+            total: 0,
+          };
 
         monthsMap[key].count++;
         monthsMap[key].total += computeSaleTotal(sale);
@@ -334,10 +391,21 @@ const Sales = ({ setSelectedTab }) => {
       if (s.costumer_phone?.toLowerCase().includes(queryLower)) return true;
 
       // Pesquisa pelos itens da venda
-      if (s.items_list?.some((item) => item.name?.toLowerCase().includes(queryLower))) return true;
+      if (
+        s.items_list?.some((item) =>
+          item.name?.toLowerCase().includes(queryLower),
+        )
+      )
+        return true;
 
       // Pesquisa pelas opções de cada item
-      if (s.items_list?.some((item) => item.additionals?.some((add) => add.name?.toLowerCase().includes(queryLower))))
+      if (
+        s.items_list?.some((item) =>
+          item.additionals?.some((add) =>
+            add.name?.toLowerCase().includes(queryLower),
+          ),
+        )
+      )
         return true;
 
       return false;
@@ -346,7 +414,9 @@ const Sales = ({ setSelectedTab }) => {
     const order = filters[key]?.order;
     if (order?.startsWith("date")) {
       filtered.sort((a, b) =>
-        order === "date" ? new Date(a.created_at) - new Date(b.created_at) : new Date(b.created_at) - new Date(a.created_at),
+        order === "date"
+          ? new Date(a.created_at) - new Date(b.created_at)
+          : new Date(b.created_at) - new Date(a.created_at),
       );
     } else if (order?.startsWith("value")) {
       filtered.sort((a, b) => {
@@ -375,15 +445,25 @@ const Sales = ({ setSelectedTab }) => {
           .eq("menu_id", menu.id)
           .order("created_at", { ascending: false });
 
-        if (error) return customAlert("Erro ao carregar meses de vendas", "error");
+        if (error)
+          return customAlert("Erro ao carregar meses de vendas", "error");
 
         const monthsMap = {};
         data.forEach((sale) => {
           const d = new Date(sale.created_at);
-          const key = d.toLocaleString("pt-BR", { month: "long", year: "numeric" });
+          const key = d.toLocaleString("pt-BR", {
+            month: "long",
+            year: "numeric",
+          });
           const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
 
-          if (!monthsMap[key]) monthsMap[key] = { key, monthStart: monthStart.getTime(), count: 0, total: 0 };
+          if (!monthsMap[key])
+            monthsMap[key] = {
+              key,
+              monthStart: monthStart.getTime(),
+              count: 0,
+              total: 0,
+            };
 
           monthsMap[key].count++;
           monthsMap[key].total += computeSaleTotal(sale);
@@ -425,21 +505,32 @@ const Sales = ({ setSelectedTab }) => {
         </div>
 
         <h3 className="mb-2 text-base font-semibold">Dashboard de vendas</h3>
-        <SalesSummary setSelectedTab={setSelectedTab} refreshSignal={refreshSummary} />
+        <SalesSummary
+          setSelectedTab={setSelectedTab}
+          refreshSignal={refreshSummary}
+        />
 
         <h3 className="mb-3 text-base font-semibold">Histórico de vendas</h3>
         <div className="space-y-3 mb-4 max-w-[1024px]">
           {!monthsList || monthsList.length === 0 ? (
-            <p className="p-6 text-center color-gray">Nenhuma venda encontrada.</p>
+            <p className="p-6 text-center color-gray">
+              Nenhuma venda encontrada.
+            </p>
           ) : null}
           {monthsList.map((group) => {
             const key = group.key;
             const isOpen = expandedMonths[key] ?? false;
             const monthSales = monthData[key] || [];
-            const monthTotal = monthSales.reduce((sum, s) => sum + computeSaleTotal(s), 0);
+            const monthTotal = monthSales.reduce(
+              (sum, s) => sum + computeSaleTotal(s),
+              0,
+            );
 
             return (
-              <section key={key} className="border border-translucid rounded-2xl overflow-hidden">
+              <section
+                key={key}
+                className="border border-translucid rounded-2xl overflow-hidden"
+              >
                 <button
                   type="button"
                   onClick={() => toggleMonth(key, group.monthStart)}
@@ -447,10 +538,14 @@ const Sales = ({ setSelectedTab }) => {
                 >
                   <div>
                     <h3 className="font-semibold text-lg capitalize">{key}</h3>
-                    <p className="text-sm color-gray text-start mt-0.5">{group.count} venda(s)</p>
+                    <p className="text-sm color-gray text-start mt-0.5">
+                      {group.count} venda(s)
+                    </p>
                   </div>
                   <div className="text-right flex items-center gap-3">
-                    <p className="font-bold">{formatCurrency(group.total || 0, menu?.currency)}</p>
+                    <p className="font-bold">
+                      {formatCurrency(group.total || 0, menu?.currency)}
+                    </p>
                     {isOpen ? <FaChevronDown /> : <FaChevronRight />}
                   </div>
                 </button>
@@ -489,7 +584,12 @@ const Sales = ({ setSelectedTab }) => {
                                 ...prev,
                                 [key]: {
                                   ...prev[key],
-                                  order: current === type ? `${type}-desc` : current === `${type}-desc` ? type : type,
+                                  order:
+                                    current === type
+                                      ? `${type}-desc`
+                                      : current === `${type}-desc`
+                                        ? type
+                                        : type,
                                 },
                               }))
                             }
@@ -498,7 +598,11 @@ const Sales = ({ setSelectedTab }) => {
                           >
                             <span>Ordenar por {label}</span>
                             {isActive &&
-                              (isDesc ? <FaChevronDown className="text-xs" /> : <FaChevronUp className="text-xs" />)}
+                              (isDesc ? (
+                                <FaChevronDown className="text-xs" />
+                              ) : (
+                                <FaChevronUp className="text-xs" />
+                              ))}
                           </button>
                         );
                       })}
@@ -506,8 +610,11 @@ const Sales = ({ setSelectedTab }) => {
 
                     {monthPager[key]?.loading && <Loading />}
 
-                    {getFilteredSales(key).length === 0 && !monthPager[key]?.loading ? (
-                      <p className="p-6 text-center color-gray">Nenhuma venda encontrada.</p>
+                    {getFilteredSales(key).length === 0 &&
+                    !monthPager[key]?.loading ? (
+                      <p className="p-6 text-center color-gray">
+                        Nenhuma venda encontrada.
+                      </p>
                     ) : (
                       getFilteredSales(key).map((sale) => (
                         <div
@@ -517,9 +624,13 @@ const Sales = ({ setSelectedTab }) => {
                           <div className="min-w-0 flex-1">
                             <div className="flex items-start justify-between gap-3 mb-3">
                               <div className="min-w-0">
-                                <h3 className="font-semibold text-lg truncate">{sale.costumer_name || "Cliente"}</h3>
+                                <h3 className="font-semibold text-lg truncate">
+                                  {sale.costumer_name || "Cliente"}
+                                </h3>
                                 <p className="text-sm color-gray mt-0.5">
-                                  {new Date(sale.created_at).toLocaleString("pt-BR")}
+                                  {new Date(sale.created_at).toLocaleString(
+                                    "pt-BR",
+                                  )}
                                 </p>
                               </div>
                               <div className="text-right shrink-0">
@@ -528,13 +639,19 @@ const Sales = ({ setSelectedTab }) => {
                                 </p>
                                 <p className="text-2xl font-bold">
                                   {formatCurrency(
-                                    sale.net_total != null ? Number(sale.net_total) : computeSaleTotal(sale),
+                                    sale.net_total != null
+                                      ? Number(sale.net_total)
+                                      : computeSaleTotal(sale),
                                     menu?.currency,
                                   )}
                                 </p>
                                 {sale.net_total != null ? (
                                   <p className="text-xs color-gray mt-0.5">
-                                    Bruto: {formatCurrency(computeSaleTotal(sale), menu?.currency)}
+                                    Bruto:{" "}
+                                    {formatCurrency(
+                                      computeSaleTotal(sale),
+                                      menu?.currency,
+                                    )}
                                   </p>
                                 ) : null}
                               </div>
@@ -574,15 +691,28 @@ const Sales = ({ setSelectedTab }) => {
 
                             {sale.items_list && (
                               <div className="text-sm">
-                                <p className="text-xs uppercase tracking-wide font-bold mb-1">Itens</p>
+                                <p className="text-xs uppercase tracking-wide font-bold mb-1">
+                                  Itens
+                                </p>
                                 <ul>
-                                  {sale.items_list?.slice(0, 4).map((item, i) => (
-                                    <li key={i} className="line-clamp-1 color-gray">
-                                      {item.qty}x {item.name} — {formatCurrency(item.price * item.qty, menu?.currency)}
-                                    </li>
-                                  ))}
+                                  {sale.items_list
+                                    ?.slice(0, 4)
+                                    .map((item, i) => (
+                                      <li
+                                        key={i}
+                                        className="line-clamp-1 color-gray"
+                                      >
+                                        {item.qty}x {item.name} —{" "}
+                                        {formatCurrency(
+                                          item.price * item.qty,
+                                          menu?.currency,
+                                        )}
+                                      </li>
+                                    ))}
                                   {sale.items_list?.length > 4 && (
-                                    <li className="color-gray">+ {sale.items_list.length - 4} item(ns)</li>
+                                    <li className="color-gray">
+                                      + {sale.items_list.length - 4} item(ns)
+                                    </li>
                                   )}
                                 </ul>
                               </div>
@@ -596,18 +726,41 @@ const Sales = ({ setSelectedTab }) => {
                             >
                               Detalhes
                             </button>
+                            <PrintDocumentButton
+                              document={normalizeSaleForPrint(sale)}
+                              currency={menu?.currency}
+                              canPrint={
+                                profile?.role === "pro" ||
+                                profile?.role === "admin"
+                              }
+                              onDenied={() =>
+                                customAlert(
+                                  "Recurso disponível apenas para o plano Pro",
+                                  "error",
+                                )
+                              }
+                              fileNamePrefix="venda"
+                              receiptTitle="VENDA"
+                              triggerClassName="xs:flex-1 cursor-pointer px-4 py-2.5 rounded-xl border border-translucid bg-[var(--translucid)] text-sm font-medium hover:opacity-80 transition text-center flex items-center justify-center gap-2"
+                              triggerLabel="Imprimir"
+                            />
                             <button
                               onClick={() => deleteSale(sale.id, key)}
-                              className="flex-1 cursor-pointer px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm font-medium border border-red-500/20 bg-red-500/40 hover:opacity-90 transition"
+                              className="xs:flex-1 cursor-pointer px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm font-medium border border-red-500/20 bg-red-500/40 hover:opacity-90 transition"
                             >
-                              <FaTrash /> Excluir
+                              <FaTrash />{" "}
+                              <span className="hidden xs:block">Excluir</span>
                             </button>
                           </div>
                         </div>
                       ))
                     )}
                     {(() => {
-                      const pager = monthPager[key] || { page: 0, hasMore: false, loading: false };
+                      const pager = monthPager[key] || {
+                        page: 0,
+                        hasMore: false,
+                        loading: false,
+                      };
                       if (!pager.hasMore) return null;
 
                       return (
@@ -620,7 +773,10 @@ const Sales = ({ setSelectedTab }) => {
                             const end = new Date(start);
                             end.setMonth(start.getMonth() + 1);
 
-                            fetchSalesByMonth(start, end, key, { page: (pager.page || 0) + 1, append: true });
+                            fetchSalesByMonth(start, end, key, {
+                              page: (pager.page || 0) + 1,
+                              append: true,
+                            });
                           }}
                         >
                           {pager.loading ? "Carregando..." : "Carregar mais"}
@@ -636,7 +792,11 @@ const Sales = ({ setSelectedTab }) => {
       </div>
 
       {saleModalOpen && selectedSale && (
-        <GenericModal title="Detalhes da venda" onClose={() => setSaleModalOpen(false)} size="xl">
+        <GenericModal
+          title="Detalhes da venda"
+          onClose={() => setSaleModalOpen(false)}
+          size="xl"
+        >
           <div className="max-h-[90dvh] sm:max-h-[80vh] w-full overflow-y-auto scrollbar-none space-y-4">
             <form
               className="space-y-4"
@@ -646,16 +806,28 @@ const Sales = ({ setSelectedTab }) => {
                 const fee = Number(selectedSale.delivery_fee) || 0;
                 const total = subtotal + fee;
 
-                const payload = { ...selectedSale, total, updated_at: new Date().toISOString() };
+                const payload = {
+                  ...selectedSale,
+                  total,
+                  updated_at: new Date().toISOString(),
+                };
 
-                const { error } = await supabase.from("sales").update(payload).eq("id", selectedSale.id);
-                if (error) return customAlert("Erro ao atualizar venda", "error");
+                const { error } = await supabase
+                  .from("sales")
+                  .update(payload)
+                  .eq("id", selectedSale.id);
+                if (error)
+                  return customAlert("Erro ao atualizar venda", "error");
 
                 setMonthData((prev) => {
                   const updated = { ...prev };
-                  const monthKey = Object.keys(prev).find((key) => prev[key].some((s) => s.id === selectedSale.id));
+                  const monthKey = Object.keys(prev).find((key) =>
+                    prev[key].some((s) => s.id === selectedSale.id),
+                  );
                   if (monthKey) {
-                    updated[monthKey] = prev[monthKey].map((s) => (s.id === selectedSale.id ? { ...s, ...payload } : s));
+                    updated[monthKey] = prev[monthKey].map((s) =>
+                      s.id === selectedSale.id ? { ...s, ...payload } : s,
+                    );
                   }
                   return updated;
                 });
@@ -664,7 +836,10 @@ const Sales = ({ setSelectedTab }) => {
                 const start = new Date(d.getFullYear(), d.getMonth(), 1);
                 const end = new Date(start);
                 end.setMonth(end.getMonth() + 1);
-                const key = d.toLocaleString("pt-BR", { month: "long", year: "numeric" });
+                const key = d.toLocaleString("pt-BR", {
+                  month: "long",
+                  year: "numeric",
+                });
 
                 refreshMonthSummary(start, end, key);
                 customAlert("Venda atualizada com sucesso!", "success");
@@ -680,21 +855,35 @@ const Sales = ({ setSelectedTab }) => {
               >
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1 block text-sm font-medium">Nome do cliente</label>
+                    <label className="mb-1 block text-sm font-medium">
+                      Nome do cliente
+                    </label>
                     <input
                       type="text"
                       className="input w-full rounded-xl bg-translucid p-3"
                       value={selectedSale.costumer_name || ""}
-                      onChange={(e) => setSelectedSale({ ...selectedSale, costumer_name: e.target.value })}
+                      onChange={(e) =>
+                        setSelectedSale({
+                          ...selectedSale,
+                          costumer_name: e.target.value,
+                        })
+                      }
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium">Telefone</label>
+                    <label className="mb-1 block text-sm font-medium">
+                      Telefone
+                    </label>
                     <input
                       type="text"
                       className="input w-full rounded-xl bg-translucid p-3"
                       value={selectedSale.costumer_phone || ""}
-                      onChange={(e) => setSelectedSale({ ...selectedSale, costumer_phone: e.target.value })}
+                      onChange={(e) =>
+                        setSelectedSale({
+                          ...selectedSale,
+                          costumer_phone: e.target.value,
+                        })
+                      }
                     />
                   </div>
                 </div>
@@ -709,11 +898,18 @@ const Sales = ({ setSelectedTab }) => {
               >
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1 block text-sm font-medium">Serviço</label>
+                    <label className="mb-1 block text-sm font-medium">
+                      Serviço
+                    </label>
                     <select
                       className="input w-full rounded-xl bg-translucid p-3"
                       value={selectedSale.service || ""}
-                      onChange={(e) => setSelectedSale({ ...selectedSale, service: e.target.value })}
+                      onChange={(e) =>
+                        setSelectedSale({
+                          ...selectedSale,
+                          service: e.target.value,
+                        })
+                      }
                     >
                       <option className="text-black" value="delivery">
                         Entrega
@@ -730,11 +926,18 @@ const Sales = ({ setSelectedTab }) => {
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium">Método de pagamento</label>
+                    <label className="mb-1 block text-sm font-medium">
+                      Método de pagamento
+                    </label>
                     <select
                       className="input w-full rounded-xl bg-translucid p-3"
                       value={selectedSale.payment_method || ""}
-                      onChange={(e) => setSelectedSale({ ...selectedSale, payment_method: e.target.value })}
+                      onChange={(e) =>
+                        setSelectedSale({
+                          ...selectedSale,
+                          payment_method: e.target.value,
+                        })
+                      }
                     >
                       <option className="text-black" value="pix">
                         Pix
@@ -769,7 +972,8 @@ const Sales = ({ setSelectedTab }) => {
                       .map((a) => a.name)
                       .filter(Boolean)
                       .join(", ");
-                    const itemSubtotal = (Number(item.qty) || 0) * (Number(item.price) || 0);
+                    const itemSubtotal =
+                      (Number(item.qty) || 0) * (Number(item.price) || 0);
 
                     return (
                       <div
@@ -796,8 +1000,14 @@ const Sales = ({ setSelectedTab }) => {
                                 {item.qty}x {item.name || "Item sem nome"}
                               </p>
                               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm color-gray">
-                                <span>{formatCurrency(itemSubtotal, menu?.currency)}</span>
-                                {additionalsNames ? <span className="truncate">{additionalsNames}</span> : null}
+                                <span>
+                                  {formatCurrency(itemSubtotal, menu?.currency)}
+                                </span>
+                                {additionalsNames ? (
+                                  <span className="truncate">
+                                    {additionalsNames}
+                                  </span>
+                                ) : null}
                               </div>
                             </div>
                           </div>
@@ -826,20 +1036,33 @@ const Sales = ({ setSelectedTab }) => {
 
                         <div
                           className="grid transition-[grid-template-rows] duration-300 ease-in-out"
-                          style={{ display: "grid", gridTemplateRows: isItemOpen ? "1fr" : "0fr" }}
+                          style={{
+                            display: "grid",
+                            gridTemplateRows: isItemOpen ? "1fr" : "0fr",
+                          }}
                         >
                           <div className="overflow-hidden">
                             <div className="border-t border-translucid p-4">
                               <div className="mb-3">
-                                <p className="mb-1 text-xs uppercase tracking-wide color-gray">Item</p>
+                                <p className="mb-1 text-xs uppercase tracking-wide color-gray">
+                                  Item
+                                </p>
                                 <input
                                   type="text"
                                   className="input w-full rounded-xl bg-translucid p-3 text-sm"
                                   value={item.name}
                                   onChange={(e) => {
-                                    const updated = [...selectedSale.items_list];
-                                    updated[i] = { ...updated[i], name: e.target.value };
-                                    setSelectedSale({ ...selectedSale, items_list: updated });
+                                    const updated = [
+                                      ...selectedSale.items_list,
+                                    ];
+                                    updated[i] = {
+                                      ...updated[i],
+                                      name: e.target.value,
+                                    };
+                                    setSelectedSale({
+                                      ...selectedSale,
+                                      items_list: updated,
+                                    });
                                   }}
                                   placeholder="Nome do item"
                                 />
@@ -847,22 +1070,34 @@ const Sales = ({ setSelectedTab }) => {
 
                               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                                 <div>
-                                  <label className="mb-1 block text-sm color-gray">Quantidade</label>
+                                  <label className="mb-1 block text-sm color-gray">
+                                    Quantidade
+                                  </label>
                                   <input
                                     type="number"
                                     min="1"
                                     className="input w-full rounded-xl bg-translucid p-3 text-sm"
                                     value={item.qty}
                                     onChange={(e) => {
-                                      const updated = [...selectedSale.items_list];
-                                      updated[i] = { ...updated[i], qty: Number(e.target.value) || 0 };
-                                      setSelectedSale({ ...selectedSale, items_list: updated });
+                                      const updated = [
+                                        ...selectedSale.items_list,
+                                      ];
+                                      updated[i] = {
+                                        ...updated[i],
+                                        qty: Number(e.target.value) || 0,
+                                      };
+                                      setSelectedSale({
+                                        ...selectedSale,
+                                        items_list: updated,
+                                      });
                                     }}
                                   />
                                 </div>
 
                                 <div>
-                                  <label className="mb-1 block text-sm color-gray">Preço unidade</label>
+                                  <label className="mb-1 block text-sm color-gray">
+                                    Preço unidade
+                                  </label>
                                   <input
                                     type="number"
                                     step="0.01"
@@ -871,30 +1106,54 @@ const Sales = ({ setSelectedTab }) => {
                                     value={item.price}
                                     onChange={(e) => {
                                       const value = e.target.value;
-                                      const updated = [...selectedSale.items_list];
-                                      updated[i] = { ...updated[i], price: value === "" ? null : Number(value) };
-                                      setSelectedSale({ ...selectedSale, items_list: updated });
+                                      const updated = [
+                                        ...selectedSale.items_list,
+                                      ];
+                                      updated[i] = {
+                                        ...updated[i],
+                                        price:
+                                          value === "" ? null : Number(value),
+                                      };
+                                      setSelectedSale({
+                                        ...selectedSale,
+                                        items_list: updated,
+                                      });
                                     }}
                                   />
                                 </div>
 
                                 <div className="col-span-2 sm:col-span-1">
-                                  <label className="mb-1 block text-sm color-gray">Subtotal</label>
+                                  <label className="mb-1 block text-sm color-gray">
+                                    Subtotal
+                                  </label>
                                   <div className="rounded-xl border border-translucid px-3 py-3 text-sm font-medium">
-                                    {formatCurrency(itemSubtotal, menu?.currency)}
+                                    {formatCurrency(
+                                      itemSubtotal,
+                                      menu?.currency,
+                                    )}
                                   </div>
                                 </div>
                               </div>
 
                               <div className="mt-3">
-                                <label className="mb-1 block text-sm color-gray">Observações</label>
+                                <label className="mb-1 block text-sm color-gray">
+                                  Observações
+                                </label>
                                 <textarea
                                   className="input w-full rounded-xl bg-translucid p-3 text-sm"
                                   value={item.note || ""}
                                   onChange={(e) => {
-                                    const updated = [...selectedSale.items_list];
-                                    updated[i] = { ...updated[i], note: e.target.value };
-                                    setSelectedSale({ ...selectedSale, items_list: updated });
+                                    const updated = [
+                                      ...selectedSale.items_list,
+                                    ];
+                                    updated[i] = {
+                                      ...updated[i],
+                                      note: e.target.value,
+                                    };
+                                    setSelectedSale({
+                                      ...selectedSale,
+                                      items_list: updated,
+                                    });
                                   }}
                                   placeholder="Observações do item"
                                 />
@@ -902,15 +1161,27 @@ const Sales = ({ setSelectedTab }) => {
 
                               <div className="mt-4 rounded-xl">
                                 <div className="mb-3 flex items-center justify-between gap-3">
-                                  <span className="text-sm font-medium">Opções</span>
+                                  <span className="text-sm font-medium">
+                                    Opções
+                                  </span>
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      const updated = [...(selectedSale.items_list || [])];
-                                      const additionals = updated[i].additionals ? [...updated[i].additionals] : [];
+                                      const updated = [
+                                        ...(selectedSale.items_list || []),
+                                      ];
+                                      const additionals = updated[i].additionals
+                                        ? [...updated[i].additionals]
+                                        : [];
                                       additionals.push({ name: "", price: 0 });
-                                      updated[i] = { ...updated[i], additionals };
-                                      setSelectedSale({ ...selectedSale, items_list: updated });
+                                      updated[i] = {
+                                        ...updated[i],
+                                        additionals,
+                                      };
+                                      setSelectedSale({
+                                        ...selectedSale,
+                                        items_list: updated,
+                                      });
                                     }}
                                     className="cursor-pointer rounded-xl bg-blue-600 px-3 py-2 text-sm text-white transition hover:bg-blue-700"
                                   >
@@ -919,7 +1190,9 @@ const Sales = ({ setSelectedTab }) => {
                                 </div>
 
                                 {(item.additionals || []).length === 0 ? (
-                                  <p className="text-sm color-gray">Nenhuma opção adicionada.</p>
+                                  <p className="text-sm color-gray">
+                                    Nenhuma opção adicionada.
+                                  </p>
                                 ) : (
                                   <div className="space-y-2">
                                     {(item.additionals || []).map((add, ai) => (
@@ -932,11 +1205,24 @@ const Sales = ({ setSelectedTab }) => {
                                           className="input rounded-xl bg-translucid p-3 text-sm"
                                           value={add.name}
                                           onChange={(e) => {
-                                            const updated = [...selectedSale.items_list];
-                                            const ad = updated[i].additionals ? [...updated[i].additionals] : [];
-                                            ad[ai] = { ...ad[ai], name: e.target.value };
-                                            updated[i] = { ...updated[i], additionals: ad };
-                                            setSelectedSale({ ...selectedSale, items_list: updated });
+                                            const updated = [
+                                              ...selectedSale.items_list,
+                                            ];
+                                            const ad = updated[i].additionals
+                                              ? [...updated[i].additionals]
+                                              : [];
+                                            ad[ai] = {
+                                              ...ad[ai],
+                                              name: e.target.value,
+                                            };
+                                            updated[i] = {
+                                              ...updated[i],
+                                              additionals: ad,
+                                            };
+                                            setSelectedSale({
+                                              ...selectedSale,
+                                              items_list: updated,
+                                            });
                                           }}
                                           placeholder="Nome da opção"
                                         />
@@ -949,11 +1235,27 @@ const Sales = ({ setSelectedTab }) => {
                                           value={add.price ?? ""}
                                           onChange={(e) => {
                                             const value = e.target.value;
-                                            const updated = [...selectedSale.items_list];
-                                            const ad = updated[i].additionals ? [...updated[i].additionals] : [];
-                                            ad[ai] = { ...ad[ai], price: value === "" ? null : Number(value) };
-                                            updated[i] = { ...updated[i], additionals: ad };
-                                            setSelectedSale({ ...selectedSale, items_list: updated });
+                                            const updated = [
+                                              ...selectedSale.items_list,
+                                            ];
+                                            const ad = updated[i].additionals
+                                              ? [...updated[i].additionals]
+                                              : [];
+                                            ad[ai] = {
+                                              ...ad[ai],
+                                              price:
+                                                value === ""
+                                                  ? null
+                                                  : Number(value),
+                                            };
+                                            updated[i] = {
+                                              ...updated[i],
+                                              additionals: ad,
+                                            };
+                                            setSelectedSale({
+                                              ...selectedSale,
+                                              items_list: updated,
+                                            });
                                           }}
                                           placeholder="Preço"
                                         />
@@ -961,16 +1263,31 @@ const Sales = ({ setSelectedTab }) => {
                                         <button
                                           type="button"
                                           onClick={async () => {
-                                            const ok = await confirm("Quer mesmo remover esta opção?");
+                                            const ok = await confirm(
+                                              "Quer mesmo remover esta opção?",
+                                            );
                                             if (!ok) return;
 
-                                            const updated = [...selectedSale.items_list];
-                                            const ad = updated[i].additionals ? [...updated[i].additionals] : [];
+                                            const updated = [
+                                              ...selectedSale.items_list,
+                                            ];
+                                            const ad = updated[i].additionals
+                                              ? [...updated[i].additionals]
+                                              : [];
                                             ad.splice(ai, 1);
-                                            updated[i] = { ...updated[i], additionals: ad };
-                                            setSelectedSale({ ...selectedSale, items_list: updated });
+                                            updated[i] = {
+                                              ...updated[i],
+                                              additionals: ad,
+                                            };
+                                            setSelectedSale({
+                                              ...selectedSale,
+                                              items_list: updated,
+                                            });
 
-                                            customAlert("Opção removida do item", "success");
+                                            customAlert(
+                                              "Opção removida do item",
+                                              "success",
+                                            );
                                           }}
                                           className="flex w-full h-full items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/40 text-sm font-semibold transition hover:opacity-90 cursor-pointer"
                                         >
@@ -996,8 +1313,13 @@ const Sales = ({ setSelectedTab }) => {
                       ...(selectedSale.items_list || []),
                       { name: "", qty: 1, price: 0, note: "", additionals: [] },
                     ];
-                    setSelectedSale({ ...selectedSale, items_list: updatedItems });
-                    setOpenItemIndexes((prev) => new Set(prev).add(updatedItems.length - 1));
+                    setSelectedSale({
+                      ...selectedSale,
+                      items_list: updatedItems,
+                    });
+                    setOpenItemIndexes((prev) =>
+                      new Set(prev).add(updatedItems.length - 1),
+                    );
                   }}
                   className="mt-4 cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-white transition hover:bg-blue-700"
                 >
@@ -1008,8 +1330,12 @@ const Sales = ({ setSelectedTab }) => {
               <div className="sticky bottom-0 rounded-2xl border border-translucid bg-low-gray/95 p-4 backdrop-blur-xl">
                 <div className="mb-3 flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-xs uppercase tracking-wide color-gray">Total da venda</p>
-                    <p className="text-2xl font-bold">{formatCurrency(modalTotal, menu?.currency)}</p>
+                    <p className="text-xs uppercase tracking-wide color-gray">
+                      Total da venda
+                    </p>
+                    <p className="text-2xl font-bold">
+                      {formatCurrency(modalTotal, menu?.currency)}
+                    </p>
                   </div>
                 </div>
 

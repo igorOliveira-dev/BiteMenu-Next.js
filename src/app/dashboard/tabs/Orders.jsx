@@ -23,6 +23,9 @@ import OrdersFilter from "./components/orders/OrdersFilter";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import useUser from "@/hooks/useUser";
 import { useReactToPrint } from "react-to-print";
+import PrintDocumentButton, {
+  normalizeOrderForPrint,
+} from "./components/print/PrintDocumentButton";
 
 const PAGE_SIZE = 10;
 
@@ -41,7 +44,15 @@ const serviceLabels = {
   faceToFace: "Atendimento presencial",
 };
 
-const SectionCard = ({ title, subtitle, children, icon = null, open, onToggle, summary }) => (
+const SectionCard = ({
+  title,
+  subtitle,
+  children,
+  icon = null,
+  open,
+  onToggle,
+  summary,
+}) => (
   <section className="rounded-2xl border border-translucid bg-[var(--low-translucid)] overflow-hidden shadow-sm">
     <button
       type="button"
@@ -81,7 +92,11 @@ const SectionCard = ({ title, subtitle, children, icon = null, open, onToggle, s
   </section>
 );
 
-const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }) => {
+const Orders = ({
+  setSelectedTab,
+  reloadTrigger,
+  setOrderQuantityChangeTrigger,
+}) => {
   const { menu, loading } = useMenu();
   const { profile, loadingProfile } = useUser();
   const customAlert = useAlert();
@@ -154,7 +169,9 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
   useEffect(() => {
     if (menu?.orders) {
       setReceiveOrders(menu.orders);
-      setEnabledOrders(menu.orders === "site_whatsapp" || menu.orders === "site");
+      setEnabledOrders(
+        menu.orders === "site_whatsapp" || menu.orders === "site",
+      );
     }
   }, [menu?.orders]);
 
@@ -193,7 +210,10 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
   };
 
   const buildOrdersQuery = (filters) => {
-    let q = supabase.from("orders").select("*", { count: "exact" }).eq("menu_id", menu.id);
+    let q = supabase
+      .from("orders")
+      .select("*", { count: "exact" })
+      .eq("menu_id", menu.id);
 
     // oculta pedidos Stripe enquanto não pagos
     q = q.or("payment_method.neq.stripe,is_paid.eq.true");
@@ -209,12 +229,16 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
       q = q.eq("payment_method", filters.payment);
     }
 
-    if (filters.dateFrom) q = q.gte("created_at", new Date(filters.dateFrom).toISOString());
-    if (filters.dateTo) q = q.lte("created_at", new Date(filters.dateTo).toISOString());
+    if (filters.dateFrom)
+      q = q.gte("created_at", new Date(filters.dateFrom).toISOString());
+    if (filters.dateTo)
+      q = q.lte("created_at", new Date(filters.dateTo).toISOString());
 
     if (filters.search && filters.search.trim() !== "") {
       const term = filters.search.trim();
-      q = q.or(`costumer_name.ilike.%${term}%,costumer_phone.ilike.%${term}%,id_text.ilike.${term}%`);
+      q = q.or(
+        `costumer_name.ilike.%${term}%,costumer_phone.ilike.%${term}%,id_text.ilike.${term}%`,
+      );
     }
 
     return q.order("updated_at", { ascending: false });
@@ -223,7 +247,9 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
   const buildSummaryQuery = (filters) => {
     let q = supabase
       .from("orders")
-      .select("is_paid,service,items_list,updated_at,delivery_fee", { count: "exact" })
+      .select("is_paid,service,items_list,updated_at,delivery_fee", {
+        count: "exact",
+      })
       .eq("menu_id", menu.id)
       .order("updated_at", { ascending: false });
 
@@ -241,12 +267,16 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
       q = q.eq("payment_method", filters.payment);
     }
 
-    if (filters.dateFrom) q = q.gte("created_at", new Date(filters.dateFrom).toISOString());
-    if (filters.dateTo) q = q.lte("created_at", new Date(filters.dateTo).toISOString());
+    if (filters.dateFrom)
+      q = q.gte("created_at", new Date(filters.dateFrom).toISOString());
+    if (filters.dateTo)
+      q = q.lte("created_at", new Date(filters.dateTo).toISOString());
 
     if (filters.search && filters.search.trim() !== "") {
       const term = filters.search.trim();
-      q = q.or(`costumer_name.ilike.%${term}%,costumer_phone.ilike.%${term}%,id_text.ilike.${term}%`);
+      q = q.or(
+        `costumer_name.ilike.%${term}%,costumer_phone.ilike.%${term}%,id_text.ilike.${term}%`,
+      );
     }
 
     return q;
@@ -263,7 +293,10 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
     const from = (nextPage - 1) * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
-    const { data, error, count } = await buildOrdersQuery(currentFilters).range(from, to);
+    const { data, error, count } = await buildOrdersQuery(currentFilters).range(
+      from,
+      to,
+    );
 
     if (error) {
       loadingRef.current = false;
@@ -300,7 +333,9 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
     try {
       while (true) {
         const to = from + PAGE - 1;
-        const { data, error, count } = await buildSummaryQuery(currentFilters).range(from, to);
+        const { data, error, count } = await buildSummaryQuery(
+          currentFilters,
+        ).range(from, to);
 
         if (error) throw error;
         if (typeof count === "number") setTotalCount(count);
@@ -352,27 +387,42 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
     setReceiveOrders(value);
     setEnabledOrders(value === "site" || value === "site_whatsapp");
 
-    const { error } = await supabase.from("menus").update({ orders: value }).eq("id", menu.id);
+    const { error } = await supabase
+      .from("menus")
+      .update({ orders: value })
+      .eq("id", menu.id);
 
-    if (error) customAlert("Erro ao atualizar configuração de pedidos.", "error");
+    if (error)
+      customAlert("Erro ao atualizar configuração de pedidos.", "error");
     else customAlert("Preferência de pedidos atualizada!", "success");
   };
 
   const togglePaid = async (id, current) => {
-    const { error } = await supabase.from("orders").update({ is_paid: !current }).eq("id", id);
+    const { error } = await supabase
+      .from("orders")
+      .update({ is_paid: !current })
+      .eq("id", id);
     if (error) return customAlert("Erro ao atualizar pagamento", "error");
 
-    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, is_paid: !current } : o)));
+    setOrders((prev) =>
+      prev.map((o) => (o.id === id ? { ...o, is_paid: !current } : o)),
+    );
     fetchSummary();
   };
 
   const handleToggleDeliveryFeeOnSales = async (value) => {
     setDeliveryFeeOnSales(value);
 
-    const { error } = await supabase.from("menus").update({ delivery_fee_on_sales: value }).eq("id", menu.id);
+    const { error } = await supabase
+      .from("menus")
+      .update({ delivery_fee_on_sales: value })
+      .eq("id", menu.id);
 
     if (error) {
-      customAlert("Erro ao atualizar configuração da taxa de entrega.", "error");
+      customAlert(
+        "Erro ao atualizar configuração da taxa de entrega.",
+        "error",
+      );
       setDeliveryFeeOnSales(!value);
     } else {
       customAlert("Configuração de taxa de entrega atualizada!", "success");
@@ -401,16 +451,24 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
     const ok = await confirm("Quer mesmo finalizar esse pedido?");
     if (!ok) return;
 
-    const { data: order, error: fetchError } = await supabase.from("orders").select("*").eq("id", id).single();
+    const { data: order, error: fetchError } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("id", id)
+      .single();
     if (fetchError || !order) {
       return customAlert("Erro ao localizar pedido", "error");
     }
 
     const subtotal = computeSubtotal(order);
-    const deliveryFee = deliveryFeeOnSales && order.service === "delivery" ? Number(order.delivery_fee) || 0 : 0;
+    const deliveryFee =
+      deliveryFeeOnSales && order.service === "delivery"
+        ? Number(order.delivery_fee) || 0
+        : 0;
     const grossTotal = subtotal + deliveryFee;
 
-    const isStripeWithNet = order.payment_method === "stripe" && order.net_total != null;
+    const isStripeWithNet =
+      order.payment_method === "stripe" && order.net_total != null;
     const netTotal = isStripeWithNet ? Number(order.net_total) : null;
 
     // total principal continua sendo o bruto (mantém compatibilidade com relatórios existentes)
@@ -435,7 +493,10 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
       return customAlert("Erro ao registrar venda", "error");
     }
 
-    const { error: deleteError } = await supabase.from("orders").delete().eq("id", id);
+    const { error: deleteError } = await supabase
+      .from("orders")
+      .delete()
+      .eq("id", id);
     if (deleteError) {
       return customAlert("Erro ao excluir pedido", "error");
     }
@@ -516,7 +577,10 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
       const qty = Number(it.qty) || 0;
       const unit = Number(it.price) || 0;
       const base = unit * qty;
-      const addsUnit = (it.additionals || []).reduce((sa, a) => sa + (Number(a.price) || 0), 0);
+      const addsUnit = (it.additionals || []).reduce(
+        (sa, a) => sa + (Number(a.price) || 0),
+        0,
+      );
       const adds = addsUnit * qty;
       return acc + base + adds;
     }, 0);
@@ -540,14 +604,19 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
 
     const firstThree = items.slice(0, 3);
 
-    const text = firstThree.map((item) => `${item.qty}x ${item.name}`).join(" • ");
+    const text = firstThree
+      .map((item) => `${item.qty}x ${item.name}`)
+      .join(" • ");
 
     const remaining = items.length - 3;
 
     return remaining > 0 ? `${text} + ${remaining} item(ns)` : text;
   };
 
-  const paidPct = summary.count > 0 ? Math.round((summary.paidCount / summary.count) * 100) : 0;
+  const paidPct =
+    summary.count > 0
+      ? Math.round((summary.paidCount / summary.count) * 100)
+      : 0;
 
   useModalBackHandler(orderModalOpen, () => setOrderModalOpen(false));
 
@@ -574,7 +643,9 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
           className="mb-2 flex cursor-pointer items-center gap-2 color-gray"
         >
           Configurar pedidos
-          <span className={`transition-transform ${showConfig ? "rotate-180" : ""}`}>
+          <span
+            className={`transition-transform ${showConfig ? "rotate-180" : ""}`}
+          >
             <FaChevronDown />
           </span>
         </button>
@@ -635,7 +706,9 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
               <input
                 type="checkbox"
                 checked={deliveryFeeOnSales}
-                onChange={(e) => handleToggleDeliveryFeeOnSales(e.target.checked)}
+                onChange={(e) =>
+                  handleToggleDeliveryFeeOnSales(e.target.checked)
+                }
               />
               <span className="slider"></span>
             </span>
@@ -643,7 +716,8 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
           </label>
 
           <p className="mt-2 text-xs color-gray">
-            Se ativado, a taxa de entrega será somada ao total das vendas registradas.
+            Se ativado, a taxa de entrega será somada ao total das vendas
+            registradas.
           </p>
 
           <hr className="my-3 border-translucid" />
@@ -652,31 +726,43 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
 
           <label className="flex items-center gap-2">
             <span className="switch">
-              <input type="checkbox" checked={soundNewOrder} onChange={(e) => handleToggleSoundNewOrder(e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={soundNewOrder}
+                onChange={(e) => handleToggleSoundNewOrder(e.target.checked)}
+              />
               <span className="slider"></span>
             </span>
 
             <span>Emitir som ao receber pedido</span>
           </label>
 
-          <p className="mt-2 text-xs color-gray">Quando ativado, o sistema tocará um som ao chegar um novo pedido.</p>
+          <p className="mt-2 text-xs color-gray">
+            Quando ativado, o sistema tocará um som ao chegar um novo pedido.
+          </p>
         </div>
 
         {!enabledOrders ? (
-          <p className="p-6 text-center color-gray">Os pedidos no site estão desabilitados.</p>
+          <p className="p-6 text-center color-gray">
+            Os pedidos no site estão desabilitados.
+          </p>
         ) : (
           <div>
             <OrdersFilter onChange={setFilters} />
 
             {orders.length === 0 ? (
-              <p className="p-6 text-center color-gray">Nenhum pedido encontrado com esses filtros.</p>
+              <p className="p-6 text-center color-gray">
+                Nenhum pedido encontrado com esses filtros.
+              </p>
             ) : (
               <div className="space-y-4">
                 {orders.map((order) => {
                   const total = computeTotalWithDelivery(order);
                   const subtotal = computeSubtotal(order);
                   const deliveryFee = computeDeliveryFee(order);
-                  const orderDate = new Date(order.updated_at).toLocaleString("pt-BR");
+                  const orderDate = new Date(order.updated_at).toLocaleString(
+                    "pt-BR",
+                  );
 
                   return (
                     <div
@@ -694,10 +780,14 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
                           <div className="mb-3 flex items-start justify-between gap-3">
                             <div className="min-w-0">
                               <div className="mb-1 flex items-center gap-2">
-                                <h3 className="truncate text-lg font-semibold">{order.costumer_name || "Cliente"}</h3>
+                                <h3 className="truncate text-lg font-semibold">
+                                  {order.costumer_name || "Cliente"}
+                                </h3>
                                 <span
                                   className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
-                                    order.is_paid ? "bg-green-600/40" : "bg-yellow-500/40"
+                                    order.is_paid
+                                      ? "bg-green-600/40"
+                                      : "bg-yellow-500/40"
                                   }`}
                                 >
                                   {order.is_paid ? "Pago" : "Pendente"}
@@ -707,8 +797,12 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
                             </div>
 
                             <div className="text-right min-w-[80px]">
-                              <p className="text-xs uppercase tracking-wide color-gray">Total</p>
-                              <p className="font-bold">{formatCurrency(total, menu?.currency)}</p>
+                              <p className="text-xs uppercase tracking-wide color-gray">
+                                Total
+                              </p>
+                              <p className="font-bold">
+                                {formatCurrency(total, menu?.currency)}
+                              </p>
                             </div>
                           </div>
 
@@ -717,26 +811,47 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
                               {serviceLabels[order.service] || "Não informado"}
                             </span>
                             <span className="rounded-full border border-translucid px-3 py-1 color-gray bg-[var(--translucid)]">
-                              {paymentLabels[order.payment_method] || "Não informado"}
+                              {paymentLabels[order.payment_method] ||
+                                "Não informado"}
                             </span>
                             {order.change_requested && (
                               <span className="rounded-full border border-translucid px-3 py-1 color-gray bg-[var(--translucid)]">
-                                Troco para: {formatCurrency(order.change_for_amount, menu?.currency)}
+                                Troco para:{" "}
+                                {formatCurrency(
+                                  order.change_for_amount,
+                                  menu?.currency,
+                                )}
                               </span>
                             )}
                           </div>
 
                           <div className="mt-12 rounded-xl">
-                            <p className="mb-1 text-xs uppercase tracking-wide font-bold">Resumo do pedido</p>
-                            <p className="font-medium line-clamp-1">{getPrimaryItemText(order)}</p>
+                            <p className="mb-1 text-xs uppercase tracking-wide font-bold">
+                              Resumo do pedido
+                            </p>
+                            <p className="font-medium line-clamp-1">
+                              {getPrimaryItemText(order)}
+                            </p>
                             <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm color-gray">
                               <span>
-                                {order.items_list?.length || 0} {order.items_list?.length === 1 ? "item" : "itens"}
+                                {order.items_list?.length || 0}{" "}
+                                {order.items_list?.length === 1
+                                  ? "item"
+                                  : "itens"}
                               </span>
                               {order.service === "delivery" ? (
                                 <>
-                                  <span>Subtotal: {formatCurrency(subtotal, menu?.currency)}</span>
-                                  <span>Entrega: {formatCurrency(deliveryFee, menu?.currency)}</span>
+                                  <span>
+                                    Subtotal:{" "}
+                                    {formatCurrency(subtotal, menu?.currency)}
+                                  </span>
+                                  <span>
+                                    Entrega:{" "}
+                                    {formatCurrency(
+                                      deliveryFee,
+                                      menu?.currency,
+                                    )}
+                                  </span>
                                 </>
                               ) : null}
                             </div>
@@ -758,20 +873,32 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
                             >
                               Ver detalhes
                             </button>
-                            <button
-                              onClick={() => {
-                                setPrintModalOpen(true);
-                                setSelectedOrder(order);
-                              }}
-                              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border bg-[var(--translucid)] border-translucid px-3 py-2 text-sm font-medium transition hover:opacity-80"
-                            >
-                              <FaPrint />
-                            </button>
+                            <PrintDocumentButton
+                              document={normalizeOrderForPrint(order, {
+                                deliveryFeeOnSales,
+                              })}
+                              currency={menu?.currency}
+                              canPrint={
+                                profile?.role === "pro" ||
+                                profile?.role === "admin"
+                              }
+                              onDenied={() =>
+                                customAlert(
+                                  "Recurso disponível apenas para o plano Pro",
+                                  "error",
+                                )
+                              }
+                              fileNamePrefix="pedido"
+                              receiptTitle="PEDIDO"
+                              triggerClassName="flex cursor-pointer items-center justify-center gap-2 rounded-xl border bg-[var(--translucid)] border-translucid px-3 py-2 text-sm font-medium transition hover:opacity-80"
+                            />
                           </div>
 
                           <div className="grid grid-cols-4 gap-2">
                             <button
-                              onClick={() => togglePaid(order.id, order.is_paid)}
+                              onClick={() =>
+                                togglePaid(order.id, order.is_paid)
+                              }
                               className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition col-span-3 ${
                                 order.is_paid
                                   ? "border border-translucid bg-translucid hover:opacity-80"
@@ -827,7 +954,9 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
                 onClick={() => fetchSummary()}
                 title="Atualizar resumo"
               >
-                <FaSyncAlt className={`${summaryLoading ? "animate-spin" : ""}`} />
+                <FaSyncAlt
+                  className={`${summaryLoading ? "animate-spin" : ""}`}
+                />
               </button>
             </div>
 
@@ -845,7 +974,8 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
                   <p className="text-3xl font-bold">{summary.count}</p>
                   {summary.lastUpdatedAt ? (
                     <p className="mt-1 text-xs color-gray">
-                      Última atualização: {new Date(summary.lastUpdatedAt).toLocaleString("pt-BR")}
+                      Última atualização:{" "}
+                      {new Date(summary.lastUpdatedAt).toLocaleString("pt-BR")}
                     </p>
                   ) : null}
                 </div>
@@ -856,7 +986,10 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
                     <span>{paidPct}%</span>
                   </div>
                   <div className="h-2 w-full overflow-hidden rounded bg-translucid">
-                    <div className="h-full bg-green-600" style={{ width: `${paidPct}%` }} />
+                    <div
+                      className="h-full bg-green-600"
+                      style={{ width: `${paidPct}%` }}
+                    />
                   </div>
                 </div>
 
@@ -873,12 +1006,16 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
                     <p className="text-xl font-semibold text-yellow-400">
                       {formatCurrency(summary.pendingTotal, menu?.currency)}
                     </p>
-                    <p className="mt-1 text-xs color-gray">Pendentes: {summary.pendingCount}</p>
+                    <p className="mt-1 text-xs color-gray">
+                      Pendentes: {summary.pendingCount}
+                    </p>
                   </div>
 
                   <div className="rounded-2xl border border-translucid bg-translucid p-3">
                     <p className="text-xs color-gray">Ticket médio</p>
-                    <p className="text-lg font-semibold">{formatCurrency(summary.avgTicket, menu?.currency)}</p>
+                    <p className="text-lg font-semibold">
+                      {formatCurrency(summary.avgTicket, menu?.currency)}
+                    </p>
                   </div>
                 </div>
               </>
@@ -888,7 +1025,11 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
       ) : null}
 
       {orderModalOpen && selectedOrder ? (
-        <GenericModal title="Detalhes do pedido" onClose={() => setOrderModalOpen(false)} size="xl">
+        <GenericModal
+          title="Detalhes do pedido"
+          onClose={() => setOrderModalOpen(false)}
+          size="xl"
+        >
           <div className="max-h-[90dvh] w-full overflow-y-auto space-y-4 scrollbar-none sm:max-h-[80vh]">
             <form
               className="space-y-4"
@@ -935,48 +1076,76 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
               >
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1 block text-sm font-medium">Nome do cliente</label>
+                    <label className="mb-1 block text-sm font-medium">
+                      Nome do cliente
+                    </label>
                     <input
                       type="text"
                       className="input w-full rounded-xl bg-translucid p-3"
                       value={selectedOrder.costumer_name || ""}
-                      onChange={(e) => setSelectedOrder({ ...selectedOrder, costumer_name: e.target.value })}
+                      onChange={(e) =>
+                        setSelectedOrder({
+                          ...selectedOrder,
+                          costumer_name: e.target.value,
+                        })
+                      }
                     />
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-sm font-medium">Telefone</label>
+                    <label className="mb-1 block text-sm font-medium">
+                      Telefone
+                    </label>
                     <input
                       type="text"
                       className="input w-full rounded-xl bg-translucid p-3"
                       value={selectedOrder.costumer_phone || ""}
-                      onChange={(e) => setSelectedOrder({ ...selectedOrder, costumer_phone: e.target.value })}
+                      onChange={(e) =>
+                        setSelectedOrder({
+                          ...selectedOrder,
+                          costumer_phone: e.target.value,
+                        })
+                      }
                     />
                   </div>
                 </div>
 
                 {selectedOrder.neighborhood != null ? (
                   <div className="mt-3">
-                    <label className="mb-1 block text-sm font-medium">Bairro</label>
+                    <label className="mb-1 block text-sm font-medium">
+                      Bairro
+                    </label>
                     <input
                       type="text"
                       className="input w-full rounded-xl bg-translucid p-3"
                       placeholder="Informe o bairro"
                       value={selectedOrder.neighborhood || ""}
-                      onChange={(e) => setSelectedOrder({ ...selectedOrder, neighborhood: e.target.value })}
+                      onChange={(e) =>
+                        setSelectedOrder({
+                          ...selectedOrder,
+                          neighborhood: e.target.value,
+                        })
+                      }
                     />
                   </div>
                 ) : null}
 
                 {selectedOrder.address != null ? (
                   <div className="mt-3">
-                    <label className="mb-1 block text-sm font-medium">Endereço</label>
+                    <label className="mb-1 block text-sm font-medium">
+                      Endereço
+                    </label>
                     <input
                       type="text"
                       className="input w-full rounded-xl bg-translucid p-3"
                       placeholder="Informe o endereço"
                       value={selectedOrder.address || ""}
-                      onChange={(e) => setSelectedOrder({ ...selectedOrder, address: e.target.value })}
+                      onChange={(e) =>
+                        setSelectedOrder({
+                          ...selectedOrder,
+                          address: e.target.value,
+                        })
+                      }
                     />
                   </div>
                 ) : null}
@@ -991,11 +1160,18 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
               >
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1 block text-sm font-medium">Serviço</label>
+                    <label className="mb-1 block text-sm font-medium">
+                      Serviço
+                    </label>
                     <select
                       className="input w-full rounded-xl bg-translucid p-3"
                       value={selectedOrder.service || ""}
-                      onChange={(e) => setSelectedOrder({ ...selectedOrder, service: e.target.value })}
+                      onChange={(e) =>
+                        setSelectedOrder({
+                          ...selectedOrder,
+                          service: e.target.value,
+                        })
+                      }
                     >
                       <option className="text-black" value="delivery">
                         Entrega
@@ -1013,11 +1189,18 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-sm font-medium">Método de pagamento</label>
+                    <label className="mb-1 block text-sm font-medium">
+                      Método de pagamento
+                    </label>
                     <select
                       className="input w-full rounded-xl bg-translucid p-3"
                       value={selectedOrder.payment_method || ""}
-                      onChange={(e) => setSelectedOrder({ ...selectedOrder, payment_method: e.target.value })}
+                      onChange={(e) =>
+                        setSelectedOrder({
+                          ...selectedOrder,
+                          payment_method: e.target.value,
+                        })
+                      }
                     >
                       <option className="text-black" value="pix">
                         Pix
@@ -1052,7 +1235,8 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
                       .map((a) => a.name)
                       .filter(Boolean)
                       .join(", ");
-                    const itemSubtotal = (Number(item.qty) || 0) * (Number(item.price) || 0);
+                    const itemSubtotal =
+                      (Number(item.qty) || 0) * (Number(item.price) || 0);
 
                     return (
                       <div
@@ -1079,8 +1263,14 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
                                 {item.qty}x {item.name || "Item sem nome"}
                               </p>
                               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm color-gray">
-                                <span>{formatCurrency(itemSubtotal, menu?.currency)}</span>
-                                {additionalsNames ? <span className="truncate">{additionalsNames}</span> : null}
+                                <span>
+                                  {formatCurrency(itemSubtotal, menu?.currency)}
+                                </span>
+                                {additionalsNames ? (
+                                  <span className="truncate">
+                                    {additionalsNames}
+                                  </span>
+                                ) : null}
                               </div>
                             </div>
                           </div>
@@ -1109,20 +1299,33 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
 
                         <div
                           className="grid transition-[grid-template-rows] duration-300 ease-in-out"
-                          style={{ display: "grid", gridTemplateRows: isItemOpen ? "1fr" : "0fr" }}
+                          style={{
+                            display: "grid",
+                            gridTemplateRows: isItemOpen ? "1fr" : "0fr",
+                          }}
                         >
                           <div className="overflow-hidden">
                             <div className="border-t border-translucid p-4">
                               <div className="mb-3">
-                                <p className="mb-1 text-xs uppercase tracking-wide color-gray">Item</p>
+                                <p className="mb-1 text-xs uppercase tracking-wide color-gray">
+                                  Item
+                                </p>
                                 <input
                                   type="text"
                                   className="input w-full rounded-xl bg-translucid p-3 text-sm"
                                   value={item.name}
                                   onChange={(e) => {
-                                    const updated = [...selectedOrder.items_list];
-                                    updated[i] = { ...updated[i], name: e.target.value };
-                                    setSelectedOrder({ ...selectedOrder, items_list: updated });
+                                    const updated = [
+                                      ...selectedOrder.items_list,
+                                    ];
+                                    updated[i] = {
+                                      ...updated[i],
+                                      name: e.target.value,
+                                    };
+                                    setSelectedOrder({
+                                      ...selectedOrder,
+                                      items_list: updated,
+                                    });
                                   }}
                                   placeholder="Nome do item"
                                 />
@@ -1130,22 +1333,34 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
 
                               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                                 <div>
-                                  <label className="mb-1 block text-sm color-gray">Quantidade</label>
+                                  <label className="mb-1 block text-sm color-gray">
+                                    Quantidade
+                                  </label>
                                   <input
                                     type="number"
                                     min="1"
                                     className="input w-full rounded-xl bg-translucid p-3 text-sm"
                                     value={item.qty}
                                     onChange={(e) => {
-                                      const updated = [...selectedOrder.items_list];
-                                      updated[i] = { ...updated[i], qty: Number(e.target.value) || 0 };
-                                      setSelectedOrder({ ...selectedOrder, items_list: updated });
+                                      const updated = [
+                                        ...selectedOrder.items_list,
+                                      ];
+                                      updated[i] = {
+                                        ...updated[i],
+                                        qty: Number(e.target.value) || 0,
+                                      };
+                                      setSelectedOrder({
+                                        ...selectedOrder,
+                                        items_list: updated,
+                                      });
                                     }}
                                   />
                                 </div>
 
                                 <div>
-                                  <label className="mb-1 block text-sm color-gray">Preço unidade</label>
+                                  <label className="mb-1 block text-sm color-gray">
+                                    Preço unidade
+                                  </label>
                                   <input
                                     type="number"
                                     step="0.01"
@@ -1154,30 +1369,54 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
                                     value={item.price}
                                     onChange={(e) => {
                                       const value = e.target.value;
-                                      const updated = [...selectedOrder.items_list];
-                                      updated[i] = { ...updated[i], price: value === "" ? null : Number(value) };
-                                      setSelectedOrder({ ...selectedOrder, items_list: updated });
+                                      const updated = [
+                                        ...selectedOrder.items_list,
+                                      ];
+                                      updated[i] = {
+                                        ...updated[i],
+                                        price:
+                                          value === "" ? null : Number(value),
+                                      };
+                                      setSelectedOrder({
+                                        ...selectedOrder,
+                                        items_list: updated,
+                                      });
                                     }}
                                   />
                                 </div>
 
                                 <div className="col-span-2 sm:col-span-1">
-                                  <label className="mb-1 block text-sm color-gray">Subtotal</label>
+                                  <label className="mb-1 block text-sm color-gray">
+                                    Subtotal
+                                  </label>
                                   <div className="rounded-xl border border-translucid px-3 py-3 text-sm font-medium">
-                                    {formatCurrency(itemSubtotal, menu?.currency)}
+                                    {formatCurrency(
+                                      itemSubtotal,
+                                      menu?.currency,
+                                    )}
                                   </div>
                                 </div>
                               </div>
 
                               <div className="mt-3">
-                                <label className="mb-1 block text-sm color-gray">Observações</label>
+                                <label className="mb-1 block text-sm color-gray">
+                                  Observações
+                                </label>
                                 <textarea
                                   className="input w-full rounded-xl bg-translucid p-3 text-sm"
                                   value={item.note || ""}
                                   onChange={(e) => {
-                                    const updated = [...selectedOrder.items_list];
-                                    updated[i] = { ...updated[i], note: e.target.value };
-                                    setSelectedOrder({ ...selectedOrder, items_list: updated });
+                                    const updated = [
+                                      ...selectedOrder.items_list,
+                                    ];
+                                    updated[i] = {
+                                      ...updated[i],
+                                      note: e.target.value,
+                                    };
+                                    setSelectedOrder({
+                                      ...selectedOrder,
+                                      items_list: updated,
+                                    });
                                   }}
                                   placeholder="Observações do item"
                                 />
@@ -1185,15 +1424,27 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
 
                               <div className="mt-4 rounded-xl">
                                 <div className="mb-3 flex items-center justify-between gap-3">
-                                  <span className="text-sm font-medium">Opções</span>
+                                  <span className="text-sm font-medium">
+                                    Opções
+                                  </span>
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      const updated = [...(selectedOrder.items_list || [])];
-                                      const additionals = updated[i].additionals ? [...updated[i].additionals] : [];
+                                      const updated = [
+                                        ...(selectedOrder.items_list || []),
+                                      ];
+                                      const additionals = updated[i].additionals
+                                        ? [...updated[i].additionals]
+                                        : [];
                                       additionals.push({ name: "", price: 0 });
-                                      updated[i] = { ...updated[i], additionals };
-                                      setSelectedOrder({ ...selectedOrder, items_list: updated });
+                                      updated[i] = {
+                                        ...updated[i],
+                                        additionals,
+                                      };
+                                      setSelectedOrder({
+                                        ...selectedOrder,
+                                        items_list: updated,
+                                      });
                                     }}
                                     className="cursor-pointer rounded-xl bg-blue-600 px-3 py-2 text-sm text-white transition hover:bg-blue-700"
                                   >
@@ -1202,7 +1453,9 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
                                 </div>
 
                                 {(item.additionals || []).length === 0 ? (
-                                  <p className="text-sm text-[var(--gray)]">Nenhuma opção adicionada.</p>
+                                  <p className="text-sm text-[var(--gray)]">
+                                    Nenhuma opção adicionada.
+                                  </p>
                                 ) : (
                                   <div className="space-y-2">
                                     {(item.additionals || []).map((add, ai) => (
@@ -1215,11 +1468,24 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
                                           className="input rounded-xl bg-translucid p-3 text-sm"
                                           value={add.name}
                                           onChange={(e) => {
-                                            const updated = [...selectedOrder.items_list];
-                                            const ad = updated[i].additionals ? [...updated[i].additionals] : [];
-                                            ad[ai] = { ...ad[ai], name: e.target.value };
-                                            updated[i] = { ...updated[i], additionals: ad };
-                                            setSelectedOrder({ ...selectedOrder, items_list: updated });
+                                            const updated = [
+                                              ...selectedOrder.items_list,
+                                            ];
+                                            const ad = updated[i].additionals
+                                              ? [...updated[i].additionals]
+                                              : [];
+                                            ad[ai] = {
+                                              ...ad[ai],
+                                              name: e.target.value,
+                                            };
+                                            updated[i] = {
+                                              ...updated[i],
+                                              additionals: ad,
+                                            };
+                                            setSelectedOrder({
+                                              ...selectedOrder,
+                                              items_list: updated,
+                                            });
                                           }}
                                           placeholder="Nome da opção"
                                         />
@@ -1232,11 +1498,27 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
                                           value={add.price ?? ""}
                                           onChange={(e) => {
                                             const value = e.target.value;
-                                            const updated = [...selectedOrder.items_list];
-                                            const ad = updated[i].additionals ? [...updated[i].additionals] : [];
-                                            ad[ai] = { ...ad[ai], price: value === "" ? null : Number(value) };
-                                            updated[i] = { ...updated[i], additionals: ad };
-                                            setSelectedOrder({ ...selectedOrder, items_list: updated });
+                                            const updated = [
+                                              ...selectedOrder.items_list,
+                                            ];
+                                            const ad = updated[i].additionals
+                                              ? [...updated[i].additionals]
+                                              : [];
+                                            ad[ai] = {
+                                              ...ad[ai],
+                                              price:
+                                                value === ""
+                                                  ? null
+                                                  : Number(value),
+                                            };
+                                            updated[i] = {
+                                              ...updated[i],
+                                              additionals: ad,
+                                            };
+                                            setSelectedOrder({
+                                              ...selectedOrder,
+                                              items_list: updated,
+                                            });
                                           }}
                                           placeholder="Preço"
                                         />
@@ -1244,16 +1526,31 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
                                         <button
                                           type="button"
                                           onClick={async () => {
-                                            const ok = await confirm("Quer mesmo remover esta opção?");
+                                            const ok = await confirm(
+                                              "Quer mesmo remover esta opção?",
+                                            );
                                             if (!ok) return;
 
-                                            const updated = [...selectedOrder.items_list];
-                                            const ad = updated[i].additionals ? [...updated[i].additionals] : [];
+                                            const updated = [
+                                              ...selectedOrder.items_list,
+                                            ];
+                                            const ad = updated[i].additionals
+                                              ? [...updated[i].additionals]
+                                              : [];
                                             ad.splice(ai, 1);
-                                            updated[i] = { ...updated[i], additionals: ad };
-                                            setSelectedOrder({ ...selectedOrder, items_list: updated });
+                                            updated[i] = {
+                                              ...updated[i],
+                                              additionals: ad,
+                                            };
+                                            setSelectedOrder({
+                                              ...selectedOrder,
+                                              items_list: updated,
+                                            });
 
-                                            customAlert("Opção removida do item", "success");
+                                            customAlert(
+                                              "Opção removida do item",
+                                              "success",
+                                            );
                                           }}
                                           className="flex w-full h-full items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/40 text-sm font-semibold transition hover:opacity-90 cursor-pointer"
                                         >
@@ -1279,8 +1576,13 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
                       ...(selectedOrder.items_list || []),
                       { name: "", qty: 1, price: 0, note: "", additionals: [] },
                     ];
-                    setSelectedOrder({ ...selectedOrder, items_list: updatedItems });
-                    setOpenItemIndexes((prev) => new Set(prev).add(updatedItems.length - 1));
+                    setSelectedOrder({
+                      ...selectedOrder,
+                      items_list: updatedItems,
+                    });
+                    setOpenItemIndexes((prev) =>
+                      new Set(prev).add(updatedItems.length - 1),
+                    );
                   }}
                   className="mt-4 cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-white transition hover:bg-blue-700"
                 >
@@ -1291,9 +1593,14 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
               <div className="sticky bottom-0 rounded-2xl border border-translucid bg-low-gray/95 p-4 backdrop-blur-xl">
                 <div className="mb-3 flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-xs uppercase tracking-wide color-gray">Total do pedido</p>
+                    <p className="text-xs uppercase tracking-wide color-gray">
+                      Total do pedido
+                    </p>
                     <p className="text-2xl font-bold">
-                      {formatCurrency(computeTotalWithDelivery(selectedOrder), menu?.currency)}
+                      {formatCurrency(
+                        computeTotalWithDelivery(selectedOrder),
+                        menu?.currency,
+                      )}
                     </p>
                   </div>
                 </div>
@@ -1323,10 +1630,16 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
       ) : null}
 
       {printModalOpen && selectedOrder ? (
-        <GenericModal title="Imprimir Pedido" onClose={() => setPrintModalOpen(false)} size="sm">
+        <GenericModal
+          title="Imprimir Pedido"
+          onClose={() => setPrintModalOpen(false)}
+          size="sm"
+        >
           <div className="space-y-4">
             <div>
-              <label className="mb-2 block text-sm font-medium">Tipo da impressão</label>
+              <label className="mb-2 block text-sm font-medium">
+                Tipo da impressão
+              </label>
 
               <select
                 value={printMode}
@@ -1351,8 +1664,9 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
                   <p className="mb-1 font-medium">Pedido completo</p>
 
                   <p className="color-gray">
-                    Via administrativa para conferência e entrega. Exibe todas as informações do pedido, incluindo cliente,
-                    pagamento, itens e valores.
+                    Via administrativa para conferência e entrega. Exibe todas
+                    as informações do pedido, incluindo cliente, pagamento,
+                    itens e valores.
                   </p>
                 </>
               )}
@@ -1362,8 +1676,8 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
                   <p className="mb-1 font-medium">Via da cozinha</p>
 
                   <p className="color-gray">
-                    Utilizada para preparo. Exibe apenas os itens solicitados, opções e observações, sem dados do cliente ou
-                    valores.
+                    Utilizada para preparo. Exibe apenas os itens solicitados,
+                    opções e observações, sem dados do cliente ou valores.
                   </p>
                 </>
               )}
@@ -1373,15 +1687,18 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
                   <p className="mb-1 font-medium">Comanda de balcão</p>
 
                   <p className="color-gray">
-                    Utilizada para identificação e retirada do pedido. Exibe número do pedido, cliente, itens e valor total,
-                    ocultando dados de contato e pagamento.
+                    Utilizada para identificação e retirada do pedido. Exibe
+                    número do pedido, cliente, itens e valor total, ocultando
+                    dados de contato e pagamento.
                   </p>
                 </>
               )}
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium">Formato do papel</label>
+              <label className="mb-2 block text-sm font-medium">
+                Formato do papel
+              </label>
 
               <select
                 value={paperSize}
@@ -1408,7 +1725,10 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
                     handlePrint();
                     setPrintModalOpen(false);
                   } else {
-                    customAlert("Recurso disponível apenas para o plano Pro", "error");
+                    customAlert(
+                      "Recurso disponível apenas para o plano Pro",
+                      "error",
+                    );
                   }
                 }}
                 className="w-full cursor-pointer rounded-xl bg-green-600 py-2 text-white transition hover:bg-green-700"
@@ -1444,7 +1764,9 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
                 <strong>Pedido:</strong> #{selectedOrder?.id?.slice(0, 6)}
               </p>
 
-              <p>{new Date(selectedOrder?.created_at).toLocaleString("pt-BR")}</p>
+              <p>
+                {new Date(selectedOrder?.created_at).toLocaleString("pt-BR")}
+              </p>
 
               <hr />
 
@@ -1469,11 +1791,13 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
               )}
 
               <p>
-                <strong>Pagamento:</strong> {paymentLabels[selectedOrder?.payment_method]}
+                <strong>Pagamento:</strong>{" "}
+                {paymentLabels[selectedOrder?.payment_method]}
               </p>
 
               <p>
-                <strong>Serviço:</strong> {serviceLabels[selectedOrder?.service]}
+                <strong>Serviço:</strong>{" "}
+                {serviceLabels[selectedOrder?.service]}
               </p>
 
               <hr />
@@ -1502,23 +1826,35 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
 
               <p>
                 <strong>Itens:</strong>{" "}
-                {(selectedOrder?.items_list || []).reduce((acc, item) => acc + (Number(item.qty) || 0), 0)}
+                {(selectedOrder?.items_list || []).reduce(
+                  (acc, item) => acc + (Number(item.qty) || 0),
+                  0,
+                )}
               </p>
 
               <p>
-                <strong>Subtotal:</strong> {formatCurrency(computeSubtotal(selectedOrder), menu?.currency)}
+                <strong>Subtotal:</strong>{" "}
+                {formatCurrency(computeSubtotal(selectedOrder), menu?.currency)}
               </p>
 
               {selectedOrder?.service === "delivery" && (
                 <p>
-                  <strong>Entrega:</strong> {formatCurrency(computeDeliveryFee(selectedOrder), menu?.currency)}
+                  <strong>Entrega:</strong>{" "}
+                  {formatCurrency(
+                    computeDeliveryFee(selectedOrder),
+                    menu?.currency,
+                  )}
                 </p>
               )}
 
               <hr />
 
               <p style={{ fontSize: "18px", fontWeight: "bold" }}>
-                TOTAL: {formatCurrency(computeTotalWithDelivery(selectedOrder), menu?.currency)}
+                TOTAL:{" "}
+                {formatCurrency(
+                  computeTotalWithDelivery(selectedOrder),
+                  menu?.currency,
+                )}
               </p>
             </>
           )}
@@ -1531,10 +1867,14 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
                 <strong>Pedido:</strong> #{selectedOrder?.id?.slice(0, 6)}
               </p>
 
-              <p>{new Date(selectedOrder?.created_at).toLocaleString("pt-BR")}</p>
+              <p>
+                {new Date(selectedOrder?.created_at).toLocaleString("pt-BR")}
+              </p>
 
               <p>
-                <strong>{serviceLabels[selectedOrder?.service]?.toUpperCase()}</strong>
+                <strong>
+                  {serviceLabels[selectedOrder?.service]?.toUpperCase()}
+                </strong>
               </p>
 
               {selectedOrder?.costumer_name && (
@@ -1561,7 +1901,11 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
                     <div key={i}>+ {add.name}</div>
                   ))}
 
-                  {item.note && <div style={{ fontWeight: "bold" }}>OBS: {item.note.toUpperCase()}</div>}
+                  {item.note && (
+                    <div style={{ fontWeight: "bold" }}>
+                      OBS: {item.note.toUpperCase()}
+                    </div>
+                  )}
 
                   <hr />
                 </div>
@@ -1577,7 +1921,9 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
                 <strong>Nº:</strong> {selectedOrder?.id?.slice(0, 6)}
               </p>
 
-              <p>{new Date(selectedOrder?.created_at).toLocaleString("pt-BR")}</p>
+              <p>
+                {new Date(selectedOrder?.created_at).toLocaleString("pt-BR")}
+              </p>
 
               {selectedOrder?.costumer_name && (
                 <p>
@@ -1611,11 +1957,18 @@ const Orders = ({ setSelectedTab, reloadTrigger, setOrderQuantityChangeTrigger }
 
               <p>
                 <strong>Itens:</strong>{" "}
-                {(selectedOrder?.items_list || []).reduce((acc, item) => acc + (Number(item.qty) || 0), 0)}
+                {(selectedOrder?.items_list || []).reduce(
+                  (acc, item) => acc + (Number(item.qty) || 0),
+                  0,
+                )}
               </p>
 
               <p style={{ fontSize: "18px", fontWeight: "bold" }}>
-                TOTAL: {formatCurrency(computeTotalWithDelivery(selectedOrder), menu?.currency)}
+                TOTAL:{" "}
+                {formatCurrency(
+                  computeTotalWithDelivery(selectedOrder),
+                  menu?.currency,
+                )}
               </p>
             </>
           )}
