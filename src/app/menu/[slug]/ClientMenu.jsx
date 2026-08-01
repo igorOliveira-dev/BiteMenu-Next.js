@@ -179,7 +179,8 @@ function describeCombos(combos, currency) {
     const sorted = [...list].sort((a, b) => Number(a.trigger_value) - Number(b.trigger_value));
 
     const parts = sorted.map((c) => {
-      const trigger = type === "quantity" ? `${c.trigger_value}un+ ` : ` ${formatCurrency(c.trigger_value, currency)}+ `;
+      const trigger =
+        type === "quantity" ? `${c.trigger_value}un+ ` : ` ${formatCurrency(c.trigger_value, currency)}+ `;
       const discount =
         c.discount_type === "percentage"
           ? ` ${c.discount_value}% OFF`
@@ -383,7 +384,9 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
 
   const totalPrice = useMemo(() => {
     if (!selectedItem) return 0;
-    const base = Number(selectedItem.promo_price && canShowPromoPrice ? selectedItem.promo_price : selectedItem.price || 0);
+    const base = Number(
+      selectedItem.promo_price && canShowPromoPrice ? selectedItem.promo_price : selectedItem.price || 0,
+    );
 
     const groups = selectedItem.option_groups || [];
     const optionsTotal = groups.reduce((acc, g) => {
@@ -838,7 +841,10 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
                   <div className="flex items-center gap-3 flex-wrap pt-6">
                     <strong style={{ color: foregroundToUse }}>{cat.name}</strong>
                     {categoryCombos[cat.id]?.length > 0 && (
-                      <span className="text-xs font-semibold flex flex-wrap gap-x-2" style={{ color: menu.details_color }}>
+                      <span
+                        className="text-xs font-semibold flex flex-wrap gap-x-2"
+                        style={{ color: menu.details_color }}
+                      >
                         {describeCombos(categoryCombos[cat.id], menu?.currency).map((line, idx) => (
                           <span key={idx}>{line}</span>
                         ))}
@@ -856,14 +862,16 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
                         onClick={() => handleItemClick(it)}
                       >
                         <div className="flex gap-2">
-                          {isSafeImageUrl(it.image_url) && (
+                          {isSafeImageUrl(it.thumb_url || it.image_url) && (
                             <div
                               className="w-[72px] h-[72px] shrink-0 overflow-hidden rounded-lg"
                               onClick={() => handleItemClick(it)}
                             >
                               <Image
                                 unoptimized
-                                src={supabaseImg(it.image_url, { width: 120, height: 120, quality: 80 })}
+                                src={
+                                  it.thumb_url || supabaseImg(it.image_url, { width: 120, height: 120, quality: 80 })
+                                }
                                 alt={it.name}
                                 width={72}
                                 height={72}
@@ -885,7 +893,10 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
                             </div>
 
                             {itemCombos[it.id]?.length > 0 && (
-                              <div className="text-xs font-semibold mt-1 space-y-0.5" style={{ color: menu.details_color }}>
+                              <div
+                                className="text-xs font-semibold mt-1 space-y-0.5"
+                                style={{ color: menu.details_color }}
+                              >
                                 {describeCombos(itemCombos[it.id], menu?.currency).map((line, idx) => (
                                   <div key={idx}>{line}</div>
                                 ))}
@@ -929,7 +940,13 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
       {menu.orders === "whatsapp" || menu.orders === "site_whatsapp" ? (
         <div
           id="cart-button-wrapper"
-          style={{ position: "fixed", right: "20px", bottom: "20px", zIndex: 40, transition: "bottom 0.2s ease-in-out" }}
+          style={{
+            position: "fixed",
+            right: "20px",
+            bottom: "20px",
+            zIndex: 40,
+            transition: "bottom 0.2s ease-in-out",
+          }}
         >
           <button
             onClick={openCart}
@@ -1077,7 +1094,9 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
               </div>
             ) : null}
 
-            {menu.orders === "none" && Array.isArray(selectedItem.option_groups) && selectedItem.option_groups.length > 0 ? (
+            {menu.orders === "none" &&
+            Array.isArray(selectedItem.option_groups) &&
+            selectedItem.option_groups.length > 0 ? (
               <div className="space-y-3">
                 {selectedItem.option_groups.map((g) => (
                   <div key={g.id}>

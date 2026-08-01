@@ -8,9 +8,44 @@ type ToWebpTargetOptions = {
   force?: boolean;
 };
 
-async function canvasToWebpBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
+async function canvasToWebpBlob(
+  canvas: HTMLCanvasElement,
+  quality: number,
+): Promise<Blob> {
   return await new Promise((resolve, reject) => {
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Falha ao gerar WebP"))), "image/webp", quality);
+    canvas.toBlob(
+      (b) => (b ? resolve(b) : reject(new Error("Falha ao gerar WebP"))),
+      "image/webp",
+      quality,
+    );
+  });
+}
+
+export async function fileToThumbnailWebp(
+  file: File,
+  { size = 216, quality = 0.82 }: { size?: number; quality?: number } = {},
+): Promise<File> {
+  const bitmap = await createImageBitmap(file);
+
+  // recorta um quadrado central (cover) antes de redimensionar
+  const side = Math.min(bitmap.width, bitmap.height);
+  const sx = (bitmap.width - side) / 2;
+  const sy = (bitmap.height - side) / 2;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas 2D não disponível");
+
+  ctx.drawImage(bitmap, sx, sy, side, side, 0, 0, size, size);
+
+  const blob = await canvasToWebpBlob(canvas, quality);
+
+  return new File([blob], "thumb.webp", {
+    type: "image/webp",
+    lastModified: Date.now(),
   });
 }
 
@@ -26,7 +61,8 @@ export async function fileToWebp(
     force = true,
   }: ToWebpTargetOptions = {},
 ): Promise<File> {
-  const isWebp = file.type === "image/webp" || file.name.toLowerCase().endsWith(".webp");
+  const isWebp =
+    file.type === "image/webp" || file.name.toLowerCase().endsWith(".webp");
   if (isWebp && !force && file.size <= maxBytes) return file;
 
   const bitmap = await createImageBitmap(file);
@@ -59,7 +95,10 @@ export async function fileToWebp(
 
     if (blob.size <= maxBytes) {
       const baseName = file.name.replace(/\.[^.]+$/, "");
-      return new File([blob], `${baseName}.webp`, { type: "image/webp", lastModified: Date.now() });
+      return new File([blob], `${baseName}.webp`, {
+        type: "image/webp",
+        lastModified: Date.now(),
+      });
     }
 
     // não coube: estratégia

@@ -49,6 +49,7 @@ const getMenuBySlug = cache(async (slug) => {
           price,
           promo_price,
           image_url,
+          thumb_url,
           additionals,
           starred,
           mandatory_additional,

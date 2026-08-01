@@ -28,7 +28,7 @@ import { useAlert } from "@/providers/AlertProvider";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import { uploadItemImage } from "@/lib/uploadImage";
 import UpdatePlanModal from "../UpdatePlanModal";
-import { fileToWebp } from "@/app/utils/imageToWebp";
+import { fileToThumbnailWebp, fileToWebp } from "@/app/utils/imageToWebp";
 import { trackAction } from "@/utils/userActions";
 import { FaEllipsisVertical } from "react-icons/fa6";
 import { createPortal } from "react-dom";
@@ -416,7 +416,7 @@ function SortableMenuItem({
                 style={{ touchAction: "none", flexShrink: 0 }}
               >
                 <img
-                  src={supabaseImg(item.image_url, { width: 120, height: 120, quality: 75 })}
+                  src={item.thumb_url || supabaseImg(item.image_url, { width: 120, height: 120, quality: 75 })}
                   alt={item.name}
                   loading="lazy"
                   decoding="async"
@@ -585,7 +585,8 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
   const getItemName = (itemId) => allItemsFlat.find((it) => it.id === itemId)?.name ?? "Item removido";
 
-  const getCategoryName = (categoryId) => (categories || []).find((c) => c.id === categoryId)?.name ?? "Categoria removida";
+  const getCategoryName = (categoryId) =>
+    (categories || []).find((c) => c.id === categoryId)?.name ?? "Categoria removida";
 
   // fetch categories/items
   useEffect(() => {
@@ -611,6 +612,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
             description,
             additionals,
             image_url,
+            thumb_url,
             position,
             visible,
             starred,
@@ -1020,7 +1022,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   // createItem atualizado para suportar image_url
   const createItem = async (
     categoryId,
-    { name = "Novo item", price = "", promo_price = null, description = "", image_url = "" } = {},
+    { name = "Novo item", price = "", promo_price = null, description = "", image_url = "", thumb_url = "" } = {},
   ) => {
     const safeCategories = Array.isArray(categories) ? categories : [];
     const totalItems = safeCategories.reduce((sum, c) => sum + (c.menu_items?.length || 0), 0);
@@ -1050,6 +1052,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       promo_price,
       description,
       image_url,
+      thumb_url,
       position: newPos,
       visible: true,
       starred: false,
@@ -1071,6 +1074,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
           promo_price,
           description,
           image_url,
+          thumb_url,
           position: newPos,
         })
         .select()
@@ -1170,6 +1174,13 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
           await supabase.storage.from("product-images").remove([path]);
         }
       }
+      if (itemToDelete?.thumb_url) {
+        const pathStart = itemToDelete.thumb_url.indexOf("/object/public/product-images/");
+        if (pathStart !== -1) {
+          const path = itemToDelete.thumb_url.substring(pathStart + "/object/public/product-images/".length);
+          await supabase.storage.from("product-images").remove([path]);
+        }
+      }
 
       const { error } = await supabase.from("menu_items").delete().eq("id", itemId);
       if (error) throw error;
@@ -1205,6 +1216,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       promo_price: item.promo_price,
       description: item.description,
       image_url: item.image_url,
+      thumb_url: item.thumb_url,
     });
 
     if (!newItem?.id) return null;
@@ -1323,7 +1335,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     // Atualização otimista
     setCategories((prev = []) =>
       prev.map((c) =>
-        c.id === categoryId ? { ...c, menu_items: (c.menu_items || []).map((it) => ({ ...it, visible: makeVisible })) } : c,
+        c.id === categoryId
+          ? { ...c, menu_items: (c.menu_items || []).map((it) => ({ ...it, visible: makeVisible })) }
+          : c,
       ),
     );
 
@@ -1526,7 +1540,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         promo_price: item?.promo_price ?? "",
         description: item?.description ?? "",
         image_url: item?.image_url ?? "",
-        // option_groups substitui additionals/mandatory_additional/additionals_limit
+        thumb_url: item?.thumb_url ?? "",
         option_groups: optionGroups,
       },
     });
@@ -1676,7 +1690,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         (cat.menu_items || []).forEach((it, itemIdx) => {
           if (typeof it.id === "string" && it.id.startsWith("tmp-")) return;
           // atualiza position e category_id (caso o item tenha sido movido entre categorias no futuro)
-          itemUpdates.push(supabase.from("menu_items").update({ position: itemIdx, category_id: cat.id }).eq("id", it.id));
+          itemUpdates.push(
+            supabase.from("menu_items").update({ position: itemIdx, category_id: cat.id }).eq("id", it.id),
+          );
         });
       });
 
@@ -1804,6 +1820,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
           promo_price: data.promo_price,
           description: data.description,
           image_url: data.image_url ?? "",
+          thumb_url: data.thumb_url ?? "",
         });
         if (newItem?.id && data.option_groups?.length > 0) {
           await saveOptionGroups(newItem.id, data.option_groups);
@@ -1815,6 +1832,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
           promo_price: data.promo_price,
           description: data.description,
           image_url: data.image_url ?? "",
+          thumb_url: data.thumb_url ?? "",
         });
         await saveOptionGroups(itemId, data.option_groups ?? []);
       }
@@ -2444,7 +2462,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
             style={{ backgroundColor: translucidToUse }}
           >
             <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 min-w-0 cursor-pointer" onClick={() => toggleCategoryCollapse(cat.id)}>
+              <div
+                className="flex items-center gap-2 min-w-0 cursor-pointer"
+                onClick={() => toggleCategoryCollapse(cat.id)}
+              >
                 <button
                   type="button"
                   className="cursor-pointer p-1 flex-shrink-0"
@@ -2553,7 +2574,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                   collisionDetection={closestCenter}
                   onDragEnd={(event) => handleItemsDragEnd(cat.id, event)}
                 >
-                  <SortableContext items={(cat.menu_items || []).map((it) => it.id)} strategy={verticalListSortingStrategy}>
+                  <SortableContext
+                    items={(cat.menu_items || []).map((it) => it.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
                     {(cat.menu_items || []).length === 0 ? (
                       <div
                         className="mt-3 flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center"
@@ -2694,9 +2718,20 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                             minQuality: 0.75,
                           });
 
-                          const url = await uploadItemImage(webpFile, menu?.owner_id, modalPayload.data.image_url);
+                          const thumbFile = await fileToThumbnailWebp(webpFile, { size: 216, quality: 0.82 });
 
-                          setModalPayload((p) => ({ ...p, data: { ...p.data, image_url: url } }));
+                          const { url, thumbUrl } = await uploadItemImage(
+                            webpFile,
+                            thumbFile,
+                            menu?.owner_id,
+                            modalPayload.data.image_url,
+                            modalPayload.data.thumb_url,
+                          );
+
+                          setModalPayload((p) => ({
+                            ...p,
+                            data: { ...p.data, image_url: url, thumb_url: thumbUrl },
+                          }));
                         } catch (err) {
                           console.error("upload image error:", err);
                           const msg = String(err?.message || "");
@@ -2715,7 +2750,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
                   {modalPayload.data.image_url && (
                     <button
-                      onClick={() => setModalPayload((p) => ({ ...p, data: { ...p.data, image_url: "" } }))}
+                      onClick={() =>
+                        setModalPayload((p) => ({ ...p, data: { ...p.data, image_url: "", thumb_url: "" } }))
+                      }
                       className="mt-1 text-sm text-red-500 hover:underline"
                       type="button"
                     >
@@ -2743,7 +2780,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                     <label className="block mb-2 w-[75px] xs:w-[100px]">
                       <div className="text-sm color-gray">Preço:</div>
                       <div className="flex items-center mb-2">
-                        <span className="absolute text-sm p-1 xs:text-base xs:p-2">{getCurrencySymbol(menu?.currency)}</span>
+                        <span className="absolute text-sm p-1 xs:text-base xs:p-2">
+                          {getCurrencySymbol(menu?.currency)}
+                        </span>
                         <input
                           type="text"
                           value={modalPayload.data.price}
@@ -2764,7 +2803,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                     <label className="block mb-2 w-[75px] xs:w-[100px]">
                       <div className="text-sm color-gray">Promoção:</div>
                       <div className="flex items-center mb-2">
-                        <span className="absolute text-sm p-1 xs:text-base xs:p-2">{getCurrencySymbol(menu?.currency)}</span>
+                        <span className="absolute text-sm p-1 xs:text-base xs:p-2">
+                          {getCurrencySymbol(menu?.currency)}
+                        </span>
                         <input
                           type="text"
                           value={canShowPromoPrice ? (modalPayload.data.promo_price ?? "") : ""}
@@ -2992,7 +3033,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         <GenericModal wfull maxWidth={"500px"} title="Grupos de opções" onClose={closeOptionGroupsModal}>
           <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-1">
             {(modalPayload.data.option_groups || []).length === 0 && (
-              <p className="text-sm color-gray text-center py-4">Nenhum grupo criado. Clique em "+ Grupo" para começar.</p>
+              <p className="text-sm color-gray text-center py-4">
+                Nenhum grupo criado. Clique em "+ Grupo" para começar.
+              </p>
             )}
 
             {(modalPayload.data.option_groups || []).map((group, gi) => (
@@ -3099,7 +3142,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                               onClick: () => toggleChoiceHiddenNow(gi, ci),
                             },
                             canSyncAcrossMenu && {
-                              label: choice.hidden ? "Exibir opção em todos os itens" : "Ocultar opção em todos os itens",
+                              label: choice.hidden
+                                ? "Exibir opção em todos os itens"
+                                : "Ocultar opção em todos os itens",
                               icon: choice.hidden ? <FaEye size={12} /> : <FaEyeSlash size={12} />,
                               onClick: () => syncChoiceVisibilityAcrossMenu(group.name, choice.name, !choice.hidden),
                             },
@@ -3198,7 +3243,13 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       )}
 
       {modalOpen && additionalsCfgOpen && modalPayload.type === "item" && cfgGroupIdx !== null && (
-        <GenericModal backdropDontClose wfull maxWidth={"420px"} title="Configurar grupo" onClose={closeAdditionalsCfgModal}>
+        <GenericModal
+          backdropDontClose
+          wfull
+          maxWidth={"420px"}
+          title="Configurar grupo"
+          onClose={closeAdditionalsCfgModal}
+        >
           <div className="space-y-4">
             <label className="block">
               <div className="text-sm color-gray mb-1">Mínimo de escolhas</div>
@@ -3576,7 +3627,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                 type="text"
                 value={comboDraft.discount_value}
                 onChange={(e) =>
-                  setComboDraft((d) => ({ ...d, discount_value: e.target.value.replace(/[^0-9.,]/g, "").replace(",", ".") }))
+                  setComboDraft((d) => ({
+                    ...d,
+                    discount_value: e.target.value.replace(/[^0-9.,]/g, "").replace(",", "."),
+                  }))
                 }
                 className="w-full p-2 rounded border border-translucid bg-translucid"
                 placeholder={comboDraft.discount_type === "percentage" ? "15" : "20.00"}
