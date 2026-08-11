@@ -55,7 +55,9 @@ const Menu = (props) => {
   const setAddress = usingExternal ? (v) => externalSetState((p) => ({ ...p, address: v })) : propSetAddress;
 
   const description = usingExternal ? externalState.description : propDescription;
-  const setDescription = usingExternal ? (v) => externalSetState((p) => ({ ...p, description: v })) : propSetDescription;
+  const setDescription = usingExternal
+    ? (v) => externalSetState((p) => ({ ...p, description: v }))
+    : propSetDescription;
 
   const backgroundColor = usingExternal ? externalState.backgroundColor : propBg;
   const setBackgroundColor = usingExternal ? (v) => externalSetState((p) => ({ ...p, backgroundColor: v })) : propSetBg;
@@ -64,7 +66,9 @@ const Menu = (props) => {
   const setTitleColor = usingExternal ? (v) => externalSetState((p) => ({ ...p, titleColor: v })) : propSetTitleColor;
 
   const detailsColor = usingExternal ? externalState.detailsColor : propDetailsColor;
-  const setDetailsColor = usingExternal ? (v) => externalSetState((p) => ({ ...p, detailsColor: v })) : propSetDetailsColor;
+  const setDetailsColor = usingExternal
+    ? (v) => externalSetState((p) => ({ ...p, detailsColor: v }))
+    : propSetDetailsColor;
 
   const { menu, loading } = useMenu();
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
@@ -335,9 +339,12 @@ const Menu = (props) => {
         force: true,
       });
 
-      const publicUrl = await uploadItemImage(webp, userId, oldUrl);
+      const result = await uploadItemImage(webp, null, userId, oldUrl, null);
 
-      externalSetState((p) => ({ ...p, bannerFile: publicUrl }));
+      externalSetState((p) => ({
+        ...p,
+        bannerFile: result.url,
+      }));
       closeAllModals();
     } catch (err) {
       console.error(err);
@@ -371,9 +378,12 @@ const Menu = (props) => {
         force: true,
       });
 
-      const publicUrl = await uploadItemImage(webp, userId, oldUrl);
+      const result = await uploadItemImage(webp, null, userId, oldUrl, null);
 
-      externalSetState((p) => ({ ...p, logoFile: publicUrl }));
+      externalSetState((p) => ({
+        ...p,
+        logoFile: result.url,
+      }));
       closeAllModals();
     } catch (err) {
       console.error(err);
@@ -471,7 +481,11 @@ const Menu = (props) => {
             {/* Banner */}
             <div className="relative w-full max-w-full h-[18dvh] sm:h-[25dvh]">
               {bannerPreview ? (
-                <img alt="Preview do banner" src={bannerPreview} className="object-cover w-full h-full cursor-pointer" />
+                <img
+                  alt="Preview do banner"
+                  src={bannerPreview}
+                  className="object-cover w-full h-full cursor-pointer"
+                />
               ) : (
                 <div
                   className="bg-translucid relative w-full h-full rounded-lg flex items-center justify-center"
@@ -670,7 +684,9 @@ const Menu = (props) => {
 
       {watermarkModalOpen && (
         <GenericModal title="Remover marca d'água" onClose={closeAllModals} wfull size="md">
-          <p className="text-[var(--gray)] mb-8">Utilize qualquer plano pago para remover a marca d'água do seu menu!</p>
+          <p className="text-[var(--gray)] mb-8">
+            Utilize qualquer plano pago para remover a marca d'água do seu menu!
+          </p>
           <a href="/dashboard/pricing" className="block text-center cursor-pointer cta-button glow-red w-full">
             Ver planos
           </a>
