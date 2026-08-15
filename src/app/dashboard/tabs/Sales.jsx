@@ -79,7 +79,8 @@ const Sales = ({ setSelectedTab }) => {
   const customAlert = useAlert();
   const confirm = useConfirm();
 
-  const [refreshSummary, setRefreshSummary] = useState(0);
+  const [salesSummary, setSalesSummary] = useState({ count: 0, total: 0, average: 0 });
+  const [salesSummaryLoading, setSalesSummaryLoading] = useState(true);
 
   const [monthData, setMonthData] = useState({});
   const [filters, setFilters] = useState({});
@@ -322,6 +323,7 @@ const Sales = ({ setSelectedTab }) => {
 
       if (error) {
         console.error(error);
+        setSalesSummaryLoading(false);
         return customAlert("Erro ao carregar meses de vendas", "error");
       }
 
@@ -349,6 +351,14 @@ const Sales = ({ setSelectedTab }) => {
 
       const monthsArray = Object.values(monthsMap);
       setMonthsList(monthsArray);
+
+      const summaryTotal = data.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
+      setSalesSummary({
+        count: data.length,
+        total: summaryTotal,
+        average: data.length > 0 ? summaryTotal / data.length : 0,
+      });
+      setSalesSummaryLoading(false);
     };
 
     fetchMonths();
@@ -435,6 +445,7 @@ const Sales = ({ setSelectedTab }) => {
     setExpandedMonths({});
     setMonthsList([]);
     setMonthPager({});
+    setSalesSummaryLoading(true);
 
     // Opcional: refazer a lista de meses
     if (menu?.id) {
@@ -445,8 +456,10 @@ const Sales = ({ setSelectedTab }) => {
           .eq("menu_id", menu.id)
           .order("created_at", { ascending: false });
 
-        if (error)
+        if (error) {
+          setSalesSummaryLoading(false);
           return customAlert("Erro ao carregar meses de vendas", "error");
+        }
 
         const monthsMap = {};
         data.forEach((sale) => {
@@ -470,6 +483,14 @@ const Sales = ({ setSelectedTab }) => {
         });
 
         setMonthsList(Object.values(monthsMap));
+
+        const summaryTotal = data.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
+        setSalesSummary({
+          count: data.length,
+          total: summaryTotal,
+          average: data.length > 0 ? summaryTotal / data.length : 0,
+        });
+        setSalesSummaryLoading(false);
       };
 
       fetchMonths();
@@ -496,7 +517,6 @@ const Sales = ({ setSelectedTab }) => {
             className="cursor-pointer rounded-full p-2 opacity-80 transition hover:opacity-100"
             onClick={() => {
               resetSales();
-              setRefreshSummary((prev) => prev + 1);
             }}
             title="Atualizar vendas"
           >
@@ -507,7 +527,10 @@ const Sales = ({ setSelectedTab }) => {
         <h3 className="mb-2 text-base font-semibold">Dashboard de vendas</h3>
         <SalesSummary
           setSelectedTab={setSelectedTab}
-          refreshSignal={refreshSummary}
+          salesCount={salesSummary.count}
+          salesTotal={salesSummary.total}
+          averageTicket={salesSummary.average}
+          loadingSales={salesSummaryLoading}
         />
 
         <h3 className="mb-3 text-base font-semibold">Histórico de vendas</h3>

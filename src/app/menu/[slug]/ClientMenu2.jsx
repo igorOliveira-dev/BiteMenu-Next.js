@@ -11,6 +11,7 @@ import { useAlert } from "@/providers/AlertProvider";
 import MenuFooter from "./components/MenuFooter";
 import { supabaseImg } from "@/lib/imageUtils";
 import { supabase } from "@/lib/supabaseClient";
+import { getCombosByMenuId } from "@/lib/queries/combos";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import XButton from "@/components/XButton";
 import { useThemeColor } from "@/providers/ThemeColorProvider";
@@ -266,10 +267,7 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole, ownerStripeAc
   useEffect(() => {
     if (!menu?.id) return;
     let mounted = true;
-    supabase
-      .from("combos")
-      .select("*")
-      .eq("menu_id", menu.id)
+    getCombosByMenuId(supabase, menu.id)
       .then(({ data, error }) => {
         if (!mounted) return;
         if (error) {

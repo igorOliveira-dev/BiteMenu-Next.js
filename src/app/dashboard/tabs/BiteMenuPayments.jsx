@@ -3,6 +3,7 @@
 import useUser from "@/hooks/useUser";
 import useMenu from "@/hooks/useMenu";
 import { supabase } from "@/lib/supabaseClient";
+import { updateMenuById } from "@/lib/queries/menus";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
@@ -132,7 +133,7 @@ const BiteMenuPayments = () => {
   const toggleStripeExpress = async () => {
     const next = !useStripeExpress;
     setUseStripeExpress(next);
-    await supabase.from("menus").update({ use_stripe_express: next }).eq("id", menu.id);
+    await updateMenuById(supabase, menu.id, { use_stripe_express: next });
   };
 
   if (menuLoading) return <Loading />;

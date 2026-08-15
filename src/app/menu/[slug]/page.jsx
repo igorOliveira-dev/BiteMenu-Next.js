@@ -37,7 +37,6 @@ const getMenuBySlug = cache(async (slug) => {
       layout,
       currency,
       use_stripe_express,
-      stripe_payment_methods,
       categories (
         id,
         name,

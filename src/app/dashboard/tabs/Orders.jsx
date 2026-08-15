@@ -5,6 +5,7 @@ import useMenu from "@/hooks/useMenu";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { useAlert } from "@/providers/AlertProvider";
 import { supabase } from "@/lib/supabaseClient";
+import { updateMenuById } from "@/lib/queries/menus";
 import Loading from "@/components/Loading";
 import {
   FaCheck,
@@ -379,10 +380,7 @@ const Orders = ({
     setReceiveOrders(value);
     setEnabledOrders(value === "site" || value === "site_whatsapp");
 
-    const { error } = await supabase
-      .from("menus")
-      .update({ orders: value })
-      .eq("id", menu.id);
+    const { error } = await updateMenuById(supabase, menu.id, { orders: value });
 
     if (error)
       customAlert("Erro ao atualizar configuração de pedidos.", "error");
@@ -405,10 +403,7 @@ const Orders = ({
   const handleToggleDeliveryFeeOnSales = async (value) => {
     setDeliveryFeeOnSales(value);
 
-    const { error } = await supabase
-      .from("menus")
-      .update({ delivery_fee_on_sales: value })
-      .eq("id", menu.id);
+    const { error } = await updateMenuById(supabase, menu.id, { delivery_fee_on_sales: value });
 
     if (error) {
       customAlert(
@@ -424,12 +419,7 @@ const Orders = ({
   const handleToggleSoundNewOrder = async (value) => {
     setSoundNewOrder(value);
 
-    const { error } = await supabase
-      .from("menus")
-      .update({
-        sound_new_order: value,
-      })
-      .eq("id", menu.id);
+    const { error } = await updateMenuById(supabase, menu.id, { sound_new_order: value });
 
     if (error) {
       customAlert("Erro ao atualizar som de pedidos.", "error");

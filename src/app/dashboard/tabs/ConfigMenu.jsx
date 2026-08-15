@@ -26,6 +26,7 @@ import { useAlert } from "@/providers/AlertProvider";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import useUser from "@/hooks/useUser";
 import { supabase } from "@/lib/supabaseClient";
+import { updateMenuById } from "@/lib/queries/menus";
 import Return from "@/components/Return";
 
 const DEFAULT_HOURS = {
@@ -735,7 +736,7 @@ const ConfigMenu = (props) => {
   };
 
   const updateLayout = async (layout) => {
-    const { error } = await supabase.from("menus").update({ layout }).eq("id", menu.id);
+    const { error } = await updateMenuById(supabase, menu.id, { layout });
     if (error) {
       console.error(error);
     }

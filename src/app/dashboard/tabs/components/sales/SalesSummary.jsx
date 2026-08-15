@@ -6,25 +6,28 @@ import { formatCurrency } from "@/lib/formatCurrency";
 import { useAlert } from "@/providers/AlertProvider";
 import Loading from "@/components/Loading";
 import { supabase } from "@/lib/supabaseClient";
+import { getOwnerRole } from "@/lib/queries/profiles";
 import { FaBolt } from "react-icons/fa";
 import UpdatePlanModal from "../UpdatePlanModal";
 import { trackAction } from "@/utils/userActions";
 
-const SalesSummary = ({ setSelectedTab, refreshSignal }) => {
+const SalesSummary = ({
+  setSelectedTab,
+  salesCount,
+  salesTotal,
+  averageTicket,
+  loadingSales,
+}) => {
   const alert = useAlert();
   const { menu, loading } = useMenu();
   const [ownerRole, setOwnerRole] = useState(null);
-  const [salesCount, setSalesCount] = useState(0);
-  const [salesTotal, setSalesTotal] = useState(0);
-  const [loadingSales, setLoadingSales] = useState(true);
-  const [averageTicket, setAverageTicket] = useState(0);
   const [showUpdatePlanModal, setShowUpdatePlanModal] = useState(false);
 
   useEffect(() => {
     if (!menu?.owner_id) return;
 
     const fetchOwnerRole = async () => {
-      const { data, error } = await supabase.from("profiles").select("role").eq("id", menu.owner_id).single();
+      const { data, error } = await getOwnerRole(supabase, menu.owner_id);
 
       if (error) {
         console.error("Erro ao buscar role do dono:", error);
@@ -36,31 +39,6 @@ const SalesSummary = ({ setSelectedTab, refreshSignal }) => {
 
     fetchOwnerRole();
   }, [menu?.owner_id]);
-
-  const fetchSalesSummary = async () => {
-    if (!menu?.id) return;
-    setLoadingSales(true);
-
-    const { data, error } = await supabase.from("sales").select("total").eq("menu_id", menu.id);
-
-    if (error) {
-      console.error("Erro ao buscar vendas:", error);
-      setLoadingSales(false);
-      return;
-    }
-
-    const total = data.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
-
-    setSalesCount(data.length);
-    setSalesTotal(total);
-    setLoadingSales(false);
-    const avg = data.length > 0 ? total / data.length : 0;
-    setAverageTicket(avg);
-  };
-
-  useEffect(() => {
-    fetchSalesSummary();
-  }, [menu?.id, refreshSignal]);
 
   const upgradePlan = () => {
     window.location.href = "/dashboard/pricing";

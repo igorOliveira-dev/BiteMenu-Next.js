@@ -7,6 +7,7 @@ import { Chart as ChartJS, LineElement, PointElement, CategoryScale, LinearScale
 import useMenu from "@/hooks/useMenu";
 import { formatCurrency, getCurrencySymbol } from "@/lib/formatCurrency";
 import { supabase } from "@/lib/supabaseClient";
+import { getOwnerRole } from "@/lib/queries/profiles";
 import Loading from "@/components/Loading";
 import { useAlert } from "@/providers/AlertProvider";
 import SalesCharts from "./components/sales/SalesCharts";
@@ -206,7 +207,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
     if (!menu?.owner_id) return;
 
     const fetchOwnerRole = async () => {
-      const { data, error } = await supabase.from("profiles").select("role").eq("id", menu.owner_id).single();
+      const { data, error } = await getOwnerRole(supabase, menu.owner_id);
 
       if (error) return console.error("Erro ao buscar role:", error);
       setOwnerRole(data?.role);

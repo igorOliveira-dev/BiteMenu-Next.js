@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { hasMenu } from "@/lib/queries/menus";
 import Loading from "@/components/Loading";
 import useUser from "@/hooks/useUser";
 import Image from "next/image";
@@ -34,7 +35,7 @@ export default function DashboardLayoutClient({ children }) {
       }
 
       try {
-        const { data: menus } = await supabase.from("menus").select("id").eq("owner_id", user.id);
+        const { data: menus } = await hasMenu(supabase, user.id);
 
         if (!menus || menus.length === 0) {
           router.replace("/getstart");

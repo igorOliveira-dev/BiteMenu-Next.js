@@ -19,6 +19,7 @@ import useModalBackHandler from "@/hooks/useModalBackHandler";
 import { FaUtensils, FaShoppingBag, FaChartLine, FaUser, FaLifeRing, FaShieldAlt } from "react-icons/fa";
 import { trackAction } from "@/utils/userActions";
 import { supabase } from "@/lib/supabaseClient";
+import { countVisibleOrders } from "@/lib/queries/orders";
 import BiteMenuPayments from "./tabs/BiteMenuPayments";
 import useUser from "@/hooks/useUser";
 import { useSearchParams } from "next/navigation";
@@ -151,14 +152,7 @@ const Dashboard = ({
     if (!menu?.id) return;
 
     const checkOrders = async () => {
-      const { count, error } = await supabase
-        .from("orders")
-        .select("*", {
-          count: "exact",
-          head: true,
-        })
-        .eq("menu_id", menu.id)
-        .or("payment_method.neq.stripe,is_paid.eq.true");
+      const { count, error } = await countVisibleOrders(supabase, menu.id);
 
       if (error || typeof count !== "number") return;
 
@@ -322,47 +316,59 @@ const Dashboard = ({
             showChanges={showChanges}
           />
         </div>
-        <div className={selectedTab === "orders" ? "block" : "hidden"}>
-          <Orders reloadTrigger={reloadOrderTrigger} setOrderQuantityChangeTrigger={setOrderQuantityChangeTrigger} />
-        </div>
-        <div className={selectedTab === "sales" ? "block" : "hidden"}>
-          <Sales setSelectedTab={setSelectedTab} />
-        </div>
-        <div className={selectedTab === "salesDashboard" ? "block" : "hidden"}>
-          <SalesDashboard setSelectedTab={setSelectedTab} />
-        </div>
-        {(profile?.privileges ?? []).includes("stripe-express") && (
-          <div className={selectedTab === "biteMenuPayments" ? "block" : "hidden"}>
+        {selectedTab === "orders" && (
+          <div className="block">
+            <Orders reloadTrigger={reloadOrderTrigger} setOrderQuantityChangeTrigger={setOrderQuantityChangeTrigger} />
+          </div>
+        )}
+        {selectedTab === "sales" && (
+          <div className="block">
+            <Sales setSelectedTab={setSelectedTab} />
+          </div>
+        )}
+        {selectedTab === "salesDashboard" && (
+          <div className="block">
+            <SalesDashboard setSelectedTab={setSelectedTab} />
+          </div>
+        )}
+        {selectedTab === "biteMenuPayments" && (profile?.privileges ?? []).includes("stripe-express") && (
+          <div className="block">
             <BiteMenuPayments />
           </div>
         )}
-        <div className={selectedTab === "configMenu" ? "block" : "hidden"}>
-          <ConfigMenu
-            setSelectedTab={setSelectedTab}
-            title={title}
-            setTitle={setTitle}
-            description={description}
-            setDescription={setDescription}
-            address={address}
-            setAddress={setAddress}
-            backgroundColor={backgroundColor}
-            setBackgroundColor={setBackgroundColor}
-            titleColor={titleColor}
-            setTitleColor={setTitleColor}
-            detailsColor={detailsColor}
-            setDetailsColor={setDetailsColor}
-            changedFields={changedFields}
-            revertField={revertField}
-            saveAll={saveAll}
-            menuState={usingExternal ? externalMenuState : undefined}
-          />
-        </div>
-        <div className={selectedTab === "account" ? "block" : "hidden"}>
-          <Account setSelectedTab={setSelectedTab} />
-        </div>
-        <div className={selectedTab === "planDetails" ? "block" : "hidden"}>
-          <PlanDetails setSelectedTab={setSelectedTab} />
-        </div>
+        {selectedTab === "configMenu" && (
+          <div className="block">
+            <ConfigMenu
+              setSelectedTab={setSelectedTab}
+              title={title}
+              setTitle={setTitle}
+              description={description}
+              setDescription={setDescription}
+              address={address}
+              setAddress={setAddress}
+              backgroundColor={backgroundColor}
+              setBackgroundColor={setBackgroundColor}
+              titleColor={titleColor}
+              setTitleColor={setTitleColor}
+              detailsColor={detailsColor}
+              setDetailsColor={setDetailsColor}
+              changedFields={changedFields}
+              revertField={revertField}
+              saveAll={saveAll}
+              menuState={usingExternal ? externalMenuState : undefined}
+            />
+          </div>
+        )}
+        {selectedTab === "account" && (
+          <div className="block">
+            <Account setSelectedTab={setSelectedTab} />
+          </div>
+        )}
+        {selectedTab === "planDetails" && (
+          <div className="block">
+            <PlanDetails setSelectedTab={setSelectedTab} />
+          </div>
+        )}
       </main>
 
       {/* Modal central ao clicar no hamburger */}

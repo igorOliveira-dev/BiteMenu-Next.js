@@ -21,6 +21,7 @@ import Image from "next/image";
 import GenericModal from "@/components/GenericModal";
 import { useCartContext } from "@/contexts/CartContext";
 import { supabase } from "@/lib/supabaseClient";
+import { getOwnerRole } from "@/lib/queries/profiles";
 import useMenu from "@/hooks/useMenu";
 import { formatCurrency, getCurrencySymbol } from "@/lib/formatCurrency";
 import { FaPen, FaTrash, FaChevronRight, FaChevronUp, FaChevronDown } from "react-icons/fa";
@@ -657,7 +658,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     if (!menu?.owner_id) return;
 
     const fetchOwnerRole = async () => {
-      const { data, error } = await supabase.from("profiles").select("role").eq("id", menu.owner_id).single();
+      const { data, error } = await getOwnerRole(supabase, menu.owner_id);
 
       if (error) {
         console.error("Erro ao buscar role do dono:", error);
