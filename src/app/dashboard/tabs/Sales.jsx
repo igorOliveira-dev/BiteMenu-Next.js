@@ -96,7 +96,7 @@ function fetchSalesMonthsData(menuId, force = false) {
 
   const promise = supabase
     .from("sales")
-    .select("created_at, items_list, total, delivery_fee")
+    .select("created_at, total, delivery_fee")
     .eq("menu_id", menuId)
     .order("created_at", { ascending: false })
     .then(({ data, error }) => {

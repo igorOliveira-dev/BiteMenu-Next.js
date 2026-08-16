@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import useMenu from "@/hooks/useMenu";
+import useOwnerRole from "@/hooks/useOwnerRole";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { useAlert } from "@/providers/AlertProvider";
 import Loading from "@/components/Loading";
-import { supabase } from "@/lib/supabaseClient";
-import { getOwnerRole } from "@/lib/queries/profiles";
 import { FaBolt } from "react-icons/fa";
 import UpdatePlanModal from "../UpdatePlanModal";
 import { trackAction } from "@/utils/userActions";
@@ -20,25 +19,8 @@ const SalesSummary = ({
 }) => {
   const alert = useAlert();
   const { menu, loading } = useMenu();
-  const [ownerRole, setOwnerRole] = useState(null);
+  const ownerRole = useOwnerRole(menu?.owner_id);
   const [showUpdatePlanModal, setShowUpdatePlanModal] = useState(false);
-
-  useEffect(() => {
-    if (!menu?.owner_id) return;
-
-    const fetchOwnerRole = async () => {
-      const { data, error } = await getOwnerRole(supabase, menu.owner_id);
-
-      if (error) {
-        console.error("Erro ao buscar role do dono:", error);
-        return;
-      }
-
-      setOwnerRole(data.role);
-    };
-
-    fetchOwnerRole();
-  }, [menu?.owner_id]);
 
   const upgradePlan = () => {
     window.location.href = "/dashboard/pricing";
