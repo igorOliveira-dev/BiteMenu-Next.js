@@ -1411,7 +1411,7 @@ const ConfigMenu = (props) => {
             <div style={{ transform: `scale(${previewScale})`, transformOrigin: "top left", width: 375, height: 620 }}>
               <iframe
                 ref={previewScrollRef}
-                src={`/menu/${menu?.slug}?preview_layout=${layoutPreview}`}
+                src={`/menu/${menu?.slug}/preview?preview_layout=${layoutPreview}`}
                 style={{ width: "375px", height: "620px", border: "none" }}
                 title="Preview do cardápio"
               />

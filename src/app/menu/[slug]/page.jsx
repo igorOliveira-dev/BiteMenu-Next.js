@@ -1,87 +1,11 @@
-import { supabase } from "@/lib/supabaseClient";
 import NotFoundMenu from "../NotFoundMenu";
 import ClientMenu from "./ClientMenu";
 import { CartProvider } from "@/contexts/CartContext";
-import { cache } from "react";
 import ClientMenu2 from "./ClientMenu2";
 import ClientMenu3 from "./ClientMenu3";
+import { getMenuBySlug, getOwnerInfo } from "./getMenuData";
 
 export const revalidate = 300; // 5 minutos — cardápios raramente mudam em alta frequência
-
-const getMenuBySlug = cache(async (slug) => {
-  if (!slug) return null;
-
-  const { data: menu, error } = await supabase
-    .from("menus")
-    .select(
-      `
-      id,
-      owner_id,
-      slug,
-      title,
-      description,
-      address,
-      banner_url,
-      logo_url,
-      background_color,
-      title_color,
-      details_color,
-      hours,
-      services,
-      payments,
-      delivery_fee,
-      delivery_fee_mode,
-      minimum_order_value,
-      pix_key,
-      orders,
-      layout,
-      currency,
-      use_stripe_express,
-      categories (
-        id,
-        name,
-        position,
-        menu_items (
-          id,
-          name,
-          description,
-          price,
-          promo_price,
-          image_url,
-          thumb_url,
-          additionals,
-          starred,
-          mandatory_additional,
-          additionals_limit,
-          visible,
-          option_groups (
-            id,
-            name,
-            min_choices,
-            max_choices,
-            position,
-            option_choices (
-              id,
-              name,
-              price,
-              hidden,
-              position
-            )
-          )
-        )
-      )
-    `,
-    )
-    .eq("slug", slug)
-    .order("position", { foreignTable: "categories", ascending: true })
-    .order("position", { foreignTable: "categories.menu_items", ascending: true })
-    .order("position", { foreignTable: "categories.menu_items.option_groups", ascending: true })
-    .order("position", { foreignTable: "categories.menu_items.option_groups.option_choices", ascending: true })
-    .maybeSingle();
-
-  if (error) return null;
-  return menu || null;
-});
 
 // SEO dinâmico (server only)
 export async function generateMetadata({ params }) {
@@ -137,37 +61,19 @@ export async function generateMetadata({ params }) {
 }
 
 // Página principal (server component)
-export default async function MenuPage({ params, searchParams }) {
+// Não lê searchParams: manter isso fora daqui é o que permite o ISR (revalidate acima)
+// funcionar de fato — ler searchParams força a rota inteira a renderizar dinamicamente
+// por request. O preview de layout (?preview_layout=) vive em /menu/[slug]/preview.
+export default async function MenuPage({ params }) {
   const { slug } = await params;
-  const { preview_layout } = (await searchParams) ?? {};
 
   const menu = await getMenuBySlug(slug);
 
   if (!menu) return <NotFoundMenu />;
 
-  // Buscar phone e role do dono server-side para evitar 2 queries client-side por visita.
-  // Incluído no cache ISR — não gera egress adicional em visitas repetidas.
-  let ownerPhone = null;
-  let ownerRole = "free";
-  let ownerStripeAccount = null;
-  let ownerCanUseStripeExpress = false; // ← novo
+  const { ownerPhone, ownerRole, ownerStripeAccount, ownerCanUseStripeExpress } = await getOwnerInfo(menu);
 
-  if (menu.owner_id) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("phone, role, stripe_connect_account_id, privileges")
-      .eq("id", menu.owner_id)
-      .maybeSingle();
-
-    if (profile) {
-      ownerPhone = profile.phone || null;
-      ownerRole = profile.role || "free";
-      ownerStripeAccount = profile.stripe_connect_account_id || null;
-      ownerCanUseStripeExpress = (profile.privileges ?? []).includes("stripe-express"); // ← novo
-    }
-  }
-
-  const effectiveLayout = preview_layout || menu.layout;
+  const effectiveLayout = menu.layout;
 
   return (
     <CartProvider>
