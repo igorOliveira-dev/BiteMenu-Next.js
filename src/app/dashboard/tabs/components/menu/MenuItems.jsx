@@ -21,8 +21,8 @@ import Image from "next/image";
 import GenericModal from "@/components/GenericModal";
 import { useCartContext } from "@/contexts/CartContext";
 import { supabase } from "@/lib/supabaseClient";
-import { getOwnerRole } from "@/lib/queries/profiles";
 import useMenu from "@/hooks/useMenu";
+import useOwnerRole from "@/hooks/useOwnerRole";
 import { formatCurrency, getCurrencySymbol } from "@/lib/formatCurrency";
 import { FaPen, FaTrash, FaChevronRight, FaChevronUp, FaChevronDown } from "react-icons/fa";
 import { useAlert } from "@/providers/AlertProvider";
@@ -463,7 +463,7 @@ function SortableMenuItem({
 
 export default function MenuItems({ backgroundColor, detailsColor, changedFields }) {
   const { menu, loading: menuLoading } = useMenu();
-  const [ownerRole, setOwnerRole] = useState(null);
+  const ownerRole = useOwnerRole(menu?.owner_id);
 
   const [planModalOpen, setPlanModalOpen] = useState(false);
   const [planModalFeature, setPlanModalFeature] = useState(null);
@@ -653,22 +653,6 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       mounted = false;
     };
   }, [menuLoading, menu?.id]);
-
-  useEffect(() => {
-    if (!menu?.owner_id) return;
-
-    const fetchOwnerRole = async () => {
-      const { data, error } = await getOwnerRole(supabase, menu.owner_id);
-
-      if (error) {
-        console.error("Erro ao buscar role do dono:", error);
-        return;
-      }
-
-      setOwnerRole(data.role);
-    };
-    fetchOwnerRole();
-  }, [menu?.owner_id]);
 
   useEffect(() => {
     console.log("Owner role atualizado:", ownerRole);

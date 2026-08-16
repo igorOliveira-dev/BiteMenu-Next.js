@@ -73,6 +73,45 @@ const SectionCard = ({
   </section>
 );
 
+// Cache em módulo (mesmo padrão de useMenu.js/useUser.js) para a busca de todo o histórico
+// de vendas usado para montar a lista de meses. Evita refazer essa query pesada toda vez
+// que a aba Sales remonta (ex: usuário alternando abas). O botão "Atualizar vendas" chama
+// com force=true para sempre pegar dado fresco.
+const SALES_MONTHS_CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+let salesMonthsCache = null; // { key, data, fetchedAt }
+let pendingSalesMonthsFetch = null; // { key, promise }
+
+function fetchSalesMonthsData(menuId, force = false) {
+  if (
+    !force &&
+    salesMonthsCache?.key === menuId &&
+    Date.now() - salesMonthsCache.fetchedAt < SALES_MONTHS_CACHE_TTL
+  ) {
+    return Promise.resolve(salesMonthsCache.data);
+  }
+
+  if (!force && pendingSalesMonthsFetch?.key === menuId) {
+    return pendingSalesMonthsFetch.promise;
+  }
+
+  const promise = supabase
+    .from("sales")
+    .select("created_at, items_list, total, delivery_fee")
+    .eq("menu_id", menuId)
+    .order("created_at", { ascending: false })
+    .then(({ data, error }) => {
+      if (error) throw error;
+      salesMonthsCache = { key: menuId, data, fetchedAt: Date.now() };
+      return data;
+    })
+    .finally(() => {
+      pendingSalesMonthsFetch = null;
+    });
+
+  pendingSalesMonthsFetch = { key: menuId, promise };
+  return promise;
+}
+
 const Sales = ({ setSelectedTab }) => {
   const { menu, loading } = useMenu();
   const { profile } = useUser();
@@ -125,6 +164,40 @@ const Sales = ({ setSelectedTab }) => {
     // fallback (caso raro): subtotal + delivery_fee se existir
     const fee = Number(sale.delivery_fee) || 0;
     return computeItemsSubtotal(sale) + fee;
+  };
+
+  const applyMonthsData = (data) => {
+    const monthsMap = {};
+
+    data.forEach((sale) => {
+      const d = new Date(sale.created_at);
+      const key = d.toLocaleString("pt-BR", {
+        month: "long",
+        year: "numeric",
+      });
+      const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
+
+      if (!monthsMap[key])
+        monthsMap[key] = {
+          key,
+          monthStart: monthStart.getTime(),
+          count: 0,
+          total: 0,
+        };
+
+      monthsMap[key].count++;
+      monthsMap[key].total += computeSaleTotal(sale);
+    });
+
+    setMonthsList(Object.values(monthsMap));
+
+    const summaryTotal = data.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
+    setSalesSummary({
+      count: data.length,
+      total: summaryTotal,
+      average: data.length > 0 ? summaryTotal / data.length : 0,
+    });
+    setSalesSummaryLoading(false);
   };
 
   useEffect(() => {
@@ -314,54 +387,14 @@ const Sales = ({ setSelectedTab }) => {
   useEffect(() => {
     if (!menu?.id) return;
 
-    const fetchMonths = async () => {
-      const { data, error } = await supabase
-        .from("sales")
-        .select("created_at, total, delivery_fee")
-        .eq("menu_id", menu.id)
-        .order("created_at", { ascending: false });
-
-      if (error) {
+    fetchSalesMonthsData(menu.id)
+      .then((data) => applyMonthsData(data))
+      .catch((error) => {
         console.error(error);
         setSalesSummaryLoading(false);
-        return customAlert("Erro ao carregar meses de vendas", "error");
-      }
-
-      const monthsMap = {};
-
-      data.forEach((sale) => {
-        const d = new Date(sale.created_at);
-        const key = d.toLocaleString("pt-BR", {
-          month: "long",
-          year: "numeric",
-        });
-        const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
-
-        if (!monthsMap[key])
-          monthsMap[key] = {
-            key,
-            monthStart: monthStart.getTime(),
-            count: 0,
-            total: 0,
-          };
-
-        monthsMap[key].count++;
-        monthsMap[key].total += computeSaleTotal(sale);
+        customAlert("Erro ao carregar meses de vendas", "error");
       });
-
-      const monthsArray = Object.values(monthsMap);
-      setMonthsList(monthsArray);
-
-      const summaryTotal = data.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
-      setSalesSummary({
-        count: data.length,
-        total: summaryTotal,
-        average: data.length > 0 ? summaryTotal / data.length : 0,
-      });
-      setSalesSummaryLoading(false);
-    };
-
-    fetchMonths();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [menu?.id]);
 
   const toggleMonth = async (key, monthStart) => {
@@ -447,53 +480,14 @@ const Sales = ({ setSelectedTab }) => {
     setMonthPager({});
     setSalesSummaryLoading(true);
 
-    // Opcional: refazer a lista de meses
+    // refaz a lista de meses sempre com dado fresco (usuário pediu "Atualizar vendas")
     if (menu?.id) {
-      const fetchMonths = async () => {
-        const { data, error } = await supabase
-          .from("sales")
-          .select("created_at, items_list, total, delivery_fee")
-          .eq("menu_id", menu.id)
-          .order("created_at", { ascending: false });
-
-        if (error) {
+      fetchSalesMonthsData(menu.id, true)
+        .then((data) => applyMonthsData(data))
+        .catch(() => {
           setSalesSummaryLoading(false);
-          return customAlert("Erro ao carregar meses de vendas", "error");
-        }
-
-        const monthsMap = {};
-        data.forEach((sale) => {
-          const d = new Date(sale.created_at);
-          const key = d.toLocaleString("pt-BR", {
-            month: "long",
-            year: "numeric",
-          });
-          const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
-
-          if (!monthsMap[key])
-            monthsMap[key] = {
-              key,
-              monthStart: monthStart.getTime(),
-              count: 0,
-              total: 0,
-            };
-
-          monthsMap[key].count++;
-          monthsMap[key].total += computeSaleTotal(sale);
+          customAlert("Erro ao carregar meses de vendas", "error");
         });
-
-        setMonthsList(Object.values(monthsMap));
-
-        const summaryTotal = data.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
-        setSalesSummary({
-          count: data.length,
-          total: summaryTotal,
-          average: data.length > 0 ? summaryTotal / data.length : 0,
-        });
-        setSalesSummaryLoading(false);
-      };
-
-      fetchMonths();
     }
   };
 

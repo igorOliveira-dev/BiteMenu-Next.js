@@ -5,9 +5,9 @@ import { FaChevronLeft, FaSyncAlt, FaDownload } from "react-icons/fa";
 import { Line } from "react-chartjs-2";
 import { Chart as ChartJS, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend } from "chart.js";
 import useMenu from "@/hooks/useMenu";
+import useOwnerRole from "@/hooks/useOwnerRole";
 import { formatCurrency, getCurrencySymbol } from "@/lib/formatCurrency";
 import { supabase } from "@/lib/supabaseClient";
-import { getOwnerRole } from "@/lib/queries/profiles";
 import Loading from "@/components/Loading";
 import { useAlert } from "@/providers/AlertProvider";
 import SalesCharts from "./components/sales/SalesCharts";
@@ -172,6 +172,59 @@ function csvEscape(v) {
   return s;
 }
 
+// Cache em módulo (mesmo padrão de useMenu.js/useUser.js) para as duas queries de "sales"
+// (período atual + anterior). Evita refazer as mesmas buscas toda vez que a aba SalesDashboard
+// remonta (ex: usuário alternando abas), mantendo o botão "Atualizar" (force=true) sempre fresco.
+const SALES_PERIOD_CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+let salesPeriodCache = null; // { key, data, prevData, fetchedAt }
+let pendingSalesPeriodFetch = null; // { key, promise }
+
+function fetchSalesPeriodData(menuId, start, end, prevStart, prevEnd, force) {
+  const key = `${menuId}:${start.toISOString()}:${end.toISOString()}`;
+
+  if (
+    !force &&
+    salesPeriodCache?.key === key &&
+    Date.now() - salesPeriodCache.fetchedAt < SALES_PERIOD_CACHE_TTL
+  ) {
+    return Promise.resolve(salesPeriodCache);
+  }
+
+  if (!force && pendingSalesPeriodFetch?.key === key) {
+    return pendingSalesPeriodFetch.promise;
+  }
+
+  const promise = (async () => {
+    const { data, error } = await supabase
+      .from("sales")
+      .select(
+        "created_at, total, net_total, payment_method, service, items_list, delivery_fee, costumer_name, costumer_phone",
+      )
+      .eq("menu_id", menuId)
+      .gte("created_at", start.toISOString())
+      .lte("created_at", end.toISOString())
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+
+    const { data: prevData } = await supabase
+      .from("sales")
+      .select("created_at, total, net_total")
+      .eq("menu_id", menuId)
+      .gte("created_at", prevStart.toISOString())
+      .lte("created_at", prevEnd.toISOString());
+
+    const result = { key, data, prevData: prevData || [], fetchedAt: Date.now() };
+    salesPeriodCache = result;
+    return result;
+  })().finally(() => {
+    pendingSalesPeriodFetch = null;
+  });
+
+  pendingSalesPeriodFetch = { key, promise };
+  return promise;
+}
+
 /** -------------------------
  * Componente
  * ------------------------ */
@@ -179,7 +232,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
   const { menu, loading } = useMenu();
   const customAlert = useAlert();
 
-  const [ownerRole, setOwnerRole] = useState(null);
+  const ownerRole = useOwnerRole(menu?.owner_id);
 
   const [rawSales, setRawSales] = useState([]);
   const [prevRawSales, setPrevRawSales] = useState([]);
@@ -202,19 +255,6 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
   // Se quiser depois, dá pra reativar: filtrar por um dia específico.
   const [singleDate, setSingleDate] = useState("");
-
-  useEffect(() => {
-    if (!menu?.owner_id) return;
-
-    const fetchOwnerRole = async () => {
-      const { data, error } = await getOwnerRole(supabase, menu.owner_id);
-
-      if (error) return console.error("Erro ao buscar role:", error);
-      setOwnerRole(data?.role);
-    };
-
-    fetchOwnerRole();
-  }, [menu?.owner_id]);
 
   const computeTotal = useCallback((sale) => {
     const items = sale.items_list || [];
@@ -241,7 +281,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
     return days > MAX_RANGE_DAYS;
   }, []);
 
-  const fetchSalesInPeriod = useCallback(async () => {
+  const fetchSalesInPeriod = useCallback(async (force = false) => {
     if (!menu?.id) return;
     setLoadingSales(true);
 
@@ -270,17 +310,17 @@ const SalesDashboard = ({ setSelectedTab }) => {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("sales")
-      .select(
-        "created_at, total, net_total, payment_method, service, items_list, delivery_fee, costumer_name, costumer_phone",
-      )
-      .eq("menu_id", menu.id)
-      .gte("created_at", start.toISOString())
-      .lte("created_at", end.toISOString())
-      .order("created_at", { ascending: true });
+    // Período anterior (mesma duração, terminando no dia antes de start)
+    const duration = end.getTime() - start.getTime();
+    const prevEnd = new Date(start.getTime() - MS_DAY);
+    prevEnd.setHours(23, 59, 59, 999);
+    const prevStart = new Date(prevEnd.getTime() - duration);
+    prevStart.setHours(0, 0, 0, 0);
 
-    if (error) {
+    let data, prevData;
+    try {
+      ({ data, prevData } = await fetchSalesPeriodData(menu.id, start, end, prevStart, prevEnd, force));
+    } catch (error) {
       console.error(error);
       customAlert("Erro ao carregar vendas.", "error");
       setLoadingSales(false);
@@ -336,20 +376,6 @@ const SalesDashboard = ({ setSelectedTab }) => {
         cursor = addStep(cursor, chosenGranularity);
       }
     }
-
-    // Período anterior (mesma duração, terminando no dia antes de start)
-    const duration = end.getTime() - start.getTime();
-    const prevEnd = new Date(start.getTime() - MS_DAY);
-    prevEnd.setHours(23, 59, 59, 999);
-    const prevStart = new Date(prevEnd.getTime() - duration);
-    prevStart.setHours(0, 0, 0, 0);
-
-    const { data: prevData } = await supabase
-      .from("sales")
-      .select("created_at, total, net_total")
-      .eq("menu_id", menu.id)
-      .gte("created_at", prevStart.toISOString())
-      .lte("created_at", prevEnd.toISOString());
 
     setSalesData(entries);
     setRawSales(data);
@@ -590,7 +616,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
             <button
               type="button"
               className="p-2 rounded hover:bg-white/5 transition opacity-90 hover:opacity-100"
-              onClick={fetchSalesInPeriod}
+              onClick={() => fetchSalesInPeriod(true)}
               aria-label="Atualizar"
             >
               <FaSyncAlt />

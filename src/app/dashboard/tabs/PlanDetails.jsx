@@ -1,71 +1,85 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
 import { FaBolt, FaChevronLeft } from "react-icons/fa";
 import Loading from "@/components/Loading";
 import { useConfirm } from "@/providers/ConfirmProvider";
+import useUser from "@/hooks/useUser";
+
+// Cache em módulo (mesmo padrão de useMenu.js/useUser.js) para evitar refazer a chamada
+// (Stripe + Supabase) a cada vez que a aba PlanDetails remonta.
+const SUBSCRIPTION_CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+let subscriptionCache = null; // { key, data, fetchedAt }
+let pendingSubscriptionFetch = null; // { key, promise }
+
+function fetchSubscriptionDetails(subscriptionId, userId) {
+  const key = `${subscriptionId}:${userId}`;
+
+  if (subscriptionCache?.key === key && Date.now() - subscriptionCache.fetchedAt < SUBSCRIPTION_CACHE_TTL) {
+    return Promise.resolve(subscriptionCache.data);
+  }
+
+  if (pendingSubscriptionFetch?.key === key) {
+    return pendingSubscriptionFetch.promise;
+  }
+
+  const promise = fetch(`/api/stripe-subscription?subscriptionId=${subscriptionId}&userId=${userId}`)
+    .then((res) => {
+      if (!res.ok) throw new Error("Erro ao buscar assinatura");
+      return res.json();
+    })
+    .then((data) => {
+      subscriptionCache = { key, data, fetchedAt: Date.now() };
+      return data;
+    })
+    .finally(() => {
+      pendingSubscriptionFetch = null;
+    });
+
+  pendingSubscriptionFetch = { key, promise };
+  return promise;
+}
 
 export default function PlanDetails({ setSelectedTab }) {
+  const { user, profile, loading: userLoading } = useUser();
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState(null);
   const confirm = useConfirm();
 
   useEffect(() => {
-    const fetchSubscription = async () => {
-      setLoading(true);
+    if (userLoading) return;
 
-      // 1️⃣ Pegar usuário logado
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        setLoading(false);
-        return;
-      }
+    if (!user || !profile) {
+      setLoading(false);
+      return;
+    }
 
-      setUserId(user.id);
+    // Sem subscription, usuário está no plano free
+    if (!profile.stripe_subscription_id) {
+      setSubscription({ plan_name: profile.role, status: "active", current_period_end: null, noCard: true });
+      setLoading(false);
+      return;
+    }
 
-      // 2️⃣ Pegar profile com stripe_subscription_id
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("stripe_subscription_id, stripe_price_id, role")
-        .eq("id", user.id)
-        .single();
+    let cancelled = false;
+    setLoading(true);
 
-      if (profileError) {
-        console.error("Erro ao buscar profile:", profileError);
-        setLoading(false);
-        return;
-      }
-
-      // Se não houver subscription, usuário está no plano free
-      if (!profile?.stripe_subscription_id) {
-        setSubscription({ plan_name: profile.role, status: "active", current_period_end: null, noCard: true });
-        setLoading(false);
-        return;
-      }
-
-      // 3️⃣ Buscar detalhes da assinatura via API Route
-      try {
-        const res = await fetch(
-          `/api/stripe-subscription?subscriptionId=${profile.stripe_subscription_id}&userId=${user.id}`,
-        );
-        if (!res.ok) throw new Error("Erro ao buscar assinatura");
-
-        const data = await res.json();
-        setSubscription(data);
-      } catch (err) {
+    fetchSubscriptionDetails(profile.stripe_subscription_id, user.id)
+      .then((data) => {
+        if (!cancelled) setSubscription(data);
+      })
+      .catch((err) => {
         console.error("Erro ao buscar assinatura no Stripe:", err);
-        setSubscription({ plan_name: "Free", status: "active", current_period_end: null });
-      } finally {
-        setLoading(false);
-      }
-    };
+        if (!cancelled) setSubscription({ plan_name: "Free", status: "active", current_period_end: null });
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
-    fetchSubscription();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [userLoading, user, profile]);
 
   if (loading) return <Loading />;
 
@@ -174,7 +188,7 @@ export default function PlanDetails({ setSelectedTab }) {
                 );
                 if (!ok) return;
 
-                cancelSubscription(subscription.id, userId);
+                cancelSubscription(subscription.id, user.id);
               }}
               className="mt-4 text-white cursor-pointer bg-red-600/70 hover:bg-red-600/90 border-2 border-[var(--translucid)] rounded-lg p-2 transition"
             >

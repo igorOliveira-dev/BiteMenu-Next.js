@@ -112,33 +112,6 @@ const Menu = (props) => {
   }, [menu?.slug]);
 
   const [subscriptionWarning, setSubscriptionWarning] = useState(null);
-  useEffect(() => {
-    const checkSubscriptionStatus = async () => {
-      if (!user || !profile?.stripe_subscription_id) {
-        setSubscriptionWarning(null);
-        return;
-      }
-
-      try {
-        const res = await fetch(
-          `/api/stripe-subscription?subscriptionId=${profile.stripe_subscription_id}&userId=${user.id}`,
-        );
-        if (!res.ok) return;
-
-        const data = await res.json();
-        if (["past_due", "unpaid"].includes(data.status) && data.latest_invoice_url) {
-          setSubscriptionWarning(data.latest_invoice_url);
-        } else {
-          setSubscriptionWarning(null);
-        }
-      } catch (err) {
-        console.error("Erro ao verificar status da assinatura:", err);
-      }
-    };
-
-    checkSubscriptionStatus();
-  }, [user, profile]);
-
   const [boletoPending, setBoletoPending] = useState(null); // { url } | null
   useEffect(() => {
     const checkSubscriptionStatus = async () => {

@@ -144,11 +144,6 @@ const Orders = ({
   useEffect(() => {
     if (!menu?.id) return;
     resetAndFetch();
-  }, [menu?.id]);
-
-  useEffect(() => {
-    if (!menu?.id) return;
-    resetAndFetch();
   }, [menu?.id, filtersKey]);
 
   useEffect(() => {
