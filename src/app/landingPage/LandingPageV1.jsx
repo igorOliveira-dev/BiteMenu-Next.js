@@ -116,7 +116,7 @@ const SocialProofChip = ({ className = "" }) => (
   >
     <FaUtensils className="text-[var(--red)]" />
     <span>
-      <strong>+400 estabelecimentos</strong> já usam o Bite Menu
+      <strong>+800 estabelecimentos</strong> já usam o Bite Menu
     </span>
   </div>
 );
@@ -254,7 +254,9 @@ export default function LandingPageV1() {
         <div className="mx-auto max-w-6xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-extrabold">Em 3 passos seu cardápio está no ar</h2>
-            <p className="mt-3 text-[var(--gray)] text-base sm:text-lg">Sem instalação, sem técnico, sem complicação.</p>
+            <p className="mt-3 text-[var(--gray)] text-base sm:text-lg">
+              Sem instalação, sem técnico, sem complicação.
+            </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
@@ -292,8 +294,8 @@ export default function LandingPageV1() {
           <div className="md:max-w-md text-center md:text-left">
             <h2 className="text-2xl sm:text-3xl font-extrabold">Veja como seu cliente vai ver</h2>
             <p className="mt-3 text-[var(--gray)] text-base sm:text-lg">
-              Um cardápio do Bite Menu de verdade, aberto no celular. Navegue pelas categorias, adicione itens e veja como o
-              pedido sai pronto pro WhatsApp.
+              Um cardápio do Bite Menu de verdade, aberto no celular. Navegue pelas categorias, adicione itens e veja
+              como o pedido sai pronto pro WhatsApp.
             </p>
             <a
               href={DEMO_URL}
@@ -325,7 +327,9 @@ export default function LandingPageV1() {
         <div className="mx-auto max-w-6xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-extrabold">Tudo o que um restaurante precisa</h2>
-            <p className="mt-3 text-[var(--gray)] text-base sm:text-lg">Nada de funcionalidade que você nunca vai usar.</p>
+            <p className="mt-3 text-[var(--gray)] text-base sm:text-lg">
+              Nada de funcionalidade que você nunca vai usar.
+            </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
@@ -358,7 +362,7 @@ export default function LandingPageV1() {
             Pronto para parar de perder pedido?
           </h2>
           <p className="mt-4 text-lg sm:text-xl opacity-95">
-            <strong>+400 estabelecimentos</strong> já estão recebendo pedidos pelo Bite Menu agora mesmo.
+            <strong>+800 estabelecimentos</strong> já estão recebendo pedidos pelo Bite Menu agora mesmo.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
@@ -401,7 +405,9 @@ export default function LandingPageV1() {
                     }`}
                   >
                     <div className="overflow-hidden">
-                      <p className="px-4 sm:px-5 pb-5 text-sm sm:text-base text-[var(--gray)] leading-relaxed">{item.a}</p>
+                      <p className="px-4 sm:px-5 pb-5 text-sm sm:text-base text-[var(--gray)] leading-relaxed">
+                        {item.a}
+                      </p>
                     </div>
                   </div>
                 </div>

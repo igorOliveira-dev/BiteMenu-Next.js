@@ -31,7 +31,15 @@
       "Bash(Get-ChildItem -Path \"c:\\\\vs-code\\\\projetos_principais\\\\bitemenu\\\\src\" -Recurse -Filter \"*.tsx\" -o -Filter \"*.ts\")",
       "Bash(Select-Object -First 30)",
       "Bash(Format-Table -Property FullName)",
-      "Bash(npx eslint *)"
+      "Bash(npx eslint *)",
+      "Bash(mkdir -p \"/home/igor/igor/projects/BiteMenu-Next.js/src/app/menu/[slug]/preview\")",
+      "Bash(npx next *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git checkout *)"
+    ],
+    "additionalDirectories": [
+      "/home/igor/igor/projects/BiteMenu-Next.js/src/app/menu/[slug]"
     ]
   }
 }
