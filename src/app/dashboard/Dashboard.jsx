@@ -79,7 +79,9 @@ const Dashboard = ({
     : setBackgroundColorLocal;
 
   const titleColor = usingExternal ? externalState.titleColor : titleColorLocal;
-  const setTitleColor = usingExternal ? (val) => externalSetState((p) => ({ ...p, titleColor: val })) : setTitleColorLocal;
+  const setTitleColor = usingExternal
+    ? (val) => externalSetState((p) => ({ ...p, titleColor: val }))
+    : setTitleColorLocal;
 
   const detailsColor = usingExternal ? externalState.detailsColor : detailsColorLocal;
   const setDetailsColor = usingExternal
@@ -244,13 +246,15 @@ const Dashboard = ({
               <span className="hidden lg:block">Vendas</span>
             </button>
 
-            <button
-              onClick={() => setSelectedTab("tables")}
-              className={`w-full px-1 xxs:px-4 py-5 lg:py-4 hover-bg-translucid transition-colors lg:border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "tables" ? "bg-translucid" : ""}`}
-            >
-              <FaChair className="text-lg shrink-0" />
-              <span className="hidden lg:block">Mesas</span>
-            </button>
+            {profile?.role === "admin" && (
+              <button
+                onClick={() => setSelectedTab("tables")}
+                className={`w-full px-1 xxs:px-4 py-5 lg:py-4 hover-bg-translucid transition-colors lg:border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "tables" ? "bg-translucid" : ""}`}
+              >
+                <FaChair className="text-lg shrink-0" />
+                <span className="hidden lg:block">Mesas</span>
+              </button>
+            )}
 
             <button
               onClick={() => setIsOpen(!isOpen)}
@@ -387,7 +391,13 @@ const Dashboard = ({
 
       {/* Modal central ao clicar no hamburger */}
       {isOpen && (
-        <GenericModal title="Compartilhe seu cardápio" onClose={() => setIsOpen(false)} wfull maxWidth={"420px"} py={"24px"}>
+        <GenericModal
+          title="Compartilhe seu cardápio"
+          onClose={() => setIsOpen(false)}
+          wfull
+          maxWidth={"420px"}
+          py={"24px"}
+        >
           <div className="grid gap-2 mb-6">
             <button
               onClick={() => shareUrl && setShowQrCode(true)}
