@@ -1,0 +1,31 @@
+# Bite Menu
+
+> Bite Menu é um SaaS de cardápio digital para restaurantes. Donos de estabelecimentos criam cardápios personalizados em minutos e recebem pedidos diretamente pelo WhatsApp e por um painel de pedidos. Clientes acessam o cardápio via link ou QR code em `/menu/[slug]` e fazem pedidos sem precisar instalar app. Mais de 300 estabelecimentos usam a plataforma.
+
+## Produto
+
+- [Página inicial](https://www.bitemenu.com.br/): visão geral do produto e criação de cardápio grátis
+- [Planos e preços](https://www.bitemenu.com.br/pricing): planos Free, Plus (R$24,90) e Pro (R$44,90)
+- [Sobre](https://www.bitemenu.com.br/about): sobre o Bite Menu
+- [Perguntas frequentes](https://www.bitemenu.com.br/faqs)
+- [Suporte](https://www.bitemenu.com.br/support)
+
+## Documentação
+
+- [Central de ajuda](https://www.bitemenu.com.br/docs): índice de documentação
+- [Como começar](https://www.bitemenu.com.br/docs/como-comecar)
+- [Cardápio digital](https://www.bitemenu.com.br/docs/cardapio-digital): criação e personalização do cardápio
+- [Pedidos](https://www.bitemenu.com.br/docs/pedidos): recebimento de pedidos via WhatsApp e painel
+- [Vendas](https://www.bitemenu.com.br/docs/vendas): acompanhamento e análise de vendas
+- [Pagamentos](https://www.bitemenu.com.br/docs/pagamentos-bite-menu): cobrança e planos
+- [Planos](https://www.bitemenu.com.br/docs/planos)
+
+## Acesso
+
+- [Login](https://www.bitemenu.com.br/login)
+- [Criar conta](https://www.bitemenu.com.br/register)
+
+## Legal
+
+- [Termos de uso](https://www.bitemenu.com.br/termos-de-uso)
+- [Política de privacidade](https://www.bitemenu.com.br/politica-de-privacidade)
