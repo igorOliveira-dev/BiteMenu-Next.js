@@ -416,7 +416,7 @@ const Menu = (props) => {
           <FiSettings className="text-xl mr-2" />
           Configurar cardápio
         </button>
-        <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[812px] min-h-[calc(100dvh-110px)]">
+        <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] min-h-[calc(100dvh-110px)]">
           {/* ESPAÇO PARA BANNER!!! */}
           {subscriptionWarning && (
             <div className="top-2 px-2 py-6 w-full bg-red-300 border border-red-400 text-red-700 rounded text-center z-100">

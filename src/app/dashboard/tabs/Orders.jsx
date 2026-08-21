@@ -591,7 +591,7 @@ const Orders = ({
 
   return (
     <div className="px-4 sm:px-2 lg:grid">
-      <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] max-w-[812px] min-h-[calc(100dvh-110px)] overflow-y-auto rounded-2xl">
+      <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] min-h-[calc(100dvh-110px)] overflow-y-auto rounded-2xl">
         <div className="mb-4 flex items-center gap-3">
           <h2 className="text-xl font-semibold">Pedidos recebidos</h2>
           <button
