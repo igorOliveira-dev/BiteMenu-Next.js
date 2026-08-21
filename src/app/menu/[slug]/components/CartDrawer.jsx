@@ -49,6 +49,26 @@ export default function CartDrawer({
 
   const [whatsappURL, setWhatsappURL] = useState(null);
 
+  // ── Pedido de mesa (QR code) ──────────────────────────────────────────────
+  const tableId = searchParams.get("mesa");
+  const [tableInfo, setTableInfo] = useState(null);
+
+  useEffect(() => {
+    if (!tableId || !menu?.id) {
+      setTableInfo(null);
+      return;
+    }
+
+    supabase
+      .from("tables")
+      .select("id,label")
+      .eq("id", tableId)
+      .eq("menu_id", menu.id)
+      .maybeSingle()
+      .then(({ data }) => setTableInfo(data || null));
+  }, [tableId, menu?.id]);
+  // ────────────────────────────────────────────────────────────────────────
+
   // pega apenas os items do menu atual
   const currentItems = cart.getItems(menu?.id);
   const currentTotalItems = cart.totalItems(menu?.id);
@@ -210,10 +230,15 @@ export default function CartDrawer({
   }, [open, menu?.id, menu?.delivery_fee_mode, hasPlusPermissions, deliveryZones.length]);
 
   useEffect(() => {
+    if (tableInfo) {
+      setSelectedService("dinein");
+      return;
+    }
+
     if (availableServiceOptions.length === 1) {
       setSelectedService(availableServiceOptions[0].id);
     }
-  }, [availableServiceOptions]);
+  }, [availableServiceOptions, tableInfo]);
 
   useEffect(() => {
     if (selectedService != null) {
@@ -332,10 +357,16 @@ export default function CartDrawer({
         const order = await res.json();
 
         setFinalValue(order.total);
-        setPurchaseStage("whatsapp");
         cart.clear(menu?.id);
         setIsPurchaseModalOpen(true);
         onPendingStripeOrderResolved?.();
+
+        if (order.table_label) {
+          setPurchaseStage("tableSuccess");
+          return;
+        }
+
+        setPurchaseStage("whatsapp");
 
         const builtURL = buildWhatsappURL({
           items: order.items_list,
@@ -448,8 +479,13 @@ export default function CartDrawer({
 
   const resetPurchase = () => {
     setIsPurchaseModalOpen(false);
-    setPurchaseStage("services");
-    setSelectedService(null);
+    if (tableInfo) {
+      setPurchaseStage("costumerInfos");
+      setSelectedService("dinein");
+    } else {
+      setPurchaseStage("services");
+      setSelectedService(null);
+    }
     setSelectedPayment(null);
     setShowWhatsappButtonOnPixStage(false);
     setWhatsappURL(null);
@@ -527,7 +563,7 @@ ${customerInfo}`;
       return false;
     }
 
-    if (costumerPhone.length < 5) {
+    if (!tableInfo && costumerPhone.length < 5) {
       customAlert("Número de telefone inválido.", "error");
       return false;
     }
@@ -606,6 +642,8 @@ ${customerInfo}`;
           costumerNeighborhood: selectedService === "delivery" && canUseZones ? costumerNeighborhood : null,
           paymentMethod: "stripe",
           service: selectedService,
+          tableId: tableInfo?.id || null,
+          tableLabel: tableInfo?.label || null,
         }),
       });
 
@@ -642,6 +680,11 @@ ${customerInfo}`;
       }
     }
 
+    if (tableInfo) {
+      finalizeTableOrder();
+      return;
+    }
+
     whatsappConfirmation();
 
     if (menu.pix_key !== null) {
@@ -660,6 +703,15 @@ ${customerInfo}`;
       return;
     }
 
+    if (tableInfo) {
+      if (selectedPayment === "pix" && menu.pix_key !== null) {
+        finalizeTableOrder({ goToStage: "sendPix" });
+      } else {
+        finalizeTableOrder();
+      }
+      return;
+    }
+
     whatsappConfirmation();
 
     if (selectedPayment === "pix" && menu.pix_key !== null) {
@@ -668,6 +720,58 @@ ${customerInfo}`;
       setPurchaseStage("whatsapp");
     }
   };
+
+  // ── Pedido de mesa: sem WhatsApp, cai direto na aba Pedidos ──────────────
+  const finalizeTableOrder = async ({ goToStage = "tableSuccess" } = {}) => {
+    const subtotal = (currentItems || []).reduce((acc, item) => {
+      const base = (Number(item.price) || 0) * (Number(item.qty) || 0);
+      const extrasPerItem = (item.additionals || []).reduce((s, a) => s + (Number(a.price) || 0), 0);
+      const extras = extrasPerItem * (Number(item.qty) || 0);
+      return acc + base + extras;
+    }, 0);
+
+    const total = Math.max(0, subtotal - discountAmount);
+    setFinalValue(total);
+
+    const payload = {
+      menu_id: menu?.id || null,
+      costumer_name: costumerName || null,
+      costumer_phone: costumerPhone || null,
+      payment_method: selectedPayment || null,
+      change_requested: selectedPayment === "cash" ? needsChange : null,
+      change_for_amount: selectedPayment === "cash" && needsChange ? normalizeMoney(changeForAmount) : null,
+      service: "dinein",
+      table_id: tableInfo.id,
+      table_label: tableInfo.label,
+      items_list: (currentItems || []).map((it) => ({
+        name: it.name,
+        qty: it.qty,
+        price: it.price,
+        image_url: it.image_url || null,
+        additionals: it.additionals || [],
+        note: it.note || "",
+      })),
+      neighborhood: null,
+      address: null,
+      delivery_fee: 0,
+      is_paid: false,
+      total,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error } = await supabase.from("orders").insert([payload]);
+
+    if (error) {
+      console.error("Erro ao registrar pedido da mesa:", error);
+      customAlert("Erro ao enviar pedido. Tente novamente.", "error");
+      return;
+    }
+
+    cart.clear(menu?.id);
+    setPurchaseStage(goToStage);
+  };
+  // ────────────────────────────────────────────────────────────────────────
 
   const whatsappConfirmation = () => {
     const subtotal = (currentItems || []).reduce((acc, item) => {
@@ -909,20 +1013,24 @@ ${customerInfo}`;
                           ? "Envio do PIX"
                           : purchaseStage === "whatsapp"
                             ? "Confirmação no WhatsApp"
-                            : null}
+                            : purchaseStage === "tableSuccess"
+                              ? "Pedido enviado!"
+                              : null}
                 </h3>
                 {purchaseStage === "costumerInfos" && (
                   <p style={{ color: grayToUse }} className="text-sm">
                     (
-                    {selectedService === "delivery"
-                      ? "entrega"
-                      : selectedService === "pickup"
-                        ? "retirada"
-                        : selectedService === "dinein"
-                          ? "Comer no local"
-                          : selectedService === "faceToFace"
-                            ? "Atendimento presencial"
-                            : null}
+                    {tableInfo
+                      ? tableInfo.label
+                      : selectedService === "delivery"
+                        ? "entrega"
+                        : selectedService === "pickup"
+                          ? "retirada"
+                          : selectedService === "dinein"
+                            ? "Comer no local"
+                            : selectedService === "faceToFace"
+                              ? "Atendimento presencial"
+                              : null}
                     )
                   </p>
                 )}
@@ -958,21 +1066,23 @@ ${customerInfo}`;
                     style={{ backgroundColor: translucidToUse }}
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium">Digite seu número para contato:</label>
-                  <PhoneInput
-                    country="br"
-                    value={costumerPhone}
-                    onChange={(value) => setCostumerPhone(value)}
-                    inputProps={{ required: true }}
-                    inputClass="!w-full !px-3 !py-2 !border !rounded !focus:outline-none !focus:ring-2 !focus:ring-blue-400 !pl-14"
-                    buttonClass="!border-r !bg-transparent !rounded-l"
-                    containerClass="!flex !items-center !mb-2"
-                    inputStyle={{
-                      backgroundColor: translucidToUse,
-                    }}
-                  />
-                </div>
+                {!tableInfo && (
+                  <div>
+                    <label className="block text-sm font-medium">Digite seu número para contato:</label>
+                    <PhoneInput
+                      country="br"
+                      value={costumerPhone}
+                      onChange={(value) => setCostumerPhone(value)}
+                      inputProps={{ required: true }}
+                      inputClass="!w-full !px-3 !py-2 !border !rounded !focus:outline-none !focus:ring-2 !focus:ring-blue-400 !pl-14"
+                      buttonClass="!border-r !bg-transparent !rounded-l"
+                      containerClass="!flex !items-center !mb-2"
+                      inputStyle={{
+                        backgroundColor: translucidToUse,
+                      }}
+                    />
+                  </div>
+                )}
                 {selectedService === "delivery" && (
                   <>
                     {canUseZones && (
@@ -1197,19 +1307,48 @@ ${customerInfo}`;
                   Valor final: <strong className="text-2xl">{formatCurrency(finalValue, menu?.currency)}</strong>
                 </p>
                 <p className="text-center p-2" style={{ color: grayToUse }}>
-                  Após fazer o PIX, envie o comprovante pelo WhatsApp!
+                  {tableInfo
+                    ? "Após fazer o PIX, mostre o comprovante para o estabelecimento."
+                    : "Após fazer o PIX, envie o comprovante pelo WhatsApp!"}
                 </p>
-                {showWhatsappButtonOnPixStage && (
-                  <a href={whatsappURL || "#"} rel="noopener noreferrer">
-                    <span
-                      className="cursor-pointer py-2 px-4 rounded font-bold text-white flex items-center justify-center gap-2 mt-2"
+                {showWhatsappButtonOnPixStage &&
+                  (tableInfo ? (
+                    <button
+                      onClick={() => setPurchaseStage("tableSuccess")}
+                      className="cursor-pointer w-full py-2 px-4 rounded font-bold text-white flex items-center justify-center gap-2 mt-2"
                       style={{ backgroundColor: menu.details_color }}
                     >
-                      <FaWhatsapp />
-                      Enviar confirmação
-                    </span>
-                  </a>
+                      Concluir pedido
+                    </button>
+                  ) : (
+                    <a href={whatsappURL || "#"} rel="noopener noreferrer">
+                      <span
+                        className="cursor-pointer py-2 px-4 rounded font-bold text-white flex items-center justify-center gap-2 mt-2"
+                        style={{ backgroundColor: menu.details_color }}
+                      >
+                        <FaWhatsapp />
+                        Enviar confirmação
+                      </span>
+                    </a>
+                  ))}
+              </div>
+            ) : purchaseStage === "tableSuccess" ? (
+              <div className="flex flex-col items-center gap-2 text-center">
+                <p className="text-sm" style={{ color: grayToUse }}>
+                  Seu pedido foi enviado para a {tableInfo?.label || "mesa"} e já está na cozinha!
+                </p>
+                {finalValue > 0 && (
+                  <p className="mt-2 font-semibold">
+                    Total: <strong>{formatCurrency(finalValue, menu?.currency)}</strong>
+                  </p>
                 )}
+                <button
+                  onClick={() => resetPurchase()}
+                  className="cursor-pointer w-full py-2 px-4 rounded font-bold text-white flex items-center justify-center gap-2 mt-2"
+                  style={{ backgroundColor: menu.details_color }}
+                >
+                  Fechar
+                </button>
               </div>
             ) : purchaseStage === "whatsapp" ? (
               <div>

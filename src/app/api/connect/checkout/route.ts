@@ -46,6 +46,8 @@ export async function POST(request) {
       paymentMethod,
       service,
       detailsColor,
+      tableId,
+      tableLabel,
     } = body;
 
     // 1. Buscar o stripe_account e stripe_fee_percentage do dono do menu
@@ -79,6 +81,8 @@ export async function POST(request) {
       costumer_phone: costumerPhone,
       payment_method: "stripe",
       service,
+      table_id: tableId ?? null,
+      table_label: tableLabel ?? null,
       items_list: items,
       neighborhood: costumerNeighborhood ?? null,
       address: costumerAddress ?? null,
@@ -128,8 +132,9 @@ export async function POST(request) {
 
     // 6. URLs de retorno
     const baseUrl = process.env.APP_URL || "https://bitemenu.com.br";
-    const successUrl = `${baseUrl}/menu/${menuSlug}?order_success=true&order_id=${orderId}`;
-    const cancelUrl = `${baseUrl}/menu/${menuSlug}?order_cancelled=true`;
+    const tableQuery = tableId ? `&mesa=${tableId}` : "";
+    const successUrl = `${baseUrl}/menu/${menuSlug}?order_success=true&order_id=${orderId}${tableQuery}`;
+    const cancelUrl = `${baseUrl}/menu/${menuSlug}?order_cancelled=true${tableQuery}`;
 
     // 7. Criar Checkout Session no Stripe
     const session = await stripe.checkout.sessions.create(

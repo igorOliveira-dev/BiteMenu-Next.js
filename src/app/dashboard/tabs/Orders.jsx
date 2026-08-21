@@ -776,6 +776,11 @@ const Orders = ({
                             <span className="rounded-full border border-translucid px-3 py-1 color-gray bg-[var(--translucid)]">
                               {serviceLabels[order.service] || "Não informado"}
                             </span>
+                            {order.table_label && (
+                              <span className="rounded-full border border-translucid px-3 py-1 color-gray bg-[var(--translucid)]">
+                                {order.table_label}
+                              </span>
+                            )}
                             <span className="rounded-full border border-translucid px-3 py-1 color-gray bg-[var(--translucid)]">
                               {paymentLabels[order.payment_method] ||
                                 "Não informado"}
@@ -1153,6 +1158,17 @@ const Orders = ({
                       </option>
                     </select>
                   </div>
+
+                  {selectedOrder.table_label ? (
+                    <div>
+                      <label className="mb-1 block text-sm font-medium">
+                        Mesa
+                      </label>
+                      <p className="input w-full rounded-xl bg-translucid p-3 color-gray">
+                        {selectedOrder.table_label}
+                      </p>
+                    </div>
+                  ) : null}
 
                   <div>
                     <label className="mb-1 block text-sm font-medium">

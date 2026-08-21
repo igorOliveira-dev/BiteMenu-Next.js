@@ -5,6 +5,7 @@ import useMenu from "@/hooks/useMenu";
 import Menu from "./tabs/Menu";
 import Orders from "./tabs/Orders";
 import Sales from "./tabs/Sales";
+import Tables from "./tabs/Tables";
 import { useAlert } from "@/providers/AlertProvider";
 import ConfigMenu from "./tabs/ConfigMenu";
 import { FaBars, FaChevronLeft, FaHeadset, FaMoneyBill, FaQrcode } from "react-icons/fa";
@@ -16,7 +17,7 @@ import PlanDetails from "./tabs/PlanDetails";
 import GenericModal from "@/components/GenericModal";
 import QrCodeModal from "./tabs/components/menu/QrCodeModal";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
-import { FaUtensils, FaShoppingBag, FaChartLine, FaUser, FaLifeRing, FaShieldAlt } from "react-icons/fa";
+import { FaUtensils, FaShoppingBag, FaChartLine, FaUser, FaLifeRing, FaShieldAlt, FaChair } from "react-icons/fa";
 import { trackAction } from "@/utils/userActions";
 import { supabase } from "@/lib/supabaseClient";
 import { countVisibleOrders } from "@/lib/queries/orders";
@@ -244,6 +245,14 @@ const Dashboard = ({
             </button>
 
             <button
+              onClick={() => setSelectedTab("tables")}
+              className={`w-full px-1 xxs:px-4 py-5 lg:py-4 hover-bg-translucid transition-colors lg:border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "tables" ? "bg-translucid" : ""}`}
+            >
+              <FaChair className="text-lg shrink-0" />
+              <span className="hidden lg:block">Mesas</span>
+            </button>
+
+            <button
               onClick={() => setIsOpen(!isOpen)}
               className={`w-full lg:hidden px-1 xxs:px-4 py-5 lg:py-4 hover-bg-translucid transition-colors lg:border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left`}
             >
@@ -324,6 +333,11 @@ const Dashboard = ({
         {selectedTab === "sales" && (
           <div className="block">
             <Sales setSelectedTab={setSelectedTab} />
+          </div>
+        )}
+        {selectedTab === "tables" && (
+          <div className="block">
+            <Tables />
           </div>
         )}
         {selectedTab === "salesDashboard" && (
