@@ -283,15 +283,14 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole, ownerStripeAcc
   useEffect(() => {
     if (!menu?.id) return;
     let mounted = true;
-    getCombosByMenuId(supabase, menu.id)
-      .then(({ data, error }) => {
-        if (!mounted) return;
-        if (error) {
-          console.error("Erro ao buscar combos:", error);
-          return;
-        }
-        setCombos(data || []);
-      });
+    getCombosByMenuId(supabase, menu.id).then(({ data, error }) => {
+      if (!mounted) return;
+      if (error) {
+        console.error("Erro ao buscar combos:", error);
+        return;
+      }
+      setCombos(data || []);
+    });
     return () => {
       mounted = false;
     };

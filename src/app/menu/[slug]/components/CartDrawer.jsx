@@ -2,7 +2,8 @@
 "use client";
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { FaChevronLeft, FaCopy, FaTimes, FaWhatsapp, FaSpinner } from "react-icons/fa";
+import { FaChevronLeft, FaCopy, FaTimes, FaWhatsapp, FaSpinner, FaReceipt } from "react-icons/fa";
+import MyOrdersModal from "./MyOrdersModal";
 import { useCartContext } from "@/contexts/CartContext";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import PhoneInput from "react-phone-input-2";
@@ -13,6 +14,7 @@ import { formatCurrency } from "@/lib/formatCurrency";
 import { useAlert } from "@/providers/AlertProvider";
 import { useSearchParams, useRouter } from "next/navigation";
 import { calculateComboDiscount } from "@/lib/comboDiscount";
+import { saveReceipt } from "@/lib/orderReceipts";
 
 function getContrastTextColor(hex) {
   const cleanHex = (hex || "#ffffff").replace("#", "");
@@ -48,6 +50,7 @@ export default function CartDrawer({
   const router = useRouter(); // ← novo
 
   const [whatsappURL, setWhatsappURL] = useState(null);
+  const [myOrdersOpen, setMyOrdersOpen] = useState(false);
 
   // ── Pedido de mesa (QR code) ──────────────────────────────────────────────
   const tableId = searchParams.get("mesa");
@@ -361,6 +364,22 @@ export default function CartDrawer({
         setIsPurchaseModalOpen(true);
         onPendingStripeOrderResolved?.();
 
+        saveReceipt(menu?.id, {
+          id: order.id,
+          menuTitle: menu?.title,
+          createdAt: order.created_at,
+          costumerName: order.costumer_name,
+          paymentMethod: "stripe",
+          service: order.service,
+          tableLabel: order.table_label || null,
+          itemsList: order.items_list || [],
+          subtotal: order.total - (order.delivery_fee ?? 0) + (order.discount ?? 0),
+          deliveryFee: order.delivery_fee ?? 0,
+          discount: order.discount ?? 0,
+          total: order.total,
+          isPaid: Boolean(order.is_paid),
+        });
+
         if (order.table_label) {
           setPurchaseStage("tableSuccess");
           return;
@@ -574,7 +593,9 @@ ${customerInfo}`;
         return false;
       }
 
-      const matchedZone = deliveryZones.find((zone) => normalizeText(zone.name) === normalizeText(costumerNeighborhood));
+      const matchedZone = deliveryZones.find(
+        (zone) => normalizeText(zone.name) === normalizeText(costumerNeighborhood),
+      );
 
       if (!matchedZone) {
         customAlert("No momento, este bairro não está disponível para entrega.", "error");
@@ -732,6 +753,7 @@ ${customerInfo}`;
 
     const total = Math.max(0, subtotal - discountAmount);
     setFinalValue(total);
+    setPurchaseStage("confirmingTable");
 
     const payload = {
       menu_id: menu?.id || null,
@@ -760,13 +782,35 @@ ${customerInfo}`;
       updated_at: new Date().toISOString(),
     };
 
-    const { error } = await supabase.from("orders").insert([payload]);
+    const ANIM_MS = 1100;
+
+    const [{ error }] = await Promise.all([
+      supabase.from("orders").insert([payload]),
+      new Promise((resolve) => setTimeout(resolve, ANIM_MS)),
+    ]);
 
     if (error) {
       console.error("Erro ao registrar pedido da mesa:", error);
       customAlert("Erro ao enviar pedido. Tente novamente.", "error");
+      setPurchaseStage("costumerInfos");
       return;
     }
+
+    saveReceipt(menu?.id, {
+      id: `local-${Date.now()}`,
+      menuTitle: menu?.title,
+      createdAt: payload.created_at,
+      costumerName: payload.costumer_name,
+      paymentMethod: payload.payment_method,
+      service: payload.service,
+      tableLabel: payload.table_label,
+      itemsList: payload.items_list,
+      subtotal,
+      deliveryFee: 0,
+      discount: discountAmount,
+      total,
+      isPaid: false,
+    });
 
     cart.clear(menu?.id);
     setPurchaseStage(goToStage);
@@ -809,6 +853,22 @@ ${customerInfo}`;
     }
 
     setWhatsappURL(url);
+
+    saveReceipt(menu?.id, {
+      id: `local-${Date.now()}`,
+      menuTitle: menu?.title,
+      createdAt: new Date().toISOString(),
+      costumerName,
+      paymentMethod: selectedPayment,
+      service: selectedService,
+      tableLabel: null,
+      itemsList: currentItems || [],
+      subtotal,
+      deliveryFee,
+      discount: discountAmount,
+      total,
+      isPaid: false,
+    });
 
     (async () => {
       try {
@@ -878,9 +938,20 @@ ${customerInfo}`;
           <h3 className="text-lg font-bold">
             Seu carrinho ({typeof cart.totalItems === "function" ? cart.totalItems(menu?.id) : currentItems.length})
           </h3>
-          <button onClick={() => onClose?.()} className="cursor-pointer text-xl" aria-label="Fechar carrinho">
-            <FaTimes />
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setMyOrdersOpen(true)}
+              className="cursor-pointer flex items-center gap-1 text-sm opacity-80 hover:opacity-100 transition"
+              style={{ color: foregroundToUse }}
+              aria-label="Meus pedidos"
+            >
+              <FaReceipt />
+              <span className="hidden xs:inline">Meus pedidos</span>
+            </button>
+            <button onClick={() => onClose?.()} className="cursor-pointer text-xl" aria-label="Fechar carrinho">
+              <FaTimes />
+            </button>
+          </div>
         </div>
 
         {/* ITENS */}
@@ -913,7 +984,9 @@ ${customerInfo}`;
                     )}
                   </div>
                   <div className="flex items-end justify-between mt-4 gap-2">
-                    <p className="font-bold text-xl">{formatCurrency((it.price + addonsTotal) * it.qty, menu?.currency)}</p>
+                    <p className="font-bold text-xl">
+                      {formatCurrency((it.price + addonsTotal) * it.qty, menu?.currency)}
+                    </p>
                     <button
                       onClick={() => cart.remove(menu.id, idx)}
                       className="cursor-pointer text-white bg-red-600 opacity-75 hover:opacity-100 py-1 px-2 text-sm flex items-center gap-2 rounded-lg"
@@ -998,9 +1071,31 @@ ${customerInfo}`;
       {isPurchaseModalOpen && (
         <div className="fixed inset-0 z-65 flex items-center justify-center" style={{ color: foregroundToUse }}>
           <div className={backdropClasses} aria-hidden="true" />
-          <div className="rounded-lg p-6 w-[90%] max-w-md z-70" style={{ backgroundColor: bgColor }}>
+          <div className="relative rounded-lg p-6 w-[90%] max-w-md z-70" style={{ backgroundColor: bgColor }}>
+            {purchaseStage === "confirmingTable" && (
+              <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible" style={{ zIndex: 5 }}>
+                <rect
+                  x="0"
+                  y="0"
+                  width="100%"
+                  height="100%"
+                  rx="8"
+                  ry="8"
+                  fill="none"
+                  stroke={menu.details_color}
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  pathLength="100"
+                  strokeDasharray="25 75"
+                  style={{ animation: "lineLoopAnim 1.1s linear infinite" }}
+                />
+              </svg>
+            )}
+
             <div className="flex items-center gap-4 mb-4">
-              <FaChevronLeft className="cursor-pointer" onClick={() => resetPurchase()} />
+              {purchaseStage !== "confirmingTable" && (
+                <FaChevronLeft className="cursor-pointer" onClick={() => resetPurchase()} />
+              )}
               <div>
                 <h3 className="font-bold">
                   {purchaseStage === "services"
@@ -1009,13 +1104,15 @@ ${customerInfo}`;
                       ? "Confirmar compra"
                       : purchaseStage === "cashChange"
                         ? "Pagamento em dinheiro"
-                        : purchaseStage === "sendPix"
-                          ? "Envio do PIX"
-                          : purchaseStage === "whatsapp"
-                            ? "Confirmação no WhatsApp"
-                            : purchaseStage === "tableSuccess"
-                              ? "Pedido enviado!"
-                              : null}
+                        : purchaseStage === "confirmingTable"
+                          ? "Enviando pedido..."
+                          : purchaseStage === "sendPix"
+                            ? "Envio do PIX"
+                            : purchaseStage === "whatsapp"
+                              ? "Confirmação no WhatsApp"
+                              : purchaseStage === "tableSuccess"
+                                ? "Pedido enviado!"
+                                : null}
                 </h3>
                 {purchaseStage === "costumerInfos" && (
                   <p style={{ color: grayToUse }} className="text-sm">
@@ -1282,8 +1379,15 @@ ${customerInfo}`;
                   Confirmar
                 </button>
               </div>
+            ) : purchaseStage === "confirmingTable" ? (
+              <div className="flex flex-col items-center gap-3 py-6 text-center">
+                <FaSpinner className="animate-spin text-2xl" style={{ color: menu.details_color }} />
+                <p style={{ color: grayToUse }} className="text-sm">
+                  Enviando seu pedido para a {tableInfo?.label || "mesa"}...
+                </p>
+              </div>
             ) : purchaseStage === "sendPix" ? (
-              <div>
+              <div style={{ animation: "popInAnim 0.35s ease-out" }}>
                 <p style={{ color: grayToUse }} className="text-center text-sm">
                   Chave PIX:
                 </p>
@@ -1333,7 +1437,10 @@ ${customerInfo}`;
                   ))}
               </div>
             ) : purchaseStage === "tableSuccess" ? (
-              <div className="flex flex-col items-center gap-2 text-center">
+              <div
+                className="flex flex-col items-center gap-2 text-center"
+                style={{ animation: "popInAnim 0.35s ease-out" }}
+              >
                 <p className="text-sm" style={{ color: grayToUse }}>
                   Seu pedido foi enviado para a {tableInfo?.label || "mesa"} e já está na cozinha!
                 </p>
@@ -1377,6 +1484,8 @@ ${customerInfo}`;
           </div>
         </div>
       )}
+
+      <MyOrdersModal menu={menu} isOpen={myOrdersOpen} onClose={() => setMyOrdersOpen(false)} />
     </div>,
     document.body,
   );

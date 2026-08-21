@@ -486,6 +486,26 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   }
 }
 
+@keyframes lineLoopAnim {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+@keyframes popInAnim {
+  from {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 .docs-title {
   opacity: 0.95;
   font-weight: 600;

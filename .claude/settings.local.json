@@ -39,10 +39,12 @@
       "Bash(git checkout *)",
       "Bash(git fetch *)",
       "Bash(git config *)",
-      "Bash(git pull *)"
+      "Bash(git pull *)",
+      "Bash(rm \"/home/igor/igor/projects/BiteMenu-Next.js/src/app/menu/[slug]/components/MyOrdersButton.jsx\")"
     ],
     "additionalDirectories": [
-      "/home/igor/igor/projects/BiteMenu-Next.js/src/app/menu/[slug]"
+      "/home/igor/igor/projects/BiteMenu-Next.js/src/app/menu/[slug]",
+      "/home/igor/igor/projects/BiteMenu-Next.js/src/app/menu/[slug]/components"
     ]
   }
 }

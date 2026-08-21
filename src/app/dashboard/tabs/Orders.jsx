@@ -217,6 +217,10 @@ const Orders = ({
       q = q.eq("payment_method", filters.payment);
     }
 
+    if (filters.tableOnly) {
+      q = q.not("table_id", "is", null);
+    }
+
     if (filters.dateFrom)
       q = q.gte("created_at", new Date(filters.dateFrom).toISOString());
     if (filters.dateTo)
@@ -253,6 +257,10 @@ const Orders = ({
 
     if (filters.payment && filters.payment !== "all") {
       q = q.eq("payment_method", filters.payment);
+    }
+
+    if (filters.tableOnly) {
+      q = q.not("table_id", "is", null);
     }
 
     if (filters.dateFrom)
