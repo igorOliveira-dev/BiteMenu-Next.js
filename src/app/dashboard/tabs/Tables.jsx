@@ -8,7 +8,7 @@ import { useConfirm } from "@/providers/ConfirmProvider";
 import GenericModal from "@/components/GenericModal";
 import Loading from "@/components/Loading";
 import QrCodeModal from "./components/menu/QrCodeModal";
-import { FaPlus, FaQrcode, FaTrash, FaChair } from "react-icons/fa";
+import { FaPlus, FaQrcode, FaTrash, FaChair, FaPen } from "react-icons/fa";
 
 const Tables = () => {
   const { menu, loading: menuLoading } = useMenu();
@@ -24,6 +24,10 @@ const Tables = () => {
   const [saving, setSaving] = useState(false);
 
   const [qrTable, setQrTable] = useState(null);
+
+  const [renameTable, setRenameTable] = useState(null);
+  const [renameInput, setRenameInput] = useState("");
+  const [renaming, setRenaming] = useState(false);
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
 
@@ -92,6 +96,36 @@ const Tables = () => {
     fetchTables();
   };
 
+  const openRenameModal = (table) => {
+    setRenameTable(table);
+    setRenameInput(table.label);
+  };
+
+  const renameTableSubmit = async () => {
+    const label = renameInput.trim();
+
+    if (label.length < 1) {
+      customAlert("Digite um nome para a mesa.", "error");
+      return;
+    }
+
+    setRenaming(true);
+
+    const { error } = await supabase.from("tables").update({ label }).eq("id", renameTable.id);
+
+    setRenaming(false);
+
+    if (error) {
+      console.error("Erro ao renomear mesa:", error);
+      customAlert("Erro ao renomear mesa.", "error");
+      return;
+    }
+
+    setTables((prev) => prev.map((t) => (t.id === renameTable.id ? { ...t, label } : t)));
+    customAlert("Mesa renomeada!", "success");
+    setRenameTable(null);
+  };
+
   const deleteTable = async (table) => {
     const ok = await confirm(`Remover "${table.label}"? Pedidos já feitos nela continuam salvos normalmente.`);
     if (!ok) return;
@@ -158,6 +192,14 @@ const Tables = () => {
                 </button>
 
                 <button
+                  onClick={() => openRenameModal(table)}
+                  className="cursor-pointer p-2 bg-translucid hover:bg-white/[0.06] rounded-lg border border-translucid transition"
+                  aria-label="Renomear mesa"
+                >
+                  <FaPen />
+                </button>
+
+                <button
                   onClick={() => deleteTable(table)}
                   className="cursor-pointer p-2 bg-translucid hover:bg-red-600/20 text-red-400 rounded-lg border border-translucid transition"
                   aria-label="Remover mesa"
@@ -206,6 +248,31 @@ const Tables = () => {
               className="cursor-pointer p-2 bg-blue-600/80 hover:bg-blue-700/80 disabled:opacity-60 text-white font-semibold rounded-lg border-2 border-[var(--translucid)] transition"
             >
               {saving ? "Criando..." : "Criar"}
+            </button>
+          </div>
+        </GenericModal>
+      )}
+
+      {renameTable && (
+        <GenericModal title="Renomear mesa" onClose={() => setRenameTable(null)} wfull size="sm">
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className="text-xs opacity-80 block mb-1">Nome da mesa</label>
+              <input
+                type="text"
+                value={renameInput}
+                onChange={(e) => setRenameInput(e.target.value)}
+                className="w-full p-2 rounded-lg bg-translucid border border-translucid outline-none"
+                placeholder="Mesa"
+              />
+            </div>
+
+            <button
+              onClick={renameTableSubmit}
+              disabled={renaming}
+              className="cursor-pointer p-2 bg-blue-600/80 hover:bg-blue-700/80 disabled:opacity-60 text-white font-semibold rounded-lg border-2 border-[var(--translucid)] transition"
+            >
+              {renaming ? "Salvando..." : "Salvar"}
             </button>
           </div>
         </GenericModal>
