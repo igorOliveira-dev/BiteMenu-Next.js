@@ -68,6 +68,7 @@ const page = () => {
         <ul className="docs-paragraph list-disc pl-6">
           <li>Limite de 20 itens no cardápio</li>
           <li>Limite de 4 categorias no cardápio</li>
+          <li>Limite de 5 mesas para pedidos via QR Code</li>
           <li>Não inclui diversas funcionalidades do Plus e do Pro</li>
         </ul>
       </section>
@@ -81,6 +82,7 @@ const page = () => {
         <ul className="docs-paragraph list-disc pl-6">
           <li>Limite de 50 itens no cardápio</li>
           <li>Limite de 10 categorias no cardápio</li>
+          <li>Limite de 15 mesas para pedidos via QR Code</li>
           <li>Diferentes layouts para o cardápio</li>
           <li>Função de preços promocionais, onde é possível definir descontos e ofertas em seus produtos</li>
           <li>Lista de produtos em destaque, os produtos selecionados aparecerão em destaque no começo do cardápio</li>
@@ -98,6 +100,7 @@ const page = () => {
         <ul className="docs-paragraph list-disc pl-6">
           <li>Limite de 200 itens no cardápio</li>
           <li>Limite de 20 categorias no cardápio</li>
+          <li>Limite de 100 mesas para pedidos via QR Code</li>
           <li>Impressão de pedidos</li>
           <li>Dashboard de vendas para análise de desempenho</li>
           <li>Download de relatório de vendas em CSV</li>
@@ -158,9 +161,10 @@ const page = () => {
           <li>Cancele o plano atual</li>
         </ol>
         <p className="docs-paragraph">
-          Após o cancelamento, os benefícios do seu plano serão cancelados imediatamente. Se você tiver mais itens ou
-          categorias do que é permitido no plano gratuito, você não poderá editar itens ou criar itens novos até que esteja
-          dentro dos limites do plano. No entanto, seu cardápio continuará funcionando normalmente para os clientes.
+          Após o cancelamento, os benefícios do seu plano serão cancelados imediatamente. Se você tiver mais itens,
+          categorias ou mesas do que é permitido no plano gratuito, você não poderá editar itens ou criar itens novos até
+          que esteja dentro dos limites do plano, e as mesas excedentes serão desativadas automaticamente. No entanto, seu
+          cardápio continuará funcionando normalmente para os clientes.
         </p>
       </section>
 

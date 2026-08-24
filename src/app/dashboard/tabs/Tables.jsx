@@ -2,16 +2,19 @@
 
 import { useEffect, useState } from "react";
 import useMenu from "@/hooks/useMenu";
+import useOwnerRole from "@/hooks/useOwnerRole";
 import { supabase } from "@/lib/supabaseClient";
 import { useAlert } from "@/providers/AlertProvider";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import GenericModal from "@/components/GenericModal";
 import Loading from "@/components/Loading";
 import QrCodeModal from "./components/menu/QrCodeModal";
+import UpdatePlanModal from "./components/UpdatePlanModal";
 import { FaPlus, FaQrcode, FaTrash, FaChair, FaPen } from "react-icons/fa";
 
 const Tables = () => {
   const { menu, loading: menuLoading } = useMenu();
+  const ownerRole = useOwnerRole(menu?.owner_id);
   const customAlert = useAlert();
   const confirm = useConfirm();
 
@@ -28,6 +31,8 @@ const Tables = () => {
   const [renameTable, setRenameTable] = useState(null);
   const [renameInput, setRenameInput] = useState("");
   const [renaming, setRenaming] = useState(false);
+
+  const [planModalOpen, setPlanModalOpen] = useState(false);
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
 
@@ -55,6 +60,64 @@ const Tables = () => {
     if (menu?.id) fetchTables();
   }, [menu?.id]);
 
+  const getTableLimitByRole = (role) => {
+    if (role === "free") return 5;
+    if (role === "plus") return 15;
+    if (role === "pro") return 100;
+    if (role === "admin") return Infinity;
+    return 5;
+  };
+
+  const openTablesLimitModal = () => {
+    setPlanModalOpen(true);
+  };
+
+  // Ativa/desativa mesas automaticamente conforme o limite do plano do dono.
+  // Mesas mais antigas ficam ativas; o excedente (mais recentes) fica desativado.
+  useEffect(() => {
+    if (!ownerRole || tables.length === 0) return;
+
+    const limit = getTableLimitByRole(ownerRole);
+    const sorted = [...tables].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+    const idsToEnable = [];
+    const idsToDisable = [];
+
+    sorted.forEach((t, i) => {
+      const shouldBeActive = i < limit;
+      if (shouldBeActive && t.active === false) idsToEnable.push(t.id);
+      if (!shouldBeActive && t.active !== false) idsToDisable.push(t.id);
+    });
+
+    if (idsToEnable.length === 0 && idsToDisable.length === 0) return;
+
+    const appliedEnable = new Set();
+    const appliedDisable = new Set();
+
+    (async () => {
+      if (idsToEnable.length > 0) {
+        const { error } = await supabase.from("tables").update({ active: true }).in("id", idsToEnable);
+        if (error) console.error("Erro ao reativar mesas:", error);
+        else idsToEnable.forEach((id) => appliedEnable.add(id));
+      }
+      if (idsToDisable.length > 0) {
+        const { error } = await supabase.from("tables").update({ active: false }).in("id", idsToDisable);
+        if (error) console.error("Erro ao desativar mesas:", error);
+        else idsToDisable.forEach((id) => appliedDisable.add(id));
+      }
+
+      if (appliedEnable.size === 0 && appliedDisable.size === 0) return;
+
+      setTables((prev) =>
+        prev.map((t) => {
+          if (appliedEnable.has(t.id)) return { ...t, active: true };
+          if (appliedDisable.has(t.id)) return { ...t, active: false };
+          return t;
+        })
+      );
+    })();
+  }, [tables, ownerRole]);
+
   const openCreateModal = () => {
     setLabelInput("Mesa");
     setQuantityInput(1);
@@ -69,7 +132,18 @@ const Tables = () => {
       return;
     }
 
+    if (!ownerRole) {
+      customAlert("Aguarde, carregando informações do seu plano...", "error");
+      return;
+    }
+
     const quantity = Math.max(1, Math.min(50, Number(quantityInput) || 1));
+
+    const limit = getTableLimitByRole(ownerRole);
+    if (tables.length + quantity > limit) {
+      openTablesLimitModal();
+      return;
+    }
 
     setSaving(true);
 
@@ -146,6 +220,8 @@ const Tables = () => {
   const qrUrl = qrTable ? `${baseUrl}/menu/${menu.slug}?mesa=${qrTable.id}` : "";
   const qrExternalUrl = qrTable ? `https://external.bitemenu.com.br/menu/${menu.slug}?mesa=${qrTable.id}` : "";
 
+  const sortedTables = [...tables].sort((a, b) => a.label.localeCompare(b.label, "pt-BR", { numeric: true }));
+
   return (
     <div className="p-4 sm:p-6 flex flex-col gap-4 max-w-[1024px]">
       <div className="flex items-center justify-between gap-3">
@@ -172,10 +248,12 @@ const Tables = () => {
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {tables.map((table) => (
+          {sortedTables.map((table) => (
             <div
               key={table.id}
-              className="rounded-xl border border-translucid bg-[var(--low-translucid)] p-3 flex items-center justify-between gap-3"
+              className={`rounded-xl border border-translucid bg-[var(--low-translucid)] p-3 flex items-center justify-between gap-3 ${
+                table.active === false ? "opacity-40" : ""
+              }`}
             >
               <div className="flex items-center gap-3 min-w-0">
                 <FaChair className="text-lg opacity-70 shrink-0" />
@@ -184,7 +262,11 @@ const Tables = () => {
 
               <div className="flex items-center gap-2 shrink-0">
                 <button
-                  onClick={() => setQrTable(table)}
+                  onClick={() =>
+                    table.active === false
+                      ? customAlert("Essa mesa está desabilitada.", "error")
+                      : setQrTable(table)
+                  }
                   className="cursor-pointer p-2 bg-translucid hover:bg-white/[0.06] rounded-lg border border-translucid transition"
                   aria-label="Ver QR Code"
                 >
@@ -286,6 +368,23 @@ const Tables = () => {
         filename={`mesa-${qrTable?.label || ""}`}
         onToast={customAlert}
       />
+
+      {planModalOpen && (
+        <UpdatePlanModal
+          onClose={() => setPlanModalOpen(false)}
+          title="Você atingiu o limite de mesas do seu plano"
+          text={
+            ownerRole === "free"
+              ? "Seu plano gratuito permite até 5 mesas. Faça upgrade para o Plus (15 mesas) ou Pro (100 mesas) para criar mais."
+              : ownerRole === "plus"
+                ? "Seu plano Plus permite até 15 mesas. Faça upgrade para o Pro (100 mesas) para criar mais."
+                : "Seu plano atual atingiu o limite de mesas."
+          }
+          onCta={() => {
+            window.location.href = "/dashboard/pricing";
+          }}
+        />
+      )}
     </div>
   );
 };

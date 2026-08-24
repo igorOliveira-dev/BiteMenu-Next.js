@@ -64,11 +64,18 @@ export default function CartDrawer({
 
     supabase
       .from("tables")
-      .select("id,label")
+      .select("id,label,active")
       .eq("id", tableId)
       .eq("menu_id", menu.id)
       .maybeSingle()
-      .then(({ data }) => setTableInfo(data || null));
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("Erro ao identificar mesa:", error);
+          setTableInfo(null);
+          return;
+        }
+        setTableInfo(data && data.active !== false ? data : null);
+      });
   }, [tableId, menu?.id]);
   // ────────────────────────────────────────────────────────────────────────
 
