@@ -15,26 +15,29 @@ export default function useAllMenus() {
     const fetchMenus = async () => {
       setLoading(true);
 
-      const query = supabase.from("menus").select(`
-  *,
-  profiles(
-    display_name,
-    role,
-    email,
-    phone,
-    stripe_customer_id
-  )
-`);
+      const pageSize = 1000;
+      let allMenus = [];
+      let from = 0;
 
-      const { data, error } = await query;
+      while (true) {
+        const { data, error } = await supabase
+          .from("menus")
+          .select("id, owner_id, title, slug, created_at, last_access_at")
+          .range(from, from + pageSize - 1);
 
-      if (error) {
-        console.error("Erro ao buscar menus:", error);
-        setMenus([]);
-      } else {
-        setMenus(data || []);
+        if (error) {
+          console.error("Erro ao buscar menus:", error);
+          break;
+        }
+
+        allMenus = allMenus.concat(data || []);
+
+        if (!data || data.length < pageSize) break;
+
+        from += pageSize;
       }
 
+      setMenus(allMenus);
       setLoading(false);
     };
 
