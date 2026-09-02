@@ -1080,7 +1080,10 @@ ${customerInfo}`;
           <div className={backdropClasses} aria-hidden="true" />
           <div className="relative rounded-lg p-6 w-[90%] max-w-md z-70" style={{ backgroundColor: bgColor }}>
             {purchaseStage === "confirmingTable" && (
-              <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible" style={{ zIndex: 5 }}>
+              <svg
+                className="absolute inset-0 w-full h-full pointer-events-none overflow-visible"
+                style={{ zIndex: 5 }}
+              >
                 <rect
                   x="0"
                   y="0"
@@ -1434,8 +1437,8 @@ ${customerInfo}`;
                   ) : (
                     <a href={whatsappURL || "#"} rel="noopener noreferrer">
                       <span
-                        className="cursor-pointer py-2 px-4 rounded font-bold text-white flex items-center justify-center gap-2 mt-2"
-                        style={{ backgroundColor: menu.details_color }}
+                        className="cursor-pointer py-2 px-4 rounded font-bold flex items-center justify-center gap-2 mt-2"
+                        style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
                       >
                         <FaWhatsapp />
                         Enviar confirmação
@@ -1479,8 +1482,8 @@ ${customerInfo}`;
                 )}
                 <a href={whatsappURL || "#"} rel="noopener noreferrer">
                   <span
-                    className="cursor-pointer py-2 px-4 rounded font-bold text-white flex items-center justify-center gap-2 mt-2"
-                    style={{ backgroundColor: menu.details_color }}
+                    className="cursor-pointer py-2 px-4 rounded font-bold flex items-center justify-center gap-2 mt-2"
+                    style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
                   >
                     <FaWhatsapp />
                     Enviar confirmação
