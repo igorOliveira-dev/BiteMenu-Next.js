@@ -419,13 +419,13 @@ const Menu = (props) => {
         <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] min-h-[calc(100dvh-110px)]">
           {/* ESPAÇO PARA BANNER!!! */}
           {subscriptionWarning && (
-            <div className="top-2 px-2 py-6 w-full bg-red-300 border border-red-400 text-red-700 rounded text-center z-100">
-              <span>Você tem uma cobrança pendente, isso pode ter removido seu acesso ao plano.</span>{" "}
+            <div className="top-2 px-2 py-6 w-full border border-amber-500/30 bg-amber-500/10 text-amber-500 rounded text-center z-100">
+              <span>Você tem uma cobrança pendente.</span>{" "}
               <a
                 href={subscriptionWarning}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-700 hover:text-blue-900 underline font-semibold"
+                className="text-blue-700 hover:text-blue-900 underline font-semibold cursor-pointer"
               >
                 Regularizar pagamento
               </a>

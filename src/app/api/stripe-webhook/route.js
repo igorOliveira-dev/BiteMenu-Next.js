@@ -97,7 +97,13 @@ export async function POST(req) {
 
         await supabase
           .from("profiles")
-          .update({ role: "free", stripe_subscription_id: null, stripe_price_id: null })
+          .update({
+            role: "free",
+            stripe_subscription_id: null,
+            stripe_price_id: null,
+            cancel_at_period_end: false,
+            scheduled_downgrade_price_id: null,
+          })
           .eq("id", profile.id);
 
         console.log("[Webhook] Assinatura cancelada, role revertido para free");
@@ -147,12 +153,16 @@ export async function POST(req) {
 
         const { data: profile, error: profErr } = await supabase
           .from("profiles")
-          .select("id")
+          .select("id, scheduled_downgrade_price_id")
           .eq("stripe_customer_id", customerId)
           .maybeSingle();
 
         if (profErr) throw profErr;
         if (!profile) throw new Error("Usuário não encontrado para esse customer");
+
+        // Se o price atual bate com o downgrade que estava agendado, a fase
+        // do Subscription Schedule já entrou em vigor: limpa o agendamento.
+        const downgradeApplied = profile.scheduled_downgrade_price_id === priceId;
 
         const { error: upErr } = await supabase
           .from("profiles")
@@ -160,6 +170,7 @@ export async function POST(req) {
             role: planData.role,
             stripe_subscription_id: subscriptionId,
             stripe_price_id: priceId,
+            ...(downgradeApplied && { scheduled_downgrade_price_id: null }),
           })
           .eq("id", profile.id);
 
@@ -175,29 +186,38 @@ export async function POST(req) {
         break;
       }
 
-      // verifica assinatura expirada
+      // sincroniza estado da assinatura (cancelamento agendado, boleto expirado, etc)
       case "customer.subscription.updated": {
         const subscription = event.data.object;
+        const customerId = subscription.customer;
+
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("id, stripe_subscription_id")
+          .eq("stripe_customer_id", customerId)
+          .maybeSingle();
+
+        // só mexe se for realmente essa a assinatura salva no profile
+        if (!profile || profile.stripe_subscription_id !== subscription.id) break;
 
         if (subscription.status === "incomplete_expired") {
-          const customerId = subscription.customer;
-
-          const { data: profile } = await supabase
+          await supabase
             .from("profiles")
-            .select("id, stripe_subscription_id")
-            .eq("stripe_customer_id", customerId)
-            .maybeSingle();
+            .update({ stripe_subscription_id: null, stripe_price_id: null })
+            .eq("id", profile.id);
 
-          // só limpa se for realmente essa a assinatura salva no profile
-          if (profile && profile.stripe_subscription_id === subscription.id) {
-            await supabase
-              .from("profiles")
-              .update({ stripe_subscription_id: null, stripe_price_id: null })
-              .eq("id", profile.id);
-
-            console.log("[Webhook] Boleto expirado sem pagamento, assinatura limpa do profile");
-          }
+          console.log("[Webhook] Boleto expirado sem pagamento, assinatura limpa do profile");
+          break;
         }
+
+        // Mantém o "cancelou, mas ainda tem acesso até X" sincronizado —
+        // cobre tanto o cancel-subscription quanto uma reativação/edição
+        // feita direto no Dashboard da Stripe.
+        await supabase
+          .from("profiles")
+          .update({ cancel_at_period_end: subscription.cancel_at_period_end ?? false })
+          .eq("id", profile.id);
+
         break;
       }
 

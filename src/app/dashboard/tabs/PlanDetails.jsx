@@ -101,9 +101,42 @@ export default function PlanDetails({ setSelectedTab }) {
 
       {subscription ? (
         <>
-          {["past_due", "unpaid"].includes(subscription.status) && subscription.latest_invoice_url && (
+          {subscription.cancel_at_period_end && (
             <div className="p-4 mb-4 bg-red-300 border border-red-400 text-red-700 rounded max-w-[1024px]">
-              <span>Você tem uma cobrança pendente, isso pode ter removido seu acesso ao plano.</span>
+              <span>
+                Assinatura cancelada. Você mantém acesso ao plano {subscription.plan_name} até{" "}
+                {formatDate(subscription.current_period_end)}. Depois disso seu plano volta pra Free.
+              </span>
+              <br />
+              <button
+                onClick={() => reactivateSubscription(subscription.id, user.id)}
+                className="mt-2 px-3 py-1.5 bg-white/80 hover:bg-white text-red-700 rounded font-semibold transition cursor-pointer"
+              >
+                Reativar assinatura
+              </button>
+            </div>
+          )}
+
+          {!subscription.cancel_at_period_end && subscription.scheduled_downgrade && (
+            <div className="p-4 mb-4 bg-amber-300/40 border border-amber-500/50 rounded max-w-[1024px]">
+              <span>
+                Troca de plano agendada: você vai para o {subscription.scheduled_downgrade.role} em{" "}
+                {formatDate(subscription.scheduled_downgrade.effective_at)}. Até lá continua com os recursos do{" "}
+                {subscription.plan_name}.
+              </span>
+              <br />
+              <button
+                onClick={() => cancelScheduledDowngrade(subscription.id, user.id)}
+                className="mt-2 px-3 py-1.5 bg-white/60 hover:bg-white/90 rounded font-semibold transition cursor-pointer text-black"
+              >
+                Cancelar agendamento
+              </button>
+            </div>
+          )}
+
+          {["past_due", "unpaid"].includes(subscription.status) && subscription.latest_invoice_url && (
+            <div className="p-4 mb-4 border border-amber-500/30 bg-amber-500/10 text-amber-500 rounded max-w-[1024px]">
+              <span>Você tem uma cobrança pendente.</span>
               <a
                 href={subscription.latest_invoice_url}
                 target="_blank"
@@ -176,15 +209,15 @@ export default function PlanDetails({ setSelectedTab }) {
             </div>
           )}
 
-          {subscription.id && (
+          {subscription.id && !subscription.cancel_at_period_end && (
             <button
               onClick={async () => {
                 const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 
                 const ok = await confirm(
-                  `Tem certeza que quer cancelar o plano? Se quiser mesmo cancelar, clique em "confirmar" e você perderá os benefícios do Bite Menu ${capitalize(
-                    subscription.plan_name,
-                  )} imediatamente, se quiser continuar com o plano, clique em "cancelar".`,
+                  `Tem certeza que quer cancelar o plano ${capitalize(subscription.plan_name)}? Você continua com acesso completo até ${formatDate(
+                    subscription.current_period_end,
+                  )} (fim do período já pago) — depois disso seu plano volta pra Free automaticamente.`,
                 );
                 if (!ok) return;
 
@@ -216,10 +249,48 @@ async function cancelSubscription(subscriptionId, userId) {
 
     if (!res.ok) throw new Error(data.error || "Falha ao cancelar assinatura");
 
-    alert("Assinatura cancelada com sucesso!");
+    alert("Assinatura cancelada. Você mantém acesso até o fim do período já pago.");
     window.location.reload();
   } catch (err) {
     console.error(err);
     alert("Erro ao cancelar assinatura: " + err.message);
+  }
+}
+
+async function reactivateSubscription(subscriptionId, userId) {
+  try {
+    const res = await fetch("/api/reactivate-subscription", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subscriptionId, userId }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Falha ao reativar assinatura");
+
+    alert("Assinatura reativada!");
+    window.location.reload();
+  } catch (err) {
+    console.error(err);
+    alert("Erro ao reativar assinatura: " + err.message);
+  }
+}
+
+async function cancelScheduledDowngrade(subscriptionId, userId) {
+  try {
+    const res = await fetch("/api/cancel-scheduled-downgrade", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subscriptionId, userId }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Falha ao cancelar agendamento");
+
+    alert("Agendamento cancelado. Você continua no plano atual.");
+    window.location.reload();
+  } catch (err) {
+    console.error(err);
+    alert("Erro ao cancelar agendamento: " + err.message);
   }
 }

@@ -7,8 +7,8 @@ export const stripeCNPJ = new Stripe(process.env.STRIPE_SECRET_KEY_CNPJ);
 
 /**
  * Retorna o client Stripe correto com base no stripe_account do perfil.
- * @param {"cpf" | "cnpj"} account
+ * @param {"cpf" | "cnpj" | "dev_tests"} account
  */
 export function getStripeClient(account = "cpf") {
-  return account === "cnpj" ? stripeCNPJ : stripeCPF;
+  return account === "cnpj" || account === "dev_tests" ? stripeCNPJ : stripeCPF;
 }

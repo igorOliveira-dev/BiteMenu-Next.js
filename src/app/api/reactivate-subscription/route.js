@@ -14,7 +14,6 @@ export async function POST(req) {
       });
     }
 
-    // Busca stripe_account do perfil
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("stripe_account")
@@ -25,34 +24,19 @@ export async function POST(req) {
 
     const stripe = getStripeClient(profile?.stripe_account ?? "cpf");
 
-    const current = await stripe.subscriptions.retrieve(subscriptionId);
-
-    // Uma subscription presa a um Subscription Schedule (downgrade agendado)
-    // não aceita cancel_at_period_end direto — a Stripe exige mexer no
-    // schedule. Cancelar tem prioridade sobre o downgrade pendente: libera
-    // o schedule (a subscription fica no price/fase atual) e cancela normal.
-    if (current.schedule) {
-      await stripe.subscriptionSchedules.release(current.schedule);
-    }
-
-    // Agenda o cancelamento pro fim do período já pago. O acesso continua
-    // liberado até lá — o corte real (role -> free) acontece no webhook
-    // customer.subscription.deleted, quando o período efetivamente termina.
+    // Desfaz o cancelamento agendado — a assinatura volta a renovar normalmente.
     const subscription = await stripe.subscriptions.update(subscriptionId, {
-      cancel_at_period_end: true,
+      cancel_at_period_end: false,
     });
 
-    await supabase
-      .from("profiles")
-      .update({ cancel_at_period_end: true, scheduled_downgrade_price_id: null })
-      .eq("id", userId);
+    await supabase.from("profiles").update({ cancel_at_period_end: false }).eq("id", userId);
 
     return new Response(JSON.stringify({ subscription }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("[Stripe Cancel] Erro:", error);
+    console.error("[Stripe Reactivate] Erro:", error);
     return new Response(JSON.stringify({ error: error.message || "Erro interno" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

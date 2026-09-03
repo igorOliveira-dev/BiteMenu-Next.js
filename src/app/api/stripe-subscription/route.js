@@ -124,7 +124,31 @@ export async function GET(req) {
       paymentIntent?.next_action?.boleto_display_details?.hosted_voucher_url ?? invoice?.hosted_invoice_url ?? null;
     const isBoletoPending = invoicePM?.type === "boleto" && ["open", "requires_action"].includes(invoice?.status);
 
-    // 6️⃣ Retornar tudo pro frontend
+    // 6️⃣ Downgrade agendado (Subscription Schedule apontando pra um price diferente)
+    let scheduledDowngrade = null;
+    if (subscription.schedule) {
+      const schedule = await stripe.subscriptionSchedules.retrieve(subscription.schedule);
+      const nextPhase = schedule.phases?.[1];
+      const nextPriceId = nextPhase?.items?.[0]?.price;
+
+      if (nextPriceId && nextPriceId !== stripePriceId) {
+        const { data: nextPlan } = await supabase
+          .from("plans")
+          .select("role, price")
+          .eq("stripe_price_id", nextPriceId)
+          .maybeSingle();
+
+        if (nextPlan) {
+          scheduledDowngrade = {
+            role: nextPlan.role,
+            price: nextPlan.price,
+            effective_at: schedule.phases[0]?.end_date ?? currentPeriodEnd,
+          };
+        }
+      }
+    }
+
+    // 7️⃣ Retornar tudo pro frontend
     return new Response(
       JSON.stringify({
         id: subscription.id,
@@ -137,6 +161,8 @@ export async function GET(req) {
         latest_invoice_url: invoice?.hosted_invoice_url ?? null,
         payment_method_type: paymentMethodType,
         boleto_url: isBoletoPending ? boletoUrl : null,
+        cancel_at_period_end: subscription.cancel_at_period_end ?? false,
+        scheduled_downgrade: scheduledDowngrade,
       }),
       { status: 200, headers: { "Content-Type": "application/json" } },
     );

@@ -7,6 +7,75 @@ import { FaCheck } from "react-icons/fa";
 import GenericModal from "./GenericModal";
 import { useAlert } from "@/providers/AlertProvider";
 import useUser from "@/hooks/useUser";
+import { supabase } from "@/lib/supabaseClient";
+
+const TIER_RANK = { free: 0, plus: 1, pro: 2 };
+
+const ChangePlanModal = ({ open, currentPlan, targetPlan, isUpgrade, periodEnd, onClose, onConfirm, loading }) => {
+  useEffect(() => {
+    if (!open) return;
+
+    const onKeyDown = (e) => {
+      if (e.key === "Escape" && !loading) onClose();
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, onClose, loading]);
+
+  if (!open) return null;
+
+  const formattedDate = periodEnd ? new Date(periodEnd * 1000).toLocaleDateString("pt-BR") : null;
+
+  return (
+    <GenericModal
+      title="Confirmar troca de plano"
+      onClose={loading ? () => {} : onClose}
+      wfull
+      maxWidth={"480px"}
+      margin={"12px"}
+    >
+      <div className="rounded-2xl text-[var(--foreground)]">
+        <p className="text-sm">
+          Trocar do plano <span className="font-semibold">{currentPlan?.name}</span> para o plano{" "}
+          <span className="font-semibold">{targetPlan?.name}</span>?
+        </p>
+
+        {isUpgrade ? (
+          <div className="mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-sm">
+            <strong>Isso gera uma cobrança agora:</strong> a diferença proporcional aos dias restantes do ciclo atual é
+            cobrada imediatamente no seu cartão cadastrado, e o acesso ao plano {targetPlan?.name} passa a valer na
+            hora.
+            <br />
+            <br />
+            Se você paga por <strong>boleto</strong>, o acesso ao {targetPlan?.name} só libera depois que esse boleto
+            for compensado (pode levar alguns dias) - o boleto será gerado assim que você confirmar.
+          </div>
+        ) : (
+          <div className="mt-4 p-3 rounded-lg bg-translucid border border-[var(--translucid)] text-sm">
+            <strong>Nenhuma cobrança agora.</strong> Você continua com os recursos do plano {currentPlan?.name} até{" "}
+            {formattedDate ?? "o fim do período já pago"}. A troca pro plano {targetPlan?.name} só entra em vigor na
+            próxima renovação.
+          </div>
+        )}
+
+        <div className="flex gap-2 items-center justify-end mt-6">
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="cursor-pointer px-4 py-2 bg-translucid border-2 border-[var(--translucid)] hover:opacity-80 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            type="button"
+          >
+            Cancelar
+          </button>
+          <button onClick={onConfirm} disabled={loading} className="cta-button glow-red" type="button">
+            {loading ? "Processando..." : "Confirmar troca"}
+          </button>
+        </div>
+      </div>
+    </GenericModal>
+  );
+};
 
 export const PaymentMethodModal = ({ open, plan, selectedPlanTrial, onClose, onCredit, stripeLoading }) => {
   const trialEndDate = new Date();
@@ -75,9 +144,108 @@ const PlansSection = ({ canShowFreeTrialBtn }) => {
 
   const alert = useAlert();
 
+  const [changePlanTarget, setChangePlanTarget] = useState(null); // { plan, isUpgrade, priceId, periodEnd }
+
+  // Já tem assinatura paga ativa: clicar num plano diferente é troca de
+  // plano (upgrade/downgrade), não um checkout novo. Só valida e abre o
+  // modal de confirmação — a troca em si só acontece se o usuário confirmar.
+  const handlePlanChange = async (plan) => {
+    if (plan.id === profile.role) {
+      alert("Você já está nesse plano.");
+      return;
+    }
+
+    try {
+      setStripeLoading(true);
+
+      const statusRes = await fetch(
+        `/api/stripe-subscription?subscriptionId=${profile.stripe_subscription_id}&userId=${profile.id}`,
+      );
+      const statusData = await statusRes.json();
+
+      if (statusData.cancel_at_period_end) {
+        alert("Sua assinatura está cancelada. Reative-a no Dashboard antes de trocar de plano.");
+        return;
+      }
+
+      if (!["active", "trialing"].includes(statusData.status)) {
+        alert(
+          statusData.status === "past_due"
+            ? "Você tem uma cobrança pendente. Regularize o pagamento antes de trocar de plano."
+            : "Você possui uma assinatura pendente. Finalize ou cancele antes de trocar de plano.",
+        );
+        return;
+      }
+
+      const { data: planRow, error: planError } = await supabase
+        .from("plans")
+        .select("stripe_price_id")
+        .eq("role", plan.id)
+        .eq("active", true)
+        .eq("stripe_account", profile.stripe_account)
+        .maybeSingle();
+
+      if (planError || !planRow?.stripe_price_id) {
+        alert("Não foi possível localizar esse plano. Tente novamente.");
+        return;
+      }
+
+      setChangePlanTarget({
+        plan,
+        priceId: planRow.stripe_price_id,
+        isUpgrade: TIER_RANK[plan.id] > TIER_RANK[profile.role],
+        periodEnd: statusData.current_period_end,
+      });
+    } catch (e) {
+      console.error(e);
+      alert("Não foi possível verificar sua assinatura. Tente novamente.");
+    } finally {
+      setStripeLoading(false);
+    }
+  };
+
+  const confirmPlanChange = async () => {
+    if (!changePlanTarget) return;
+
+    try {
+      setStripeLoading(true);
+
+      const changeRes = await fetch("/api/change-subscription-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: profile.id, newPriceId: changePlanTarget.priceId }),
+      });
+      const changeData = await changeRes.json();
+
+      if (!changeRes.ok) throw new Error(changeData.error || "Falha ao trocar de plano");
+
+      const successParams = new URLSearchParams({ type: changeData.type, plan: changePlanTarget.plan.name });
+
+      if (changeData.type === "downgrade_scheduled" && changeData.effective_at) {
+        successParams.set("date", changeData.effective_at);
+      }
+
+      if (changeData.type === "upgrade_pending") {
+        if (changeData.payment_method_type) successParams.set("payment_method", changeData.payment_method_type);
+        if (changeData.invoice_url) successParams.set("invoice_url", changeData.invoice_url);
+      }
+
+      window.location.href = `/billing/plan-change-success?${successParams.toString()}`;
+    } catch (e) {
+      console.error(e);
+      alert("Não foi possível trocar de plano. Tente novamente.");
+      setStripeLoading(false);
+    }
+  };
+
   const openModal = (plan, withTrial = false) => {
     if (plan.id === "free") {
       planClick("free");
+      return;
+    }
+
+    if (profile?.stripe_subscription_id && profile?.role !== "free") {
+      handlePlanChange(plan);
       return;
     }
 
@@ -195,6 +363,17 @@ const PlansSection = ({ canShowFreeTrialBtn }) => {
         onClose={closeModal}
         onCredit={handleCredit}
         stripeLoading={stripeLoading}
+      />
+
+      <ChangePlanModal
+        open={!!changePlanTarget}
+        currentPlan={plans.find((p) => p.id === profile?.role)}
+        targetPlan={changePlanTarget?.plan}
+        isUpgrade={changePlanTarget?.isUpgrade}
+        periodEnd={changePlanTarget?.periodEnd}
+        onClose={() => setChangePlanTarget(null)}
+        onConfirm={confirmPlanChange}
+        loading={stripeLoading}
       />
     </section>
   );
