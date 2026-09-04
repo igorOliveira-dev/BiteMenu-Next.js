@@ -1,10 +1,30 @@
 import { stripeCPF, stripeCNPJ } from "@/lib/stripe";
 import { createClient } from "@supabase/supabase-js";
+import { plans } from "@/consts/Plans";
+import { sendUpcomingRenewalEmail, sendBoletoReadyEmail } from "@/lib/emails/subscriptionEmails";
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 const webhookSecretCPF = process.env.STRIPE_WEBHOOK_SECRET_CPF;
 const webhookSecretCNPJ = process.env.STRIPE_WEBHOOK_SECRET_CNPJ;
+
+function planNameFromRole(role) {
+  return plans.find((p) => p.id === role)?.name ?? role ?? "seu plano";
+}
+
+// Customer do Stripe às vezes não tem email salvo (checkout criado sem coletar);
+// nesse caso cai pro email do usuário no Supabase Auth.
+async function getCustomerEmail(stripe, customerId) {
+  const customer = await stripe.customers.retrieve(customerId);
+  if (customer && !customer.deleted && customer.email) return customer.email;
+
+  const { data: profile } = await supabase.from("profiles").select("id").eq("stripe_customer_id", customerId).maybeSingle();
+
+  if (!profile) return null;
+
+  const { data: authUser } = await supabase.auth.admin.getUserById(profile.id);
+  return authUser?.user?.email ?? null;
+}
 
 export async function POST(req) {
   const body = await req.text();
@@ -217,6 +237,81 @@ export async function POST(req) {
           .from("profiles")
           .update({ cancel_at_period_end: subscription.cancel_at_period_end ?? false })
           .eq("id", profile.id);
+
+        break;
+      }
+
+      // Aviso de renovação próxima (cartão e boleto)
+      case "invoice.upcoming": {
+        const invoiceObj = event.data.object;
+        const customerId = invoiceObj.customer;
+        const subscriptionId = invoiceObj.subscription ?? invoiceObj.parent?.subscription_details?.subscription ?? null;
+
+        if (!customerId || !subscriptionId) {
+          console.log("[Webhook] invoice.upcoming sem customer/subscription; ignorando");
+          break;
+        }
+
+        const priceId = invoiceObj.lines?.data?.[0]?.price?.id;
+        const { data: planData } = priceId
+          ? await supabase.from("plans").select("role").eq("stripe_price_id", priceId).maybeSingle()
+          : { data: null };
+
+        const email = await getCustomerEmail(stripe, customerId);
+
+        if (email) {
+          await sendUpcomingRenewalEmail({
+            to: email,
+            planName: planNameFromRole(planData?.role),
+            amountCents: invoiceObj.amount_due,
+            renewalDate: new Date(invoiceObj.period_end * 1000),
+          });
+          console.log("[Webhook] Email de renovação próxima enviado para", email);
+        } else {
+          console.log("[Webhook] invoice.upcoming sem email disponível para customer", customerId);
+        }
+
+        break;
+      }
+
+      // Boleto da renovação disponível — o principal ponto de esquecimento
+      case "invoice.finalized": {
+        const invoiceObj = event.data.object;
+        const customerId = invoiceObj.customer;
+        const subscriptionId = invoiceObj.subscription ?? invoiceObj.parent?.subscription_details?.subscription ?? null;
+        const paymentIntentId =
+          typeof invoiceObj.payment_intent === "string" ? invoiceObj.payment_intent : invoiceObj.payment_intent?.id;
+
+        if (!customerId || !subscriptionId || !paymentIntentId) {
+          console.log("[Webhook] invoice.finalized sem dados suficientes; ignorando");
+          break;
+        }
+
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        const boletoDetails = paymentIntent.next_action?.boleto_display_details;
+
+        // Não é boleto (ex: cartão cobrado automaticamente) — nada a avisar aqui.
+        if (!boletoDetails?.hosted_voucher_url) break;
+
+        const priceId = invoiceObj.lines?.data?.[0]?.price?.id;
+        const { data: planData } = priceId
+          ? await supabase.from("plans").select("role").eq("stripe_price_id", priceId).maybeSingle()
+          : { data: null };
+
+        const email = await getCustomerEmail(stripe, customerId);
+
+        if (email) {
+          await sendBoletoReadyEmail({
+            to: email,
+            planName: planNameFromRole(planData?.role),
+            amountCents: invoiceObj.amount_due,
+            dueDate: boletoDetails.expires_at ? new Date(boletoDetails.expires_at * 1000) : new Date(),
+            boletoUrl: boletoDetails.hosted_voucher_url,
+          });
+          console.log("[Webhook] Email de boleto disponível enviado para", email);
+        } else {
+          console.log("[Webhook] invoice.finalized (boleto) sem email disponível para customer", customerId);
+        }
 
         break;
       }

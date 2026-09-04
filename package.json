@@ -28,6 +28,7 @@
     "react-qr-code": "^2.0.18",
     "react-to-print": "^3.3.0",
     "recharts": "^3.9.2",
+    "resend": "^6.26.0",
     "slugify": "^1.6.6",
     "stripe": "^19.1.0"
   },
