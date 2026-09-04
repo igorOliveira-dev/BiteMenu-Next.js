@@ -9,7 +9,7 @@ const webhookSecretCPF = process.env.STRIPE_WEBHOOK_SECRET_CPF;
 const webhookSecretCNPJ = process.env.STRIPE_WEBHOOK_SECRET_CNPJ;
 
 function planNameFromRole(role) {
-  return plans.find((p) => p.id === role)?.name ?? role ?? "seu plano";
+  return plans.find((p) => p.id === role)?.name ?? role ?? null;
 }
 
 // Customer do Stripe às vezes não tem email salvo (checkout criado sem coletar);
@@ -274,24 +274,34 @@ export async function POST(req) {
         break;
       }
 
-      // Boleto da renovação disponível — o principal ponto de esquecimento
-      case "invoice.finalized": {
-        const invoiceObj = event.data.object;
-        const customerId = invoiceObj.customer;
-        const subscriptionId = invoiceObj.subscription ?? invoiceObj.parent?.subscription_details?.subscription ?? null;
-        const paymentIntentId =
-          typeof invoiceObj.payment_intent === "string" ? invoiceObj.payment_intent : invoiceObj.payment_intent?.id;
+      // Boleto disponível para pagamento — reage direto no payment_intent
+      // (que já traz o boleto_display_details no próprio payload) em vez de
+      // invoice.finalized + retrieve, porque no modo teste o Stripe simula o
+      // pagamento do boleto poucos segundos depois e o retrieve chega tarde,
+      // com o payment_intent já "succeeded" e sem next_action.
+      case "payment_intent.requires_action": {
+        const paymentIntent = event.data.object;
+        const boletoDetails = paymentIntent.next_action?.boleto_display_details;
 
-        if (!customerId || !subscriptionId || !paymentIntentId) {
-          console.log("[Webhook] invoice.finalized sem dados suficientes; ignorando");
+        // Não é boleto (ex: cartão pedindo 3D Secure) — nada a avisar aqui.
+        if (!boletoDetails?.hosted_voucher_url) break;
+
+        const customerId = paymentIntent.customer;
+
+        if (!customerId) {
+          console.log("[Webhook] payment_intent.requires_action (boleto) sem customer; ignorando");
           break;
         }
 
-        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-        const boletoDetails = paymentIntent.next_action?.boleto_display_details;
+        // Essa versão da API não traz mais o id da invoice no payment_intent;
+        // buscamos a invoice em aberto mais recente do customer.
+        const openInvoices = await stripe.invoices.list({ customer: customerId, status: "open", limit: 1 });
+        const invoiceObj = openInvoices.data[0];
 
-        // Não é boleto (ex: cartão cobrado automaticamente) — nada a avisar aqui.
-        if (!boletoDetails?.hosted_voucher_url) break;
+        if (!invoiceObj) {
+          console.log("[Webhook] payment_intent.requires_action (boleto) sem invoice em aberto para", customerId);
+          break;
+        }
 
         const priceId = invoiceObj.lines?.data?.[0]?.price?.id;
         const { data: planData } = priceId
@@ -310,7 +320,7 @@ export async function POST(req) {
           });
           console.log("[Webhook] Email de boleto disponível enviado para", email);
         } else {
-          console.log("[Webhook] invoice.finalized (boleto) sem email disponível para customer", customerId);
+          console.log("[Webhook] payment_intent.requires_action (boleto) sem email disponível para customer", customerId);
         }
 
         break;

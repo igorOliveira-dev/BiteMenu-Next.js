@@ -134,7 +134,9 @@ export default function PlanDetails({ setSelectedTab }) {
             </div>
           )}
 
-          {["past_due", "unpaid"].includes(subscription.status) && subscription.latest_invoice_url && (
+          {!subscription.cancel_at_period_end &&
+            ["past_due", "unpaid"].includes(subscription.status) &&
+            subscription.latest_invoice_url && (
             <div className="p-4 mb-4 border border-amber-500/30 bg-amber-500/10 text-amber-500 rounded max-w-[1024px]">
               <span>Você tem uma cobrança pendente.</span>
               <a
@@ -148,7 +150,9 @@ export default function PlanDetails({ setSelectedTab }) {
             </div>
           )}
 
-          {subscription.status === "incomplete" && (subscription.boleto_url || subscription.latest_invoice_url) && (
+          {!subscription.cancel_at_period_end &&
+            subscription.status === "incomplete" &&
+            (subscription.boleto_url || subscription.latest_invoice_url) && (
             <div className="text-center rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 w-full max-w-[1024px] mb-4">
               <span>
                 {subscription.payment_method_type === "boleto"

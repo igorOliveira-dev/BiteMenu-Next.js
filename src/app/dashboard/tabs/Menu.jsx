@@ -129,6 +129,13 @@ const Menu = (props) => {
 
         const data = await res.json();
 
+        // Assinatura já marcada pra cancelar: não faz sentido cobrar pagamento pendente
+        if (data.cancel_at_period_end) {
+          setSubscriptionWarning(null);
+          setBoletoPending(null);
+          return;
+        }
+
         // Assinatura atrasada/não paga
         if (["past_due", "unpaid"].includes(data.status) && data.latest_invoice_url) {
           setSubscriptionWarning(data.latest_invoice_url);
