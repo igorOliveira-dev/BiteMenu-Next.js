@@ -63,7 +63,7 @@ export async function POST(req) {
       payment_method_types: ["card", "boleto"],
       payment_method_options: {
         boleto: {
-          expires_after_days: 3,
+          expires_after_days: 7,
         },
       },
       customer: customerId,
