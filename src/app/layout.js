@@ -2,6 +2,7 @@ import { ConfirmProvider } from "@/providers/ConfirmProvider";
 import "./globals.css";
 import { AlertProvider } from "@/providers/AlertProvider";
 import GA from "@/components/GA";
+import AcquisitionTracker from "@/components/AcquisitionTracker";
 import logoMark from "../../public/LogoMarca-sem-fundo.png";
 import PWAGuard from "./PWAGuard";
 import { CookieConsentProvider } from "@/providers/CookieConsentProvider";
@@ -70,6 +71,7 @@ export default function RootLayout({ children }) {
             <ConfirmProvider>
               <AlertProvider>
                 <PWAGuard />
+                <AcquisitionTracker />
                 {children}
                 <GA />
                 <CookieBanner />

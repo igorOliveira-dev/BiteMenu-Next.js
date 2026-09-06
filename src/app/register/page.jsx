@@ -11,6 +11,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useAlert } from "@/providers/AlertProvider";
 import { CURRENT_PRIVACY_VERSION } from "@/lib/privacy";
+import { getAcquisitionSource } from "@/utils/acquisitionSource";
 
 export default function SignUp() {
   const router = useRouter();
@@ -91,6 +92,7 @@ export default function SignUp() {
             phone: fullPhone,
             privacy_accepted_at: nowIso,
             privacy_policy_version: CURRENT_PRIVACY_VERSION,
+            acquisition_source: getAcquisitionSource(),
           },
         ]);
 

@@ -63,7 +63,7 @@ const Admin = () => {
       
         const { data, error } = await supabase
           .from("profiles")
-          .select("id, display_name, email, role, phone, stripe_customer_id")
+          .select("id, display_name, email, role, phone, stripe_customer_id, acquisition_source")
           .in("id", chunk);
       
         if (error) {
@@ -87,6 +87,7 @@ const Admin = () => {
           owner_email: ownerProfile?.email || "Sem e-mail",
           owner_role: ownerProfile?.role || "desconhecido",
           owner_phone: ownerProfile?.phone || "Sem telefone",
+          owner_acquisition_source: ownerProfile?.acquisition_source || "direct",
           stripe_costumer_id: ownerProfile?.stripe_customer_id || null,
         };
       });
@@ -398,9 +399,21 @@ const Admin = () => {
                 )}
               </p>
 
-              <p className="text-xs text-gray-400">
-                dono: <span className="font-semibold text-white">{menu.owner_name}</span> (
-                <span className="font-mono">{menu.owner_role}</span>)
+              <p className="text-xs text-gray-400 flex items-center gap-2">
+                <span>
+                  dono: <span className="font-semibold text-white">{menu.owner_name}</span> (
+                  <span className="font-mono">{menu.owner_role}</span>)
+                </span>
+                {menu.owner_acquisition_source === "instagram" && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-400 border border-pink-500/40">
+                    Instagram
+                  </span>
+                )}
+                {menu.owner_acquisition_source === "tiktok" && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                    TikTok
+                  </span>
+                )}
               </p>
 
               <p className="text-xs text-gray-400">

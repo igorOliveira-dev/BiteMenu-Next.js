@@ -40,7 +40,9 @@
       "Bash(git fetch *)",
       "Bash(git config *)",
       "Bash(git pull *)",
-      "Bash(rm \"/home/igor/igor/projects/BiteMenu-Next.js/src/app/menu/[slug]/components/MyOrdersButton.jsx\")"
+      "Bash(rm \"/home/igor/igor/projects/BiteMenu-Next.js/src/app/menu/[slug]/components/MyOrdersButton.jsx\")",
+      "Bash(git stash *)",
+      "Bash(echo \"---EXIT:$?---\")"
     ],
     "additionalDirectories": [
       "/home/igor/igor/projects/BiteMenu-Next.js/src/app/menu/[slug]",
