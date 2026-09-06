@@ -1,5 +1,4 @@
 const STORAGE_KEY = "bite_menu_acquisition_source";
-const DEFAULT_SOURCE = "direct";
 
 function readValue() {
   if (typeof window === "undefined") return null;
@@ -19,20 +18,17 @@ function writeValue(value) {
   }
 }
 
-// Captura utm_source da URL apenas na primeira visita (first-touch).
-// Se não houver utm_source (acesso direto), grava "direct" mesmo assim,
-// para travar a origem logo no primeiro acesso e evitar que um acesso
-// posterior via link de campanha sobrescreva a origem real do usuário.
 export function captureAcquisitionSource() {
   if (typeof window === "undefined") return;
   if (readValue()) return;
 
   const params = new URLSearchParams(window.location.search);
   const source = params.get("utm_source");
+  if (!source) return;
 
-  writeValue(source ? source.trim().slice(0, 100) : DEFAULT_SOURCE);
+  writeValue(source.trim().slice(0, 100));
 }
 
 export function getAcquisitionSource() {
-  return readValue() || DEFAULT_SOURCE;
+  return readValue();
 }

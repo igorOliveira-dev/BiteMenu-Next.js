@@ -5,6 +5,7 @@ import useAllMenus from "@/hooks/useAllMenus";
 import { supabase } from "@/lib/supabaseClient";
 import Loading from "@/components/Loading";
 import Return from "@/components/Return";
+import { ACQUISITION_SOURCE_LABELS } from "@/lib/acquisitionSourceOptions";
 import {
   AreaChart,
   Area,
@@ -87,7 +88,7 @@ const Admin = () => {
           owner_email: ownerProfile?.email || "Sem e-mail",
           owner_role: ownerProfile?.role || "desconhecido",
           owner_phone: ownerProfile?.phone || "Sem telefone",
-          owner_acquisition_source: ownerProfile?.acquisition_source || "direct",
+          owner_acquisition_source: ownerProfile?.acquisition_source || null,
           stripe_costumer_id: ownerProfile?.stripe_customer_id || null,
         };
       });
@@ -404,14 +405,9 @@ const Admin = () => {
                   dono: <span className="font-semibold text-white">{menu.owner_name}</span> (
                   <span className="font-mono">{menu.owner_role}</span>)
                 </span>
-                {menu.owner_acquisition_source === "instagram" && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-400 border border-pink-500/40">
-                    Instagram
-                  </span>
-                )}
-                {menu.owner_acquisition_source === "tiktok" && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
-                    TikTok
+                {menu.owner_acquisition_source && menu.owner_acquisition_source !== "direct" && (
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-translucid border border-[var(--translucid)] text-gray-400">
+                    {ACQUISITION_SOURCE_LABELS[menu.owner_acquisition_source] || menu.owner_acquisition_source}
                   </span>
                 )}
               </p>

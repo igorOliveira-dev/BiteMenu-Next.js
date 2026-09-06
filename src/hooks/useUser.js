@@ -84,3 +84,7 @@ export default function useUser() {
 
   return { user, profile, loading };
 }
+
+export function updateCachedProfile(patch) {
+  if (cachedProfile) cachedProfile = { ...cachedProfile, ...patch };
+}

@@ -15,6 +15,8 @@ import PrivacyAcceptModal from "@/components/PrivacyAcceptModal";
 import { CURRENT_PRIVACY_VERSION } from "@/lib/privacy";
 import useStrategicPlanModal from "@/hooks/useStrategicPlanModal";
 import UpdatePlanModal from "@/app/dashboard/tabs/components/UpdatePlanModal";
+import useAcquisitionSourceModal from "@/hooks/useAcquisitionSourceModal";
+import AcquisitionSourceModal from "@/app/dashboard/components/AcquisitionSourceModal";
 
 export default function DashboardLayoutClient({ children }) {
   const router = useRouter();
@@ -25,6 +27,7 @@ export default function DashboardLayoutClient({ children }) {
   const [showDownloadButton, setShowDownloadButton] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const strategicModal = useStrategicPlanModal(profile);
+  const acquisitionModal = useAcquisitionSourceModal(profile);
 
   useEffect(() => {
     const checkUserMenu = async () => {
@@ -163,6 +166,9 @@ export default function DashboardLayoutClient({ children }) {
           onClose={strategicModal.onClose}
           onCta={strategicModal.onCta}
         />
+      )}
+      {acquisitionModal.show && !showPrivacyModal && !strategicModal.show && (
+        <AcquisitionSourceModal onClose={acquisitionModal.onClose} onSubmit={acquisitionModal.onSubmit} />
       )}
     </>
   );
