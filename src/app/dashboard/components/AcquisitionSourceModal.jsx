@@ -22,12 +22,21 @@ function RadioCard({ label, selected, onClick }) {
 
 export default function AcquisitionSourceModal({ onClose, onSubmit }) {
   const [selected, setSelected] = useState(null);
+  const [otherText, setOtherText] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const isOther = selected === "other";
+  const canSubmit = selected && (!isOther || otherText.trim().length > 0);
+
+  const handleSelect = (value) => {
+    setSelected(value);
+    if (value !== "other") setOtherText("");
+  };
+
   const handleSubmit = async () => {
-    if (!selected || saving) return;
+    if (!canSubmit || saving) return;
     setSaving(true);
-    await onSubmit(selected);
+    await onSubmit(isOther ? otherText.trim() : selected);
     setSaving(false);
   };
 
@@ -40,10 +49,22 @@ export default function AcquisitionSourceModal({ onClose, onSubmit }) {
               key={option.value}
               label={option.label}
               selected={selected === option.value}
-              onClick={() => setSelected(option.value)}
+              onClick={() => handleSelect(option.value)}
             />
           ))}
         </div>
+
+        {isOther && (
+          <input
+            type="text"
+            autoFocus
+            maxLength={60}
+            value={otherText}
+            onChange={(e) => setOtherText(e.target.value)}
+            placeholder="De onde você veio?"
+            className="input w-full bg-translucid border border-translucid p-3 rounded-xl outline-none"
+          />
+        )}
 
         <div className="flex gap-2 items-end justify-end pt-2">
           <button
@@ -55,7 +76,7 @@ export default function AcquisitionSourceModal({ onClose, onSubmit }) {
           </button>
           <button
             onClick={handleSubmit}
-            disabled={!selected || saving}
+            disabled={!canSubmit || saving}
             type="button"
             className="cta-button glow-red disabled:opacity-50 disabled:cursor-not-allowed"
           >
