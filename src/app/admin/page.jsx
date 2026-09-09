@@ -34,6 +34,7 @@ const Admin = () => {
   const [planGrowth, setPlanGrowth] = useState({ plus: [], pro: [] });
   const [planGrowthLoading, setPlanGrowthLoading] = useState(true);
   const [planGrowthError, setPlanGrowthError] = useState(null);
+  const [subscriberStatus, setSubscriberStatus] = useState({});
 
   const [sortByLastAccess, setSortByLastAccess] = useState(false);
   const [onlyLast7Days, setOnlyLast7Days] = useState(false);
@@ -164,6 +165,7 @@ const Admin = () => {
 
         const data = await res.json();
         setPlanGrowth({ plus: data.plus || [], pro: data.pro || [] });
+        setSubscriberStatus(data.subscriberStatus || {});
       } catch (err) {
         console.error("Erro ao buscar evolução por plano:", err);
         setPlanGrowthError("Não foi possível carregar os dados do Stripe.");
@@ -384,6 +386,22 @@ const Admin = () => {
               <div className="flex items-center gap-2">
                 {menu.stripe_costumer_id != null && <span className="text-gray-400">!</span>}
                 <h2 className="text-lg font-semibold">{menu.title}</h2>
+                {(() => {
+                  const status = subscriberStatus[menu.stripe_costumer_id];
+                  if (!status) return null;
+
+                  const colorByStatus = {
+                    active: "bg-green-500/20 text-green-400 border-green-500/40",
+                    trialing: "bg-blue-500/20 text-blue-400 border-blue-500/40",
+                    past_due: "bg-red-500/20 text-red-400 border-red-500/40",
+                    unpaid: "bg-red-500/20 text-red-400 border-red-500/40",
+                  };
+                  const colorClass = colorByStatus[status.status] || "bg-gray-500/20 text-gray-400 border-gray-500/40";
+
+                  return (
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full border ${colorClass}`}>{status.label}</span>
+                  );
+                })()}
                 <span className="text-xs text-gray-400 ml-auto">{menu.items_count ?? 0} itens</span>
               </div>
 

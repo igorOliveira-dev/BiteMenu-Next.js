@@ -41,6 +41,41 @@ function monthLabel(key) {
   });
 }
 
+const STATUS_LABELS = {
+  active: "Ativa",
+  trialing: "Teste grátis",
+  past_due: "Vencida",
+  unpaid: "Vencida",
+  canceled: "Cancelada",
+  incomplete: "Pendente",
+  incomplete_expired: "Expirada",
+};
+
+// 🔹 Para cada customer, pega a assinatura mais recente e retorna um mapa
+// customerId -> status (usa os mesmos dados já buscados acima, sem custo extra de API)
+function buildSubscriberStatus(items) {
+  const latestByCustomer = {};
+
+  items.forEach((sub) => {
+    if (!sub.customer) return;
+    const existing = latestByCustomer[sub.customer];
+    if (!existing || sub.created > existing.created) {
+      latestByCustomer[sub.customer] = sub;
+    }
+  });
+
+  const subscriberStatus = {};
+  Object.entries(latestByCustomer).forEach(([customerId, sub]) => {
+    subscriberStatus[customerId] = {
+      status: sub.status,
+      label: STATUS_LABELS[sub.status] || sub.status,
+      cancelAtPeriodEnd: sub.cancel_at_period_end,
+    };
+  });
+
+  return subscriberStatus;
+}
+
 // 🔹 Agora calcula: novos, cancelados, e ativos líquidos acumulados por mês
 function buildMonthlyStats(items) {
   const newByMonth = {};
@@ -109,6 +144,8 @@ export async function GET() {
           created: sub.created,
           canceled_at: sub.canceled_at, // 🔹 novo campo capturado
           status: sub.status,
+          customer: sub.customer,
+          cancel_at_period_end: sub.cancel_at_period_end,
         }));
       }),
     );
@@ -121,6 +158,7 @@ export async function GET() {
     return NextResponse.json({
       plus: buildMonthlyStats(plusItems),
       pro: buildMonthlyStats(proItems),
+      subscriberStatus: buildSubscriberStatus(allSubscriptions),
     });
   } catch (err) {
     console.error("Erro ao buscar assinaturas Stripe:", err);
