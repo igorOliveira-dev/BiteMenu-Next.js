@@ -113,90 +113,6 @@ function buildMonthlyStats(items) {
   });
 }
 
-const PLAN_PRICES = { plus: 24.9, pro: 44.9 };
-
-// 🔹 Taxa aproximada que a Stripe costuma descontar no Brasil em cobranças
-// recorrentes com cartão nacional (3,99% + R$0,39 por cobrança). É uma
-// estimativa — boleto/pix têm taxas diferentes, mas cartão é o método mais comum.
-const STRIPE_FEE_PERCENT = 0.0399;
-const STRIPE_FEE_FIXED = 0.39;
-
-function monthKeysBetween(startKey, endKey) {
-  const [startYear, startMonth] = startKey.split("-").map(Number);
-  const [endYear, endMonth] = endKey.split("-").map(Number);
-
-  const keys = [];
-  let year = startYear;
-  let month = startMonth;
-
-  while (year < endYear || (year === endYear && month <= endMonth)) {
-    keys.push(`${year}-${String(month).padStart(2, "0")}`);
-    month++;
-    if (month > 12) {
-      month = 1;
-      year++;
-    }
-  }
-
-  return keys;
-}
-
-// 🔹 Deltas de assinaturas ativas por mês (+1 quando criada, -1 quando cancelada)
-function buildActiveDeltasByMonth(items) {
-  const deltas = {};
-
-  items.forEach(({ created, canceled_at, status }) => {
-    const createdKey = monthKey(created);
-    deltas[createdKey] = (deltas[createdKey] || 0) + 1;
-
-    if (canceled_at && status !== "incomplete_expired") {
-      const cancelKey = monthKey(canceled_at);
-      deltas[cancelKey] = (deltas[cancelKey] || 0) - 1;
-    }
-  });
-
-  return deltas;
-}
-
-// 🔹 Estimativa de faturamento bruto/líquido mensal, com base no número de
-// assinaturas ativas de cada plano (mesmos dados já buscados acima, sem custo
-// extra de API). Preenche meses sem eventos carregando o total anterior.
-function buildRevenueTimeline(plusItems, proItems) {
-  const plusDeltas = buildActiveDeltasByMonth(plusItems);
-  const proDeltas = buildActiveDeltasByMonth(proItems);
-
-  const allKeys = [...Object.keys(plusDeltas), ...Object.keys(proDeltas)];
-  if (allKeys.length === 0) return [];
-
-  const sortedKeys = [...new Set(allKeys)].sort();
-
-  const now = new Date();
-  const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const lastKey = sortedKeys[sortedKeys.length - 1] > currentKey ? sortedKeys[sortedKeys.length - 1] : currentKey;
-
-  const timelineKeys = monthKeysBetween(sortedKeys[0], lastKey);
-
-  let plusActive = 0;
-  let proActive = 0;
-
-  return timelineKeys.map((key) => {
-    plusActive += plusDeltas[key] || 0;
-    proActive += proDeltas[key] || 0;
-
-    const gross = plusActive * PLAN_PRICES.plus + proActive * PLAN_PRICES.pro;
-    const totalActive = plusActive + proActive;
-    const net = Math.max(gross - gross * STRIPE_FEE_PERCENT - totalActive * STRIPE_FEE_FIXED, 0);
-
-    return {
-      month: monthLabel(key),
-      plusActive,
-      proActive,
-      gross: Number(gross.toFixed(2)),
-      net: Number(net.toFixed(2)),
-    };
-  });
-}
-
 export async function GET() {
   try {
     const { data: plans, error: plansError } = await supabaseAdmin
@@ -243,7 +159,6 @@ export async function GET() {
       plus: buildMonthlyStats(plusItems),
       pro: buildMonthlyStats(proItems),
       subscriberStatus: buildSubscriberStatus(allSubscriptions),
-      revenue: buildRevenueTimeline(plusItems, proItems),
     });
   } catch (err) {
     console.error("Erro ao buscar assinaturas Stripe:", err);
