@@ -35,6 +35,7 @@ const Admin = () => {
   const [planGrowthLoading, setPlanGrowthLoading] = useState(true);
   const [planGrowthError, setPlanGrowthError] = useState(null);
   const [subscriberStatus, setSubscriberStatus] = useState({});
+  const [revenueTimeline, setRevenueTimeline] = useState([]);
 
   const [sortByLastAccess, setSortByLastAccess] = useState(false);
   const [onlyLast7Days, setOnlyLast7Days] = useState(false);
@@ -166,6 +167,7 @@ const Admin = () => {
         const data = await res.json();
         setPlanGrowth({ plus: data.plus || [], pro: data.pro || [] });
         setSubscriberStatus(data.subscriberStatus || {});
+        setRevenueTimeline(data.revenue || []);
       } catch (err) {
         console.error("Erro ao buscar evolução por plano:", err);
         setPlanGrowthError("Não foi possível carregar os dados do Stripe.");
@@ -302,6 +304,51 @@ const Admin = () => {
               </div>
             )}
           </div>
+          {/* 🔹 Estimativa de faturamento mensal (bruto x líquido) com base nas assinaturas ativas */}
+          {revenueTimeline.length > 0 && (
+            <div className="w-full max-w-4xl mx-auto h-72 mb-10">
+              <h3 className="text-sm text-gray-400 mb-1 text-center">Estimativa de faturamento mensal</h3>
+              <p className="text-[11px] text-gray-500 mb-2 text-center">
+                Bruto: R$24,90/Plus + R$44,90/Pro por assinatura ativa. Líquido: descontando ~3,99% + R$0,39 por
+                cobrança (taxa aproximada da Stripe).
+              </p>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={revenueTimeline}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                  <XAxis dataKey="month" stroke="#999" fontSize={12} />
+                  <YAxis
+                    stroke="#999"
+                    fontSize={12}
+                    tickFormatter={(v) => `R$${v}`}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #333" }}
+                    labelStyle={{ color: "#fff" }}
+                    formatter={(value) => `R$ ${Number(value).toFixed(2).replace(".", ",")}`}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Area
+                    type="monotone"
+                    dataKey="gross"
+                    name="Faturamento bruto"
+                    stroke="#3b82f6"
+                    fill="#3b82f6"
+                    fillOpacity={0.15}
+                    strokeWidth={2}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="net"
+                    name="Faturamento líquido"
+                    stroke="#22c55e"
+                    fill="#22c55e"
+                    fillOpacity={0.25}
+                    strokeWidth={2}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </>
       )}
 
