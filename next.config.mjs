@@ -36,6 +36,21 @@ const nextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [
+          {
+            type: "host",
+            value: "bitemenu.com.br",
+          },
+        ],
+        destination: "https://www.bitemenu.com.br/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default withPWA(nextConfig);
