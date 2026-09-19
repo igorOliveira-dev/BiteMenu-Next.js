@@ -3426,7 +3426,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       )}
 
       {combosModalOpen && (
-        <GenericModal wfull maxWidth={"480px"} title="Combos" onClose={closeCombosModal}>
+        <GenericModal wfull maxWidth={"420px"} py={"24px"} title="Combos" onClose={closeCombosModal}>
           <p className="text-sm color-gray mb-3">
             Configure descontos automáticos por quantidade ou valor gasto, aplicados a um item, categoria ou ao carrinho
             todo.
@@ -3467,7 +3467,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
               <button
                 type="button"
                 onClick={() => openComboForm(null)}
-                className="w-full mt-3 cursor-pointer px-3 py-2 rounded bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white text-sm"
+                className="w-full mt-4 cursor-pointer p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border-2 border-[var(--translucid)] transition"
               >
                 + Novo combo
               </button>
@@ -3491,9 +3491,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
       {comboFormOpen && comboDraft && (
         <GenericModal
-          backdropDontClose
           wfull
           maxWidth={"420px"}
+          py={"24px"}
           title={comboDraft.id ? "Editar combo" : "Novo combo"}
           onClose={() => {
             setComboFormOpen(false);
@@ -3522,7 +3522,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                         // carrinho só faz sentido por valor, mas deixamos livre pra escolher também por quantidade total
                       }))
                     }
-                    className={`flex-1 p-2 rounded border cursor-pointer text-sm ${comboDraft.scope === opt.value ? "bg-blue-600/80 text-white border-transparent" : "border-translucid bg-translucid"}`}
+                    className={`flex-1 p-2 rounded-lg border-2 border-[var(--translucid)] cursor-pointer text-sm font-semibold transition ${comboDraft.scope === opt.value ? "bg-green-600/80 text-white" : "hover:bg-[var(--translucid)]"}`}
                   >
                     {opt.label}
                   </button>
@@ -3570,14 +3570,14 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                 <button
                   type="button"
                   onClick={() => setComboDraft((d) => ({ ...d, trigger_type: "quantity" }))}
-                  className={`flex-1 p-2 rounded border cursor-pointer text-sm ${comboDraft.trigger_type === "quantity" ? "bg-blue-600/80 text-white border-transparent" : "border-translucid bg-translucid"}`}
+                  className={`flex-1 p-2 rounded-lg border-2 border-[var(--translucid)] cursor-pointer text-sm font-semibold transition ${comboDraft.trigger_type === "quantity" ? "bg-green-600/80 text-white" : "hover:bg-[var(--translucid)]"}`}
                 >
                   Por quantidade
                 </button>
                 <button
                   type="button"
                   onClick={() => setComboDraft((d) => ({ ...d, trigger_type: "value" }))}
-                  className={`flex-1 p-2 rounded border cursor-pointer text-sm ${comboDraft.trigger_type === "value" ? "bg-blue-600/80 text-white border-transparent" : "border-translucid bg-translucid"}`}
+                  className={`flex-1 p-2 rounded-lg border-2 border-[var(--translucid)] cursor-pointer text-sm font-semibold transition ${comboDraft.trigger_type === "value" ? "bg-green-600/80 text-white" : "hover:bg-[var(--translucid)]"}`}
                 >
                   Por valor gasto
                 </button>
@@ -3613,14 +3613,14 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                 <button
                   type="button"
                   onClick={() => setComboDraft((d) => ({ ...d, discount_type: "percentage" }))}
-                  className={`flex-1 p-2 rounded border cursor-pointer text-sm ${comboDraft.discount_type === "percentage" ? "bg-blue-600/80 text-white border-transparent" : "border-translucid bg-translucid"}`}
+                  className={`flex-1 p-2 rounded-lg border-2 border-[var(--translucid)] cursor-pointer text-sm font-semibold transition ${comboDraft.discount_type === "percentage" ? "bg-green-600/80 text-white" : "hover:bg-[var(--translucid)]"}`}
                 >
                   Porcentagem (%)
                 </button>
                 <button
                   type="button"
                   onClick={() => setComboDraft((d) => ({ ...d, discount_type: "fixed" }))}
-                  className={`flex-1 p-2 rounded border cursor-pointer text-sm ${comboDraft.discount_type === "fixed" ? "bg-blue-600/80 text-white border-transparent" : "border-translucid bg-translucid"}`}
+                  className={`flex-1 p-2 rounded-lg border-2 border-[var(--translucid)] cursor-pointer text-sm font-semibold transition ${comboDraft.discount_type === "fixed" ? "bg-green-600/80 text-white" : "hover:bg-[var(--translucid)]"}`}
                 >
                   Valor fixo ({getCurrencySymbol(menu?.currency)})
                 </button>
@@ -3645,18 +3645,21 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
               />
             </label>
 
-            <div className="flex justify-end gap-2 mt-2">
+            <div className="grid gap-2 pt-3">
+              <button
+                onClick={saveCombo}
+                className="cursor-pointer p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border-2 border-[var(--translucid)] transition"
+              >
+                Salvar
+              </button>
               <button
                 onClick={() => {
                   setComboFormOpen(false);
                   setComboDraft(null);
                 }}
-                className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded"
+                className="cursor-pointer p-2 font-semibold rounded-lg hover:bg-[var(--translucid)] border-2 border-[var(--translucid)] transition"
               >
                 Cancelar
-              </button>
-              <button onClick={saveCombo} className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded">
-                Salvar
               </button>
             </div>
           </div>

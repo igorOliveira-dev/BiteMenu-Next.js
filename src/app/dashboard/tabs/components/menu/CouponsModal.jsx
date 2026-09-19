@@ -311,7 +311,7 @@ export default function CouponsModal({ menuId, currency, canCreate, onClose }) {
               <DateField value={draft.starts_at} onChange={(v) => setDraft((d) => ({ ...d, starts_at: v }))} />
             </label>
             <label className="block">
-              <div className="text-sm color-gray mb-1">Fim (inclusive)</div>
+              <div className="text-sm color-gray mb-1">Válido até</div>
               <DateField value={draft.ends_at} onChange={(v) => setDraft((d) => ({ ...d, ends_at: v }))} />
             </label>
           </div>
