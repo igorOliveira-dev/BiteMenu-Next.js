@@ -1113,38 +1113,39 @@ const Orders = ({
       {resetModalOpen ? (
         <GenericModal
           title="Resetar numeração dos pedidos?"
-          size="sm"
-          hideClose
-          backdropDontClose
+          onClose={() => setResetModalOpen(false)}
+          wfull
+          maxWidth={"420px"}
+          py={"24px"}
         >
           <p className="mb-2 text-sm">
             Deseja reiniciar a numeração dos pedidos ao fechar a loja?
           </p>
-          <p className="mb-4 text-xs color-gray">
+          <p className="mb-6 text-xs color-gray">
             Se estiver fechando para um intervalo, é recomendável escolher
             &quot;Não&quot;: a numeração continua de onde parou quando você
             abrir a loja de novo.
           </p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setResetModalOpen(false);
-                handleToggleStoreOpen(true);
-              }}
-              className="w-full cursor-pointer rounded-xl border bg-[var(--translucid)] border-translucid py-3 text-sm font-medium transition hover:opacity-80"
-            >
-              Sim, resetar
-            </button>
+          <div className="grid gap-2">
             <button
               type="button"
               onClick={() => {
                 setResetModalOpen(false);
                 handleToggleStoreOpen();
               }}
-              className="w-full cursor-pointer rounded-xl bg-blue-600 py-3 text-sm font-medium text-white transition hover:bg-blue-700"
+              className="cursor-pointer p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border-2 border-[var(--translucid)] transition"
             >
-              Não
+              Não, manter numeração
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setResetModalOpen(false);
+                handleToggleStoreOpen(true);
+              }}
+              className="cursor-pointer p-2 font-semibold rounded-lg hover:bg-[var(--translucid)] border-2 border-[var(--translucid)] transition"
+            >
+              Sim, resetar numeração
             </button>
           </div>
         </GenericModal>
