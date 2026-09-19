@@ -5,6 +5,10 @@ import { FaTimes } from "react-icons/fa";
 
 const AlertContext = createContext(null);
 
+let nextAlertId = 0;
+
+const MAX_ALERTS = 3;
+
 const alertPresets = {
   fast: {
     duration: 2500,
@@ -27,7 +31,7 @@ export function AlertProvider({ children, duration: defaultDuration = 4000 }) {
 
       const finalTextColor = options.textColor ?? preset.textColor ?? null;
 
-      const id = Date.now();
+      const id = nextAlertId++; // Date.now() repetia quando 2 alertas disparavam no mesmo ms
 
       const newAlert = {
         id,
@@ -39,7 +43,7 @@ export function AlertProvider({ children, duration: defaultDuration = 4000 }) {
         textColor: finalTextColor,
       };
 
-      setAlerts((prev) => [...prev, newAlert]);
+      setAlerts((prev) => [...prev, newAlert].slice(-MAX_ALERTS)); // os mais antigos saem
 
       setTimeout(() => closeAlert(id), finalDuration);
     },

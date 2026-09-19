@@ -124,6 +124,9 @@ const Orders = ({
 
   const [soundNewOrder, setSoundNewOrder] = useState(true);
 
+  const [manualStoreControl, setManualStoreControl] = useState(false);
+  const [storeOpen, setStoreOpen] = useState(false);
+
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [summary, setSummary] = useState({
     count: 0,
@@ -168,6 +171,14 @@ const Orders = ({
       setSoundNewOrder(menu.sound_new_order);
     }
   }, [menu?.sound_new_order]);
+
+  useEffect(() => {
+    setManualStoreControl(!!menu?.manual_control);
+    setStoreOpen(!!menu?.is_open);
+    // só ao carregar o menu: depender dos campos faz o efeito reverter o clique
+    // seguinte com o valor antigo, já que os handlers mutam `menu` após o await
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [menu?.id]);
 
   useEffect(() => {
     if (menu?.delivery_fee_on_sales !== undefined) {
@@ -429,6 +440,40 @@ const Orders = ({
       setSoundNewOrder(!value);
     } else {
       customAlert("Configuração de som atualizada!", "success");
+    }
+  };
+
+  const handleToggleManualStoreControl = async (value) => {
+    setManualStoreControl(value);
+
+    const { error } = await updateMenuById(supabase, menu.id, {
+      manual_control: value,
+    });
+
+    if (error) {
+      customAlert("Erro ao atualizar controle manual da loja.", "error");
+      setManualStoreControl(!value);
+    } else {
+      menu.manual_control = value; // useMenu mantém o menu em cache entre abas
+
+      customAlert("Controle manual da loja atualizado!", "success");
+    }
+  };
+
+  const handleToggleStoreOpen = async () => {
+    const value = !storeOpen;
+    setStoreOpen(value);
+
+    const { error } = await updateMenuById(supabase, menu.id, {
+      is_open: value,
+    });
+
+    if (error) {
+      customAlert("Erro ao atualizar status da loja.", "error");
+      setStoreOpen(!value);
+    } else {
+      menu.is_open = value;
+      customAlert(value ? "Loja aberta!" : "Loja fechada!", "success");
     }
   };
 
@@ -714,6 +759,59 @@ const Orders = ({
           <p className="mt-2 text-xs color-gray">
             Quando ativado, o sistema tocará um som ao chegar um novo pedido.
           </p>
+
+          <hr className="my-3 border-translucid" />
+
+          <p className="mb-2 text-sm font-medium">Abertura da loja</p>
+
+          <label className="flex items-center gap-2">
+            <span className="switch">
+              <input
+                type="checkbox"
+                checked={manualStoreControl}
+                onChange={(e) =>
+                  handleToggleManualStoreControl(e.target.checked)
+                }
+              />
+              <span className="slider"></span>
+            </span>
+
+            <span>Controle manual de abertura e fechamento</span>
+          </label>
+
+          <p className="mt-2 mb-3 text-xs color-gray">
+            Quando ativado, o horário de funcionamento é ignorado e a loja só
+            abre e fecha pelo botão abaixo.
+          </p>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleToggleStoreOpen}
+              disabled={!manualStoreControl}
+              className={`flex-1 cursor-pointer rounded-xl px-3 py-2 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                storeOpen
+                  ? "bg-red-600 hover:bg-red-700"
+                  : "bg-green-600 hover:bg-green-700"
+              }`}
+            >
+              {storeOpen ? "Fechar loja" : "Abrir loja"}
+            </button>
+
+            {manualStoreControl ? (
+              <span
+                className={`shrink-0 text-sm font-semibold ${
+                  storeOpen ? "text-green-500" : "text-red-500"
+                }`}
+              >
+                {storeOpen ? "Loja aberta" : "Loja fechada"}
+              </span>
+            ) : (
+              <span className="shrink-0 text-sm color-gray">
+                Pelo horário
+              </span>
+            )}
+          </div>
         </div>
 
         {!enabledOrders ? (

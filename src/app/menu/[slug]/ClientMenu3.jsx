@@ -13,6 +13,7 @@ import { supabaseImg } from "@/lib/imageUtils";
 import { supabase } from "@/lib/supabaseClient";
 import { getCombosByMenuId } from "@/lib/queries/combos";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
+import useManualStore from "@/hooks/useManualStore";
 import XButton from "@/components/XButton";
 import { useThemeColor } from "@/providers/ThemeColorProvider";
 import { useCookieConsent } from "@/providers/CookieConsentProvider";
@@ -203,9 +204,19 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole, ownerStripeAc
 
   const establishmentPhone = ownerPhone ?? null;
 
-  const open = useMemo(() => isOpenNow(menu.hours), [menu.hours]);
-  const closingTime = useMemo(() => getClosingTime(menu.hours), [menu.hours]);
-  const nextOpenInfo = useMemo(() => getNextOpenInfo(menu.hours), [menu.hours]);
+  const manualStore = useManualStore(menu.id);
+  const open = useMemo(
+    () => (manualStore.control ? manualStore.open : isOpenNow(menu.hours)),
+    [menu.hours, manualStore],
+  );
+  const closingTime = useMemo(
+    () => (manualStore.control ? null : getClosingTime(menu.hours)),
+    [menu.hours, manualStore.control],
+  );
+  const nextOpenInfo = useMemo(
+    () => (manualStore.control ? null : getNextOpenInfo(menu.hours)),
+    [menu.hours, manualStore.control],
+  );
 
   const contrast = useMemo(() => getContrastTextColor(menu.background_color), [menu.background_color]);
   const background = menu.background_color;
