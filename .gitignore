@@ -44,3 +44,5 @@ next-env.d.ts
 
 # supabase CLI cache
 supabase/.temp/
+# graphify
+graphify-out/
