@@ -36,6 +36,7 @@ import { createPortal } from "react-dom";
 import { useLayoutEffect } from "react";
 import { supabaseImg } from "@/lib/imageUtils";
 import ActionsMenu from "@/components/ActionMenu";
+import CouponsModal from "./CouponsModal";
 
 function getContrastTextColor(hex) {
   const cleanHex = (hex || "").replace("#", "");
@@ -554,6 +555,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
   const [combos, setCombos] = useState(null);
   const [combosModalOpen, setCombosModalOpen] = useState(false);
+  const [couponsModalOpen, setCouponsModalOpen] = useState(false);
   const [comboFormOpen, setComboFormOpen] = useState(false);
   const [comboDraft, setComboDraft] = useState(null);
 
@@ -2252,6 +2254,18 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
               >
                 + Criar combo
               </button>
+              <button
+                onClick={() => setCouponsModalOpen(true)}
+                className="cursor-pointer px-3 py-1 hover:opacity-75 rounded font-bold"
+                style={{
+                  backgroundColor: translucidToUse,
+                  color: foregroundToUse,
+                  border: "2px solid",
+                  borderColor: translucidToUse,
+                }}
+              >
+                + Cupons
+              </button>
             </>
           )}
         </div>
@@ -3464,6 +3478,15 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
             </div>
           )}
         </GenericModal>
+      )}
+
+      {couponsModalOpen && (
+        <CouponsModal
+          menuId={menu?.id}
+          currency={menu?.currency}
+          canCreate={ownerRole === "admin" || ownerRole === "pro"}
+          onClose={() => setCouponsModalOpen(false)}
+        />
       )}
 
       {comboFormOpen && comboDraft && (
