@@ -1028,8 +1028,16 @@ ${customerInfo}`;
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => {
-                  if (!isOpen) {
+                onClick={async () => {
+                  // controle manual vale mais que o horário: confere o estado atual no banco
+                  const { data: store } = await supabase
+                    .from("menus")
+                    .select("manual_control, is_open")
+                    .eq("id", menu.id)
+                    .maybeSingle();
+                  const openNow = store?.manual_control ? store.is_open : isOpen;
+
+                  if (!openNow) {
                     customAlert(`${menu.title} está fechado no momento!`);
                     return;
                   }
