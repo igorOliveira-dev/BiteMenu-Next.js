@@ -316,6 +316,11 @@ export default function CouponsModal({ menuId, currency, canCreate, onClose }) {
             </label>
           </div>
 
+          <div className="rounded-lg border border-amber-500/20 bg-amber-500/20 p-3 text-xs">
+            <strong>Atenção:</strong> o cupom só vale enquanto a sua loja estiver no plano Pro. Se o plano deixar de ser
+            Pro antes da data de validade, o cupom fica inválido automaticamente e deixa de funcionar no cardápio.
+          </div>
+
           <div className="grid gap-2 pt-3">
             <button
               type="button"
