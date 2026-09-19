@@ -126,6 +126,7 @@ const Orders = ({
 
   const [manualStoreControl, setManualStoreControl] = useState(false);
   const [storeOpen, setStoreOpen] = useState(false);
+  const [resetModalOpen, setResetModalOpen] = useState(false);
 
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [summary, setSummary] = useState({
@@ -460,12 +461,13 @@ const Orders = ({
     }
   };
 
-  const handleToggleStoreOpen = async () => {
+  const handleToggleStoreOpen = async (resetCounter = false) => {
     const value = !storeOpen;
     setStoreOpen(value);
 
     const { error } = await updateMenuById(supabase, menu.id, {
       is_open: value,
+      ...(resetCounter ? { order_counter: 0 } : {}),
     });
 
     if (error) {
@@ -787,7 +789,9 @@ const Orders = ({
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={handleToggleStoreOpen}
+              onClick={() =>
+                storeOpen ? setResetModalOpen(true) : handleToggleStoreOpen()
+              }
               disabled={!manualStoreControl}
               className={`flex-1 cursor-pointer rounded-xl px-3 py-2 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-40 ${
                 storeOpen
@@ -841,12 +845,17 @@ const Orders = ({
                       key={order.id}
                       className="rounded-2xl border border-translucid bg-translucid p-4 shadow-sm transition hover:shadow-md"
                     >
-                      <p
-                        className="mb-2 text-sm border-b-2 pb-1 border-[var(--translucid)]"
+                      <div
+                        className="mb-2 flex items-center justify-between text-sm border-b-2 pb-1 border-[var(--translucid)]"
                         style={{ color: "var(--gray)" }}
                       >
-                        <strong>Pedido:</strong> #{order?.id?.slice(0, 6)}
-                      </p>
+                        <p>
+                          <strong>Pedido:</strong> #{order?.id?.slice(0, 6)}
+                        </p>
+                        <p className="font-semibold">
+                          Nº {order.order_number ?? "—"}
+                        </p>
+                      </div>
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div className="min-w-0 flex-1">
                           <div className="mb-3 flex items-start justify-between gap-3">
@@ -1099,6 +1108,46 @@ const Orders = ({
             )}
           </div>
         </aside>
+      ) : null}
+
+      {resetModalOpen ? (
+        <GenericModal
+          title="Resetar numeração dos pedidos?"
+          size="sm"
+          hideClose
+          backdropDontClose
+        >
+          <p className="mb-2 text-sm">
+            Deseja reiniciar a numeração dos pedidos ao fechar a loja?
+          </p>
+          <p className="mb-4 text-xs color-gray">
+            Se estiver fechando para um intervalo, é recomendável escolher
+            &quot;Não&quot;: a numeração continua de onde parou quando você
+            abrir a loja de novo.
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setResetModalOpen(false);
+                handleToggleStoreOpen(true);
+              }}
+              className="w-full cursor-pointer rounded-xl border bg-[var(--translucid)] border-translucid py-3 text-sm font-medium transition hover:opacity-80"
+            >
+              Sim, resetar
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setResetModalOpen(false);
+                handleToggleStoreOpen();
+              }}
+              className="w-full cursor-pointer rounded-xl bg-blue-600 py-3 text-sm font-medium text-white transition hover:bg-blue-700"
+            >
+              Não
+            </button>
+          </div>
+        </GenericModal>
       ) : null}
 
       {orderModalOpen && selectedOrder ? (

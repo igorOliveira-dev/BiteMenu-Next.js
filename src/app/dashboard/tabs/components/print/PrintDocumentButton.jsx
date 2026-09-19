@@ -42,6 +42,7 @@ export function normalizeOrderForPrint(order, { deliveryFeeOnSales } = {}) {
 
   return {
     id: order.id,
+    orderNumber: order.order_number ?? null,
     createdAt: order.created_at,
     costumerName: order.costumer_name,
     costumerPhone: order.costumer_phone,
@@ -132,6 +133,13 @@ export default function PrintDocumentButton({
   });
 
   if (!document) return null;
+
+  // vendas não guardam order_number: mostram só o id curto
+  const shortId = `#${document.id?.slice(0, 6)}`;
+  const numberLabel =
+    document.orderNumber != null
+      ? `${document.orderNumber} (${shortId})`
+      : shortId;
 
   const totalItens = (document.itemsList || []).reduce(
     (acc, item) => acc + (Number(item.qty) || 0),
@@ -245,7 +253,7 @@ export default function PrintDocumentButton({
             <>
               <h1>{receiptTitle}</h1>
               <p>
-                <strong>Nº:</strong> #{document.id?.slice(0, 6)}
+                <strong>Nº:</strong> {numberLabel}
               </p>
               <p>{new Date(document.createdAt).toLocaleString("pt-BR")}</p>
               <hr />
@@ -317,7 +325,7 @@ export default function PrintDocumentButton({
             <>
               <h1>COZINHA</h1>
               <p>
-                <strong>Nº:</strong> #{document.id?.slice(0, 6)}
+                <strong>Nº:</strong> {numberLabel}
               </p>
               <p>{new Date(document.createdAt).toLocaleString("pt-BR")}</p>
               <p>
@@ -357,7 +365,7 @@ export default function PrintDocumentButton({
             <>
               <h1>COMANDA</h1>
               <p>
-                <strong>Nº:</strong> #{document.id?.slice(0, 6)}
+                <strong>Nº:</strong> {numberLabel}
               </p>
               <p>{new Date(document.createdAt).toLocaleString("pt-BR")}</p>
               {document.costumerName && (
