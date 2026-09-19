@@ -39,6 +39,7 @@ export function normalizeOrderForPrint(order, { deliveryFeeOnSales } = {}) {
   const subtotal = computeItemsSubtotal(order.items_list);
   const deliveryFee =
     order.service === "delivery" ? Number(order.delivery_fee) || 0 : 0;
+  const discount = Math.min(Number(order.discount) || 0, subtotal);
 
   return {
     id: order.id,
@@ -52,8 +53,9 @@ export function normalizeOrderForPrint(order, { deliveryFeeOnSales } = {}) {
     service: order.service,
     itemsList: order.items_list || [],
     subtotal,
+    discount,
     deliveryFee,
-    total: subtotal + deliveryFee,
+    total: subtotal - discount + deliveryFee,
     netTotal: null,
   };
 }
@@ -64,6 +66,8 @@ export function normalizeSaleForPrint(sale) {
   const deliveryFee = Number(sale.delivery_fee) || 0;
   const total =
     sale.total != null ? Number(sale.total) : subtotal + deliveryFee;
+  // vendas não guardam o desconto: a diferença para o total é o desconto aplicado
+  const discount = Math.max(0, Math.round((subtotal + deliveryFee - total) * 100) / 100);
 
   return {
     id: sale.id,
@@ -76,6 +80,7 @@ export function normalizeSaleForPrint(sale) {
     service: sale.service,
     itemsList: sale.items_list || [],
     subtotal,
+    discount,
     deliveryFee,
     total,
     netTotal: sale.net_total != null ? Number(sale.net_total) : null,
@@ -303,6 +308,12 @@ export default function PrintDocumentButton({
                 <strong>Subtotal:</strong>{" "}
                 {formatCurrency(document.subtotal, currency)}
               </p>
+              {document.discount > 0 && (
+                <p>
+                  <strong>Desconto:</strong> -
+                  {formatCurrency(document.discount, currency)}
+                </p>
+              )}
               {document.service === "delivery" && (
                 <p>
                   <strong>Entrega:</strong>{" "}

@@ -251,7 +251,7 @@ const Orders = ({
   const buildSummaryQuery = (filters) => {
     let q = supabase
       .from("orders")
-      .select("is_paid,service,items_list,updated_at,delivery_fee", {
+      .select("is_paid,service,items_list,updated_at,delivery_fee,discount", {
         count: "exact",
       })
       .eq("menu_id", menu.id)
@@ -497,7 +497,7 @@ const Orders = ({
       deliveryFeeOnSales && order.service === "delivery"
         ? Number(order.delivery_fee) || 0
         : 0;
-    const grossTotal = subtotal + deliveryFee;
+    const grossTotal = subtotal - computeDiscount(order) + deliveryFee;
 
     const isStripeWithNet =
       order.payment_method === "stripe" && order.net_total != null;
@@ -613,10 +613,14 @@ const Orders = ({
     return Number(order?.delivery_fee) || 0;
   };
 
+  // desconto (combo/cupom) gravado no pedido, nunca maior que o subtotal
+  const computeDiscount = (order) =>
+    Math.min(Number(order?.discount) || 0, computeSubtotal(order));
+
   const computeTotalWithDelivery = (order) => {
     const subtotal = computeSubtotal(order);
     const delivery = computeDeliveryFee(order);
-    return subtotal + delivery;
+    return subtotal - computeDiscount(order) + delivery;
   };
 
   const getPrimaryItemText = (order) => {
@@ -836,6 +840,7 @@ const Orders = ({
                   const total = computeTotalWithDelivery(order);
                   const subtotal = computeSubtotal(order);
                   const deliveryFee = computeDeliveryFee(order);
+                  const discount = computeDiscount(order);
                   const orderDate = new Date(order.updated_at).toLocaleString(
                     "pt-BR",
                   );
@@ -939,6 +944,12 @@ const Orders = ({
                                     )}
                                   </span>
                                 </>
+                              ) : null}
+                              {discount > 0 ? (
+                                <span className="text-green-500">
+                                  Desconto: -
+                                  {formatCurrency(discount, menu?.currency)}
+                                </span>
                               ) : null}
                             </div>
                           </div>
@@ -1740,6 +1751,15 @@ const Orders = ({
                         menu?.currency,
                       )}
                     </p>
+                    {computeDiscount(selectedOrder) > 0 ? (
+                      <p className="text-xs text-green-500">
+                        Desconto aplicado: -
+                        {formatCurrency(
+                          computeDiscount(selectedOrder),
+                          menu?.currency,
+                        )}
+                      </p>
+                    ) : null}
                   </div>
                 </div>
 

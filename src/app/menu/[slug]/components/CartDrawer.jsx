@@ -14,6 +14,7 @@ import { formatCurrency } from "@/lib/formatCurrency";
 import { useAlert } from "@/providers/AlertProvider";
 import { useSearchParams, useRouter } from "next/navigation";
 import { calculateComboDiscount } from "@/lib/comboDiscount";
+import { applyCoupon } from "@/lib/couponDiscount";
 import { saveReceipt } from "@/lib/orderReceipts";
 
 function getContrastTextColor(hex) {
@@ -97,7 +98,7 @@ export default function CartDrawer({
   // mova esta linha para ANTES do useMemo do discountAmount
   const hasPlusPermissions = ["plus", "pro", "admin"].includes(ownerRole ?? "free");
 
-  const { totalDiscount: discountAmount } = useMemo(() => {
+  const { totalDiscount: comboDiscount } = useMemo(() => {
     if (!hasPlusPermissions) return { totalDiscount: 0 };
     return calculateComboDiscount({ items: currentItems, combos, categoryByItemId });
   }, [currentItems, combos, categoryByItemId, hasPlusPermissions]);
@@ -130,7 +131,33 @@ export default function CartDrawer({
   const [costumerPhone, setCostumerPhone] = useState("");
 
   const [costumerNeighborhood, setCostumerNeighborhood] = useState("");
-  const [deliveryFeeValue, setDeliveryFeeValue] = useState(0);
+  const [rawDeliveryFee, setDeliveryFeeValue] = useState(0);
+
+  // ── Cupom (só lojas Pro) ─────────────────────────────────────────────────
+  // discountAmount e deliveryFeeValue já incluem o cupom, então totais, payload
+  // do pedido e Stripe usam os mesmos valores sem mudanças.
+  // ponytail: valida só no navegador (o total do pedido já é calculado aqui);
+  // se precisar de blindagem, recalcular o total no servidor.
+  const canUseCoupon = ["pro", "admin"].includes(ownerRole ?? "free");
+  const [couponInput, setCouponInput] = useState("");
+  const [coupon, setCoupon] = useState(null);
+  const couponResult = applyCoupon({
+    coupon: canUseCoupon ? coupon : null,
+    subtotal: Math.max(0, currentTotalPrice - comboDiscount),
+    isDelivery: selectedService === "delivery",
+  });
+  const discountAmount = comboDiscount + couponResult.discount;
+  const deliveryFeeValue = couponResult.freeShipping ? 0 : rawDeliveryFee;
+  const appliedCouponCode = couponResult.discount > 0 || couponResult.freeShipping ? coupon.code : null;
+
+  const handleApplyCoupon = async () => {
+    const code = couponInput.trim();
+    if (!code) return;
+    const { data, error } = await supabase.rpc("get_coupon", { p_menu_id: menu.id, p_code: code });
+    if (error || !data?.[0]) return customAlert("Cupom inválido ou expirado.", "error");
+    setCoupon(data[0]);
+  };
+  // ────────────────────────────────────────────────────────────────────────
 
   const [showWhatsappButtonOnPixStage, setShowWhatsappButtonOnPixStage] = useState(false);
 
@@ -569,7 +596,7 @@ ${itemsList}
 
 ————————————
 Subtotal: ${formatCurrency(subtotal, menu?.currency)}
-${discount > 0 ? `Desconto: -${formatCurrency(discount, menu?.currency)}\n` : ""}${selectedService === "delivery" ? `Frete: ${formatCurrency(deliveryFee, menu?.currency)}` : ""}
+${discount > 0 ? `Desconto: -${formatCurrency(discount, menu?.currency)}\n` : ""}${appliedCouponCode ? `Cupom: ${appliedCouponCode}\n` : ""}${selectedService === "delivery" ? `Frete: ${formatCurrency(deliveryFee, menu?.currency)}` : ""}
 💰 Total: ${formatCurrency(total, menu?.currency)}
 
 ${customerInfo}`;
@@ -783,6 +810,7 @@ ${customerInfo}`;
       neighborhood: null,
       address: null,
       delivery_fee: 0,
+      discount: discountAmount,
       is_paid: false,
       total,
       created_at: new Date().toISOString(),
@@ -899,6 +927,7 @@ ${customerInfo}`;
             neighborhood: selectedService === "delivery" && canUseZones ? costumerNeighborhood : null,
             address: selectedService === "delivery" ? costumerAddress : null,
             delivery_fee: deliveryFee,
+            discount: discountAmount,
             is_paid: false,
             total,
             created_at: new Date().toISOString(),
@@ -1010,6 +1039,49 @@ ${customerInfo}`;
         {/* FOOTER */}
         {currentItems && currentItems.length > 0 && (
           <div className="fixed w-full bottom-0 bg-inherit z-10 p-4">
+            {canUseCoupon &&
+              (coupon ? (
+                <div className="flex items-center justify-between text-sm mb-2" style={{ color: grayToUse }}>
+                  <span>
+                    Cupom {coupon.code}
+                    {couponResult.belowMin
+                      ? ` (pedido mínimo ${formatCurrency(coupon.min_order, menu?.currency)})`
+                      : coupon.type === "free_shipping"
+                        ? couponResult.freeShipping
+                          ? " – frete grátis"
+                          : " – frete grátis na entrega"
+                        : ""}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCoupon(null);
+                      setCouponInput("");
+                    }}
+                    className="cursor-pointer underline"
+                  >
+                    Remover
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2 mb-2">
+                  <input
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value)}
+                    placeholder="Cupom de desconto"
+                    className="flex-1 min-w-0 rounded-lg bg-translucid px-3 py-2 text-sm uppercase"
+                    style={{ backgroundColor: translucidToUse, color: foregroundToUse }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyCoupon}
+                    className="cursor-pointer rounded-lg px-3 py-2 text-sm font-semibold"
+                    style={{ backgroundColor: translucidToUse, color: foregroundToUse }}
+                  >
+                    Aplicar
+                  </button>
+                </div>
+              ))}
             {discountAmount > 0 && (
               <>
                 <div className="flex items-center justify-between text-sm mb-1" style={{ color: grayToUse }}>
