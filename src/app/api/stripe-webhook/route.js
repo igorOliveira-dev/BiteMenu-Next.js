@@ -10,6 +10,7 @@ const webhookSecrets = {
   main: process.env.STRIPE_WEBHOOK_SECRET_MAIN,
   cnpj: process.env.STRIPE_WEBHOOK_SECRET_CNPJ,
   cpf: process.env.STRIPE_WEBHOOK_SECRET_CPF,
+  dev_tests: process.env.STRIPE_WEBHOOK_SECRET_DEV_TESTS,
 };
 
 function planNameFromRole(role) {
@@ -22,7 +23,11 @@ async function getCustomerEmail(stripe, customerId) {
   const customer = await stripe.customers.retrieve(customerId);
   if (customer && !customer.deleted && customer.email) return customer.email;
 
-  const { data: profile } = await supabase.from("profiles").select("id").eq("stripe_customer_id", customerId).maybeSingle();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("stripe_customer_id", customerId)
+    .maybeSingle();
 
   if (!profile) return null;
 
@@ -83,7 +88,11 @@ export async function POST(req) {
 
         if (!userId || !priceId) throw new Error("Dados insuficientes");
 
-        const { data: planData } = await supabase.from("plans").select("role").eq("stripe_price_id", priceId).maybeSingle();
+        const { data: planData } = await supabase
+          .from("plans")
+          .select("role")
+          .eq("stripe_price_id", priceId)
+          .maybeSingle();
 
         if (!planData) throw new Error("Plano não encontrado");
 
@@ -340,7 +349,10 @@ export async function POST(req) {
           });
           console.log("[Webhook] Email de boleto disponível enviado para", email);
         } else {
-          console.log("[Webhook] payment_intent.requires_action (boleto) sem email disponível para customer", customerId);
+          console.log(
+            "[Webhook] payment_intent.requires_action (boleto) sem email disponível para customer",
+            customerId,
+          );
         }
 
         break;
