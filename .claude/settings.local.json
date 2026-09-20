@@ -42,7 +42,8 @@
       "Bash(git pull *)",
       "Bash(rm \"/home/igor/igor/projects/BiteMenu-Next.js/src/app/menu/[slug]/components/MyOrdersButton.jsx\")",
       "Bash(git stash *)",
-      "Bash(echo \"---EXIT:$?---\")"
+      "Bash(echo \"---EXIT:$?---\")",
+      "Bash(graphify update *)"
     ],
     "additionalDirectories": [
       "/home/igor/igor/projects/BiteMenu-Next.js/src/app/menu/[slug]",

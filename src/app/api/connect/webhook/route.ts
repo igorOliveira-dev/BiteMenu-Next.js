@@ -33,7 +33,7 @@ function calcNetTotal(balanceTransaction: Stripe.BalanceTransaction): number {
 }
 
 export async function POST(req: Request) {
-  const stripe = getStripeClient("cnpj");
+  const stripe = getStripeClient("main");
   const body = await req.text();
 
   const signature = (await headers()).get("stripe-signature");

@@ -31,7 +31,7 @@ export async function GET(req) {
 
     if (profileError) throw profileError;
 
-    const stripe = getStripeClient(profile?.stripe_account ?? "cpf");
+    const stripe = getStripeClient(profile?.stripe_account ?? "main");
 
     // 1️⃣ Buscar a assinatura completa
     const subscription = await stripe.subscriptions.retrieve(subscriptionId, {

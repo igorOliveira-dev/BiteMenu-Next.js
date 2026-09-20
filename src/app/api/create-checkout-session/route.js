@@ -23,7 +23,7 @@ export async function POST(req) {
 
     if (profileError) throw profileError;
 
-    const stripe = getStripeClient(profile?.stripe_account ?? "cpf");
+    const stripe = getStripeClient(profile?.stripe_account ?? "main");
 
     let customerId = profile?.stripe_customer_id;
 

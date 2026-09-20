@@ -1,11 +1,6 @@
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
+import { getStripeClient } from "@/lib/stripe";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-
-const stripeClients = {
-  cpf: process.env.STRIPE_SECRET_KEY_CPF ? new Stripe(process.env.STRIPE_SECRET_KEY_CPF) : null,
-  cnpj: process.env.STRIPE_SECRET_KEY_CNPJ ? new Stripe(process.env.STRIPE_SECRET_KEY_CNPJ) : null,
-};
 
 async function fetchAllSubscriptionsForPrice(stripe, priceId) {
   const all = [];
@@ -131,7 +126,7 @@ export async function GET() {
 
     const results = await Promise.all(
       plans.map(async (plan) => {
-        const stripe = stripeClients[plan.stripe_account];
+        const stripe = getStripeClient(plan.stripe_account);
         if (!stripe) {
           console.warn(`Nenhuma chave Stripe configurada para a conta "${plan.stripe_account}"`);
           return [];

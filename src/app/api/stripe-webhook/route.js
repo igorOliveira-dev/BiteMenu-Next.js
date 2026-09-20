@@ -1,12 +1,16 @@
-import { stripeCPF, stripeCNPJ } from "@/lib/stripe";
+import { stripeClients } from "@/lib/stripe";
 import { createClient } from "@supabase/supabase-js";
 import { plans } from "@/consts/Plans";
 import { sendUpcomingRenewalEmail, sendBoletoReadyEmail } from "@/lib/emails/subscriptionEmails";
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-const webhookSecretCPF = process.env.STRIPE_WEBHOOK_SECRET_CPF;
-const webhookSecretCNPJ = process.env.STRIPE_WEBHOOK_SECRET_CNPJ;
+// Uma entrada por conta Stripe ativa. "main" primeiro porque é pra onde tudo está migrando.
+const webhookSecrets = {
+  main: process.env.STRIPE_WEBHOOK_SECRET_MAIN,
+  cnpj: process.env.STRIPE_WEBHOOK_SECRET_CNPJ,
+  cpf: process.env.STRIPE_WEBHOOK_SECRET_CPF,
+};
 
 function planNameFromRole(role) {
   return plans.find((p) => p.id === role)?.name ?? role ?? null;
@@ -30,21 +34,26 @@ export async function POST(req) {
   const body = await req.text();
   const sig = req.headers.get("stripe-signature");
 
-  // Auto-detecta qual conta originou o evento tentando validar nas duas
+  // Auto-detecta qual conta originou o evento: o primeiro secret que validar é o dono.
   let event;
   let stripe;
 
-  try {
-    event = stripeCPF.webhooks.constructEvent(body, sig, webhookSecretCPF);
-    stripe = stripeCPF;
-  } catch {
+  for (const [account, secret] of Object.entries(webhookSecrets)) {
+    const client = stripeClients[account];
+    if (!client || !secret) continue;
+
     try {
-      event = stripeCNPJ.webhooks.constructEvent(body, sig, webhookSecretCNPJ);
-      stripe = stripeCNPJ;
-    } catch (err) {
-      console.error("[Webhook] Assinatura inválida:", err.message);
-      return new Response(`Webhook Error: ${err.message}`, { status: 400 });
+      event = client.webhooks.constructEvent(body, sig, secret);
+      stripe = client;
+      break;
+    } catch {
+      // secret de outra conta, tenta a próxima
     }
+  }
+
+  if (!event) {
+    console.error("[Webhook] Assinatura inválida em todas as contas configuradas");
+    return new Response("Webhook Error: assinatura inválida", { status: 400 });
   }
 
   try {
@@ -109,11 +118,22 @@ export async function POST(req) {
 
         const { data: profile } = await supabase
           .from("profiles")
-          .select("id")
+          .select("id, stripe_subscription_id")
           .eq("stripe_customer_id", customerId)
           .maybeSingle();
 
-        if (!profile) throw new Error("Usuário não encontrado para cancelamento");
+        // Durante a migração entre contas Stripe o customer antigo some do profile
+        // e a assinatura antiga é cancelada — não é motivo pra derrubar o cliente
+        // pra free nem pra devolver erro (a Stripe ficaria reenviando o evento).
+        if (!profile) {
+          console.log(`[Webhook] Cancelamento do customer ${customerId} sem profile correspondente, ignorado`);
+          break;
+        }
+
+        if (profile.stripe_subscription_id !== subscription.id) {
+          console.log(`[Webhook] Cancelamento da assinatura antiga ${subscription.id} ignorado (profile já migrado)`);
+          break;
+        }
 
         await supabase
           .from("profiles")

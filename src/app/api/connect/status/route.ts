@@ -15,7 +15,7 @@ export async function POST(req: Request) {
       });
     }
 
-    const stripe = getStripeClient("cnpj");
+    const stripe = getStripeClient("main");
 
     const account = await stripe.accounts.retrieve(profile.stripe_connect_account_id);
 
