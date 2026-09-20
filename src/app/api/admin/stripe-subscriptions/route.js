@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getStripeClient } from "@/lib/stripe";
+import { stripeClients } from "@/lib/stripe";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 async function fetchAllSubscriptionsForPrice(stripe, priceId) {
@@ -126,22 +126,29 @@ export async function GET() {
 
     const results = await Promise.all(
       plans.map(async (plan) => {
-        const stripe = getStripeClient(plan.stripe_account);
+        // Direto no mapa (sem o fallback pra "main" do getStripeClient): conta sem chave é pulada
+        const stripe = stripeClients[plan.stripe_account];
         if (!stripe) {
           console.warn(`Nenhuma chave Stripe configurada para a conta "${plan.stripe_account}"`);
           return [];
         }
 
-        const subs = await fetchAllSubscriptionsForPrice(stripe, plan.stripe_price_id);
+        try {
+          const subs = await fetchAllSubscriptionsForPrice(stripe, plan.stripe_price_id);
 
-        return subs.map((sub) => ({
-          role: roleByPriceId[plan.stripe_price_id],
-          created: sub.created,
-          canceled_at: sub.canceled_at, // 🔹 novo campo capturado
-          status: sub.status,
-          customer: sub.customer,
-          cancel_at_period_end: sub.cancel_at_period_end,
-        }));
+          return subs.map((sub) => ({
+            role: roleByPriceId[plan.stripe_price_id],
+            created: sub.created,
+            canceled_at: sub.canceled_at, // 🔹 novo campo capturado
+            status: sub.status,
+            customer: sub.customer,
+            cancel_at_period_end: sub.cancel_at_period_end,
+          }));
+        } catch (err) {
+          // Um price inválido nesta conta (ex.: chave errada pro ambiente) não derruba o painel inteiro
+          console.warn(`Falha ao buscar ${plan.stripe_price_id} na conta "${plan.stripe_account}":`, err.message);
+          return [];
+        }
       }),
     );
 
