@@ -14,7 +14,6 @@ import {
   FaClock,
   FaTrash,
   FaPlus,
-  FaLink,
   FaCheck,
 } from "react-icons/fa";
 import { HexColorPicker, HexColorInput } from "react-colorful";
@@ -28,7 +27,6 @@ import { useConfirm } from "@/providers/ConfirmProvider";
 import useUser from "@/hooks/useUser";
 import { supabase } from "@/lib/supabaseClient";
 import { updateMenuById } from "@/lib/queries/menus";
-import Return from "@/components/Return";
 
 const DEFAULT_HOURS = {
   mon: "09:00-18:00",
@@ -83,7 +81,7 @@ function slugify(value) {
   return value
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9-]/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
@@ -97,10 +95,10 @@ const serviceOptions = [
 ];
 
 const paymentOptions = [
-  { id: "cash", label: "Dinheiro", description: "Pagamento em espécie" },
-  { id: "debit", label: "Débito", description: "Cartão de débito" },
-  { id: "credit", label: "Crédito", description: "Cartão de crédito" },
-  { id: "pix", label: "PIX", description: "Pagamento instantâneo" },
+  { id: "cash", label: "Dinheiro" },
+  { id: "debit", label: "Cartão de débito" },
+  { id: "credit", label: "Cartão de crédito" },
+  { id: "pix", label: "PIX" },
 ];
 
 const dayLabels = {
@@ -119,67 +117,47 @@ function cx(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
-/* ---------------------------------------------------------
- * SectionCard agora é um acordeão: recolhido por padrão,
- * mostra um resumo (summary) da própria seção quando fechado,
- * e expande com animação ao clicar no cabeçalho inteiro.
- * ------------------------------------------------------- */
-function SectionCard({ id, icon, title, description, children, aside, open, onToggle, summary, sectionRef }) {
+/* --- Blocos visuais padronizados (mesma borda, mesmo raio, mesma altura) --- */
+
+const INPUT_CLASS =
+  "h-11 w-full rounded-xl border border-[var(--translucid)] bg-translucid px-3 text-[15px] outline-none transition focus:border-red-500/70";
+
+function SectionCard({ id, icon, title, summary, open, onToggle, sectionRef, children }) {
   return (
     <section
       ref={sectionRef}
       id={id}
-      className="rounded-3xl border-2 bg-translucid backdrop-blur-sm overflow-hidden transition-colors border-[var(--translucid)]"
+      className="overflow-hidden rounded-2xl border border-[var(--translucid)] bg-translucid"
     >
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className="flex w-full gap-2 sm:gap-4 px-4 py-4 text-left transition hover:bg-white/[0.02]items-center justify-between sm:px-6 cursor-pointer"
+        className="flex w-full cursor-pointer items-center gap-3 px-4 py-4 text-left transition hover-bg-translucid"
       >
-        <div className="flex min-w-0 items-center gap-4">
-          <div
-            className={cx(
-              "hidden xxs:flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border transition",
-              open ? "border-red-500/50 bg-red-500/15 text-red-400" : "border-[var(--translucid)] bg-translucid",
-            )}
-          >
-            {icon}
-          </div>
-          <div className="min-w-0">
-            <h3 className="text-sm sm:text-lg font-semibold">{title}</h3>
-            {!open && summary ? (
-              <p className="mt-1 truncate text-sm opacity-70">{summary}</p>
-            ) : description ? (
-              <p className="mt-1 text-sm opacity-70">{description}</p>
-            ) : null}
-          </div>
-        </div>
+        <span
+          className={cx(
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition",
+            open ? "border-red-500/50 bg-red-500/15 text-red-400" : "border-[var(--translucid)] bg-translucid",
+          )}
+        >
+          {icon}
+        </span>
 
-        <div className="flex items-center sm:pl-6" onClick={(e) => e.stopPropagation()}>
-          <span
-            className={cx(
-              "flex xs:h-9 xs:w-9 shrink-0 items-center justify-center rounded-full xs:border border-[var(--translucid)] xs:bg-[var(--translucid)] transition-transform",
-              open ? "rotate-180" : "rotate-0",
-            )}
-            onClick={onToggle}
-            role="button"
-            aria-label={open ? "Recolher seção" : "Expandir seção"}
-          >
-            <FaChevronDown className="text-xs" />
-          </span>
-        </div>
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold">{title}</span>
+          <span className="mt-0.5 block truncate text-xs opacity-60">{summary}</span>
+        </span>
+
+        <FaChevronDown className={cx("shrink-0 text-xs opacity-60 transition-transform", open && "rotate-180")} />
       </button>
 
       <div
-        className={cx(
-          "grid transition-[grid-template-rows] duration-300 ease-in-out",
-          open ? "grid-template-rows-[1fr]" : "grid-template-rows-[0fr]",
-        )}
-        style={{ display: "grid", gridTemplateRows: open ? "1fr" : "0fr" }}
+        className="grid transition-[grid-template-rows] duration-300 ease-in-out"
+        style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
       >
         <div className="overflow-hidden">
-          <div className="border-t border-[var(--translucid)] px-2 py-5 xxs:px-5 sm:px-6">{children}</div>
+          <div className="border-t border-[var(--translucid)] px-4 py-5">{children}</div>
         </div>
       </div>
     </section>
@@ -189,25 +167,76 @@ function SectionCard({ id, icon, title, description, children, aside, open, onTo
 function Field({ label, hint, children }) {
   return (
     <div className="space-y-2">
-      <div>
-        <label className="font-semibold">{label}</label>
-        {hint ? <p className="mt-1 text-sm ">{hint}</p> : null}
-      </div>
+      {label ? (
+        <div>
+          <div className="text-sm font-semibold">{label}</div>
+          {hint ? <p className="mt-0.5 text-xs opacity-60">{hint}</p> : null}
+        </div>
+      ) : null}
       {children}
     </div>
   );
 }
 
+// contador só aparece perto do limite, pra não poluir
+function Counter({ value = "", max }) {
+  if (value.length < max * 0.75) return null;
+  return <div className="text-right text-xs opacity-60">{`${value.length}/${max}`}</div>;
+}
+
+function Notice({ children }) {
+  return <div className="rounded-xl border border-amber-500/30 bg-amber-500/15 p-3 text-xs">{children}</div>;
+}
+
 function TextInput({ className = "", ...props }) {
+  return <input {...props} className={cx(INPUT_CLASS, className)} />;
+}
+
+function TextArea({ className = "", ...props }) {
+  return <textarea {...props} className={cx(INPUT_CLASS, "h-auto py-3", className)} />;
+}
+
+function GhostButton({ className = "", children, ...props }) {
   return (
-    <input
+    <button
+      type="button"
       {...props}
       className={cx(
-        "h-12 w-full rounded-2xl border bg-translucid border-[var(--translucid)] px-4 text-[15px]  outline-none transition",
-        "placeholder: focus:border-red-500/70",
+        "inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl border border-[var(--translucid)] bg-translucid px-4 text-sm font-semibold transition hover:border-red-500/40",
         className,
       )}
-    />
+    >
+      {children}
+    </button>
+  );
+}
+
+function OptionCard({ selected, multi, title, description, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cx(
+        "flex w-full cursor-pointer items-start gap-3 rounded-xl border p-3 text-left transition",
+        selected
+          ? "border-red-500/60 bg-red-500/15"
+          : "border-[var(--translucid)] bg-translucid hover:border-red-500/30",
+      )}
+    >
+      <span
+        className={cx(
+          "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center border transition",
+          multi ? "rounded-md" : "rounded-full",
+          selected ? "border-red-500 bg-red-500 text-white" : "border-[var(--high-translucid)] text-transparent",
+        )}
+      >
+        <FaCheck className="text-[9px]" />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-sm font-semibold">{title}</span>
+        {description ? <span className="mt-0.5 block text-xs opacity-60">{description}</span> : null}
+      </span>
+    </button>
   );
 }
 
@@ -254,15 +283,12 @@ function CurrencySelect({ value, onChange }) {
         ref={btnRef}
         type="button"
         onClick={() => (open ? closeMenu() : openMenu())}
-        className={cx(
-          "flex h-12 w-full items-center justify-between rounded-2xl border bg-translucid border-[var(--translucid)] px-4 text-[15px] text-[var(--foreground)] outline-none transition",
-          "focus:border-red-500/70",
-        )}
+        className={cx(INPUT_CLASS, "flex cursor-pointer items-center justify-between")}
       >
         <span>
           {selected.symbol} — {selected.label}
         </span>
-        <span className="text-xs opacity-70">▼</span>
+        <FaChevronDown className="text-xs opacity-60" />
       </button>
 
       {open &&
@@ -271,7 +297,7 @@ function CurrencySelect({ value, onChange }) {
           <>
             <div className="fixed inset-0 z-[998]" onMouseDown={closeMenu} />
             <div
-              className="fixed z-[999] overflow-hidden rounded-2xl border border-[var(--low-gray)] bg-[var(--background)] text-[var(--foreground)] shadow-xl"
+              className="fixed z-[999] overflow-hidden rounded-xl border border-[var(--low-gray)] bg-[var(--background)] text-[var(--foreground)] shadow-xl"
               style={{ left: rect.left, top: rect.bottom + 6, width: rect.width }}
             >
               <input
@@ -284,7 +310,7 @@ function CurrencySelect({ value, onChange }) {
               />
               <ul className="max-h-60 overflow-y-auto">
                 {filtered.length === 0 ? (
-                  <li className="px-4 py-3 text-sm opacity-70">Nenhuma moeda encontrada</li>
+                  <li className="px-4 py-3 text-sm opacity-60">Nenhuma moeda encontrada</li>
                 ) : (
                   filtered.map((c) => (
                     <li key={c.code}>
@@ -295,7 +321,7 @@ function CurrencySelect({ value, onChange }) {
                           closeMenu();
                         }}
                         className={cx(
-                          "flex w-full items-center gap-2 px-4 py-3 text-left text-[15px] transition hover:bg-[var(--translucid)]",
+                          "flex w-full cursor-pointer items-center gap-2 px-4 py-3 text-left text-[15px] transition hover:bg-[var(--translucid)]",
                           c.code === value ? "bg-[var(--translucid)] font-semibold" : "",
                         )}
                       >
@@ -314,73 +340,10 @@ function CurrencySelect({ value, onChange }) {
   );
 }
 
-function TextArea({ className = "", ...props }) {
-  return (
-    <textarea
-      {...props}
-      className={cx(
-        "w-full rounded-2xl border bg-translucid border-[var(--translucid)] px-4 py-3 text-[15px]  outline-none transition",
-        "placeholder: focus:border-red-500/70",
-        className,
-      )}
-    />
-  );
-}
-
-function SelectionCard({ selected, title, description, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cx(
-        "group flex w-full items-start gap-3 rounded-2xl border p-4 text-left transition cursor-pointer",
-        selected
-          ? "border-red-500/70 bg-red-500/20 shadow-[0_0_0_1px_rgba(255,0,0,0.25)]"
-          : "border-[var(--translucid)] bg-translucid hover:opacity-80 hover:scale-[1.01]",
-      )}
-    >
-      <div
-        className={cx(
-          "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition",
-          selected ? "border-red-400 bg-red-500 " : "border-gray-500 bg-transparent text-transparent",
-        )}
-      >
-        <FaCheck className="text-[10px]" />
-      </div>
-      <div>
-        <div className="font-semibold">{title}</div>
-        {description ? <p className="mt-0.5 text-sm opacity-70">{description}</p> : null}
-      </div>
-    </button>
-  );
-}
-
-function ModeOption({ active, title, description, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cx(
-        "rounded-2xl border p-4 text-left transition cursor-pointer",
-        active
-          ? "border-red-500/70 bg-red-500/20 shadow-[0_0_0_1px_rgba(239,68,68,0.22)]"
-          : "border-[var(--translucid)] bg-translucid hover:border-white/20 hover:bg-white/[0.06]",
-      )}
-    >
-      <div className="font-semibold">{title}</div>
-      <p className="mt-1 text-sm ">{description}</p>
-    </button>
-  );
-}
-
 function timeToMinutes(time) {
   if (!time) return null;
   const [hours, minutes] = time.split(":").map(Number);
   return hours * 60 + minutes;
-}
-
-function normalizeCloseTime(time) {
-  return time === "00:00" ? "23:59" : time;
 }
 
 function isCloseBeforeOpen(openTime, closeTime) {
@@ -417,6 +380,7 @@ const ConfigMenu = (props) => {
   const [paletteIndex, setPaletteIndex] = useState(0);
   // seletor de cor aberto (só um por vez; o nativo do Firefox/Linux não dá pra fechar via JS)
   const [openColorIdx, setOpenColorIdx] = useState(null);
+  const openColorRef = useRef(null);
   const [layoutPreview, setLayoutPreview] = useState(null);
   const [layout, setLayout] = useState("default");
   const [previewScale, setPreviewScale] = useState(1);
@@ -438,17 +402,13 @@ const ConfigMenu = (props) => {
   const [currencyLocal, setCurrencyLocal] = useState(menu?.currency ?? "BRL");
   const [hoursLocal, setHoursLocal] = useState(() => normalizeHours(menu?.hours));
   const [minimumOrderValueLocal, setMinimumOrderValueLocal] = useState(
-    menu?.minimum_order_value !== undefined && menu?.minimum_order_value !== null ? String(menu.minimum_order_value) : "",
+    menu?.minimum_order_value !== undefined && menu?.minimum_order_value !== null
+      ? String(menu.minimum_order_value)
+      : "",
   );
 
-  // ---- Estado de UI: quais seções estão abertas ----
-  const [openSections, setOpenSections] = useState({
-    basico: false,
-    servicos: false,
-    pagamentos: false,
-    aparencia: false,
-    horarios: false,
-  });
+  // ---- Estado de UI: uma seção aberta por vez ----
+  const [openSection, setOpenSection] = useState(null);
 
   const sectionRefs = {
     basico: useRef(null),
@@ -459,13 +419,14 @@ const ConfigMenu = (props) => {
   };
 
   const toggleSection = (key) => {
-    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const goToSection = (key) => {
-    setOpenSections((prev) => ({ ...prev, [key]: true }));
-    requestAnimationFrame(() => {
-      sectionRefs[key]?.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setOpenSection((prev) => {
+      const next = prev === key ? null : key;
+      if (next) {
+        requestAnimationFrame(() => {
+          sectionRefs[next]?.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      }
+      return next;
     });
   };
 
@@ -514,7 +475,9 @@ const ConfigMenu = (props) => {
   const setPixKey = usingExternal ? (value) => externalSetState((p) => ({ ...p, pixKey: value })) : setPixKeyLocal;
 
   const currency = usingExternal ? (externalState?.currency ?? "BRL") : currencyLocal;
-  const setCurrency = usingExternal ? (value) => externalSetState((p) => ({ ...p, currency: value })) : setCurrencyLocal;
+  const setCurrency = usingExternal
+    ? (value) => externalSetState((p) => ({ ...p, currency: value }))
+    : setCurrencyLocal;
 
   const minimumOrderValue = usingExternal ? (externalState?.minimumOrderValue ?? "") : minimumOrderValueLocal;
   const setMinimumOrderValue = usingExternal
@@ -558,7 +521,8 @@ const ConfigMenu = (props) => {
     if (!menu) return;
 
     if (menu.title && !usingExternal && typeof propSetTitle === "function") propSetTitle(menu.title);
-    if (menu.description && !usingExternal && typeof propSetDescription === "function") propSetDescription(menu.description);
+    if (menu.description && !usingExternal && typeof propSetDescription === "function")
+      propSetDescription(menu.description);
     if (menu.address && !usingExternal && typeof propSetAddress === "function") propSetAddress(menu.address);
 
     if (menu.slug) {
@@ -569,7 +533,9 @@ const ConfigMenu = (props) => {
     if (menu.payments && !usingExternal) setSelectedPaymentsLocal(menu.payments);
 
     if (!usingExternal) {
-      setDeliveryFeeLocal(menu?.delivery_fee !== undefined && menu?.delivery_fee !== null ? String(menu.delivery_fee) : "");
+      setDeliveryFeeLocal(
+        menu?.delivery_fee !== undefined && menu?.delivery_fee !== null ? String(menu.delivery_fee) : "",
+      );
       setDeliveryZonesLocal(normalizeDeliveryZones(menu?.delivery_zones));
       setDeliveryFeeModeLocal(menu?.delivery_fee_mode ?? null);
       setMinimumOrderValueLocal(
@@ -584,7 +550,8 @@ const ConfigMenu = (props) => {
     }
 
     if (menu.background_color && !usingExternal && typeof propSetBg === "function") propSetBg(menu.background_color);
-    if (menu.title_color && !usingExternal && typeof propSetTitleColor === "function") propSetTitleColor(menu.title_color);
+    if (menu.title_color && !usingExternal && typeof propSetTitleColor === "function")
+      propSetTitleColor(menu.title_color);
     if (menu.details_color && !usingExternal && typeof propSetDetailsColor === "function")
       propSetDetailsColor(menu.details_color);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -702,17 +669,17 @@ const ConfigMenu = (props) => {
     return () => window.removeEventListener("resize", compute);
   }, [layoutPreview]);
 
-  const canUseZones = userRole === "admin" || userRole === "plus" || userRole === "pro";
-  const hasPlusPermissions = userRole === "admin" || userRole === "plus" || userRole === "pro";
+  // fecha o seletor de cor ao clicar fora dele
+  useEffect(() => {
+    if (openColorIdx === null) return;
+    const onPointerDown = (e) => {
+      if (!openColorRef.current?.contains(e.target)) setOpenColorIdx(null);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [openColorIdx]);
 
-  const previewStyles = useMemo(
-    () => ({
-      background: propBg || "#0A0A0A",
-      color: propTitleColor || "#FFFFFF",
-      accent: propDetailsColor || "#EF4444",
-    }),
-    [propBg, propTitleColor, propDetailsColor],
-  );
+  const hasPlusPermissions = userRole === "admin" || userRole === "plus" || userRole === "pro";
 
   const suggestRandomPalette = () => {
     let next = Math.floor(Math.random() * COLOR_PALETTES.length);
@@ -803,7 +770,7 @@ const ConfigMenu = (props) => {
   };
 
   const toggleDeliveryMode = (mode) => {
-    if (mode === "zones" && !canUseZones) {
+    if (mode === "zones" && !hasPlusPermissions) {
       customAlert?.("Taxa por bairro está disponível apenas no Plus ou Pro.", "error");
       setDeliveryFeeMode("fixed");
       return;
@@ -872,12 +839,12 @@ const ConfigMenu = (props) => {
 
   if (loading) return <Loading />;
 
-  // ---- Resumos exibidos quando cada seção está fechada ----
-  const basicoSummary = [propTitle || "Sem nome definido", slug ? `/${slug}` : null].filter(Boolean).join(" · ");
+  // ---- Resumo de cada seção (mostra o estado atual, sem texto decorativo) ----
+  const basicoSummary = [propTitle || "Sem nome", slug ? `/${slug}` : null].filter(Boolean).join(" · ");
 
   const servicosSummary = (() => {
     const count = selectedServices?.length || 0;
-    const parts = [`${count} serviço${count === 1 ? "" : "s"} ativo${count === 1 ? "" : "s"}`];
+    const parts = [`${count} serviço${count === 1 ? "" : "s"}`];
     if (selectedServices?.includes("delivery")) {
       parts.push(deliveryFeeMode === "zones" ? "frete por bairro" : "frete fixo");
     }
@@ -886,506 +853,428 @@ const ConfigMenu = (props) => {
 
   const pagamentosSummary = (() => {
     const count = (selectedPayments?.length || 0) + (isConnected && useStripeExpress ? 1 : 0);
-    return `${count} forma${count === 1 ? "" : "s"} de pagamento habilitada${count === 1 ? "" : "s"}`;
+    return `${count} forma${count === 1 ? "" : "s"} de pagamento`;
   })();
 
-  const aparenciaSummary = `Estilo: ${layout === "default" ? "Padrão" : layout === "list" ? "Lista" : "Grade de itens"}`;
+  const aparenciaSummary = `Estilo ${layout === "default" ? "padrão" : layout === "list" ? "lista" : "grade"}`;
 
   const horariosSummary = (() => {
     const closedDays = dayOrder.filter((d) => hours?.[d] === null).length;
     if (closedDays === 0) return "Aberto todos os dias";
     if (closedDays === 7) return "Fechado todos os dias";
-    return `Fechado em ${closedDays} dia${closedDays === 1 ? "" : "s"} da semana`;
+    return `Fechado em ${closedDays} dia${closedDays === 1 ? "" : "s"}`;
   })();
 
-  return (
-    <div className="w-full max-w-7xl pb-32 pt-3 px-2">
-      <div>
-        <div className="flex pb-5 lg:flex-row lg:items-center">
-          <button
-            type="button"
-            className="p-2 rounded hover:bg-[var(--translucid)] transition cursor-pointer"
-            onClick={() => setSelectedTab("menu")}
-            aria-label="Voltar"
-          >
-            <FaChevronLeft />
-          </button>
+  const colorFields = [
+    { label: "Fundo", value: propBg, setter: propSetBg },
+    { label: "Título", value: propTitleColor, setter: propSetTitleColor },
+    { label: "Detalhes", value: propDetailsColor, setter: propSetDetailsColor },
+  ];
 
-          <h2 className="ml-2 font-semibold">Configurações do cardápio</h2>
-        </div>
+  return (
+    <div className="w-full max-w-7xl px-2 pb-32 pt-3">
+      <div className="flex items-center gap-2 pb-5">
+        <button
+          type="button"
+          className="cursor-pointer rounded-lg p-2 transition hover-bg-translucid"
+          onClick={() => setSelectedTab("menu")}
+          aria-label="Voltar"
+        >
+          <FaChevronLeft />
+        </button>
+        <h2 className="text-lg font-semibold">Configurações do cardápio</h2>
       </div>
 
-      <div className="grid gap-5 max-w-[1080px]">
-        <div className="space-y-5">
-          <SectionCard
-            id="basico"
-            sectionRef={sectionRefs.basico}
-            icon={<FaStore />}
-            title="Informações básicas"
-            description="Os dados principais que aparecem para quem acessa seu cardápio."
-            summary={basicoSummary}
-            open={openSections.basico}
-            onToggle={() => toggleSection("basico")}
-          >
-            <div className="grid gap-4">
-              <Field label="Nome do estabelecimento" hint="Use o nome pelo qual seus clientes já conhecem você.">
+      <div className="max-w-[1080px] space-y-3">
+        <SectionCard
+          id="basico"
+          sectionRef={sectionRefs.basico}
+          icon={<FaStore />}
+          title="Informações básicas"
+          summary={basicoSummary}
+          open={openSection === "basico"}
+          onToggle={() => toggleSection("basico")}
+        >
+          <div className="grid gap-5">
+            <Field label="Nome do estabelecimento">
+              <TextInput
+                value={propTitle || ""}
+                onChange={(e) => {
+                  const value = e.target.value.slice(0, 30);
+                  if (usingExternal) externalSetState((p) => ({ ...p, title: value }));
+                  else if (typeof propSetTitle === "function") propSetTitle(value);
+                }}
+                placeholder="Ex.: Bite Menu"
+                maxLength={30}
+              />
+              <Counter value={propTitle || ""} max={30} />
+            </Field>
+
+            <Field label="Descrição">
+              <TextArea
+                rows={3}
+                value={propDescription || ""}
+                onChange={(e) => {
+                  const value = e.target.value.slice(0, 200);
+                  if (usingExternal) externalSetState((p) => ({ ...p, description: value }));
+                  else if (typeof propSetDescription === "function") propSetDescription(value);
+                }}
+                placeholder="Ex.: Lanches, porções e bebidas."
+                maxLength={200}
+              />
+              <Counter value={propDescription || ""} max={200} />
+            </Field>
+
+            <Field label="Endereço">
+              <div className="relative">
+                <FaMapMarkerAlt className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs opacity-60" />
                 <TextInput
-                  value={propTitle || ""}
+                  className="pl-9"
+                  value={propAddress || ""}
                   onChange={(e) => {
-                    const value = e.target.value.slice(0, 30);
-                    if (usingExternal) externalSetState((p) => ({ ...p, title: value }));
-                    else if (typeof propSetTitle === "function") propSetTitle(value);
+                    const value = e.target.value.slice(0, 255);
+                    if (usingExternal) externalSetState((p) => ({ ...p, address: value }));
+                    else if (typeof propSetAddress === "function") propSetAddress(value);
                   }}
-                  placeholder="Ex.: Bite Menu"
-                  maxLength={30}
+                  placeholder="Ex.: Rua das Flores, 120 - Centro"
+                  maxLength={255}
                 />
-                <div className="text-right text-xs ">{(propTitle || "").length}/30</div>
-              </Field>
+              </div>
+            </Field>
 
-              <Field label="Descrição" hint="Explique objetivamente o que o cliente encontra no seu cardápio.">
-                <TextArea
-                  rows={4}
-                  value={propDescription || ""}
-                  onChange={(e) => {
-                    const value = e.target.value.slice(0, 200);
-                    if (usingExternal) externalSetState((p) => ({ ...p, description: value }));
-                    else if (typeof propSetDescription === "function") propSetDescription(value);
-                  }}
-                  placeholder="Ex.: Lanches, porções e bebidas com pedido rápido no WhatsApp."
-                  maxLength={200}
+            <Field label="Link do cardápio">
+              <div className="flex h-11 items-center overflow-hidden rounded-xl border border-[var(--translucid)] bg-translucid">
+                <span className="hidden h-full shrink-0 items-center border-r border-[var(--translucid)] px-3 text-sm opacity-60 xs:flex">
+                  bitemenu.com.br/menu/
+                </span>
+                <input
+                  type="text"
+                  value={slug || ""}
+                  onChange={(e) => setSlug(slugify(e.target.value.slice(0, 20)))}
+                  placeholder="seu-slug"
+                  maxLength={20}
+                  className="h-full w-full bg-transparent px-3 text-[15px] outline-none"
                 />
-                <div className="text-right text-xs ">{(propDescription || "").length}/200</div>
-              </Field>
+              </div>
+              <Counter value={slug || ""} max={20} />
+            </Field>
 
-              <Field label="Endereço" hint="Mostre onde fica o estabelecimento ou o ponto de retirada.">
-                <div className="relative">
-                  <FaMapMarkerAlt className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 " />
-                  <TextInput
-                    className="pl-11"
-                    value={propAddress || ""}
-                    onChange={(e) => {
-                      const value = e.target.value.slice(0, 255);
-                      if (usingExternal) externalSetState((p) => ({ ...p, address: value }));
-                      else if (typeof propSetAddress === "function") propSetAddress(value);
-                    }}
-                    placeholder="Ex.: Rua das Flores, 120 - Centro"
-                    maxLength={255}
+            <Field label="Moeda">
+              <CurrencySelect value={currency || "BRL"} onChange={setCurrency} />
+            </Field>
+          </div>
+        </SectionCard>
+
+        <SectionCard
+          id="servicos"
+          sectionRef={sectionRefs.servicos}
+          icon={<FaTruck />}
+          title="Serviços e entrega"
+          summary={servicosSummary}
+          open={openSection === "servicos"}
+          onToggle={() => toggleSection("servicos")}
+        >
+          <div className="grid gap-5">
+            <Field label="Como o cliente recebe o pedido">
+              <div className="grid gap-2 sm:grid-cols-2">
+                {serviceOptions.map((opt) => (
+                  <OptionCard
+                    key={opt.id}
+                    multi
+                    selected={selectedServices?.includes(opt.id)}
+                    title={opt.label}
+                    onClick={() => toggleService(opt.id)}
+                  />
+                ))}
+              </div>
+            </Field>
+
+            {selectedServices?.includes("delivery") && (
+              <Field label="Cobrança do frete">
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <OptionCard
+                    selected={deliveryFeeMode === "fixed"}
+                    title="Taxa fixa"
+                    description="Mesmo valor para qualquer entrega."
+                    onClick={() => toggleDeliveryMode("fixed")}
+                  />
+                  <OptionCard
+                    selected={deliveryFeeMode === "zones"}
+                    title="Taxa por bairro"
+                    description="Um valor para cada bairro."
+                    onClick={() => toggleDeliveryMode("zones")}
                   />
                 </div>
-              </Field>
 
-              <Field label="Link do cardápio" hint="Escolha um slug simples e fácil de compartilhar.">
-                <div className="overflow-hidden rounded-2xl border border-[var(--translucid)] bg-translucid">
-                  <div className="flex flex-col sm:flex-row sm:items-center">
-                    <div className="flex h-12 items-center border-b border-[var(--translucid)] px-4 text-sm sm:border-b-0 sm:border-r">
-                      bitemenu.com.br/menu/
-                    </div>
-                    <div className="relative flex-1">
-                      <FaLink className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 " />
-                      <input
-                        type="text"
-                        value={slug || ""}
-                        onChange={(e) => setSlug(slugify(e.target.value.slice(0, 20)))}
-                        placeholder="seu-slug"
-                        maxLength={20}
-                        className="h-12 w-full bg-transparent pl-11 pr-4 text-[15px]  outline-none placeholder:"
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right text-xs ">{(slug || "").length}/20</div>
-              </Field>
-
-              <Field
-                label="Moeda"
-                hint="Define apenas o símbolo exibido antes dos valores (no cardápio, pedidos e vendas). Não converte valores."
-              >
-                <CurrencySelect value={currency || "BRL"} onChange={setCurrency} />
-              </Field>
-            </div>
-          </SectionCard>
-
-          <SectionCard
-            id="servicos"
-            sectionRef={sectionRefs.servicos}
-            icon={<FaTruck />}
-            title="Serviços e entrega"
-            description="Defina como os clientes podem fazer pedidos e como o frete será cobrado."
-            summary={servicosSummary}
-            open={openSections.servicos}
-            onToggle={() => toggleSection("servicos")}
-          >
-            <div className="space-y-5">
-              <div>
-                <div className="mb-3 text-sm font-semibold">Serviços disponíveis</div>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {serviceOptions.map((opt) => (
-                    <SelectionCard
-                      key={opt.id}
-                      selected={selectedServices?.includes(opt.id)}
-                      title={opt.label}
-                      onClick={() => toggleService(opt.id)}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {selectedServices?.includes("delivery") && (
-                <div>
-                  <div className="mb-4">
-                    <div className="text-sm font-semibold">Cobrança do frete</div>
-                    <p className="mt-1 text-sm ">Escolha a forma mais simples para o seu tipo de operação.</p>
-                  </div>
-
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <ModeOption
-                      active={deliveryFeeMode === "fixed"}
-                      title="Taxa fixa"
-                      description="Uma única taxa para qualquer entrega. Melhor para operações simples."
-                      onClick={() => toggleDeliveryMode("fixed")}
-                    />
-                    <ModeOption
-                      active={deliveryFeeMode === "zones"}
-                      title="Taxa por bairro"
-                      description="Defina um valor diferente para cada bairro ou região."
-                      onClick={() => toggleDeliveryMode("zones")}
-                    />
-                  </div>
-
-                  {deliveryFeeMode === "fixed" && (
-                    <div className="mt-4 max-w-md">
-                      <Field label={`Taxa de entrega (${getCurrencySymbol(currency)})`}>
-                        <TextInput
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={deliveryFee || ""}
-                          onChange={(e) => setDeliveryFee(String(e.target.value).replace(",", "."))}
-                          placeholder="0.00"
-                        />
-                      </Field>
-                    </div>
-                  )}
-
-                  {deliveryFeeMode === "zones" && (
-                    <div className="mt-4 space-y-4">
-                      {!canUseZones ? (
-                        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/20 p-4 text-sm">
-                          Taxa por bairro está disponível apenas no Plus ou Pro. Enquanto isso, seu cardápio continuará
-                          usando taxa fixa.
-                        </div>
-                      ) : (
-                        <>
-                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                              <div className="font-semibold">Bairros e taxas</div>
-                              <p className="mt-1 text-sm ">Cadastre os bairros atendidos e quanto cobrar em cada um.</p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={addDeliveryZone}
-                              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[var(--translucid)] bg-translucid px-4 py-3 text-sm font-semibold transition hover:opacity-90 cursor-pointer"
-                            >
-                              <FaPlus className="text-xs" />
-                              Adicionar bairro
-                            </button>
-                          </div>
-
-                          {deliveryZones.length === 0 ? (
-                            <div className="rounded-2xl border border-dashed border-[var(--translucid)] bg-translucid p-5 text-sm ">
-                              Nenhum bairro cadastrado ainda.
-                            </div>
-                          ) : (
-                            <div className="space-y-3">
-                              {deliveryZones.map((zone, index) => (
-                                <div
-                                  key={zone.id}
-                                  className="grid gap-3 rounded-2xl border border-[var(--translucid)] bg-translucid p-4 grid-cols-1 sm:grid-cols-[1fr_180px_auto]"
-                                >
-                                  <div>
-                                    <label className="mb-2 block text-xs uppercase tracking-[0.14em] ">
-                                      Bairro {index + 1}
-                                    </label>
-                                    <TextInput
-                                      value={zone.name}
-                                      onChange={(e) => updateDeliveryZone(zone.id, "name", e.target.value)}
-                                      placeholder="Ex.: Centro"
-                                    />
-                                  </div>
-
-                                  <div>
-                                    <label className="mb-2 block text-xs uppercase tracking-[0.14em] ">
-                                      Taxa ({getCurrencySymbol(currency)})
-                                    </label>
-                                    <TextInput
-                                      type="number"
-                                      min="0"
-                                      step="0.01"
-                                      value={zone.shipping_fee}
-                                      onChange={(e) => updateDeliveryZone(zone.id, "shipping_fee", e.target.value)}
-                                      placeholder="0.00"
-                                    />
-                                  </div>
-
-                                  <div className="flex items-end">
-                                    <button
-                                      type="button"
-                                      onClick={() => removeDeliveryZone(zone.id)}
-                                      className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/40 px-4 text-sm font-semibold transition hover:opacity-90 cursor-pointer w-full"
-                                    >
-                                      <FaTrash className="text-xs" />
-                                      Remover
-                                    </button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div>
-                <Field
-                  label={`Valor mínimo de pedido (${getCurrencySymbol(currency)})`}
-                  hint="Pedidos abaixo desse valor não poderão ser finalizados pelo cliente."
-                >
-                  {hasPlusPermissions ? (
+                {deliveryFeeMode === "fixed" && (
+                  <div className="max-w-xs pt-1">
                     <TextInput
                       type="number"
                       min="0"
                       step="0.01"
-                      value={minimumOrderValue || ""}
-                      onChange={(e) => setMinimumOrderValue(String(e.target.value).replace(",", "."))}
-                      placeholder="Ex.: 15.00"
+                      value={deliveryFee || ""}
+                      onChange={(e) => setDeliveryFee(String(e.target.value).replace(",", "."))}
+                      placeholder={`Taxa em ${getCurrencySymbol(currency)}`}
                     />
-                  ) : (
-                    <div className="rounded-2xl border border-amber-500/20 bg-amber-500/20 p-4 text-sm">
-                      O valor mínimo de pedido está disponível apenas no Plus ou Pro. Enquanto isso, seus clientes poderão
-                      finalizar pedidos de qualquer valor.
-                    </div>
-                  )}
-                </Field>
-              </div>
-            </div>
-          </SectionCard>
-
-          <SectionCard
-            id="pagamentos"
-            sectionRef={sectionRefs.pagamentos}
-            icon={<FaCreditCard />}
-            title="Pagamentos"
-            description="Escolha como o cliente poderá pagar ao finalizar o pedido."
-            summary={pagamentosSummary}
-            open={openSections.pagamentos}
-            onToggle={() => toggleSection("pagamentos")}
-          >
-            <div className="space-y-5">
-              <div className="grid gap-3 md:grid-cols-2">
-                {paymentOptions.map((opt) => (
-                  <SelectionCard
-                    key={opt.id}
-                    selected={selectedPayments?.includes(opt.id)}
-                    title={opt.label}
-                    description={opt.description}
-                    onClick={() => togglePayment(opt.id)}
-                  />
-                ))}
-                {isConnected && (
-                  <SelectionCard
-                    selected={useStripeExpress}
-                    title="Pagamento online"
-                    description="Cliente paga com cartão, redirecionado ao Stripe."
-                    onClick={toggleStripeExpress}
-                  />
+                  </div>
                 )}
-              </div>
 
-              {selectedPayments?.includes("pix") && (
-                <div className="max-w-2xl rounded-2xl border border-[var(--translucid)] bg-translucid p-4 sm:p-5">
-                  <Field label="Chave PIX" hint="Essa chave será usada pelo cliente ao escolher pagamento via PIX.">
-                    <TextInput
-                      value={pixKey || ""}
-                      onChange={(e) => setPixKey(e.target.value)}
-                      placeholder="Ex.: telefone, e-mail, CPF ou chave aleatória"
-                    />
-                  </Field>
-                </div>
+                {deliveryFeeMode === "zones" &&
+                  (!hasPlusPermissions ? (
+                    <Notice>Taxa por bairro é exclusiva do Plus ou Pro. Seu cardápio continua com taxa fixa.</Notice>
+                  ) : (
+                    <div className="space-y-2 pt-1">
+                      {deliveryZones.length === 0 ? (
+                        <p className="text-xs opacity-60">Nenhum bairro cadastrado ainda.</p>
+                      ) : (
+                        deliveryZones.map((zone) => (
+                          <div key={zone.id} className="grid grid-cols-[1fr_110px_44px] gap-2">
+                            <TextInput
+                              value={zone.name}
+                              onChange={(e) => updateDeliveryZone(zone.id, "name", e.target.value)}
+                              placeholder="Bairro"
+                            />
+                            <TextInput
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={zone.shipping_fee}
+                              onChange={(e) => updateDeliveryZone(zone.id, "shipping_fee", e.target.value)}
+                              placeholder={getCurrencySymbol(currency)}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeDeliveryZone(zone.id)}
+                              aria-label={`Remover ${zone.name || "bairro"}`}
+                              className="flex h-11 cursor-pointer items-center justify-center rounded-xl border border-red-500/30 text-red-400 transition hover:bg-red-500/15"
+                            >
+                              <FaTrash className="text-xs" />
+                            </button>
+                          </div>
+                        ))
+                      )}
+
+                      <GhostButton onClick={addDeliveryZone}>
+                        <FaPlus className="text-xs" />
+                        Adicionar bairro
+                      </GhostButton>
+                    </div>
+                  ))}
+              </Field>
+            )}
+
+            <Field label={`Valor mínimo de pedido (${getCurrencySymbol(currency)})`}>
+              {hasPlusPermissions ? (
+                <TextInput
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={minimumOrderValue || ""}
+                  onChange={(e) => setMinimumOrderValue(String(e.target.value).replace(",", "."))}
+                  placeholder="Ex.: 15.00"
+                  className="max-w-xs"
+                />
+              ) : (
+                <Notice>Valor mínimo de pedido é exclusivo do Plus ou Pro.</Notice>
+              )}
+            </Field>
+          </div>
+        </SectionCard>
+
+        <SectionCard
+          id="pagamentos"
+          sectionRef={sectionRefs.pagamentos}
+          icon={<FaCreditCard />}
+          title="Pagamentos"
+          summary={pagamentosSummary}
+          open={openSection === "pagamentos"}
+          onToggle={() => toggleSection("pagamentos")}
+        >
+          <div className="grid gap-5">
+            <div className="grid gap-2 sm:grid-cols-2">
+              {paymentOptions.map((opt) => (
+                <OptionCard
+                  key={opt.id}
+                  multi
+                  selected={selectedPayments?.includes(opt.id)}
+                  title={opt.label}
+                  onClick={() => togglePayment(opt.id)}
+                />
+              ))}
+              {isConnected && (
+                <OptionCard
+                  multi
+                  selected={useStripeExpress}
+                  title="Pagamento online"
+                  description="Cartão via Stripe."
+                  onClick={toggleStripeExpress}
+                />
               )}
             </div>
-          </SectionCard>
-        </div>
 
-        <div className="space-y-5">
-          <SectionCard
-            id="aparencia"
-            sectionRef={sectionRefs.aparencia}
-            icon={<FaPalette />}
-            title="Aparência"
-            description="Escolha cores bonitas e consistentes para deixar seu cardápio mais profissional."
-            summary={aparenciaSummary}
-            open={openSections.aparencia}
-            onToggle={() => toggleSection("aparencia")}
-          >
-            <div className="space-y-5">
-              <div className="grid gap-4">
-                {[
-                  { label: "Cor do fundo", value: propBg, setter: propSetBg },
-                  { label: "Cor do título", value: propTitleColor, setter: propSetTitleColor },
-                  { label: "Cor dos detalhes", value: propDetailsColor, setter: propSetDetailsColor },
-                ].map((item, idx) => (
-                  <Field key={item.label} label={item.label}>
-                    <div className="rounded-2xl border border-[var(--translucid)] bg-translucid p-3">
-                      <div className="flex items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={() => setOpenColorIdx(openColorIdx === idx ? null : idx)}
-                          className="h-12 w-14 shrink-0 cursor-pointer rounded-xl border border-[var(--translucid)]"
-                          style={{ backgroundColor: item.value }}
-                          aria-label={item.label}
-                          aria-expanded={openColorIdx === idx}
-                        />
-                        <HexColorInput
-                          prefixed
-                          color={item.value}
-                          onChange={(c) => item.setter?.(c)}
-                          aria-label={`Hexadecimal: ${item.label}`}
-                          className="h-12 w-full rounded-xl border border-[var(--translucid)] bg-translucid px-3 text-sm uppercase outline-none focus:border-red-500/70"
-                        />
-                      </div>
-                      {openColorIdx === idx && (
-                        <HexColorPicker
-                          color={item.value}
-                          onChange={(c) => item.setter?.(c)}
-                          style={{ width: "100%", height: 160, marginTop: 12 }}
-                        />
-                      )}
+            {selectedPayments?.includes("pix") && (
+              <Field label="Chave PIX">
+                <TextInput
+                  value={pixKey || ""}
+                  onChange={(e) => setPixKey(e.target.value)}
+                  placeholder="Telefone, e-mail, CPF ou chave aleatória"
+                />
+              </Field>
+            )}
+          </div>
+        </SectionCard>
+
+        <SectionCard
+          id="aparencia"
+          sectionRef={sectionRefs.aparencia}
+          icon={<FaPalette />}
+          title="Aparência"
+          summary={aparenciaSummary}
+          open={openSection === "aparencia"}
+          onToggle={() => toggleSection("aparencia")}
+        >
+          <div className="grid gap-5">
+            <Field label="Cores">
+              <div className="grid gap-3 sm:grid-cols-3">
+                {colorFields.map((item, idx) => (
+                  <div key={item.label} ref={openColorIdx === idx ? openColorRef : null}>
+                    <div className="mb-2 text-xs opacity-60">{item.label}</div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setOpenColorIdx(openColorIdx === idx ? null : idx)}
+                        className="h-11 w-11 shrink-0 cursor-pointer rounded-xl border border-[var(--high-translucid)]"
+                        style={{ backgroundColor: item.value }}
+                        aria-label={`Escolher cor: ${item.label}`}
+                        aria-expanded={openColorIdx === idx}
+                      />
+                      <HexColorInput
+                        prefixed
+                        color={item.value}
+                        onChange={(c) => item.setter?.(c)}
+                        aria-label={`Hexadecimal: ${item.label}`}
+                        className={cx(INPUT_CLASS, "uppercase")}
+                      />
                     </div>
-                  </Field>
+                    {openColorIdx === idx && (
+                      <HexColorPicker
+                        color={item.value}
+                        onChange={(c) => item.setter?.(c)}
+                        style={{ width: "100%", height: 150, marginTop: 8 }}
+                      />
+                    )}
+                  </div>
                 ))}
               </div>
-              <button
-                type="button"
-                onClick={suggestRandomPalette}
-                className="inline-flex items-center gap-2 rounded-2xl border border-[var(--translucid)] bg-translucid px-4 py-3 text-sm font-semibold transition hover:opacity-90 cursor-pointer"
-              >
+              <GhostButton onClick={suggestRandomPalette}>
                 <FaLightbulb />
                 Sugerir cores
-              </button>
+              </GhostButton>
+            </Field>
 
-              <div className="mb-4">
-                <div className="text-sm font-semibold">Estilo do menu</div>
-                <p className="mt-1 text-sm ">Escolha o estilo que melhor se adapta ao seu negócio.</p>
-              </div>
-              <div className="grid gap-3 md:grid-cols-3">
-                <ModeOption
-                  active={layout === "default"}
+            <Field label="Estilo do menu">
+              <div className="grid gap-2 sm:grid-cols-3">
+                <OptionCard
+                  selected={layout === "default"}
                   title="Padrão"
-                  description="Simples e eficiente, com foco total no seu cardápio."
+                  description="Simples, foco no cardápio."
                   onClick={() => handleLayoutClick("default")}
                 />
-                <ModeOption
-                  active={layout === "list"}
+                <OptionCard
+                  selected={layout === "list"}
                   title="Lista"
-                  description="Fotos menores e itens organizados em uma lista elegante."
+                  description="Fotos menores, itens em lista."
                   onClick={() => handleLayoutClick("list")}
                 />
-                <ModeOption
-                  active={layout === "grid"}
-                  title="Grade de itens"
-                  description="Fotos maiores organizadas em uma grade moderna e visualmente impactante."
+                <OptionCard
+                  selected={layout === "grid"}
+                  title="Grade"
+                  description="Fotos maiores em grade."
                   onClick={() => handleLayoutClick("grid")}
                 />
               </div>
-            </div>
-          </SectionCard>
+            </Field>
+          </div>
+        </SectionCard>
 
-          <SectionCard
-            id="horarios"
-            sectionRef={sectionRefs.horarios}
-            icon={<FaClock />}
-            title="Horários de funcionamento"
-            description="Defina quando seu estabelecimento está aberto para pedidos."
-            summary={horariosSummary}
-            open={openSections.horarios}
-            onToggle={() => toggleSection("horarios")}
-          >
-            <div className="space-y-3">
-              {dayOrder.map((day) => {
-                const value = hours?.[day];
-                const isClosed = value === null;
-                const [openTime, closeTime] = typeof value === "string" ? value.split("-") : ["", ""];
+        <SectionCard
+          id="horarios"
+          sectionRef={sectionRefs.horarios}
+          icon={<FaClock />}
+          title="Horários"
+          summary={horariosSummary}
+          open={openSection === "horarios"}
+          onToggle={() => toggleSection("horarios")}
+        >
+          <div className="space-y-2">
+            {dayOrder.map((day) => {
+              const value = hours?.[day];
+              const isClosed = value === null;
+              const [openTime, closeTime] = typeof value === "string" ? value.split("-") : ["", ""];
 
-                return (
-                  <div
-                    key={day}
-                    className="grid gap-3 rounded-2xl border border-[var(--translucid)] bg-translucid p-4 sm:grid-cols-[70px_1fr_auto] sm:items-center"
-                  >
-                    <div className="font-semibold">{dayLabels[day]}</div>
+              return (
+                <div key={day} className="grid grid-cols-[44px_1fr] items-center gap-3 sm:grid-cols-[44px_1fr_auto]">
+                  <div className="text-sm font-semibold">{dayLabels[day]}</div>
 
-                    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                      <input
-                        type="time"
-                        value={openTime || ""}
-                        disabled={isClosed}
-                        onChange={(e) => updateDayHour(day, "open", e.target.value)}
-                        onBlur={(e) => updateDayHour(day, "open", e.target.value)}
-                        className="h-11 rounded-2xl border border-[var(--translucid)] bg-translucid px-3  outline-none disabled:cursor-not-allowed disabled:opacity-40"
-                      />
-                      <span className="text-center ">até</span>
-                      <input
-                        type="time"
-                        value={closeTime || ""}
-                        disabled={isClosed}
-                        onChange={(e) => updateDayHour(day, "close", e.target.value)}
-                        onBlur={(e) => updateDayHour(day, "close", e.target.value)}
-                        className="h-11 rounded-2xl border border-[var(--translucid)] bg-translucid px-3  outline-none disabled:cursor-not-allowed disabled:opacity-40"
-                      />
-                    </div>
-
-                    <label className="inline-flex cursor-pointer items-center gap-3 rounded-full border border-[var(--translucid)] bg-translucid px-3 py-2 text-sm">
-                      <span className="switch">
-                        <input
-                          type="checkbox"
-                          className="hidden"
-                          checked={isClosed}
-                          onChange={(e) => {
-                            const checked = e.target.checked;
-                            safeSetHours((prev) => {
-                              const base = { ...prev };
-                              base[day] = checked ? null : typeof base[day] === "string" ? base[day] : DEFAULT_HOURS[day];
-                              return base;
-                            });
-                          }}
-                        />
-                        <span className="slider"></span>
-                      </span>
-                      Fechado
-                    </label>
+                  <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                    <input
+                      type="time"
+                      value={openTime || ""}
+                      disabled={isClosed}
+                      onChange={(e) => updateDayHour(day, "open", e.target.value)}
+                      onBlur={(e) => updateDayHour(day, "open", e.target.value)}
+                      className={cx(INPUT_CLASS, "disabled:cursor-not-allowed disabled:opacity-40")}
+                    />
+                    <span className="text-xs opacity-60">até</span>
+                    <input
+                      type="time"
+                      value={closeTime || ""}
+                      disabled={isClosed}
+                      onChange={(e) => updateDayHour(day, "close", e.target.value)}
+                      onBlur={(e) => updateDayHour(day, "close", e.target.value)}
+                      className={cx(INPUT_CLASS, "disabled:cursor-not-allowed disabled:opacity-40")}
+                    />
                   </div>
-                );
-              })}
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                safeSetHours((prev) => {
-                  const next = { ...prev };
-                  Object.keys(next).forEach((day) => {
-                    next[day] = "00:00-23:59";
-                  });
-                  return next;
+
+                  <label className="col-start-2 inline-flex cursor-pointer items-center gap-2 text-xs opacity-70 sm:col-start-3">
+                    <span className="switch">
+                      <input
+                        type="checkbox"
+                        className="hidden"
+                        checked={isClosed}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          safeSetHours((prev) => {
+                            const base = { ...prev };
+                            base[day] = checked ? null : typeof base[day] === "string" ? base[day] : DEFAULT_HOURS[day];
+                            return base;
+                          });
+                        }}
+                      />
+                      <span className="slider"></span>
+                    </span>
+                    Fechado
+                  </label>
+                </div>
+              );
+            })}
+          </div>
+
+          <GhostButton
+            className="mt-4"
+            onClick={() => {
+              safeSetHours((prev) => {
+                const next = { ...prev };
+                Object.keys(next).forEach((day) => {
+                  next[day] = "00:00-23:59";
                 });
-              }}
-              className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-[var(--translucid)] bg-translucid px-4 py-3 text-sm font-semibold transition hover:opacity-90 cursor-pointer"
-            >
-              24h para todos
-            </button>
-          </SectionCard>
-        </div>
+                return next;
+              });
+            }}
+          >
+            Abrir 24h todos os dias
+          </GhostButton>
+        </SectionCard>
       </div>
 
       {layoutPreview !== null && (
@@ -1417,11 +1306,11 @@ const ConfigMenu = (props) => {
             </div>
           </div>
 
-          <div className="flex gap-3 mt-4" onClick={(e) => e.stopPropagation()}>
+          <div className="mt-4 flex gap-3" onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
               onClick={() => setLayoutPreview(null)}
-              className="rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:opacity-80 cursor-pointer"
+              className="h-11 cursor-pointer rounded-xl border border-white/20 bg-white/10 px-5 text-sm font-semibold text-white transition hover:opacity-80"
             >
               Cancelar
             </button>
@@ -1432,15 +1321,15 @@ const ConfigMenu = (props) => {
                 onClick={() => {
                   window.location.href = "https://www.bitemenu.com.br/dashboard/pricing";
                 }}
-                className="rounded-2xl bg-[#d42020] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 cursor-pointer"
+                className="h-11 cursor-pointer rounded-xl bg-[#d42020] px-5 text-sm font-semibold text-white transition hover:opacity-90"
               >
-                Assinar Plus para liberar estilo
+                Assinar Plus para liberar
               </button>
             ) : (
               <button
                 type="button"
                 onClick={handleApplyLayout}
-                className="rounded-2xl bg-[#d42020] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 cursor-pointer"
+                className="h-11 cursor-pointer rounded-xl bg-[#d42020] px-5 text-sm font-semibold text-white transition hover:opacity-90"
               >
                 Aplicar estilo
               </button>
