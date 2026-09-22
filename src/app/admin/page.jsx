@@ -39,6 +39,7 @@ const Admin = () => {
   const [sortByLastAccess, setSortByLastAccess] = useState(false);
   const [onlyLast7Days, setOnlyLast7Days] = useState(false);
   const [showOnlyPlusPro, setShowOnlyPlusPro] = useState(false);
+  const [utmSource, setUtmSource] = useState("");
 
   const PAGE_SIZE = 15;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -179,7 +180,7 @@ const Admin = () => {
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [showOnlyPaid, search, sortByLastAccess, onlyLast7Days, showOnlyPlusPro]);
+  }, [showOnlyPaid, search, sortByLastAccess, onlyLast7Days, showOnlyPlusPro, utmSource]);
 
   if (loading || menusLoading) return <Loading />;
 
@@ -211,6 +212,14 @@ const Admin = () => {
   if (showOnlyPlusPro) {
     visibleMenus = visibleMenus.filter((m) => ["plus", "pro"].includes(m.owner_role));
   }
+
+  if (utmSource) {
+    visibleMenus = visibleMenus.filter((m) =>
+      utmSource === "none" ? !m.owner_acquisition_source : m.owner_acquisition_source === utmSource
+    );
+  }
+
+  const utmSources = [...new Set(fullMenus.map((m) => m.owner_acquisition_source).filter(Boolean))].sort();
 
   const paginatedMenus = visibleMenus.slice(0, visibleCount);
   const hasMore = visibleCount < visibleMenus.length;
@@ -314,6 +323,20 @@ const Admin = () => {
           placeholder="Pesquisar..."
           className="px-3 py-1 w-full rounded bg-translucid border border-translucid text-sm max-w-lg"
         />
+
+        <select
+          value={utmSource}
+          onChange={(e) => setUtmSource(e.target.value)}
+          className="px-3 py-1 w-full rounded bg-translucid border border-translucid text-sm max-w-lg"
+        >
+          <option value="">Todas as origens (utm_source)</option>
+          <option value="none">Sem origem</option>
+          {utmSources.map((src) => (
+            <option key={src} value={src}>
+              {ACQUISITION_SOURCE_LABELS[src] || src}
+            </option>
+          ))}
+        </select>
 
         <div className="flex gap-4 flex-wrap justify-center">
           <label className="flex items-center gap-2 text-sm text-gray-300">
