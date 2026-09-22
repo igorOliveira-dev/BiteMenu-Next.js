@@ -73,3 +73,35 @@ export async function sendBoletoReadyEmail({ to, planName, amountCents, dueDate,
     html,
   });
 }
+
+export async function sendSubscriptionPastDueEmail({ to, planName, amountCents, invoiceUrl }) {
+  if (!to) return;
+  if (!resend) {
+    console.warn("[Resend] RESEND_API_KEY não configurada; email de assinatura vencida não enviado");
+    return;
+  }
+
+  const button = invoiceUrl
+    ? `<p style="margin-top: 24px;">
+        <a href="${invoiceUrl}" style="background:#111;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;">Regularizar pagamento</a>
+      </p>`
+    : "";
+
+  const html = emailShell(
+    "Sua assinatura está com pagamento pendente",
+    `
+      <p>Olá!</p>
+      <p>Não conseguimos confirmar o pagamento da renovação da sua assinatura do ${planPhrase(planName)} no Bite Menu${amountCents ? `, no valor de <strong>${formatBRL(amountCents)}</strong>` : ""}.</p>
+      <p>Para continuar usando o Bite Menu sem interrupções, regularize o pagamento. Você pode pagar com cartão ou boleto.</p>
+      ${button}
+      <p>Se o pagamento não for regularizado, sua assinatura pode ser cancelada automaticamente.</p>
+    `,
+  );
+
+  await resend.emails.send({
+    from: RESEND_FROM_EMAIL,
+    to,
+    subject: "Pagamento pendente na sua assinatura Bite Menu",
+    html,
+  });
+}

@@ -1,7 +1,11 @@
 import { stripeClients } from "@/lib/stripe";
 import { createClient } from "@supabase/supabase-js";
 import { plans } from "@/consts/Plans";
-import { sendUpcomingRenewalEmail, sendBoletoReadyEmail } from "@/lib/emails/subscriptionEmails";
+import {
+  sendUpcomingRenewalEmail,
+  sendBoletoReadyEmail,
+  sendSubscriptionPastDueEmail,
+} from "@/lib/emails/subscriptionEmails";
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
@@ -239,6 +243,33 @@ export async function POST(req) {
       case "customer.subscription.updated": {
         const subscription = event.data.object;
         const customerId = subscription.customer;
+
+        // Assinatura acabou de vencer (renovação não paga) — avisa uma vez pra regularizar
+        const previousStatus = event.data.previous_attributes?.status;
+        if (subscription.status === "past_due" && previousStatus && previousStatus !== "past_due") {
+          const invoiceObj = subscription.latest_invoice
+            ? await stripe.invoices.retrieve(subscription.latest_invoice)
+            : null;
+
+          const priceId = subscription.items?.data?.[0]?.price?.id;
+          const { data: planData } = priceId
+            ? await supabase.from("plans").select("role").eq("stripe_price_id", priceId).maybeSingle()
+            : { data: null };
+
+          const email = await getCustomerEmail(stripe, customerId);
+
+          if (email) {
+            await sendSubscriptionPastDueEmail({
+              to: email,
+              planName: planNameFromRole(planData?.role),
+              amountCents: invoiceObj?.amount_due,
+              invoiceUrl: invoiceObj?.hosted_invoice_url,
+            });
+            console.log("[Webhook] Email de assinatura vencida enviado para", email);
+          } else {
+            console.log("[Webhook] Assinatura vencida sem email disponível para customer", customerId);
+          }
+        }
 
         const { data: profile } = await supabase
           .from("profiles")
