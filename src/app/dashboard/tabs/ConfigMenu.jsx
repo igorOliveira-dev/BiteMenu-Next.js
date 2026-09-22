@@ -17,6 +17,7 @@ import {
   FaLink,
   FaCheck,
 } from "react-icons/fa";
+import { HexColorPicker, HexColorInput } from "react-colorful";
 import { COLOR_PALETTES } from "@/consts/colorPallets";
 import { CURRENCIES } from "@/consts/currencies";
 import { getCurrencySymbol } from "@/lib/formatCurrency";
@@ -414,6 +415,8 @@ const ConfigMenu = (props) => {
 
   const [userRole, setUserRole] = useState(null);
   const [paletteIndex, setPaletteIndex] = useState(0);
+  // seletor de cor aberto (só um por vez; o nativo do Firefox/Linux não dá pra fechar via JS)
+  const [openColorIdx, setOpenColorIdx] = useState(null);
   const [layoutPreview, setLayoutPreview] = useState(null);
   const [layout, setLayout] = useState("default");
   const [previewScale, setPreviewScale] = useState(1);
@@ -1229,44 +1232,40 @@ const ConfigMenu = (props) => {
           >
             <div className="space-y-5">
               <div className="grid gap-4">
-                <Field label="Cor do fundo">
-                  <div className="flex items-center gap-3 rounded-2xl border border-[var(--translucid)] bg-translucid p-3">
-                    <input
-                      type="color"
-                      value={propBg}
-                      onChange={(e) => propSetBg?.(e.target.value)}
-                      className="h-12 w-14 cursor-pointer rounded-xl border border-[var(--translucid)] bg-transparent"
-                      aria-label="Cor do fundo"
-                    />
-                    <div className="text-sm ">{propBg}</div>
-                  </div>
-                </Field>
-
-                <Field label="Cor do título">
-                  <div className="flex items-center gap-3 rounded-2xl border border-[var(--translucid)] bg-translucid p-3">
-                    <input
-                      type="color"
-                      value={propTitleColor}
-                      onChange={(e) => propSetTitleColor?.(e.target.value)}
-                      className="h-12 w-14 cursor-pointer rounded-xl border border-[var(--translucid)] bg-transparent"
-                      aria-label="Cor do título"
-                    />
-                    <div className="text-sm ">{propTitleColor}</div>
-                  </div>
-                </Field>
-
-                <Field label="Cor dos detalhes">
-                  <div className="flex items-center gap-3 rounded-2xl border border-[var(--translucid)] bg-translucid p-3">
-                    <input
-                      type="color"
-                      value={propDetailsColor}
-                      onChange={(e) => propSetDetailsColor?.(e.target.value)}
-                      className="h-12 w-14 cursor-pointer rounded-xl border border-[var(--translucid)] bg-transparent"
-                      aria-label="Cor dos detalhes"
-                    />
-                    <div className="text-sm ">{propDetailsColor}</div>
-                  </div>
-                </Field>
+                {[
+                  { label: "Cor do fundo", value: propBg, setter: propSetBg },
+                  { label: "Cor do título", value: propTitleColor, setter: propSetTitleColor },
+                  { label: "Cor dos detalhes", value: propDetailsColor, setter: propSetDetailsColor },
+                ].map((item, idx) => (
+                  <Field key={item.label} label={item.label}>
+                    <div className="rounded-2xl border border-[var(--translucid)] bg-translucid p-3">
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setOpenColorIdx(openColorIdx === idx ? null : idx)}
+                          className="h-12 w-14 shrink-0 cursor-pointer rounded-xl border border-[var(--translucid)]"
+                          style={{ backgroundColor: item.value }}
+                          aria-label={item.label}
+                          aria-expanded={openColorIdx === idx}
+                        />
+                        <HexColorInput
+                          prefixed
+                          color={item.value}
+                          onChange={(c) => item.setter?.(c)}
+                          aria-label={`Hexadecimal: ${item.label}`}
+                          className="h-12 w-full rounded-xl border border-[var(--translucid)] bg-translucid px-3 text-sm uppercase outline-none focus:border-red-500/70"
+                        />
+                      </div>
+                      {openColorIdx === idx && (
+                        <HexColorPicker
+                          color={item.value}
+                          onChange={(c) => item.setter?.(c)}
+                          style={{ width: "100%", height: 160, marginTop: 12 }}
+                        />
+                      )}
+                    </div>
+                  </Field>
+                ))}
               </div>
               <button
                 type="button"
