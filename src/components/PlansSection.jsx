@@ -11,6 +11,10 @@ import { supabase } from "@/lib/supabaseClient";
 
 const TIER_RANK = { free: 0, plus: 1, pro: 2 };
 
+// Manutenção temporária: contratação de planos desativada durante a correção
+// técnica nos pagamentos. Voltar pra false pra reativar.
+const MAINTENANCE = true;
+
 const ChangePlanModal = ({ open, currentPlan, targetPlan, isUpgrade, periodEnd, onClose, onConfirm, loading }) => {
   useEffect(() => {
     if (!open) return;
@@ -307,7 +311,16 @@ const PlansSection = ({ canShowFreeTrialBtn }) => {
     <section className="py-3 px-6 flex flex-col items-center justify-center min-h-[calc(100dvh-100px)]">
       <h2 className="font-bold scale-130 xxs:scale-150 mt-4 lg:mt-0 mb-8 text-center">Planos disponíveis:</h2>
 
-      {showFreeTrialBtn && (
+      {MAINTENANCE && (
+        <div className="w-full max-w-[700px] mb-8 p-4 rounded-xl bg-amber-500/10 border-2 border-amber-500/40 text-sm text-center">
+          <strong>Contratação temporariamente indisponível.</strong>
+          <br />
+          Estamos passando por uma correção técnica no sistema de pagamentos. Em breve você poderá assinar
+          normalmente. Se você já é assinante, seu cardápio continua funcionando sem alteração.
+        </div>
+      )}
+
+      {showFreeTrialBtn && !MAINTENANCE && (
         <button
           className="cta-button glow-red w-full mb-6 py-4 text-lg font-bold"
           onClick={() =>
@@ -325,8 +338,12 @@ const PlansSection = ({ canShowFreeTrialBtn }) => {
         {plans.map((plan) => (
           <div
             key={plan.name}
-            className="p-4 px-6 bg-degraded-t-speckled border-2 border-[var(--translucid)] rounded-xl w-64 flex flex-col gap-6 justify-between cursor-pointer hover:border-[var(--red)] hover:scale-102 hover:shadow-[0_0_25px_rgba(255,0,0,0.4)] transition"
-            onClick={() => openModal(plan)}
+            className={`p-4 px-6 bg-degraded-t-speckled border-2 border-[var(--translucid)] rounded-xl w-64 flex flex-col gap-6 justify-between transition ${
+              MAINTENANCE
+                ? "opacity-60"
+                : "cursor-pointer hover:border-[var(--red)] hover:scale-102 hover:shadow-[0_0_25px_rgba(255,0,0,0.4)]"
+            }`}
+            onClick={() => !MAINTENANCE && openModal(plan)}
           >
             <div>
               <h2 className="font-bold mb-2 text-center">{plan.name}</h2>
@@ -350,7 +367,9 @@ const PlansSection = ({ canShowFreeTrialBtn }) => {
             </div>
 
             <div className="w-full flex flex-col gap-2">
-              <button className="cta-button glow-red">Selecionar</button>
+              <button className="cta-button glow-red disabled:opacity-50 disabled:cursor-not-allowed" disabled={MAINTENANCE}>
+                {MAINTENANCE ? "Indisponível" : "Selecionar"}
+              </button>
             </div>
           </div>
         ))}
