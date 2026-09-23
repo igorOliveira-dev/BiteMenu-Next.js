@@ -24,7 +24,7 @@ const ZERO_DECIMAL_CURRENCIES = [
 ];
 
 export async function POST(request) {
-  const stripe = getStripeClient("main");
+  const stripe = getStripeClient("cnpj");
 
   try {
     const body = await request.json();

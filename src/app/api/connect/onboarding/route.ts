@@ -18,7 +18,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const stripe = getStripeClient("main");
+    const stripe = getStripeClient("cnpj");
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles")

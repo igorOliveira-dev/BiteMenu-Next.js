@@ -67,7 +67,7 @@ export async function POST(req) {
     const newRank = TIER_RANK[newPlan.role];
     const isUpgrade = newRank > currentRank;
 
-    const stripe = getStripeClient(profile.stripe_account ?? "main");
+    const stripe = getStripeClient(profile.stripe_account ?? "cnpj");
     const subscriptionId = profile.stripe_subscription_id;
 
     if (isUpgrade) {

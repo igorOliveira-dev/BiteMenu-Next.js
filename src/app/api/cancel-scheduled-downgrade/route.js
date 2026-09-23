@@ -22,7 +22,7 @@ export async function POST(req) {
 
     if (profileError) throw profileError;
 
-    const stripe = getStripeClient(profile?.stripe_account ?? "main");
+    const stripe = getStripeClient(profile?.stripe_account ?? "cnpj");
 
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 

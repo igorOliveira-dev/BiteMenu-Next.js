@@ -126,7 +126,7 @@ export async function GET() {
 
     const results = await Promise.all(
       plans.map(async (plan) => {
-        // Direto no mapa (sem o fallback pra "main" do getStripeClient): conta sem chave é pulada
+        // Direto no mapa (sem o fallback pra "cnpj" do getStripeClient): conta sem chave é pulada
         const stripe = stripeClients[plan.stripe_account];
         if (!stripe) {
           console.warn(`Nenhuma chave Stripe configurada para a conta "${plan.stripe_account}"`);

@@ -20,7 +20,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const stripe = getStripeClient("main");
+    const stripe = getStripeClient("cnpj");
 
     const loginLink = await stripe.accounts.createLoginLink(profile.stripe_connect_account_id);
 

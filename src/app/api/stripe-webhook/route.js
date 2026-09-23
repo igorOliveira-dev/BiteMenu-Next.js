@@ -9,7 +9,7 @@ import {
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-// Uma entrada por conta Stripe ativa. "main" primeiro porque é pra onde tudo está migrando.
+// Uma entrada por conta Stripe ativa. "main" fica só até o último cancelamento nela ser processado.
 const webhookSecrets = {
   main: process.env.STRIPE_WEBHOOK_SECRET_MAIN,
   cnpj: process.env.STRIPE_WEBHOOK_SECRET_CNPJ,
