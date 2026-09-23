@@ -13,7 +13,7 @@ const TIER_RANK = { free: 0, plus: 1, pro: 2 };
 
 // Manutenção temporária: contratação de planos desativada durante a correção
 // técnica nos pagamentos. Voltar pra false pra reativar.
-const MAINTENANCE = true;
+const MAINTENANCE = false;
 
 const ChangePlanModal = ({ open, currentPlan, targetPlan, isUpgrade, periodEnd, onClose, onConfirm, loading }) => {
   useEffect(() => {
@@ -315,8 +315,8 @@ const PlansSection = ({ canShowFreeTrialBtn }) => {
         <div className="w-full max-w-[700px] mb-8 p-4 rounded-xl bg-amber-500/10 border-2 border-amber-500/40 text-sm text-center">
           <strong>Contratação temporariamente indisponível.</strong>
           <br />
-          Estamos passando por uma correção técnica no sistema de pagamentos. Em breve você poderá assinar
-          normalmente. Se você já é assinante, seu cardápio continua funcionando sem alteração.
+          Estamos passando por uma correção técnica no sistema de pagamentos. Em breve você poderá assinar normalmente.
+          Se você já é assinante, seu cardápio continua funcionando sem alteração.
         </div>
       )}
 
@@ -367,7 +367,10 @@ const PlansSection = ({ canShowFreeTrialBtn }) => {
             </div>
 
             <div className="w-full flex flex-col gap-2">
-              <button className="cta-button glow-red disabled:opacity-50 disabled:cursor-not-allowed" disabled={MAINTENANCE}>
+              <button
+                className="cta-button glow-red disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={MAINTENANCE}
+              >
                 {MAINTENANCE ? "Indisponível" : "Selecionar"}
               </button>
             </div>
