@@ -46,15 +46,24 @@ const STATUS_LABELS = {
   incomplete_expired: "Expirada",
 };
 
+const LIVE_STATUSES = ["active", "trialing", "past_due", "unpaid", "incomplete"];
+const isLive = (sub) => LIVE_STATUSES.includes(sub.status);
+
 // 🔹 Para cada customer, pega a assinatura mais recente e retorna um mapa
-// customerId -> status (usa os mesmos dados já buscados acima, sem custo extra de API)
+// customerId -> status (usa os mesmos dados já buscados acima, sem custo extra de API).
+// Assinatura viva ganha de cancelada: o mesmo cus_ existe em mais de uma conta
+// (migração copiou os ids), e a cancelada da main pode ser mais nova que a ativa da cnpj/cpf.
 function buildSubscriberStatus(items) {
   const latestByCustomer = {};
 
   items.forEach((sub) => {
     if (!sub.customer) return;
     const existing = latestByCustomer[sub.customer];
-    if (!existing || sub.created > existing.created) {
+    const better =
+      !existing ||
+      (isLive(sub) && !isLive(existing)) ||
+      (isLive(sub) === isLive(existing) && sub.created > existing.created);
+    if (better) {
       latestByCustomer[sub.customer] = sub;
     }
   });

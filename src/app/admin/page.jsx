@@ -40,6 +40,7 @@ const Admin = () => {
   const [onlyLast7Days, setOnlyLast7Days] = useState(false);
   const [showOnlyPlusPro, setShowOnlyPlusPro] = useState(false);
   const [utmSource, setUtmSource] = useState("");
+  const [subStatus, setSubStatus] = useState("");
 
   const PAGE_SIZE = 15;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -180,7 +181,7 @@ const Admin = () => {
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [showOnlyPaid, search, sortByLastAccess, onlyLast7Days, showOnlyPlusPro, utmSource]);
+  }, [showOnlyPaid, search, sortByLastAccess, onlyLast7Days, showOnlyPlusPro, utmSource, subStatus]);
 
   if (loading || menusLoading) return <Loading />;
 
@@ -219,7 +220,15 @@ const Admin = () => {
     );
   }
 
+  if (subStatus) {
+    visibleMenus = visibleMenus.filter((m) => {
+      const status = subscriberStatus[m.stripe_costumer_id];
+      return subStatus === "none" ? !status : status?.label === subStatus;
+    });
+  }
+
   const utmSources = [...new Set(fullMenus.map((m) => m.owner_acquisition_source).filter(Boolean))].sort();
+  const subStatusLabels = [...new Set(Object.values(subscriberStatus).map((st) => st.label))].sort();
 
   const paginatedMenus = visibleMenus.slice(0, visibleCount);
   const hasMore = visibleCount < visibleMenus.length;
@@ -334,6 +343,20 @@ const Admin = () => {
           {utmSources.map((src) => (
             <option key={src} value={src}>
               {ACQUISITION_SOURCE_LABELS[src] || src}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={subStatus}
+          onChange={(e) => setSubStatus(e.target.value)}
+          className="px-3 py-1 w-full rounded bg-translucid border border-translucid text-sm max-w-lg"
+        >
+          <option value="">Todos os status de assinatura</option>
+          <option value="none">Sem assinatura</option>
+          {subStatusLabels.map((label) => (
+            <option key={label} value={label}>
+              {label}
             </option>
           ))}
         </select>
