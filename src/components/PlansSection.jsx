@@ -13,7 +13,7 @@ const TIER_RANK = { free: 0, plus: 1, pro: 2 };
 
 // Manutenção temporária: contratação de planos desativada durante a correção
 // técnica nos pagamentos. Voltar pra false pra reativar.
-const MAINTENANCE = false;
+const MAINTENANCE = true;
 
 const ChangePlanModal = ({ open, currentPlan, targetPlan, isUpgrade, periodEnd, onClose, onConfirm, loading }) => {
   useEffect(() => {
