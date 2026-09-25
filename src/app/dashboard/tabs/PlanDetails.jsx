@@ -135,6 +135,7 @@ export default function PlanDetails({ setSelectedTab }) {
           )}
 
           {!subscription.cancel_at_period_end &&
+            process.env.NEXT_PUBLIC_STRIPE_BILLING_PAUSED !== "true" &&
             ["past_due", "unpaid"].includes(subscription.status) &&
             subscription.latest_invoice_url && (
             <div className="p-4 mb-4 border border-amber-500/30 bg-amber-500/10 text-amber-500 rounded max-w-[1024px]">

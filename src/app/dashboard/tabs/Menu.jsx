@@ -157,8 +157,12 @@ const Menu = (props) => {
           return;
         }
 
-        // Assinatura atrasada/não paga
-        if (["past_due", "unpaid"].includes(data.status) && data.latest_invoice_url) {
+        // Assinatura atrasada/não paga (aviso escondido enquanto o billing estiver pausado)
+        if (
+          process.env.NEXT_PUBLIC_STRIPE_BILLING_PAUSED !== "true" &&
+          ["past_due", "unpaid"].includes(data.status) &&
+          data.latest_invoice_url
+        ) {
           setSubscriptionWarning(data.latest_invoice_url);
         } else {
           setSubscriptionWarning(null);

@@ -17,6 +17,10 @@ const webhookSecrets = {
   dev_tests: process.env.STRIPE_WEBHOOK_SECRET_DEV_TESTS,
 };
 
+// Liga enquanto a conta Stripe estiver em análise/pagamentos bloqueados:
+// não manda email de vencido e não rebaixa quem teve a assinatura cancelada por falha de pagamento.
+const billingPaused = process.env.STRIPE_BILLING_PAUSED === "true";
+
 function planNameFromRole(role) {
   return plans.find((p) => p.id === role)?.name ?? role ?? null;
 }
@@ -148,6 +152,11 @@ export async function POST(req) {
           break;
         }
 
+        if (billingPaused && subscription.cancellation_details?.reason === "payment_failed") {
+          console.log(`[Webhook] Billing pausado: cancelamento por falha de pagamento ignorado (profile ${profile.id})`);
+          break;
+        }
+
         await supabase
           .from("profiles")
           .update({
@@ -246,7 +255,13 @@ export async function POST(req) {
 
         // Assinatura acabou de vencer (renovação não paga) — avisa uma vez pra regularizar
         const previousStatus = event.data.previous_attributes?.status;
-        if (subscription.status === "past_due" && previousStatus && previousStatus !== "past_due") {
+        const justWentPastDue = subscription.status === "past_due" && previousStatus && previousStatus !== "past_due";
+
+        if (justWentPastDue && billingPaused) {
+          console.log("[Webhook] Billing pausado: email de assinatura vencida não enviado para customer", customerId);
+        }
+
+        if (justWentPastDue && !billingPaused) {
           const invoiceObj = subscription.latest_invoice
             ? await stripe.invoices.retrieve(subscription.latest_invoice)
             : null;
