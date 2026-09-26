@@ -38,6 +38,7 @@ const emptyDraft = () => ({
   min_order: "",
   starts_at: toBR(new Date()),
   ends_at: "",
+  max_uses: "",
 });
 
 const inputClass = "input w-full rounded bg-translucid p-2 text-sm";
@@ -142,7 +143,8 @@ export default function CouponsModal({ menuId, currency, canCreate, onClose }) {
   const status = (c) => {
     const now = Date.now();
     if (now < new Date(c.starts_at)) return "Agendado";
-    if (now > new Date(c.ends_at)) return "Expirado";
+    if (c.ends_at && now > new Date(c.ends_at)) return "Expirado";
+    if (c.max_uses && c.uses >= c.max_uses) return "Esgotado";
     return "Ativo";
   };
 
@@ -156,7 +158,8 @@ export default function CouponsModal({ menuId, currency, canCreate, onClose }) {
             max_discount: c.max_discount ?? "",
             min_order: Number(c.min_order) > 0 ? String(c.min_order) : "",
             starts_at: toBR(c.starts_at),
-            ends_at: toBR(c.ends_at),
+            ends_at: c.ends_at ? toBR(c.ends_at) : "",
+            max_uses: c.max_uses ?? "",
           }
         : emptyDraft(),
     );
@@ -174,10 +177,16 @@ export default function CouponsModal({ menuId, currency, canCreate, onClose }) {
       return alert("Informe o valor do desconto.", "error");
     }
 
+    // data de fim e limite de usos são opcionais (podem ser usados juntos)
     const starts = parseBR(draft.starts_at, false);
-    const ends = parseBR(draft.ends_at, true);
-    if (!starts || !ends) return alert("Informe o início e o fim no formato dd/mm/aaaa.", "error");
-    if (ends <= starts) return alert("O fim precisa ser depois do início.", "error");
+    const ends = draft.ends_at ? parseBR(draft.ends_at, true) : null;
+    if (!starts || (draft.ends_at && !ends)) return alert("Informe as datas no formato dd/mm/aaaa.", "error");
+    if (ends && ends <= starts) return alert("O fim precisa ser depois do início.", "error");
+
+    const maxUses = String(draft.max_uses).trim() === "" ? null : Number(draft.max_uses);
+    if (maxUses !== null && !(Number.isInteger(maxUses) && maxUses > 0)) {
+      return alert("Limite de usos: informe um número inteiro maior que zero.", "error");
+    }
 
     const isPct = draft.type === "percentage";
     const payload = {
@@ -189,7 +198,8 @@ export default function CouponsModal({ menuId, currency, canCreate, onClose }) {
       max_discount: isPct && num(draft.max_discount) > 0 ? num(draft.max_discount) : null,
       min_order: num(draft.min_order) > 0 ? num(draft.min_order) : 0,
       starts_at: starts.toISOString(),
-      ends_at: ends.toISOString(),
+      ends_at: ends ? ends.toISOString() : null,
+      max_uses: maxUses,
     };
 
     const query = draft.id
@@ -311,10 +321,21 @@ export default function CouponsModal({ menuId, currency, canCreate, onClose }) {
               <DateField value={draft.starts_at} onChange={(v) => setDraft((d) => ({ ...d, starts_at: v }))} />
             </label>
             <label className="block">
-              <div className="text-sm color-gray mb-1">Válido até</div>
+              <div className="text-sm color-gray mb-1">Válido até (opcional)</div>
               <DateField value={draft.ends_at} onChange={(v) => setDraft((d) => ({ ...d, ends_at: v }))} />
             </label>
           </div>
+
+          <label className="block">
+            <div className="text-sm color-gray mb-1">Limite de usos (opcional)</div>
+            <input
+              className={inputClass}
+              inputMode="numeric"
+              value={draft.max_uses}
+              onChange={(e) => setDraft((d) => ({ ...d, max_uses: e.target.value.replace(/\D/g, "") }))}
+              placeholder="Sem limite"
+            />
+          </label>
 
           <div className="rounded-lg border border-amber-500/20 bg-amber-500/20 p-3 text-xs">
             <strong>Atenção:</strong> o cupom só vale enquanto a sua loja estiver no plano Pro. Se o plano deixar de ser
@@ -359,7 +380,10 @@ export default function CouponsModal({ menuId, currency, canCreate, onClose }) {
                   </div>
                   <div className="text-xs color-gray">{describe(c)}</div>
                   <div className="text-xs color-gray">
-                    {toBR(c.starts_at)} → {toBR(c.ends_at)}
+                    {toBR(c.starts_at)} → {c.ends_at ? toBR(c.ends_at) : "sem data de fim"}
+                    {" · "}
+                    {c.uses || 0}
+                    {c.max_uses ? `/${c.max_uses}` : ""} uso(s)
                   </div>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">

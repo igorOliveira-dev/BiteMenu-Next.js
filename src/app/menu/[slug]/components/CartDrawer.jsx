@@ -141,6 +141,14 @@ export default function CartDrawer({
   const canUseCoupon = ["pro", "admin"].includes(ownerRole ?? "free");
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState(null);
+
+  // Carrinho esvaziou (compra concluída ou "Limpar") → o cupom não vai para a próxima compra
+  const cartIsEmpty = (currentItems || []).length === 0;
+  useEffect(() => {
+    if (!cartIsEmpty) return;
+    setCoupon(null);
+    setCouponInput("");
+  }, [cartIsEmpty]);
   const couponResult = applyCoupon({
     coupon: canUseCoupon ? coupon : null,
     subtotal: Math.max(0, currentTotalPrice - comboDiscount),
@@ -156,6 +164,23 @@ export default function CartDrawer({
     const { data, error } = await supabase.rpc("get_coupon", { p_menu_id: menu.id, p_code: code });
     if (error || !data?.[0]) return customAlert("Cupom inválido ou expirado.", "error");
     setCoupon(data[0]);
+  };
+
+  // Conta 1 uso no banco ao confirmar o pedido (a função só incrementa se ainda
+  // há usos/validade). false = esgotou: tira o cupom para o cliente ver o novo total.
+  // Erro de rede/RPC não bloqueia a venda.
+  const consumeCoupon = async () => {
+    if (!appliedCouponCode) return true;
+    const { data, error } = await supabase.rpc("use_coupon", { p_menu_id: menu.id, p_code: appliedCouponCode });
+    if (error) {
+      console.error("use_coupon error:", error);
+      return true;
+    }
+    if (data) return true;
+    setCoupon(null);
+    setCouponInput("");
+    customAlert("Este cupom atingiu o limite de usos ou expirou. Confira o novo total.", "error");
+    return false;
   };
   // ────────────────────────────────────────────────────────────────────────
 
@@ -721,7 +746,7 @@ ${customerInfo}`;
   };
   // ────────────────────────────────────────────────────────────────────────
 
-  const confirmCashChange = () => {
+  const confirmCashChange = async () => {
     if (needsChange === null) {
       customAlert("Selecione se precisa de troco.", "error");
       return;
@@ -734,6 +759,8 @@ ${customerInfo}`;
         return;
       }
     }
+
+    if (!(await consumeCoupon())) return;
 
     if (tableInfo) {
       finalizeTableOrder();
@@ -748,7 +775,7 @@ ${customerInfo}`;
     setPurchaseStage("whatsapp");
   };
 
-  const confirmPurchase = () => {
+  const confirmPurchase = async () => {
     saveCustomerInfo();
 
     if (!validateCustomerFields()) return;
@@ -757,6 +784,8 @@ ${customerInfo}`;
       customAlert("Selecione a forma de pagamento", "error");
       return;
     }
+
+    if (!(await consumeCoupon())) return;
 
     if (tableInfo) {
       if (selectedPayment === "pix" && menu.pix_key !== null) {
