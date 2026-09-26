@@ -81,6 +81,21 @@ const SALES_MONTHS_CACHE_TTL = 5 * 60 * 1000; // 5 minutos
 let salesMonthsCache = null; // { key, data, fetchedAt }
 let pendingSalesMonthsFetch = null; // { key, promise }
 
+// Supabase/PostgREST corta respostas em 1000 linhas (max-rows padrão).
+// Busca em blocos até vir um bloco incompleto. Ordem precisa ser estável (created_at + id).
+// ponytail: N/1000 requests por carga; se ficar pesado, trocar por uma RPC de agregação (SUM/COUNT por mês) no banco.
+const SUPABASE_MAX_ROWS = 1000;
+
+async function fetchAllRows(buildQuery) {
+  const rows = [];
+  for (let from = 0; ; from += SUPABASE_MAX_ROWS) {
+    const { data, error } = await buildQuery().range(from, from + SUPABASE_MAX_ROWS - 1);
+    if (error) throw error;
+    rows.push(...(data || []));
+    if (!data || data.length < SUPABASE_MAX_ROWS) return rows;
+  }
+}
+
 function fetchSalesMonthsData(menuId, force = false) {
   if (
     !force &&
@@ -94,13 +109,15 @@ function fetchSalesMonthsData(menuId, force = false) {
     return pendingSalesMonthsFetch.promise;
   }
 
-  const promise = supabase
-    .from("sales")
-    .select("created_at, total, delivery_fee")
-    .eq("menu_id", menuId)
-    .order("created_at", { ascending: false })
-    .then(({ data, error }) => {
-      if (error) throw error;
+  const promise = fetchAllRows(() =>
+    supabase
+      .from("sales")
+      .select("created_at, total, delivery_fee")
+      .eq("menu_id", menuId)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false }),
+  )
+    .then((data) => {
       salesMonthsCache = { key: menuId, data, fetchedAt: Date.now() };
       return data;
     })
@@ -296,14 +313,21 @@ const Sales = ({ setSelectedTab }) => {
   const refreshMonthSummary = async (monthStart, monthEnd, monthKey) => {
     if (!menu?.id) return;
 
-    const { data, error } = await supabase
-      .from("sales")
-      .select("total, delivery_fee")
-      .eq("menu_id", menu.id)
-      .gte("created_at", monthStart.toISOString())
-      .lt("created_at", monthEnd.toISOString());
-
-    if (error) return;
+    let data;
+    try {
+      data = await fetchAllRows(() =>
+        supabase
+          .from("sales")
+          .select("total, delivery_fee")
+          .eq("menu_id", menu.id)
+          .gte("created_at", monthStart.toISOString())
+          .lt("created_at", monthEnd.toISOString())
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: false }),
+      );
+    } catch {
+      return;
+    }
 
     const count = data.length;
     const total = data.reduce((sum, s) => sum + computeSaleTotal(s), 0);
@@ -414,8 +438,8 @@ const Sales = ({ setSelectedTab }) => {
         end.setMonth(start.getMonth() + 1);
 
         // carrega as primeiras 20 vendas
+        // count/total do mês já vêm de fetchSalesMonthsData, não precisa rebuscar
         fetchSalesByMonth(start, end, key, { page: 0, append: false });
-        refreshMonthSummary(start, end, key);
       }
 
       return next;
