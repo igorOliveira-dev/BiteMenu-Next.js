@@ -47,9 +47,7 @@ const inputClass = "input w-full rounded bg-translucid p-2 text-sm";
 function DateField({ value, onChange }) {
   const pickerRef = useRef(null);
   const parsed = parseBR(value, false);
-  const iso = parsed
-    ? `${value.slice(6, 10)}-${value.slice(3, 5)}-${value.slice(0, 2)}`
-    : "";
+  const iso = parsed ? `${value.slice(6, 10)}-${value.slice(3, 5)}-${value.slice(0, 2)}` : "";
 
   const openPicker = () => {
     const el = pickerRef.current;
@@ -96,9 +94,7 @@ function DateField({ value, onChange }) {
 function MoneyField({ symbol, ...props }) {
   return (
     <div className="relative">
-      <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-sm color-gray">
-        {symbol}
-      </span>
+      <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-sm color-gray">{symbol}</span>
       <input
         className={inputClass}
         inputMode="decimal"
@@ -307,12 +303,7 @@ export default function CouponsModal({ menuId, currency, canCreate, onClose }) {
 
           <label className="block">
             <div className="text-sm color-gray mb-1">Valor mínimo do pedido</div>
-            <MoneyField
-              symbol={symbol}
-              value={draft.min_order}
-              onChange={set("min_order")}
-              placeholder="Sem mínimo"
-            />
+            <MoneyField symbol={symbol} value={draft.min_order} onChange={set("min_order")} placeholder="Sem mínimo" />
           </label>
 
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -336,11 +327,6 @@ export default function CouponsModal({ menuId, currency, canCreate, onClose }) {
               placeholder="Sem limite"
             />
           </label>
-
-          <div className="rounded-lg border border-amber-500/20 bg-amber-500/20 p-3 text-xs">
-            <strong>Atenção:</strong> o cupom só vale enquanto a sua loja estiver no plano Pro. Se o plano deixar de ser
-            Pro antes da data de validade, o cupom fica inválido automaticamente e deixa de funcionar no cardápio.
-          </div>
 
           <div className="grid gap-2 pt-3">
             <button
