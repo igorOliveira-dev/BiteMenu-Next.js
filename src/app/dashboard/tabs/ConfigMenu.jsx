@@ -398,7 +398,6 @@ const ConfigMenu = (props) => {
   const [deliveryZonesLocal, setDeliveryZonesLocal] = useState(normalizeDeliveryZones(menu?.delivery_zones));
   const [deliveryFeeModeLocal, setDeliveryFeeModeLocal] = useState(menu?.delivery_fee_mode ?? null);
   const [pixKeyLocal, setPixKeyLocal] = useState(menu?.pix_key ?? "");
-  const [useStripeExpressLocal, setUseStripeExpressLocal] = useState(!!menu?.use_stripe_express);
   const [currencyLocal, setCurrencyLocal] = useState(menu?.currency ?? "BRL");
   const [hoursLocal, setHoursLocal] = useState(() => normalizeHours(menu?.hours));
   const [minimumOrderValueLocal, setMinimumOrderValueLocal] = useState(
@@ -484,11 +483,6 @@ const ConfigMenu = (props) => {
     ? (value) => externalSetState((p) => ({ ...p, minimumOrderValue: value }))
     : setMinimumOrderValueLocal;
 
-  const useStripeExpress = usingExternal ? !!externalState?.useStripeExpress : useStripeExpressLocal;
-  const setUseStripeExpress = usingExternal
-    ? (value) => externalSetState((p) => ({ ...p, useStripeExpress: value }))
-    : setUseStripeExpressLocal;
-
   const hours = normalizeHours(usingExternal ? externalState?.hours : hoursLocal);
 
   const safeSetHours = (updaterOrValue) => {
@@ -545,7 +539,6 @@ const ConfigMenu = (props) => {
       );
       setPixKeyLocal(menu?.pix_key ?? "");
       setCurrencyLocal(menu?.currency ?? "BRL");
-      setUseStripeExpressLocal(!!menu?.use_stripe_express);
       safeSetHours(menu?.hours);
     }
 
@@ -746,27 +739,12 @@ const ConfigMenu = (props) => {
     const prev = selectedPayments || [];
     const next = prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id];
 
-    const stripeActive = isConnected && useStripeExpress;
-
-    if (next.length === 0 && !stripeActive) {
+    if (next.length === 0) {
       customAlert("Mantenha ao menos 1 forma de pagamento.");
       return;
     }
 
     setSelectedPayments(next);
-  };
-
-  const isConnected = !!profile?.stripe_connect_ready;
-
-  const toggleStripeExpress = () => {
-    const next = !useStripeExpress;
-
-    if (!next && (selectedPayments?.length || 0) === 0) {
-      customAlert("Mantenha ao menos 1 forma de pagamento.");
-      return;
-    }
-
-    setUseStripeExpress(next);
   };
 
   const toggleDeliveryMode = (mode) => {
@@ -852,7 +830,7 @@ const ConfigMenu = (props) => {
   })();
 
   const pagamentosSummary = (() => {
-    const count = (selectedPayments?.length || 0) + (isConnected && useStripeExpress ? 1 : 0);
+    const count = selectedPayments?.length || 0;
     return `${count} forma${count === 1 ? "" : "s"} de pagamento`;
   })();
 
@@ -1101,15 +1079,6 @@ const ConfigMenu = (props) => {
                   onClick={() => togglePayment(opt.id)}
                 />
               ))}
-              {isConnected && (
-                <OptionCard
-                  multi
-                  selected={useStripeExpress}
-                  title="Pagamento online"
-                  description="Cartão via Stripe."
-                  onClick={toggleStripeExpress}
-                />
-              )}
             </div>
 
             {selectedPayments?.includes("pix") && (

@@ -8,7 +8,6 @@ import { useAlert } from "@/providers/AlertProvider";
 import Loading from "@/components/Loading";
 import { FaBolt } from "react-icons/fa";
 import UpdatePlanModal from "../UpdatePlanModal";
-import { trackAction } from "@/utils/userActions";
 
 const SalesSummary = ({
   setSelectedTab,
@@ -50,7 +49,6 @@ const SalesSummary = ({
       <button
         onClick={() => {
           if (ownerRole === "free" || ownerRole === "plus") {
-            trackAction("triedSalesDashboard");
             setShowUpdatePlanModal(true);
           } else {
             setSelectedTab("salesDashboard");

@@ -52,6 +52,6 @@ Para ver mais detalhes dos planos, acesse: [Documentação de planos](https://ww
 
 - [Next.js](https://nextjs.org/) (App Router)
 - [Supabase](https://supabase.com/) — banco de dados, autenticação e storage
-- [Stripe](https://stripe.com/) — assinaturas e pagamentos
+- Pagamentos: em migração para o [Asaas](https://www.asaas.com/)
 - [Tailwind CSS](https://tailwindcss.com/)
 - PWA via `next-pwa`

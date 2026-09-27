@@ -180,7 +180,7 @@ const page = () => {
         </p>
         <p className="docs-paragraph">Não armazenamos informações de pagamento ou dados pessoais desnecessários.</p>
         <p className="docs-paragraph">
-          Para garantir a segurança das transações, utilizamos os serviços da Stripe, um processador de pagamentos confiável
+          Para garantir a segurança das transações, utilizamos um processador de pagamentos confiável
           e seguro, que lida com todas as informações de pagamento de forma segura.
         </p>
       </section>

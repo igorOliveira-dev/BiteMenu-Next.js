@@ -5,7 +5,6 @@ import Image from "next/image";
 import React from "react";
 import { FaCheck } from "react-icons/fa";
 import logoMark from "../../../public/LogoMarca-sem-fundo.png";
-import { planClick } from "../utils/planClick";
 import { plans } from "../../consts/Plans";
 import PlansSection from "@/components/PlansSection";
 

@@ -14,10 +14,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  ComposedChart,
-  Legend,
-  Bar,
-  Line,
 } from "recharts";
 
 const Admin = () => {
@@ -25,22 +21,16 @@ const Admin = () => {
   const [fullMenus, setFullMenus] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [showOnlyPaid, setShowOnlyPaid] = useState(false);
   const [search, setSearch] = useState("");
   const [avgPerWeekday, setAvgPerWeekday] = useState(null);
   const [monthlyGrowth, setMonthlyGrowth] = useState([]);
 
   const [showCharts, setShowCharts] = useState(true);
-  const [planGrowth, setPlanGrowth] = useState({ plus: [], pro: [] });
-  const [planGrowthLoading, setPlanGrowthLoading] = useState(true);
-  const [planGrowthError, setPlanGrowthError] = useState(null);
-  const [subscriberStatus, setSubscriberStatus] = useState({});
 
   const [sortByLastAccess, setSortByLastAccess] = useState(false);
   const [onlyLast7Days, setOnlyLast7Days] = useState(false);
   const [showOnlyPlusPro, setShowOnlyPlusPro] = useState(false);
   const [utmSource, setUtmSource] = useState("");
-  const [subStatus, setSubStatus] = useState("");
 
   const PAGE_SIZE = 15;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -67,7 +57,7 @@ const Admin = () => {
       
         const { data, error } = await supabase
           .from("profiles")
-          .select("id, display_name, email, role, phone, stripe_customer_id, acquisition_source")
+          .select("id, display_name, email, role, phone, acquisition_source")
           .in("id", chunk);
       
         if (error) {
@@ -92,7 +82,6 @@ const Admin = () => {
           owner_role: ownerProfile?.role || "desconhecido",
           owner_phone: ownerProfile?.phone || "Sem telefone",
           owner_acquisition_source: ownerProfile?.acquisition_source || null,
-          stripe_costumer_id: ownerProfile?.stripe_customer_id || null,
         };
       });
       
@@ -155,42 +144,14 @@ const Admin = () => {
     setMonthlyGrowth(data);
   }, [fullMenus]);
 
-  // 🔹 Buscar evolução de assinantes por plano (Stripe: CPF + CNPJ)
-  useEffect(() => {
-    const fetchPlanGrowth = async () => {
-      setPlanGrowthLoading(true);
-      setPlanGrowthError(null);
-
-      try {
-        const res = await fetch("/api/admin/stripe-subscriptions");
-        if (!res.ok) throw new Error("Falha ao buscar dados do Stripe");
-
-        const data = await res.json();
-        setPlanGrowth({ plus: data.plus || [], pro: data.pro || [] });
-        setSubscriberStatus(data.subscriberStatus || {});
-      } catch (err) {
-        console.error("Erro ao buscar evolução por plano:", err);
-        setPlanGrowthError("Não foi possível carregar os dados do Stripe.");
-      } finally {
-        setPlanGrowthLoading(false);
-      }
-    };
-
-    fetchPlanGrowth();
-  }, []);
-
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [showOnlyPaid, search, sortByLastAccess, onlyLast7Days, showOnlyPlusPro, utmSource, subStatus]);
+  }, [search, sortByLastAccess, onlyLast7Days, showOnlyPlusPro, utmSource]);
 
   if (loading || menusLoading) return <Loading />;
 
   // 🔹 FILTRAGEM + ORDENAÇÃO
   let visibleMenus = [...fullMenus];
-
-  if (showOnlyPaid) {
-    visibleMenus = visibleMenus.filter((m) => m.stripe_costumer_id != null);
-  }
 
   if (search.trim() !== "") {
     const s = search.toLowerCase();
@@ -220,15 +181,7 @@ const Admin = () => {
     );
   }
 
-  if (subStatus) {
-    visibleMenus = visibleMenus.filter((m) => {
-      const status = subscriberStatus[m.stripe_costumer_id];
-      return subStatus === "none" ? !status : status?.label === subStatus;
-    });
-  }
-
   const utmSources = [...new Set(fullMenus.map((m) => m.owner_acquisition_source).filter(Boolean))].sort();
-  const subStatusLabels = [...new Set(Object.values(subscriberStatus).map((st) => st.label))].sort();
 
   const paginatedMenus = visibleMenus.slice(0, visibleCount);
   const hasMore = visibleCount < visibleMenus.length;
@@ -273,53 +226,6 @@ const Admin = () => {
               </ResponsiveContainer>
             </div>
           )}
-          {/* 🔹 Gráficos de evolução de assinantes por plano (Stripe: CPF + CNPJ) */}
-          <div className="w-full max-w-6xl mx-auto mb-10">
-            <h3 className="text-sm text-gray-400 mb-4 text-center">Evolução de assinantes por plano</h3>
-
-            {planGrowthError ? (
-              <p className="text-center text-red-400 text-sm">{planGrowthError}</p>
-            ) : planGrowthLoading ? (
-              <p className="text-center text-gray-500 text-sm">Carregando dados do Stripe...</p>
-            ) : (
-              <div className="flex flex-col gap-10">
-                {[
-                  { key: "plus", label: "Plus", color: "#3b82f6" },
-                  { key: "pro", label: "Pro", color: "#1e3a8a" },
-                ].map(({ key, label, color }) => (
-                  <div key={key} className="w-full">
-                    <p className="text-xs mb-2 text-center" style={{ color }}>
-                      {label}
-                    </p>
-                    <div className="w-full h-72">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <ComposedChart data={planGrowth[key]}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                          <XAxis dataKey="month" stroke="#999" fontSize={12} />
-                          <YAxis stroke="#999" fontSize={12} allowDecimals={false} />
-                          <Tooltip
-                            contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #333" }}
-                            labelStyle={{ color: "#fff" }}
-                          />
-                          <Legend wrapperStyle={{ fontSize: 12 }} />
-                          <Bar dataKey="novos" name="Novos assinantes" fill={color} fillOpacity={0.6} />
-                          <Bar dataKey="cancelados" name="Cancelamentos" fill="#ef4444" fillOpacity={0.6} />
-                          <Line
-                            type="monotone"
-                            dataKey="total"
-                            name="Total líquido acumulado"
-                            stroke="#22c55e"
-                            strokeWidth={2}
-                            dot={false}
-                          />
-                        </ComposedChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         </>
       )}
 
@@ -347,20 +253,6 @@ const Admin = () => {
           ))}
         </select>
 
-        <select
-          value={subStatus}
-          onChange={(e) => setSubStatus(e.target.value)}
-          className="px-3 py-1 w-full rounded bg-translucid border border-translucid text-sm max-w-lg"
-        >
-          <option value="">Todos os status de assinatura</option>
-          <option value="none">Sem assinatura</option>
-          {subStatusLabels.map((label) => (
-            <option key={label} value={label}>
-              {label}
-            </option>
-          ))}
-        </select>
-
         <div className="flex gap-4 flex-wrap justify-center">
           <label className="flex items-center gap-2 text-sm text-gray-300">
             Apenas Plus/Pro
@@ -368,16 +260,6 @@ const Admin = () => {
               type="checkbox"
               checked={showOnlyPlusPro}
               onChange={(e) => setShowOnlyPlusPro(e.target.checked)}
-              className="toggle toggle-primary"
-            />
-          </label>
-
-          <label className="flex items-center gap-2 text-sm text-gray-300">
-            Somente com stripe
-            <input
-              type="checkbox"
-              checked={showOnlyPaid}
-              onChange={(e) => setShowOnlyPaid(e.target.checked)}
               className="toggle toggle-primary"
             />
           </label>
@@ -430,24 +312,7 @@ const Admin = () => {
               } rounded-lg flex flex-col gap-2`}
             >
               <div className="flex items-center gap-2">
-                {menu.stripe_costumer_id != null && <span className="text-gray-400">!</span>}
                 <h2 className="text-lg font-semibold">{menu.title}</h2>
-                {(() => {
-                  const status = subscriberStatus[menu.stripe_costumer_id];
-                  if (!status) return null;
-
-                  const colorByStatus = {
-                    active: "bg-green-500/20 text-green-400 border-green-500/40",
-                    trialing: "bg-blue-500/20 text-blue-400 border-blue-500/40",
-                    past_due: "bg-red-500/20 text-red-400 border-red-500/40",
-                    unpaid: "bg-red-500/20 text-red-400 border-red-500/40",
-                  };
-                  const colorClass = colorByStatus[status.status] || "bg-gray-500/20 text-gray-400 border-gray-500/40";
-
-                  return (
-                    <span className={`text-[11px] px-2 py-0.5 rounded-full border ${colorClass}`}>{status.label}</span>
-                  );
-                })()}
                 <span className="text-xs text-gray-400 ml-auto">{menu.items_count ?? 0} itens</span>
               </div>
 

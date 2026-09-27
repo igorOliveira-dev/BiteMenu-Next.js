@@ -53,7 +53,7 @@ const Menu = (props) => {
     changedFields,
   } = props;
 
-  const { user, profile } = useUser();
+  const { profile } = useUser();
 
   const usingExternal = Array.isArray(menuState) && menuState.length === 2;
   const [externalState, externalSetState] = usingExternal ? menuState : [null, null];
@@ -131,59 +131,6 @@ const Menu = (props) => {
   useEffect(() => {
     if (menu?.slug) setSlug(menu.slug);
   }, [menu?.slug]);
-
-  const [subscriptionWarning, setSubscriptionWarning] = useState(null);
-  const [boletoPending, setBoletoPending] = useState(null); // { url } | null
-  useEffect(() => {
-    const checkSubscriptionStatus = async () => {
-      if (!user || !profile?.stripe_subscription_id) {
-        setSubscriptionWarning(null);
-        setBoletoPending(null);
-        return;
-      }
-
-      try {
-        const res = await fetch(
-          `/api/stripe-subscription?subscriptionId=${profile.stripe_subscription_id}&userId=${user.id}`,
-        );
-        if (!res.ok) return;
-
-        const data = await res.json();
-
-        // Assinatura já marcada pra cancelar: não faz sentido cobrar pagamento pendente
-        if (data.cancel_at_period_end) {
-          setSubscriptionWarning(null);
-          setBoletoPending(null);
-          return;
-        }
-
-        // Assinatura atrasada/não paga (aviso escondido enquanto o billing estiver pausado)
-        if (
-          process.env.NEXT_PUBLIC_STRIPE_BILLING_PAUSED !== "true" &&
-          ["past_due", "unpaid"].includes(data.status) &&
-          data.latest_invoice_url
-        ) {
-          setSubscriptionWarning(data.latest_invoice_url);
-        } else {
-          setSubscriptionWarning(null);
-        }
-
-        // Boleto aguardando confirmação (status "incomplete" + método boleto)
-        if (data.status === "incomplete" && (data.boleto_url || data.latest_invoice_url)) {
-          setBoletoPending({
-            url: data.boleto_url || data.latest_invoice_url,
-            isBoleto: data.payment_method_type === "boleto",
-          });
-        } else {
-          setBoletoPending(null);
-        }
-      } catch (err) {
-        console.error("Erro ao verificar status da assinatura:", err);
-      }
-    };
-
-    checkSubscriptionStatus();
-  }, [user, profile]);
 
   const anyModalOpen = titleModalOpen || bannerModalOpen || logoModalOpen;
 
@@ -450,37 +397,6 @@ const Menu = (props) => {
         </button>
         <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] min-h-[calc(100dvh-110px)]">
           {/* ESPAÇO PARA BANNER!!! */}
-          {subscriptionWarning && (
-            <div className="top-2 px-2 py-6 w-full border border-amber-500/30 bg-amber-500/10 text-amber-500 rounded text-center z-100">
-              <span>Você tem uma cobrança pendente.</span>{" "}
-              <a
-                href={subscriptionWarning}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-700 hover:text-blue-900 underline font-semibold cursor-pointer"
-              >
-                Regularizar pagamento
-              </a>
-            </div>
-          )}
-          {boletoPending && (
-            <div className="text-center rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 w-full">
-              <span>
-                {boletoPending.isBoleto
-                  ? "Seu boleto ainda não foi confirmado. O acesso ao plano será liberado assim que o pagamento for compensado."
-                  : "Sua assinatura está com o pagamento pendente. O acesso ao plano será liberado assim que o pagamento for confirmado."}
-              </span>
-              <br />
-              <a
-                href={boletoPending.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-500 hover:text-blue-700 underline"
-              >
-                {boletoPending.isBoleto ? "Visualizar boleto" : "Finalizar pagamento"}
-              </a>
-            </div>
-          )}
           <SurveyBanner />
           <div className="min-h-[calc(100dvh-110px)] pb-2" style={{ backgroundColor }}>
             {/* Banner */}

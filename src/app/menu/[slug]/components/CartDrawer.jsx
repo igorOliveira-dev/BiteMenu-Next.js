@@ -39,10 +39,6 @@ export default function CartDrawer({
   isOpen,
   ownerPhone,
   ownerRole,
-  ownerStripeAccount,
-  ownerCanUseStripeExpress,
-  pendingStripeOrderId,
-  onPendingStripeOrderResolved,
 }) {
   const cart = useCartContext();
   const confirm = useConfirm();
@@ -135,7 +131,7 @@ export default function CartDrawer({
 
   // ── Cupom (só lojas Pro) ─────────────────────────────────────────────────
   // discountAmount e deliveryFeeValue já incluem o cupom, então totais, payload
-  // do pedido e Stripe usam os mesmos valores sem mudanças.
+  // do pedido usam os mesmos valores sem mudanças.
   // ponytail: valida só no navegador (o total do pedido já é calculado aqui);
   // se precisar de blindagem, recalcular o total no servidor.
   const canUseCoupon = ["pro", "admin"].includes(ownerRole ?? "free");
@@ -194,18 +190,11 @@ export default function CartDrawer({
   const [needsChange, setNeedsChange] = useState(null);
   const [changeForAmount, setChangeForAmount] = useState("");
 
-  // ── Stripe ──────────────────────────────────────────────────────────────
-  const [isStripeLoading, setIsStripeLoading] = useState(false);
-  // ────────────────────────────────────────────────────────────────────────
-
   // delivery_zones é lazy-loaded ao abrir o carrinho (não vem mais na query principal)
   const [deliveryZones, setDeliveryZones] = useState([]);
   const filteredZones = deliveryZones.filter((zone) => zone.name.toLowerCase().includes(search.toLowerCase()));
 
   const canUseZones = menu?.delivery_fee_mode === "zones" && hasPlusPermissions && deliveryZones.length > 0;
-
-  // Verifica se este menu aceita pagamento online via Stripe
-  const usesStripeExpress = Boolean(menu?.use_stripe_express && ownerStripeAccount && ownerCanUseStripeExpress);
 
   const serviceOptions = [
     {
@@ -228,10 +217,7 @@ export default function CartDrawer({
     { id: "pix", label: "PIX" },
   ];
 
-  const availablePaymentsOptions = [
-    ...paymentOptions.filter((option) => (menu?.payments || []).includes(option.id)),
-    ...(usesStripeExpress ? [{ id: "stripe_online", label: "Pagamento online" }] : []),
-  ];
+  const availablePaymentsOptions = paymentOptions.filter((option) => (menu?.payments || []).includes(option.id));
 
   function normalizeMoney(value) {
     const num = Number(String(value ?? "").replace(",", "."));
@@ -406,70 +392,6 @@ export default function CartDrawer({
     }
   }, [open]);
 
-  // ── Retorno do Stripe: detectar ?order_success=true na URL ──────────────
-  useEffect(() => {
-    if (!pendingStripeOrderId) return;
-
-    const delay = DURATION + MOUNT_DELAY + 50;
-
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/orders/${pendingStripeOrderId}`);
-        if (!res.ok) return;
-        const order = await res.json();
-
-        setFinalValue(order.total);
-        cart.clear(menu?.id);
-        setIsPurchaseModalOpen(true);
-        onPendingStripeOrderResolved?.();
-
-        saveReceipt(menu?.id, {
-          id: order.id,
-          menuTitle: menu?.title,
-          createdAt: order.created_at,
-          costumerName: order.costumer_name,
-          paymentMethod: "stripe",
-          service: order.service,
-          tableLabel: order.table_label || null,
-          itemsList: order.items_list || [],
-          subtotal: order.total - (order.delivery_fee ?? 0) + (order.discount ?? 0),
-          deliveryFee: order.delivery_fee ?? 0,
-          discount: order.discount ?? 0,
-          total: order.total,
-          isPaid: Boolean(order.is_paid),
-        });
-
-        if (order.table_label) {
-          setPurchaseStage("tableSuccess");
-          return;
-        }
-
-        setPurchaseStage("whatsapp");
-
-        const builtURL = buildWhatsappURL({
-          items: order.items_list,
-          subtotal: order.total - (order.delivery_fee ?? 0) + (order.discount ?? 0),
-          discount: order.discount ?? 0,
-          deliveryFee: order.delivery_fee ?? 0,
-          total: order.total,
-          costumerName: order.costumer_name,
-          costumerPhone: order.costumer_phone,
-          costumerAddress: order.address,
-          costumerNeighborhood: order.neighborhood,
-          selectedService: order.service,
-          selectedPayment: "stripe",
-          paymentLabel: "Stripe",
-        });
-        setWhatsappURL(builtURL);
-      } catch (err) {
-        console.error("Erro ao buscar pedido:", err);
-      }
-    }, delay);
-
-    return () => clearTimeout(timer);
-  }, [pendingStripeOrderId]);
-  // ────────────────────────────────────────────────────────────────────────
-
   // calcular taxa de entrega
   useEffect(() => {
     if (selectedService !== "delivery") {
@@ -568,7 +490,6 @@ export default function CartDrawer({
     setShowWhatsappButtonOnPixStage(false);
     setWhatsappURL(null);
     setDeliveryFeeValue(0);
-    setIsStripeLoading(false);
     setNeedsChange(null);
     setChangeForAmount("");
   };
@@ -675,75 +596,6 @@ ${customerInfo}`;
 
     return true;
   }
-  // ────────────────────────────────────────────────────────────────────────
-
-  // ── Checkout via Stripe Express ──────────────────────────────────────────
-  const handleStripeCheckout = async () => {
-    saveCustomerInfo();
-    if (!validateCustomerFields()) return;
-
-    setIsStripeLoading(true);
-
-    try {
-      const subtotal = (currentItems || []).reduce((acc, item) => {
-        const base = (Number(item.price) || 0) * (Number(item.qty) || 0);
-        const extrasPerItem = (item.additionals || []).reduce((s, a) => s + (Number(a.price) || 0), 0);
-        const extras = extrasPerItem * (Number(item.qty) || 0);
-        return acc + base + extras;
-      }, 0);
-
-      const deliveryFee = selectedService === "delivery" ? deliveryFeeValue : 0;
-      const total = Math.max(0, subtotal - discountAmount) + deliveryFee;
-
-      const response = await fetch("/api/connect/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          menuId: menu.id,
-          menuTitle: menu.title,
-          menuSlug: menu.slug,
-          ownerId: menu.owner_id,
-          currency: menu.currency,
-          items: (currentItems || []).map((it) => ({
-            name: it.name,
-            qty: it.qty,
-            price: it.price,
-            image_url: it.image_url || null,
-            additionals: it.additionals || [],
-            note: it.note || "",
-          })),
-          subtotal,
-          discount: discountAmount,
-          deliveryFee,
-          total,
-          costumerName,
-          costumerPhone,
-          costumerAddress,
-          costumerNeighborhood: selectedService === "delivery" && canUseZones ? costumerNeighborhood : null,
-          paymentMethod: "stripe",
-          service: selectedService,
-          tableId: tableInfo?.id || null,
-          tableLabel: tableInfo?.label || null,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.url) {
-        customAlert(data.error || "Erro ao iniciar pagamento. Tente novamente.", "error");
-        setIsStripeLoading(false);
-        return;
-      }
-
-      // Redirecionar para o Stripe Checkout
-      window.location.href = data.url;
-      // Nota: o carrinho será limpo no useEffect que detecta ?order_success=true
-    } catch (err) {
-      console.error("Erro ao criar checkout Stripe:", err);
-      customAlert("Erro ao conectar com o sistema de pagamento.", "error");
-      setIsStripeLoading(false);
-    }
-  };
   // ────────────────────────────────────────────────────────────────────────
 
   const confirmCashChange = async () => {
@@ -1415,11 +1267,6 @@ ${customerInfo}`;
                   </p>
                   <button
                     onClick={() => {
-                      if (selectedPayment === "stripe_online") {
-                        handleStripeCheckout();
-                        return;
-                      }
-
                       if (selectedPayment === "cash") {
                         saveCustomerInfo();
                         if (!validateCustomerFields()) return;
@@ -1433,11 +1280,10 @@ ${customerInfo}`;
 
                       confirmPurchase();
                     }}
-                    disabled={isStripeLoading}
                     className="cursor-pointer hover:opacity-90 p-2 font-bold transition rounded disabled:opacity-50"
                     style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
                   >
-                    {isStripeLoading ? <>Redirecionando...</> : "Confirmar"}
+                    Confirmar
                   </button>
                 </>
               </div>
@@ -1579,10 +1425,7 @@ ${customerInfo}`;
             ) : purchaseStage === "whatsapp" ? (
               <div>
                 <p className="text-sm" style={{ color: grayToUse }}>
-                  {/* Mensagem ligeiramente diferente se veio do Stripe (pagamento já confirmado) */}
-                  {whatsappURL && whatsappURL.includes("Stripe")
-                    ? `Pagamento confirmado! Agora envie a confirmação do pedido para ${menu.title} pelo WhatsApp.`
-                    : `Para confirmar a compra, você deve enviar uma mensagem de confirmação ao WhatsApp de ${menu.title}`}
+                  {`Para confirmar a compra, você deve enviar uma mensagem de confirmação ao WhatsApp de ${menu.title}`}
                 </p>
                 {finalValue > 0 && (
                   <p className="text-center mt-2 font-semibold">

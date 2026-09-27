@@ -8,7 +8,7 @@ import Sales from "./tabs/Sales";
 import Tables from "./tabs/Tables";
 import { useAlert } from "@/providers/AlertProvider";
 import ConfigMenu from "./tabs/ConfigMenu";
-import { FaBars, FaChevronLeft, FaHeadset, FaMoneyBill, FaQrcode } from "react-icons/fa";
+import { FaBars, FaChevronLeft, FaHeadset, FaQrcode } from "react-icons/fa";
 import Account from "./tabs/Account";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -18,13 +18,9 @@ import GenericModal from "@/components/GenericModal";
 import QrCodeModal from "./tabs/components/menu/QrCodeModal";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import { FaUtensils, FaShoppingBag, FaChartLine, FaUser, FaLifeRing, FaShieldAlt, FaChair } from "react-icons/fa";
-import { trackAction } from "@/utils/userActions";
 import { supabase } from "@/lib/supabaseClient";
 import { countVisibleOrders } from "@/lib/queries/orders";
-import BiteMenuPayments from "./tabs/BiteMenuPayments";
-import useUser from "@/hooks/useUser";
 import { useSearchParams } from "next/navigation";
-import ProTrial from "./components/ad-pages/ProTrial";
 
 const Dashboard = ({
   menuState: externalMenuState,
@@ -59,7 +55,6 @@ const Dashboard = ({
   const [showQrCode, setShowQrCode] = useState(false);
 
   const searchParams = useSearchParams();
-  const { profile } = useUser();
 
   // helpers para usar state unificado (se externo, usar externalState, senao usar locais)
   const title = usingExternal ? externalState.title : titleLocal;
@@ -139,16 +134,6 @@ const Dashboard = ({
   useEffect(() => {
     if (menu?.slug) setSlug(menu.slug);
   }, [menu?.slug]);
-
-  useEffect(() => {
-    const map = {
-      menu: "accessedMenu",
-      orders: "accessedOrders",
-      sales: "accessedSales",
-      configMenu: "accessedConfigMenu",
-    };
-    if (map[selectedTab]) trackAction(map[selectedTab]);
-  }, [selectedTab]);
 
   // identificar novos pedidos
   useEffect(() => {
@@ -264,15 +249,6 @@ const Dashboard = ({
 
           {/* Bottom section */}
           <div className="w-full hidden lg:flex flex-col">
-            {(profile?.privileges ?? []).includes("stripe-express") && (
-              <button
-                onClick={() => setSelectedTab("biteMenuPayments")}
-                className={`cursor-pointer w-full px-1 xxs:px-4 py-4 hover-bg-translucid transition-colors border-t-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "biteMenuPayments" ? "bg-translucid" : ""}`}
-              >
-                <FaMoneyBill className="hidden lg:block text-lg shrink-0" />
-                <span>Pagamentos Bite Menu</span>
-              </button>
-            )}
 
             <Link
               href="/support"
@@ -345,11 +321,6 @@ const Dashboard = ({
         {selectedTab === "salesDashboard" && (
           <div className="block">
             <SalesDashboard setSelectedTab={setSelectedTab} />
-          </div>
-        )}
-        {selectedTab === "biteMenuPayments" && (profile?.privileges ?? []).includes("stripe-express") && (
-          <div className="block">
-            <BiteMenuPayments />
           </div>
         )}
         {selectedTab === "configMenu" && (
@@ -443,8 +414,6 @@ const Dashboard = ({
         filename={`qrcode-${menu?.slug || slug || "menu"}`}
         onToast={(msg, type) => customAlert(msg, type === "error" ? "error" : undefined)}
       />
-
-      <ProTrial />
     </div>
   );
 };

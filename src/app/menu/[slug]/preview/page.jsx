@@ -17,7 +17,7 @@ export default async function MenuPreviewPage({ params, searchParams }) {
 
   if (!menu) return <NotFoundMenu />;
 
-  const { ownerPhone, ownerRole, ownerStripeAccount, ownerCanUseStripeExpress } = await getOwnerInfo(menu);
+  const { ownerPhone, ownerRole } = await getOwnerInfo(menu);
 
   const effectiveLayout = preview_layout || menu.layout;
 
@@ -28,32 +28,24 @@ export default async function MenuPreviewPage({ params, searchParams }) {
           menu={menu}
           ownerPhone={ownerPhone}
           ownerRole={ownerRole}
-          ownerStripeAccount={ownerStripeAccount}
-          ownerCanUseStripeExpress={ownerCanUseStripeExpress}
         />
       ) : effectiveLayout === "list" ? (
         <ClientMenu2
           menu={menu}
           ownerPhone={ownerPhone}
           ownerRole={ownerRole}
-          ownerStripeAccount={ownerStripeAccount}
-          ownerCanUseStripeExpress={ownerCanUseStripeExpress}
         />
       ) : effectiveLayout === "grid" ? (
         <ClientMenu3
           menu={menu}
           ownerPhone={ownerPhone}
           ownerRole={ownerRole}
-          ownerStripeAccount={ownerStripeAccount}
-          ownerCanUseStripeExpress={ownerCanUseStripeExpress}
         />
       ) : (
         <ClientMenu
           menu={menu}
           ownerPhone={ownerPhone}
           ownerRole={ownerRole}
-          ownerStripeAccount={ownerStripeAccount}
-          ownerCanUseStripeExpress={ownerCanUseStripeExpress}
         />
       )}
     </CartProvider>
