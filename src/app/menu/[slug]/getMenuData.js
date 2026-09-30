@@ -29,7 +29,6 @@ export const getMenuBySlug = cache(async (slug) => {
       orders,
       layout,
       currency,
-      use_stripe_express,
       categories (
         id,
         name,
@@ -80,23 +79,19 @@ export const getMenuBySlug = cache(async (slug) => {
 export async function getOwnerInfo(menu) {
   let ownerPhone = null;
   let ownerRole = "free";
-  let ownerStripeAccount = null;
-  let ownerCanUseStripeExpress = false;
 
   if (menu?.owner_id) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("phone, role, stripe_connect_account_id, privileges")
+      .select("phone, role")
       .eq("id", menu.owner_id)
       .maybeSingle();
 
     if (profile) {
       ownerPhone = profile.phone || null;
       ownerRole = profile.role || "free";
-      ownerStripeAccount = profile.stripe_connect_account_id || null;
-      ownerCanUseStripeExpress = (profile.privileges ?? []).includes("stripe-express");
     }
   }
 
-  return { ownerPhone, ownerRole, ownerStripeAccount, ownerCanUseStripeExpress };
+  return { ownerPhone, ownerRole };
 }

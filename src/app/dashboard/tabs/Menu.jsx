@@ -2,8 +2,18 @@
 
 import { useAlert } from "@/providers/AlertProvider";
 import useMenu from "@/hooks/useMenu";
-import { FaPen, FaCamera, FaChevronLeft, FaLightbulb, FaMapMarkerAlt } from "react-icons/fa";
+import {
+  FaPen,
+  FaCamera,
+  FaChevronLeft,
+  FaLightbulb,
+  FaMapMarkerAlt,
+  FaShareAlt,
+  FaQrcode,
+  FaPalette,
+} from "react-icons/fa";
 import { FiSettings } from "react-icons/fi";
+import { HexColorPicker, HexColorInput } from "react-colorful";
 import GenericModal from "@/components/GenericModal";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Loading from "@/components/Loading";
@@ -43,7 +53,7 @@ const Menu = (props) => {
     changedFields,
   } = props;
 
-  const { user, profile } = useUser();
+  const { profile } = useUser();
 
   const usingExternal = Array.isArray(menuState) && menuState.length === 2;
   const [externalState, externalSetState] = usingExternal ? menuState : [null, null];
@@ -99,6 +109,17 @@ const Menu = (props) => {
 
   // palette index
   const [paletteIndex, setPaletteIndex] = useState(0);
+  // seletor de cor aberto (só um por vez; o nativo do Firefox/Linux não dá pra fechar via JS)
+  const [openColorIdx, setOpenColorIdx] = useState(null);
+  const colorListRef = useRef(null);
+  useEffect(() => {
+    if (openColorIdx === null) return;
+    const close = (e) => {
+      if (!colorListRef.current?.contains(e.target)) setOpenColorIdx(null);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [openColorIdx]);
   const colorFields = [
     { label: "Cor do fundo:", value: backgroundColor, setter: setBackgroundColor },
     { label: "Cor do título:", value: titleColor, setter: setTitleColor },
@@ -110,55 +131,6 @@ const Menu = (props) => {
   useEffect(() => {
     if (menu?.slug) setSlug(menu.slug);
   }, [menu?.slug]);
-
-  const [subscriptionWarning, setSubscriptionWarning] = useState(null);
-  const [boletoPending, setBoletoPending] = useState(null); // { url } | null
-  useEffect(() => {
-    const checkSubscriptionStatus = async () => {
-      if (!user || !profile?.stripe_subscription_id) {
-        setSubscriptionWarning(null);
-        setBoletoPending(null);
-        return;
-      }
-
-      try {
-        const res = await fetch(
-          `/api/stripe-subscription?subscriptionId=${profile.stripe_subscription_id}&userId=${user.id}`,
-        );
-        if (!res.ok) return;
-
-        const data = await res.json();
-
-        // Assinatura já marcada pra cancelar: não faz sentido cobrar pagamento pendente
-        if (data.cancel_at_period_end) {
-          setSubscriptionWarning(null);
-          setBoletoPending(null);
-          return;
-        }
-
-        // Assinatura atrasada/não paga
-        if (["past_due", "unpaid"].includes(data.status) && data.latest_invoice_url) {
-          setSubscriptionWarning(data.latest_invoice_url);
-        } else {
-          setSubscriptionWarning(null);
-        }
-
-        // Boleto aguardando confirmação (status "incomplete" + método boleto)
-        if (data.status === "incomplete" && (data.boleto_url || data.latest_invoice_url)) {
-          setBoletoPending({
-            url: data.boleto_url || data.latest_invoice_url,
-            isBoleto: data.payment_method_type === "boleto",
-          });
-        } else {
-          setBoletoPending(null);
-        }
-      } catch (err) {
-        console.error("Erro ao verificar status da assinatura:", err);
-      }
-    };
-
-    checkSubscriptionStatus();
-  }, [user, profile]);
 
   const anyModalOpen = titleModalOpen || bannerModalOpen || logoModalOpen;
 
@@ -425,37 +397,6 @@ const Menu = (props) => {
         </button>
         <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] min-h-[calc(100dvh-110px)]">
           {/* ESPAÇO PARA BANNER!!! */}
-          {subscriptionWarning && (
-            <div className="top-2 px-2 py-6 w-full border border-amber-500/30 bg-amber-500/10 text-amber-500 rounded text-center z-100">
-              <span>Você tem uma cobrança pendente.</span>{" "}
-              <a
-                href={subscriptionWarning}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-700 hover:text-blue-900 underline font-semibold cursor-pointer"
-              >
-                Regularizar pagamento
-              </a>
-            </div>
-          )}
-          {boletoPending && (
-            <div className="text-center rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 w-full">
-              <span>
-                {boletoPending.isBoleto
-                  ? "Seu boleto ainda não foi confirmado. O acesso ao plano será liberado assim que o pagamento for compensado."
-                  : "Sua assinatura está com o pagamento pendente. O acesso ao plano será liberado assim que o pagamento for confirmado."}
-              </span>
-              <br />
-              <a
-                href={boletoPending.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-500 hover:text-blue-700 underline"
-              >
-                {boletoPending.isBoleto ? "Visualizar boleto" : "Finalizar pagamento"}
-              </a>
-            </div>
-          )}
           <SurveyBanner />
           <div className="min-h-[calc(100dvh-110px)] pb-2" style={{ backgroundColor }}>
             {/* Banner */}
@@ -569,55 +510,81 @@ const Menu = (props) => {
         </div>
 
         {/* Sidebar */}
-        <aside className="hidden p-2 pt-4 m-2 fixed right-0 rounded-lg bg-translucid border-2 border-translucid w-[calc(30dvw-36px)] shadow-[0_0_10px_var(--shadow)] lg:flex items-center flex-col overflow-hidden h-[calc(100dvh-110px)]">
-          <div className="h-full py-4 flex flex-col justify-between">
-            <div>
-              <h3>Compartilhe seu cardápio!</h3>
-              <button
-                onClick={() => shareUrl && setShowQrCode(true)}
-                className="cursor-pointer w-full max-w-[320px] mt-2 p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border-2 border-[var(--translucid)] transition"
-              >
-                Opções de compartilhamento
-              </button>
-            </div>
-
-            <hr className="border-2 border-translucid m-2 mb-4 max-w-full" />
-            <div className="mt-2 max-w-full">
-              <div className="flex items-center mb-2">
-                <p className="font-semibold">Cores do cardápio:</p>
-              </div>
-
-              <div className="flex flex-col space-y-3">
-                {colorFields.map((item, idx) => (
-                  <div key={idx} className="flex items-center space-x-3">
-                    <label className="w-36">{item.label}</label>
-                    <input
-                      type="color"
-                      value={item.value}
-                      onChange={(e) => item.setter(e.target.value)}
-                      className="h-8 w-8 rounded"
-                      aria-label={item.label}
-                    />
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-4 flex items-center space-x-3">
-                <button type="button" onClick={suggestRandomPalette} className="custom-gray-button has-icon">
-                  <FaLightbulb /> Sugerir cores
-                </button>
-              </div>
-            </div>
-
-            <hr className="border-2 border-translucid mt-2 mb-4 max-w-full" />
+        <aside className="hidden p-4 m-2 fixed right-0 rounded-2xl bg-translucid border border-translucid w-[calc(30dvw-36px)] shadow-[0_0_10px_var(--shadow)] lg:flex flex-col gap-3 overflow-y-auto h-[calc(100dvh-110px)]">
+          {/* Compartilhar */}
+          <section className="rounded-xl border border-translucid bg-translucid p-3">
+            <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide color-gray">
+              <FaShareAlt /> Compartilhe seu cardápio
+            </h3>
+            <p className="mt-1 text-xs color-gray">Gere o QR Code ou copie o link para enviar aos seus clientes.</p>
             <button
-              onClick={() => setSelectedTab("configMenu")}
-              className="cursor-pointer w-full max-w-[320px] mt-2 p-2 bg-low-gray border-2 border-translucid font-semibold rounded-lg hover:opacity-80 transition flex items-center justify-center"
+              onClick={() => shareUrl && setShowQrCode(true)}
+              className="cursor-pointer w-full mt-3 p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border border-translucid transition flex items-center justify-center gap-2"
             >
-              <FiSettings className="text-xl mr-2" />
-              Configurar cardápio
+              <FaQrcode /> Opções de compartilhamento
             </button>
-          </div>
+          </section>
+
+          {/* Cores */}
+          <section className="rounded-xl border border-translucid bg-translucid p-3">
+            <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide color-gray">
+              <FaPalette /> Cores do cardápio
+            </h3>
+
+            <div ref={colorListRef} className="mt-3 flex flex-col gap-1">
+              {colorFields.map((item, idx) => (
+                <div key={idx}>
+                  <button
+                    type="button"
+                    onClick={() => setOpenColorIdx(openColorIdx === idx ? null : idx)}
+                    className="flex w-full items-center gap-3 rounded-lg p-2 cursor-pointer hover-bg-translucid transition text-left"
+                    aria-label={item.label}
+                    aria-expanded={openColorIdx === idx}
+                  >
+                    <span
+                      className="h-8 w-8 shrink-0 rounded-lg border border-translucid"
+                      style={{ backgroundColor: item.value }}
+                    />
+                    <span className="text-sm flex-1">{item.label.replace(":", "")}</span>
+                    <span className="text-xs color-gray uppercase">{item.value}</span>
+                  </button>
+                  {openColorIdx === idx && (
+                    <div className="p-2 flex flex-col gap-2">
+                      <HexColorPicker
+                        color={item.value}
+                        onChange={item.setter}
+                        style={{ width: "100%", height: 140 }}
+                      />
+                      <HexColorInput
+                        prefixed
+                        color={item.value}
+                        onChange={item.setter}
+                        aria-label={`Hexadecimal: ${item.label}`}
+                        className="w-full p-2 rounded-lg border border-translucid bg-translucid text-sm uppercase"
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={suggestRandomPalette}
+              className="custom-gray-button has-icon w-full justify-center mt-3"
+            >
+              <FaLightbulb /> Sugerir cores
+            </button>
+          </section>
+
+          {/* Configurações */}
+          <button
+            onClick={() => setSelectedTab("configMenu")}
+            className="cursor-pointer w-full mt-auto p-3 bg-low-gray border border-translucid font-semibold rounded-xl hover:opacity-80 transition flex items-center justify-center gap-2"
+          >
+            <FiSettings className="text-xl" />
+            Configurar cardápio
+          </button>
         </aside>
       </div>
 

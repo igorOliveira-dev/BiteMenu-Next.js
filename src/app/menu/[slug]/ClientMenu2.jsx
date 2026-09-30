@@ -189,7 +189,7 @@ function isSafeImageUrl(url) {
   return typeof url === "string" && url.length > 8 && (url.startsWith("http://") || url.startsWith("https://"));
 }
 
-export default function ClientMenu2({ menu, ownerPhone, ownerRole, ownerStripeAccount, ownerCanUseStripeExpress }) {
+export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
   const cart = useCartContext();
   const alert = useAlert();
 
@@ -343,29 +343,6 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole, ownerStripeAc
     el.addEventListener("scroll", checkScroll);
     return () => el.removeEventListener("scroll", checkScroll);
   }, [selectedItem]);
-
-  const [pendingStripeOrderId, setPendingStripeOrderId] = useState(null);
-
-  // verifica se chegou com query de order_success e order_id para abrir o carrinho automaticamente
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const params = new URLSearchParams(window.location.search);
-    const orderSuccess = params.get("order_success");
-    const orderId = params.get("order_id");
-
-    console.log("🔍 ClientMenu params:", { orderSuccess, orderId });
-
-    if (orderSuccess !== "true" || !orderId) return;
-
-    const url = new URL(window.location.href);
-    url.searchParams.delete("order_success");
-    url.searchParams.delete("order_id");
-    window.history.replaceState({}, "", url.toString());
-
-    setCartOpen(true);
-    setPendingStripeOrderId(orderId);
-  }, []);
 
   const hasPlusPermissions = ownerRole === "plus" || ownerRole === "pro" || ownerRole === "admin";
   const canShowPromoPrice = hasPlusPermissions;
@@ -1226,10 +1203,6 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole, ownerStripeAc
         isOpen={open}
         ownerPhone={ownerPhone}
         ownerRole={ownerRole}
-        ownerStripeAccount={ownerStripeAccount}
-        ownerCanUseStripeExpress={ownerCanUseStripeExpress}
-        pendingStripeOrderId={pendingStripeOrderId}
-        onPendingStripeOrderResolved={() => setPendingStripeOrderId(null)}
       />
 
       <MenuFooter

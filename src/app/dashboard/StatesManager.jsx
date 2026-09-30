@@ -209,7 +209,6 @@ export default function StatesManager({
     "pixKey",
     "hours",
     "currency",
-    "useStripeExpress",
   ],
   onSave,
   defaultFolderPrefix,
@@ -276,7 +275,6 @@ export default function StatesManager({
       pixKey: menuFromServer.pix_key ?? null,
       hours: menuFromServer.hours ?? null,
       currency: menuFromServer.currency ?? "BRL",
-      useStripeExpress: !!menuFromServer.use_stripe_express,
     };
     setServerState(normalized);
     setLocalState(normalized);
@@ -433,7 +431,6 @@ export default function StatesManager({
 
       payload.banner_url = bannerUrl;
       payload.logo_url = logoUrl;
-      payload.use_stripe_express = !!localState.useStripeExpress;
 
       // Atualizar DB — RLS pode bloquear se 'user' não for owner ou se token ausente
       if (menuFromServer?.id) {
@@ -485,7 +482,6 @@ export default function StatesManager({
           pixKey: data.pix_key ?? null,
           hours: data.hours ?? null,
           currency: data.currency ?? "BRL",
-          useStripeExpress: !!data.use_stripe_express,
         };
 
         setServerState(normalized);
@@ -523,7 +519,6 @@ export default function StatesManager({
             data.minimum_order_value !== undefined && data.minimum_order_value !== null
               ? String(data.minimum_order_value)
               : "",
-          useStripeExpress: !!data.use_stripe_express,
         };
 
         setServerState(normalized);
@@ -632,7 +627,6 @@ export default function StatesManager({
                     pixKey: "Chave PIX",
                     hours: "Horário",
                     currency: "Moeda",
-                    useStripeExpress: "Pagamento online",
                   };
 
                   const displayName = displayNameMap[key] || key;

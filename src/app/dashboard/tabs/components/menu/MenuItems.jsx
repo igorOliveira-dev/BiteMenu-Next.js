@@ -30,7 +30,6 @@ import { useConfirm } from "@/providers/ConfirmProvider";
 import { uploadItemImage } from "@/lib/uploadImage";
 import UpdatePlanModal from "../UpdatePlanModal";
 import { fileToThumbnailWebp, fileToWebp } from "@/app/utils/imageToWebp";
-import { trackAction } from "@/utils/userActions";
 import { FaEllipsisVertical } from "react-icons/fa6";
 import { createPortal } from "react-dom";
 import { useLayoutEffect } from "react";
@@ -1846,7 +1845,6 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     } else {
       alert?.("Assine o plano Plus ou Pro para destacar itens!");
       if (!planModalOpen) {
-        trackAction("triedHighlight");
         setPlanModalFeature("highlight_items");
         setPlanModalOpen(true);
       }
@@ -2168,7 +2166,6 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   };
 
   const openItemsLimitModal = () => {
-    trackAction("triedItemLimit");
     setPlanModalFeature("items_limit");
     setPlanModalOpen(true);
   };
@@ -2182,7 +2179,6 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   };
 
   const openCategoriesLimitModal = () => {
-    trackAction("triedCategoryLimit");
     setPlanModalFeature("categories_limit");
     setPlanModalOpen(true);
   };
@@ -2812,7 +2808,6 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                             if (!canShowPromoPrice) {
                               if (!planModalOpen) {
                                 alert("Assine o plano Plus ou Pro para criar promoções!");
-                                trackAction("triedPromotion");
                                 setPlanModalFeature("promo_price");
                                 setPlanModalOpen(true);
                               }

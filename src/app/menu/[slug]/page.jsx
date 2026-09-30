@@ -71,7 +71,7 @@ export default async function MenuPage({ params }) {
 
   if (!menu) return <NotFoundMenu />;
 
-  const { ownerPhone, ownerRole, ownerStripeAccount, ownerCanUseStripeExpress } = await getOwnerInfo(menu);
+  const { ownerPhone, ownerRole } = await getOwnerInfo(menu);
 
   const effectiveLayout = menu.layout;
 
@@ -82,32 +82,24 @@ export default async function MenuPage({ params }) {
           menu={menu}
           ownerPhone={ownerPhone}
           ownerRole={ownerRole}
-          ownerStripeAccount={ownerStripeAccount}
-          ownerCanUseStripeExpress={ownerCanUseStripeExpress}
         />
       ) : effectiveLayout === "list" ? (
         <ClientMenu2
           menu={menu}
           ownerPhone={ownerPhone}
           ownerRole={ownerRole}
-          ownerStripeAccount={ownerStripeAccount}
-          ownerCanUseStripeExpress={ownerCanUseStripeExpress}
         />
       ) : effectiveLayout === "grid" ? (
         <ClientMenu3
           menu={menu}
           ownerPhone={ownerPhone}
           ownerRole={ownerRole}
-          ownerStripeAccount={ownerStripeAccount}
-          ownerCanUseStripeExpress={ownerCanUseStripeExpress}
         />
       ) : (
         <ClientMenu
           menu={menu}
           ownerPhone={ownerPhone}
           ownerRole={ownerRole}
-          ownerStripeAccount={ownerStripeAccount}
-          ownerCanUseStripeExpress={ownerCanUseStripeExpress}
         />
       )}
     </CartProvider>

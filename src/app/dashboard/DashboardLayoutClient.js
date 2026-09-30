@@ -13,8 +13,6 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { FaBolt } from "react-icons/fa";
 import PrivacyAcceptModal from "@/components/PrivacyAcceptModal";
 import { CURRENT_PRIVACY_VERSION } from "@/lib/privacy";
-import useStrategicPlanModal from "@/hooks/useStrategicPlanModal";
-import UpdatePlanModal from "@/app/dashboard/tabs/components/UpdatePlanModal";
 import useAcquisitionSourceModal from "@/hooks/useAcquisitionSourceModal";
 import AcquisitionSourceModal from "@/app/dashboard/components/AcquisitionSourceModal";
 
@@ -26,7 +24,6 @@ export default function DashboardLayoutClient({ children }) {
   const [showPlanButton, setShowPlanButton] = useState(false);
   const [showDownloadButton, setShowDownloadButton] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
-  const strategicModal = useStrategicPlanModal(profile);
   const acquisitionModal = useAcquisitionSourceModal(profile);
 
   useEffect(() => {
@@ -158,16 +155,7 @@ export default function DashboardLayoutClient({ children }) {
           onClose={() => setShowPrivacyModal(false)}
         />
       )}
-      {strategicModal.show && !showPrivacyModal && (
-        <UpdatePlanModal
-          title={strategicModal.suggestion.title}
-          text={strategicModal.suggestion.text}
-          ctaText={strategicModal.suggestion.ctaText}
-          onClose={strategicModal.onClose}
-          onCta={strategicModal.onCta}
-        />
-      )}
-      {acquisitionModal.show && !showPrivacyModal && !strategicModal.show && (
+      {acquisitionModal.show && !showPrivacyModal && (
         <AcquisitionSourceModal onClose={acquisitionModal.onClose} onSubmit={acquisitionModal.onSubmit} />
       )}
     </>

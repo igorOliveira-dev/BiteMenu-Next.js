@@ -46,3 +46,6 @@ next-env.d.ts
 supabase/.temp/
 # graphify
 graphify-out/
+
+# logs da migração de assinaturas (contêm emails e links de checkout)
+migracao-*.json
