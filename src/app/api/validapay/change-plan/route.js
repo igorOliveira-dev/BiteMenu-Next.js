@@ -80,8 +80,11 @@ export async function POST(req) {
     const messages = {
       PAYMENT_DECLINED: "Cartão recusado. Confira o cartão cadastrado e tente de novo.",
       INTERNAL_ERROR: "Não conseguimos gerar a cobrança da diferença agora. Tente de novo em alguns minutos.",
+      RECURRENCE_CHANGE_REQUIRES_NEW_ADHESION:
+        "No Pix Automático não dá pra trocar entre mensal e anual por aqui. Fale com o suporte do Bite Menu que a gente ajuda.",
     };
-    return json({ error: messages[err.code] || err.message || "Erro interno" }, err.code === "PAYMENT_DECLINED" ? 400 : 500);
+    const status = ["PAYMENT_DECLINED", "RECURRENCE_CHANGE_REQUIRES_NEW_ADHESION"].includes(err.code) ? 400 : 500;
+    return json({ error: messages[err.code] || err.message || "Erro interno" }, status);
   }
 }
 

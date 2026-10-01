@@ -43,9 +43,10 @@ export async function POST(req) {
       method: "POST",
       body: {
         priceId,
-        // Sem isso a ValidaPay usa o padrão da conta (só PIX)
-        allowedPaymentMethods: ["pix", "creditcard", "boleto"],
-        subscriptionAllowedPaymentMethods: ["pix", "creditcard", "boleto"],
+        // Sem isso a ValidaPay usa o padrão da conta (só PIX). Pix Automático no lugar do PIX comum:
+        // o cliente autoriza uma vez no banco e as renovações são debitadas sozinhas.
+        allowedPaymentMethods: ["pix_automatico", "creditcard", "boleto"],
+        subscriptionAllowedPaymentMethods: ["pix_automatico", "creditcard", "boleto"],
         customer: { name: profile.display_name || undefined, email: user.email },
         companyName: "Bite Menu",
         successUrl: `${baseUrl}/dashboard?tab=planDetails`,
