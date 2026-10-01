@@ -11,7 +11,7 @@ const faqs = [
   },
   {
     q: "Preciso de cartão de crédito para começar?",
-    a: "Não. Você cria sua conta e seu cardápio sem informar nenhum dado de pagamento. Só pede cartão se você decidir assinar um plano pago.",
+    a: "Não. Você cria sua conta e seu cardápio sem informar nenhum dado de pagamento. Só se você decidir assinar um plano pago, e aí dá pra pagar por PIX, boleto ou cartão.",
   },
   {
     q: "Como o cliente faz o pagamento?",

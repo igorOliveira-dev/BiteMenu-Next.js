@@ -127,11 +127,11 @@ const page = () => {
               Inclui cardápio digital, controle de pedidos, controle de vendas, com limite de 20 itens e 4 categorias.
             </li>
             <li>
-              <strong>Plus (R$ 24,90/mês):</strong> inclui todos os recursos do Free, com limite ampliado para 50 itens e 10
+              <strong>Plus (R$ 29,90/mês ou R$ 299,00/ano):</strong> inclui todos os recursos do Free, com limite ampliado para 50 itens e 10
               categorias, maior personalização do cardápio e configuração de taxa de entrega por bairro.
             </li>
             <li>
-              <strong>Pro (R$ 44,90/mês):</strong> inclui todos os recursos do Plus, com limite de 200 itens e 20 categorias,
+              <strong>Pro (R$ 49,90/mês ou R$ 499,00/ano):</strong> inclui todos os recursos do Plus, com limite de 200 itens e 20 categorias,
               impressão de pedidos, dashboard de vendas avançado com filtros por período, análise de ticket médio e relatório
               de vendas.
             </li>
@@ -163,36 +163,33 @@ const page = () => {
         <section className="flex flex-col gap-2 mb-4">
           <h2 className="default-h2">5. Pagamento e Cobrança</h2>
           <p>
-            As assinaturas dos planos Plus e Pro são cobradas mensalmente, com renovação automática na mesma data do mês, por
-            meio do <strong>Stripe</strong>, processador de pagamentos parceiro do Bite Menu. O Usuário aceita que a
-            contratação de um plano pago configura autorização de débito recorrente no instrumento de pagamento cadastrado.
+            As assinaturas dos planos Plus e Pro são cobradas mensal ou anualmente, conforme o ciclo escolhido, com renovação
+            automática ao fim de cada ciclo, por
+            meio da <strong>ValidaPay</strong>, processadora de pagamentos parceira do Bite Menu. O Usuário aceita que a
+            contratação de um plano pago configura autorização de cobrança recorrente na forma de pagamento escolhida no
+            checkout (PIX, boleto ou cartão de crédito).
           </p>
           <p>
-            O Bite Menu não armazena dados de cartão de crédito. Essas informações são tratadas exclusivamente pelo Stripe,
+            O Bite Menu não armazena dados de cartão de crédito. Essas informações são tratadas exclusivamente pela ValidaPay,
             em conformidade com o padrão PCI-DSS. Consulte a{" "}
             <a
-              href="https://stripe.com/privacy"
+              href="https://validapay.com.br"
               target="_blank"
               rel="noopener noreferrer"
               className="underline text-blue-500 hover:text-blue-700"
             >
-              Política de Privacidade do Stripe
+              Política de Privacidade da ValidaPay
             </a>{" "}
             para mais informações.
-          </p>
-          <p>
-            <strong>Período de teste gratuito:</strong> Determinados planos podem incluir um período de teste sem cobrança
-            (por exemplo, 7 dias no plano Pro). Findo esse período, a assinatura é convertida automaticamente em paga e
-            cobrada mensalmente, salvo cancelamento pelo Usuário antes do término do período de teste. É responsabilidade
-            exclusiva do Usuário cancelar o plano dentro do prazo caso não deseje ser cobrado.
           </p>
           <p>
             <strong>Alteração de preços:</strong> O Bite Menu poderá ajustar os valores dos planos mediante aviso prévio de
             30 dias. O Usuário poderá cancelar sem ônus antes da entrada em vigor do novo valor.
           </p>
           <p>
-            <strong>Falha no pagamento:</strong> Em caso de falha no débito recorrente, o Bite Menu poderá suspender o acesso
-            aos recursos do plano pago e rebaixar a conta para o plano Free até a regularização.
+            <strong>Falha no pagamento:</strong> Em caso de falha na cobrança recorrente, novas tentativas podem ser feitas
+            automaticamente. Esgotadas as tentativas sem pagamento, a assinatura é encerrada e a conta é rebaixada para o
+            plano Free.
           </p>
         </section>
 

@@ -16,7 +16,9 @@ export const plans = [
       "Taxa por bairro",
       "Criação de combos",
     ],
-    price: "24,90",
+    price: "29,90",
+    yearlyPrice: "299,00",
+    yearlyAnchor: "358,80",
     id: "plus",
   },
   {
@@ -30,7 +32,17 @@ export const plans = [
       "Dashboard de vendas",
       "Relatório de vendas",
     ],
-    price: "44,90",
+    price: "49,90",
+    yearlyPrice: "499,00",
+    yearlyAnchor: "598,80",
     id: "pro",
   },
 ];
+
+// Contratação em manutenção para todos, exceto estes e-mails (teste da assinatura real em produção).
+// Pra liberar geral: PLANS_MAINTENANCE = false.
+export const PLANS_MAINTENANCE = true;
+export const PLANS_TESTERS = ["igorventuradeoliveira@gmail.com"];
+
+export const plansBlockedFor = (email) =>
+  PLANS_MAINTENANCE && !PLANS_TESTERS.includes(String(email ?? "").toLowerCase());

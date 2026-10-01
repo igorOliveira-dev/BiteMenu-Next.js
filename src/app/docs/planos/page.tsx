@@ -40,14 +40,14 @@ const page = () => {
       <section className="mt-4 scroll-mt-[90px]" id="assinatura-de-planos">
         <h2 className="docs-title">Assinatura de Planos</h2>
         <p className="docs-paragraph">
-          Você pode assinar qualquer um dos planos do Bite Menu a qualquer momento. Aceitamos pagamento apenas através de
-          cartão de crédito, garantindo um processo de assinatura rápido e seguro. Não oferecemos opções de pagamento por
-          boleto, transferência bancária ou PIX no momento.
+          Você pode assinar qualquer um dos planos do Bite Menu a qualquer momento. A cobrança pode ser mensal ou anual (no anual
+          você paga 10 meses e leva 12) e você escolhe pagar por PIX, boleto ou cartão de crédito na página de pagamento.
         </p>
         <p className="docs-paragraph">
-          A partir da assinatura do plano, você terá acesso imediato aos recursos e funcionalidades correspondentes ao plano
-          escolhido. O pagamento é processado mensalmente, e você pode cancelar ou alterar seu plano a qualquer momento
-          através da sua conta no Bite Menu.
+          Assim que o pagamento é confirmado (PIX e cartão em poucos minutos, boleto em até 3 dias úteis), você passa a ter
+          acesso aos recursos do plano escolhido. Você pode cancelar a qualquer momento em Detalhes do Plano, e continua com
+          o plano até o fim do período já pago. Para trocar de plano, cancele a assinatura atual e assine o novo plano
+          quando ela terminar.
         </p>
         <p className="docs-paragraph">
           Para fazer a assinatura, você deve acessar a{" "}

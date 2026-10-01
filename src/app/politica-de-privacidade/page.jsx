@@ -95,7 +95,7 @@ const page = () => {
             <li>Arquivos enviados, como logotipo e banner do cardápio;</li>
             <li>Dados dos cardápios criados (produtos, categorias, preços e configurações);</li>
             <li>Telefone de contato;</li>
-            <li>Dados relacionados à assinatura dos planos Bite Menu (processados via Stripe);</li>
+            <li>Dados relacionados à assinatura dos planos Bite Menu (processados via ValidaPay);</li>
             <li>
               Identificador da conta Stripe conectada (apenas quando o estabelecimento habilita o Pagamentos Bite Menu).
             </li>
@@ -375,22 +375,23 @@ const page = () => {
         <section className="flex flex-col gap-2 mb-4">
           <h2 className="default-h2">10. Pagamentos de Assinatura (Planos Bite Menu)</h2>
           <p>
-            Para a contratação dos planos pagos <strong>Plus</strong> e <strong>Pro</strong>, o Bite Menu utiliza o{" "}
-            <strong>Stripe</strong> como processador de pagamentos. Nesse contexto, o Bite Menu é o{" "}
-            <strong>controlador</strong> e o Stripe atua como <strong>operador</strong> (subprocessador) para as finalidades
-            de cobrança e gestão das assinaturas, nos termos do DPA celebrado entre as partes.
+            Para a contratação dos planos pagos <strong>Plus</strong> e <strong>Pro</strong>, o Bite Menu utiliza a{" "}
+            <strong>ValidaPay</strong> como processadora de pagamentos. Nesse contexto, o Bite Menu é o{" "}
+            <strong>controlador</strong> e a ValidaPay atua como <strong>operadora</strong> (subprocessadora) para as
+            finalidades de cobrança e gestão das assinaturas.
           </p>
           <p>
-            Ao contratar um plano pago, o estabelecimento é redirecionado a uma página segura do Stripe para inserir seus
-            dados de pagamento. O Bite Menu <strong>não armazena nem tem acesso</strong> a informações sensíveis como número
-            de cartão, código de segurança (CVV) ou data de validade.
+            Ao contratar um plano pago, o estabelecimento é redirecionado a uma página segura da ValidaPay, onde informa
+            seu CPF ou CNPJ e escolhe pagar por PIX, boleto ou cartão de crédito. O Bite Menu envia à ValidaPay apenas o
+            nome e o e-mail da conta para pré-preencher o pagamento, e <strong>não armazena nem tem acesso</strong> a
+            informações sensíveis como número de cartão, código de segurança (CVV) ou data de validade.
           </p>
-          <p>As informações que o Bite Menu recebe do Stripe sobre as assinaturas incluem:</p>
+          <p>As informações que o Bite Menu recebe da ValidaPay sobre as assinaturas incluem:</p>
           <ul className="list-disc ml-6">
-            <li>Identificador da transação e da assinatura;</li>
-            <li>Status do pagamento (ativo, cancelado, pendente, inadimplente);</li>
+            <li>Identificador da assinatura;</li>
+            <li>Status da assinatura (ativa, cancelada, cancelamento agendado, expirada);</li>
             <li>Plano contratado e período de vigência;</li>
-            <li>Data de início e término da assinatura.</li>
+            <li>E-mail e CPF/CNPJ informados no pagamento, usados apenas para vincular a assinatura à conta.</li>
           </ul>
           <p>Esses dados são usados exclusivamente para:</p>
           <ul className="list-disc ml-6">
@@ -400,26 +401,8 @@ const page = () => {
             <li>Cumprir obrigações legais e contábeis.</li>
           </ul>
           <p>
-            <strong>Período de teste gratuito:</strong> Alguns planos podem oferecer período de teste sem cobrança (por
-            exemplo, 7 dias no plano Pro). Após o término, a assinatura é convertida automaticamente em paga e o valor é
-            cobrado mensalmente, salvo cancelamento pelo estabelecimento antes do vencimento do período de teste. É de
-            responsabilidade do usuário cancelar previamente caso não deseje continuar com o plano pago.
-          </p>
-          <p>
             <strong>Base legal:</strong> O tratamento desses dados fundamenta-se na execução de contrato (art. 7º, V da LGPD)
             e no cumprimento de obrigação legal (art. 7º, II da LGPD) para fins fiscais e contábeis.
-          </p>
-          <p>
-            O processamento das assinaturas está sujeito à{" "}
-            <a
-              href="https://stripe.com/privacy"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline text-blue-500 hover:text-blue-700"
-            >
-              Política de Privacidade do Stripe
-            </a>
-            .
           </p>
         </section>
 
