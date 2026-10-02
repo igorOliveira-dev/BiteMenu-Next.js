@@ -342,7 +342,10 @@ export default function StatesManager({
   const saveAll = async () => {
     if (!localState) return;
 
-    if (await isSlugDuplicated(localState.slug)) {
+    // slug pode terminar em "-" se salvou sem tirar o foco do campo
+    const slug = (localState.slug || "").replace(/-+$/, "");
+
+    if (await isSlugDuplicated(slug)) {
       customAlert?.("O slug selecionado já foi usado. Escolha outro.", "error");
       return;
     }
@@ -386,7 +389,7 @@ export default function StatesManager({
         background_color: localState.backgroundColor,
         title_color: localState.titleColor,
         details_color: localState.detailsColor,
-        slug: localState.slug,
+        slug,
         services: localState.selectedServices,
         payments: localState.selectedPayments,
 

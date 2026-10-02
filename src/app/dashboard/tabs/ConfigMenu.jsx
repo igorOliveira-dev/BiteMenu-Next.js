@@ -84,7 +84,7 @@ function slugify(value) {
     .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9-]/g, "-")
     .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
+    .replace(/^-/, ""); // hífen final fica enquanto digita; sai no blur e ao salvar
 }
 
 const serviceOptions = [
@@ -990,6 +990,7 @@ const ConfigMenu = (props) => {
                   type="text"
                   value={slug || ""}
                   onChange={(e) => setSlug(slugify(e.target.value.slice(0, 20)))}
+                  onBlur={() => slug?.endsWith("-") && setSlug(slug.replace(/-+$/, ""))}
                   placeholder="seu-slug"
                   maxLength={20}
                   className="h-full w-full bg-transparent px-3 text-[15px] outline-none"
