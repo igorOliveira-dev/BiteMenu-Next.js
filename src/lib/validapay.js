@@ -2,7 +2,7 @@ import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 // VALIDAPAY_API_URL / VALIDAPAY_OAUTH_URL: sandbox ou produção (ver .env)
-const SCOPES = "checkouts/write subscriptions/write subscriptions/read customers/read";
+const SCOPES = "checkouts/write checkouts/read subscriptions/write subscriptions/read customers/read";
 
 let cachedToken = null; // { value, expiresAt }
 
@@ -95,6 +95,17 @@ export async function findLiveSubscription(email) {
     if (live) return live.subscriptionId;
   }
   return null;
+}
+
+// Conta do Bite Menu dona de uma assinatura: a assinatura guarda a sessão de checkout que a criou
+// (checkoutId = cs_...), e a sessão guarda o metadata.userId que mandamos. Não depende do e-mail
+// que o cliente digitou na página de pagamento.
+export async function userIdFromSubscription(subscriptionId) {
+  const sub = await validapay(`/v1/subscriptions/${subscriptionId}`);
+  if (sub.metadata?.userId) return sub.metadata.userId;
+  if (!sub.checkoutId?.startsWith("cs_")) return null;
+  const session = await validapay(`/v1/checkout-sessions/${sub.checkoutId}`);
+  return session.metadata?.userId ?? null;
 }
 
 // Usuário autenticado a partir do header "Authorization: Bearer <access_token>" do Supabase.

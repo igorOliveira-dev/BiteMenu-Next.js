@@ -1,4 +1,4 @@
-import { validapay, planFromPriceId, activePriceId, isValidSignature } from "@/lib/validapay";
+import { validapay, planFromPriceId, activePriceId, isValidSignature, userIdFromSubscription } from "@/lib/validapay";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { sendSubscriptionEmail } from "@/lib/emails/subscriptionEmails";
 
@@ -11,16 +11,24 @@ const PAID_EVENTS = ["subscription.activated", "subscription.renewed", "subscrip
 const ENDED_EVENTS = ["subscription.canceled", "subscription.expired"];
 const NOTIFY_ONLY_EVENTS = ["charge.created", "payment.failed"];
 
+// Ordem: metadata do evento → assinatura já ligada ao profile (renovações) → sessão de checkout
+// que criou a assinatura (primeira compra) → e-mail, só como último recurso.
 async function findProfile(evt) {
   const select = "id, email, role, validapay_subscription_id";
   const tries = [
-    evt.metadata?.userId && ["id", evt.metadata.userId],
-    ["validapay_subscription_id", evt.subscriptionId],
-    evt.email && ["email", evt.email],
-  ].filter(Boolean);
+    async () => evt.metadata?.userId && ["id", evt.metadata.userId],
+    async () => ["validapay_subscription_id", evt.subscriptionId],
+    async () => {
+      const userId = await userIdFromSubscription(evt.subscriptionId);
+      return userId && ["id", userId];
+    },
+    async () => evt.email && ["email", evt.email],
+  ];
 
-  for (const [column, value] of tries) {
-    const { data, error } = await supabaseAdmin.from("profiles").select(select).eq(column, value).maybeSingle();
+  for (const next of tries) {
+    const lookup = await next();
+    if (!lookup) continue;
+    const { data, error } = await supabaseAdmin.from("profiles").select(select).eq(lookup[0], lookup[1]).maybeSingle();
     if (error) throw error;
     if (data) return data;
   }
