@@ -5,29 +5,13 @@ import {
   TIER,
   priceInfo,
   activePriceId,
-  DAYS_TO_PAY_AFTER_DUE,
+  openBoleto,
 } from "@/lib/validapay";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { brDate } from "@/lib/brDate";
 
 const json = (body, status = 200) => Response.json(body, { status });
 const CYCLE_OF = { MONTHLY: "monthly", YEARLY: "yearly" };
-const OPEN_INVOICE = ["PENDING", "AWAITING_PAYMENT", "OVERDUE"];
-const DAY = 86400000;
-
-// Boleto emitido, não pago e ainda dentro do prazo de pagamento. Enquanto existir, não geramos
-// outra cobrança: o upgrade por boleto fica PENDING_UPGRADE até compensar, e cada nova
-// confirmação gerava mais um boleto de pró-rata.
-function openBoleto(sub) {
-  return (sub.billingCycles ?? [])
-    .flatMap((c) => c.invoices ?? [])
-    .find(
-      (i) =>
-        OPEN_INVOICE.includes(i.status) &&
-        (i.paymentType ?? sub.paymentType) === "BOLETO" &&
-        (!i.dueDate || new Date(i.dueDate).getTime() + DAYS_TO_PAY_AFTER_DUE * DAY > Date.now()),
-    );
-}
 
 // Regras:
 // - mesmo ciclo, plano maior: cobra a diferença proporcional agora; vale quando ela é paga (cartão: na hora)

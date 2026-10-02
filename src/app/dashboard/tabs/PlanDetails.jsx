@@ -21,6 +21,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { brDate } from "@/lib/brDate";
 import { legacyPlanInfo } from "@/lib/legacyPlan";
 import LegacyPlanNotice from "@/components/LegacyPlanNotice";
+import BillingAlert from "../components/BillingAlert";
 
 const PAYMENT_METHODS = {
   CREDIT_CARD: { label: "Cartão de crédito", Icon: FaCreditCard },
@@ -220,6 +221,7 @@ export default function PlanDetails({ setSelectedTab }) {
         <h2 className="xs:font-semibold">Detalhes do Plano</h2>
       </div>
 
+      <BillingAlert setSelectedTab={setSelectedTab} className="mb-4 w-full max-w-[1024px]" />
       <LegacyPlanNotice info={legacyPlanInfo(p)} className="mb-4 max-w-[1024px]" />
 
       {p.validapay_subscription_id && p.cancel_at_period_end && (

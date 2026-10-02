@@ -1,5 +1,14 @@
-import { validapay, getUserFromRequest, PRICE_IDS, findLiveSubscription, DAYS_TO_PAY_AFTER_DUE } from "@/lib/validapay";
+import {
+  validapay,
+  getUserFromRequest,
+  PRICE_IDS,
+  findLiveSubscription,
+  findPendingBoletoSubscription,
+  openBoleto,
+  DAYS_TO_PAY_AFTER_DUE,
+} from "@/lib/validapay";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { brDate } from "@/lib/brDate";
 import { plansBlockedFor } from "@/consts/Plans";
 
 const json = (body, status = 200) => Response.json(body, { status });
@@ -40,7 +49,19 @@ export async function POST(req) {
       );
     }
 
-    const baseUrl = process.env.APP_URL || "https://bitemenu.com.br";
+    const pendingSub = await findPendingBoletoSubscription(user.email);
+    if (pendingSub) {
+      const pending = openBoleto(pendingSub);
+      const due = pending.dueDate ? ` (vencimento ${brDate(pending.dueDate)})` : "";
+      return json(
+        {
+          error: `Você já tem um boleto da assinatura em aberto${due}. Ele foi enviado pro seu e-mail. Depois de pago, a compensação leva até 3 dias úteis e o plano é liberado sozinho.`,
+        },
+        400,
+      );
+    }
+
+    const baseUrl =process.env.APP_URL || "https://bitemenu.com.br";
 
     // CPF/CNPJ e forma de pagamento são preenchidos pelo cliente na página da ValidaPay.
     // O role só muda quando a assinatura é ativada (webhook).

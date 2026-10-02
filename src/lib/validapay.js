@@ -101,6 +101,34 @@ export async function findLiveSubscription(email) {
   return null;
 }
 
+const OPEN_INVOICE = ["PENDING", "AWAITING_PAYMENT", "OVERDUE"];
+const DAY = 86400000;
+
+// Boleto emitido, não pago e ainda dentro do prazo de pagamento. Enquanto existir, não geramos
+// outra cobrança: boleto leva dias pra compensar e o cliente acabava gerando e pagando outro.
+export function openBoleto(sub) {
+  return (sub.billingCycles ?? [])
+    .flatMap((c) => c.invoices ?? [])
+    .find(
+      (i) =>
+        OPEN_INVOICE.includes(i.status) &&
+        (i.paymentType ?? sub.paymentType) === "BOLETO" &&
+        (!i.dueDate || new Date(i.dueDate).getTime() + DAYS_TO_PAY_AFTER_DUE * DAY > Date.now()),
+    );
+}
+
+// Assinatura ainda PENDING com boleto em aberto (primeira compra no boleto, antes da compensação).
+// Essas assinaturas ainda não estão no profile e o findLiveSubscription as ignora.
+// Lista filtrada direto em /v1/subscriptions: buscar cliente + detalhe do cliente levava 3-4s.
+// A lista não traz e-mail nem faturas, então confere os dois na assinatura completa.
+export async function findPendingBoletoSubscription(email) {
+  const { items = [] } = await validapay(`/v1/subscriptions?status=PENDING&search=${encodeURIComponent(email)}`);
+  const candidates = items.filter((s) => s.paymentType === "BOLETO");
+
+  const subs = await Promise.all(candidates.map((s) => validapay(`/v1/subscriptions/${s.subscriptionId}`)));
+  return subs.find((sub) => sub.email?.toLowerCase() === email.toLowerCase() && openBoleto(sub)) ?? null;
+}
+
 // Conta do Bite Menu dona de uma assinatura: a assinatura guarda a sessão de checkout que a criou
 // (checkoutId = cs_...), e a sessão guarda o metadata.userId que mandamos. Não depende do e-mail
 // que o cliente digitou na página de pagamento.

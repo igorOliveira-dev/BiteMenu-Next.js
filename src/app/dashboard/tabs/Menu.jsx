@@ -26,6 +26,7 @@ import useModalBackHandler from "@/hooks/useModalBackHandler";
 import useUser from "@/hooks/useUser";
 import SurveyBanner from "@/components/CustomBanner";
 import { LegacyPlanEndingBanner } from "@/components/LegacyPlanNotice";
+import BillingAlert from "../components/BillingAlert";
 import { getContrastTextColor as contrastText } from "@/utils/color";
 
 const getContrastTextColor = (hex) => contrastText(hex, "#000000");
@@ -392,6 +393,7 @@ const Menu = (props) => {
         </button>
         <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] min-h-[calc(100dvh-110px)]">
           {/* ESPAÇO PARA BANNER!!! */}
+          <BillingAlert setSelectedTab={setSelectedTab} className="my-2" />
           <LegacyPlanEndingBanner />
           <SurveyBanner />
           <div className="min-h-[calc(100dvh-110px)] pb-2" style={{ backgroundColor }}>
