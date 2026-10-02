@@ -3,15 +3,9 @@
 import { useEffect, useRef } from "react";
 import { useCookieConsent } from "@/providers/CookieConsentProvider";
 import { useThemeColor } from "@/providers/ThemeColorProvider";
+import { getContrastTextColor as contrastText } from "@/utils/color";
 
-function getContrastTextColor(hex) {
-  const clean = (hex || "#171717").replace("#", "");
-  const r = parseInt(clean.substring(0, 2), 16);
-  const g = parseInt(clean.substring(2, 4), 16);
-  const b = parseInt(clean.substring(4, 6), 16);
-  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
-  return yiq >= 128 ? "#171717" : "#fafafa";
-}
+const getContrastTextColor = (hex) => (contrastText(hex, "#171717") === "black" ? "#171717" : "#fafafa");
 
 export default function CookieBanner() {
   const { consent, setConsent, setBannerHeight } = useCookieConsent();

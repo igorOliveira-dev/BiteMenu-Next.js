@@ -29,6 +29,7 @@ export const getMenuBySlug = cache(async (slug) => {
       orders,
       layout,
       currency,
+      timezone,
       categories (
         id,
         name,

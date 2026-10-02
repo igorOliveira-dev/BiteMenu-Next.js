@@ -84,7 +84,7 @@ function slugify(value) {
     .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9-]/g, "-")
     .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
+    .replace(/^-/, ""); // hífen final fica enquanto digita; sai no blur e ao salvar
 }
 
 const serviceOptions = [
@@ -178,6 +178,45 @@ function Field({ label, hint, children }) {
   );
 }
 
+const BR_TIMEZONES = [
+  ["America/Sao_Paulo", "Brasília (UTC-3)"],
+  ["America/Manaus", "Amazonas, MT, MS, RO, RR (UTC-4)"],
+  ["America/Rio_Branco", "Acre (UTC-5)"],
+  ["America/Noronha", "Fernando de Noronha (UTC-2)"],
+];
+
+// lista do navegador lida no cliente pra não divergir do SSR
+function TimezoneSelect({ value, onChange }) {
+  const [browserTz, setBrowserTz] = useState(null);
+  const [allZones, setAllZones] = useState([]);
+
+  useEffect(() => {
+    setBrowserTz(Intl.DateTimeFormat().resolvedOptions().timeZone);
+    setAllZones(Intl.supportedValuesOf?.("timeZone") ?? []);
+  }, []);
+
+  const brCodes = BR_TIMEZONES.map(([code]) => code);
+  const others = (allZones.includes(value) ? allZones : [value, ...allZones]).filter((z) => !brCodes.includes(z));
+  const label = (code, text) => (code === browserTz ? `${text} (seu fuso atual)` : text);
+
+  const options = [
+    ...BR_TIMEZONES.map(([code, text]) => ({ value: code, label: label(code, text), group: "Brasil" })),
+    ...others.map((code) => ({ value: code, label: label(code, code.replaceAll("_", " ")), group: "Outros" })),
+  ];
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <SearchSelect
+      value={value}
+      onChange={onChange}
+      options={options}
+      display={selected?.label ?? value}
+      placeholder="Buscar fuso horário..."
+      emptyText="Nenhum fuso encontrado"
+    />
+  );
+}
+
 // contador só aparece perto do limite, pra não poluir
 function Counter({ value = "", max }) {
   if (value.length < max * 0.75) return null;
@@ -240,19 +279,17 @@ function OptionCard({ selected, multi, title, description, onClick }) {
   );
 }
 
-function CurrencySelect({ value, onChange }) {
+function SearchSelect({ value, onChange, options, display, placeholder, emptyText }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [rect, setRect] = useState(null);
   const btnRef = useRef(null);
 
-  const selected = CURRENCIES.find((c) => c.code === value) || CURRENCIES[0];
-
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return CURRENCIES;
-    return CURRENCIES.filter((c) => c.label.toLowerCase().includes(q) || c.code.toLowerCase().includes(q));
-  }, [query]);
+    if (!q) return options;
+    return options.filter((o) => o.label.toLowerCase().includes(q) || o.value.toLowerCase().includes(q));
+  }, [query, options]);
 
   const closeMenu = () => {
     setOpen(false);
@@ -285,9 +322,7 @@ function CurrencySelect({ value, onChange }) {
         onClick={() => (open ? closeMenu() : openMenu())}
         className={cx(INPUT_CLASS, "flex cursor-pointer items-center justify-between")}
       >
-        <span>
-          {selected.symbol} — {selected.label}
-        </span>
+        <span className="truncate">{display}</span>
         <FaChevronDown className="text-xs opacity-60" />
       </button>
 
@@ -305,28 +340,31 @@ function CurrencySelect({ value, onChange }) {
                 autoFocus
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Buscar moeda..."
+                placeholder={placeholder}
                 className="h-11 w-full border-b border-[var(--low-gray)] bg-[var(--background)] px-4 text-[15px] text-[var(--foreground)] outline-none"
               />
               <ul className="max-h-60 overflow-y-auto">
                 {filtered.length === 0 ? (
-                  <li className="px-4 py-3 text-sm opacity-60">Nenhuma moeda encontrada</li>
+                  <li className="px-4 py-3 text-sm opacity-60">{emptyText}</li>
                 ) : (
-                  filtered.map((c) => (
-                    <li key={c.code}>
+                  filtered.map((o, i) => (
+                    <li key={o.value}>
+                      {o.group && o.group !== filtered[i - 1]?.group ? (
+                        <div className="px-4 pt-3 pb-1 text-xs font-semibold uppercase opacity-50">{o.group}</div>
+                      ) : null}
                       <button
                         type="button"
                         onClick={() => {
-                          onChange(c.code);
+                          onChange(o.value);
                           closeMenu();
                         }}
                         className={cx(
                           "flex w-full cursor-pointer items-center gap-2 px-4 py-3 text-left text-[15px] transition hover:bg-[var(--translucid)]",
-                          c.code === value ? "bg-[var(--translucid)] font-semibold" : "",
+                          o.value === value ? "bg-[var(--translucid)] font-semibold" : "",
                         )}
                       >
-                        <span className="w-12 shrink-0">{c.symbol}</span>
-                        <span>{c.label}</span>
+                        {o.prefix ? <span className="w-12 shrink-0">{o.prefix}</span> : null}
+                        <span>{o.label}</span>
                       </button>
                     </li>
                   ))
@@ -337,6 +375,22 @@ function CurrencySelect({ value, onChange }) {
           document.body,
         )}
     </>
+  );
+}
+
+function CurrencySelect({ value, onChange }) {
+  const selected = CURRENCIES.find((c) => c.code === value) || CURRENCIES[0];
+  const options = useMemo(() => CURRENCIES.map((c) => ({ value: c.code, label: c.label, prefix: c.symbol })), []);
+
+  return (
+    <SearchSelect
+      value={value}
+      onChange={onChange}
+      options={options}
+      display={`${selected.symbol} — ${selected.label}`}
+      placeholder="Buscar moeda..."
+      emptyText="Nenhuma moeda encontrada"
+    />
   );
 }
 
@@ -399,6 +453,7 @@ const ConfigMenu = (props) => {
   const [deliveryFeeModeLocal, setDeliveryFeeModeLocal] = useState(menu?.delivery_fee_mode ?? null);
   const [pixKeyLocal, setPixKeyLocal] = useState(menu?.pix_key ?? "");
   const [currencyLocal, setCurrencyLocal] = useState(menu?.currency ?? "BRL");
+  const [timezoneLocal, setTimezoneLocal] = useState(menu?.timezone ?? "America/Sao_Paulo");
   const [hoursLocal, setHoursLocal] = useState(() => normalizeHours(menu?.hours));
   const [minimumOrderValueLocal, setMinimumOrderValueLocal] = useState(
     menu?.minimum_order_value !== undefined && menu?.minimum_order_value !== null
@@ -478,6 +533,11 @@ const ConfigMenu = (props) => {
     ? (value) => externalSetState((p) => ({ ...p, currency: value }))
     : setCurrencyLocal;
 
+  const timezone = usingExternal ? (externalState?.timezone ?? "America/Sao_Paulo") : timezoneLocal;
+  const setTimezone = usingExternal
+    ? (value) => externalSetState((p) => ({ ...p, timezone: value }))
+    : setTimezoneLocal;
+
   const minimumOrderValue = usingExternal ? (externalState?.minimumOrderValue ?? "") : minimumOrderValueLocal;
   const setMinimumOrderValue = usingExternal
     ? (value) => externalSetState((p) => ({ ...p, minimumOrderValue: value }))
@@ -539,6 +599,7 @@ const ConfigMenu = (props) => {
       );
       setPixKeyLocal(menu?.pix_key ?? "");
       setCurrencyLocal(menu?.currency ?? "BRL");
+      setTimezoneLocal(menu?.timezone ?? "America/Sao_Paulo");
       safeSetHours(menu?.hours);
     }
 
@@ -929,6 +990,7 @@ const ConfigMenu = (props) => {
                   type="text"
                   value={slug || ""}
                   onChange={(e) => setSlug(slugify(e.target.value.slice(0, 20)))}
+                  onBlur={() => slug?.endsWith("-") && setSlug(slug.replace(/-+$/, ""))}
                   placeholder="seu-slug"
                   maxLength={20}
                   className="h-full w-full bg-transparent px-3 text-[15px] outline-none"
@@ -1175,6 +1237,11 @@ const ConfigMenu = (props) => {
           open={openSection === "horarios"}
           onToggle={() => toggleSection("horarios")}
         >
+          <div className="mb-4">
+            <Field label="Fuso horário" hint="A loja abre e fecha neste fuso, independente de onde o cliente esteja.">
+              <TimezoneSelect value={timezone || "America/Sao_Paulo"} onChange={setTimezone} />
+            </Field>
+          </div>
           <div className="space-y-2">
             {dayOrder.map((day) => {
               const value = hours?.[day];

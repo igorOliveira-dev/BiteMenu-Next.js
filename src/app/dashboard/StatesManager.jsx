@@ -11,6 +11,7 @@ import GenericModal from "@/components/GenericModal";
 import { FaChevronLeft } from "react-icons/fa";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
+import { getContrastTextColor } from "@/utils/color";
 
 /**
  * StatesManager (versão com checagem de auth e tratamento RLS/storage)
@@ -23,22 +24,12 @@ import useModalBackHandler from "@/hooks/useModalBackHandler";
  */
 const BUCKET_NAME = process.env.NEXT_PUBLIC_SUPABASE_BUCKET || "menus";
 const TABLE_NAME = "menus";
-const DEFAULT_BACKGROUND = "#ffffff";
 
 function rgbToHex(rgb) {
   const match = rgb.match(/\d+/g);
   if (!match) return "#ffffff"; // fallback para branco se der erro
   const [r, g, b] = match.map(Number);
   return "#" + [r, g, b].map((x) => x.toString(16).padStart(2, "0")).join("");
-}
-
-function getContrastTextColor(hex) {
-  const cleanHex = (hex || DEFAULT_BACKGROUND).replace("#", "");
-  const r = parseInt(cleanHex.substring(0, 2), 16);
-  const g = parseInt(cleanHex.substring(2, 4), 16);
-  const b = parseInt(cleanHex.substring(4, 6), 16);
-  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
-  return yiq >= 128 ? "black" : "white";
 }
 
 function stableStringify(value) {
@@ -209,6 +200,7 @@ export default function StatesManager({
     "pixKey",
     "hours",
     "currency",
+    "timezone",
   ],
   onSave,
   defaultFolderPrefix,
@@ -275,6 +267,7 @@ export default function StatesManager({
       pixKey: menuFromServer.pix_key ?? null,
       hours: menuFromServer.hours ?? null,
       currency: menuFromServer.currency ?? "BRL",
+      timezone: menuFromServer.timezone ?? "America/Sao_Paulo",
     };
     setServerState(normalized);
     setLocalState(normalized);
@@ -340,7 +333,10 @@ export default function StatesManager({
   const saveAll = async () => {
     if (!localState) return;
 
-    if (await isSlugDuplicated(localState.slug)) {
+    // slug pode terminar em "-" se salvou sem tirar o foco do campo
+    const slug = (localState.slug || "").replace(/-+$/, "");
+
+    if (await isSlugDuplicated(slug)) {
       customAlert?.("O slug selecionado já foi usado. Escolha outro.", "error");
       return;
     }
@@ -384,7 +380,7 @@ export default function StatesManager({
         background_color: localState.backgroundColor,
         title_color: localState.titleColor,
         details_color: localState.detailsColor,
-        slug: localState.slug,
+        slug,
         services: localState.selectedServices,
         payments: localState.selectedPayments,
 
@@ -403,6 +399,7 @@ export default function StatesManager({
         pix_key: localState.pixKey || null,
         hours: localState.hours,
         currency: localState.currency || "BRL",
+        timezone: localState.timezone || "America/Sao_Paulo",
       };
 
       // folderPrefix: use prop defaultFolderPrefix se fornecida, senão userId/menuId
@@ -482,6 +479,7 @@ export default function StatesManager({
           pixKey: data.pix_key ?? null,
           hours: data.hours ?? null,
           currency: data.currency ?? "BRL",
+          timezone: data.timezone ?? "America/Sao_Paulo",
         };
 
         setServerState(normalized);
@@ -515,6 +513,7 @@ export default function StatesManager({
           pixKey: data.pix_key ?? null,
           hours: data.hours ?? null,
           currency: data.currency ?? "BRL",
+          timezone: data.timezone ?? "America/Sao_Paulo",
           minimumOrderValue:
             data.minimum_order_value !== undefined && data.minimum_order_value !== null
               ? String(data.minimum_order_value)
@@ -627,6 +626,7 @@ export default function StatesManager({
                     pixKey: "Chave PIX",
                     hours: "Horário",
                     currency: "Moeda",
+                    timezone: "Fuso horário",
                   };
 
                   const displayName = displayNameMap[key] || key;
