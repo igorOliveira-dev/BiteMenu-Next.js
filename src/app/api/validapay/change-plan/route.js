@@ -1,8 +1,33 @@
-import { validapay, getUserFromRequest, PRICE_IDS, TIER, priceInfo, activePriceId } from "@/lib/validapay";
+import {
+  validapay,
+  getUserFromRequest,
+  PRICE_IDS,
+  TIER,
+  priceInfo,
+  activePriceId,
+  DAYS_TO_PAY_AFTER_DUE,
+} from "@/lib/validapay";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { brDate } from "@/lib/brDate";
 
 const json = (body, status = 200) => Response.json(body, { status });
 const CYCLE_OF = { MONTHLY: "monthly", YEARLY: "yearly" };
+const OPEN_INVOICE = ["PENDING", "AWAITING_PAYMENT", "OVERDUE"];
+const DAY = 86400000;
+
+// Boleto emitido, não pago e ainda dentro do prazo de pagamento. Enquanto existir, não geramos
+// outra cobrança: o upgrade por boleto fica PENDING_UPGRADE até compensar, e cada nova
+// confirmação gerava mais um boleto de pró-rata.
+function openBoleto(sub) {
+  return (sub.billingCycles ?? [])
+    .flatMap((c) => c.invoices ?? [])
+    .find(
+      (i) =>
+        OPEN_INVOICE.includes(i.status) &&
+        (i.paymentType ?? sub.paymentType) === "BOLETO" &&
+        (!i.dueDate || new Date(i.dueDate).getTime() + DAYS_TO_PAY_AFTER_DUE * DAY > Date.now()),
+    );
+}
 
 // Regras:
 // - mesmo ciclo, plano maior: cobra a diferença proporcional agora; vale quando ela é paga (cartão: na hora)
@@ -32,6 +57,18 @@ export async function POST(req) {
     }
 
     const sub = await validapay(`/v1/subscriptions/${profile.validapay_subscription_id}`);
+
+    const pending = openBoleto(sub);
+    if (pending) {
+      const due = pending.dueDate ? ` (vencimento ${brDate(pending.dueDate)})` : "";
+      return json(
+        {
+          error: `Você já tem um boleto em aberto${due}. Pague esse boleto (o link está no aviso no topo do painel) e aguarde a compensação, que leva até 3 dias úteis, antes de trocar de plano.`,
+        },
+        400,
+      );
+    }
+
     const itemId = sub.primaryItemId;
     const scheduledPriceId = activePriceId(sub.items); // com downgrade agendado já é o plano novo
     const currentCycle = CYCLE_OF[sub.interval] ?? "monthly";
