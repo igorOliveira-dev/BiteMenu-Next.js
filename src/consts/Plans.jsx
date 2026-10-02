@@ -41,7 +41,7 @@ export const plans = [
 
 // Contratação em manutenção para todos, exceto estes e-mails (teste da assinatura real em produção).
 // Pra liberar geral: PLANS_MAINTENANCE = false.
-export const PLANS_MAINTENANCE = true;
+export const PLANS_MAINTENANCE = false;
 export const PLANS_TESTERS = ["igorventuradeoliveira@gmail.com"];
 
 export const plansBlockedFor = (email) =>
