@@ -11,7 +11,7 @@ export async function POST(req) {
 
     const { data: profile, error } = await supabaseAdmin
       .from("profiles")
-      .select("validapay_subscription_id")
+      .select("role, validapay_subscription_id")
       .eq("id", user.id)
       .single();
     if (error) throw error;
@@ -28,6 +28,7 @@ export async function POST(req) {
       ? { role: "free", validapay_subscription_id: null, cancel_at_period_end: false, plan_until: null }
       : { cancel_at_period_end: true, plan_until: result.effectiveAt };
 
+    if (profile.role === "admin") delete patch.role; // role também marca admin
     await supabaseAdmin.from("profiles").update(patch).eq("id", user.id);
 
     return Response.json(patch);

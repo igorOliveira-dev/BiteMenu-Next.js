@@ -116,6 +116,9 @@ export async function POST(req) {
       ];
     }
 
+    // role também marca admin: assinatura de admin nunca mexe nisso
+    if (patch && profile.role === "admin") delete patch.role;
+
     if (patch) {
       const { error } = await supabaseAdmin.from("profiles").update(patch).eq("id", profile.id);
       if (error) throw error;

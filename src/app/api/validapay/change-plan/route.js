@@ -60,7 +60,7 @@ export async function POST(req) {
     // Pago na hora (cartão) ou troca de ciclo: já vale. Pix/boleto: vale no webhook subscription.upgraded.
     const appliesNow =
       result.mode === "RECURRENCE_CHANGE" || (result.mode === "PRORATA_NOW" && result.settlement === "PAID");
-    if (appliesNow && planId !== profile.role) {
+    if (appliesNow && planId !== profile.role && profile.role !== "admin") {
       await supabaseAdmin.from("profiles").update({ role: planId }).eq("id", user.id);
     }
 
