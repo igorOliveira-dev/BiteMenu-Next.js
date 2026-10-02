@@ -11,6 +11,7 @@ import GenericModal from "@/components/GenericModal";
 import { FaChevronLeft } from "react-icons/fa";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
+import { getContrastTextColor } from "@/utils/color";
 
 /**
  * StatesManager (versão com checagem de auth e tratamento RLS/storage)
@@ -23,22 +24,12 @@ import useModalBackHandler from "@/hooks/useModalBackHandler";
  */
 const BUCKET_NAME = process.env.NEXT_PUBLIC_SUPABASE_BUCKET || "menus";
 const TABLE_NAME = "menus";
-const DEFAULT_BACKGROUND = "#ffffff";
 
 function rgbToHex(rgb) {
   const match = rgb.match(/\d+/g);
   if (!match) return "#ffffff"; // fallback para branco se der erro
   const [r, g, b] = match.map(Number);
   return "#" + [r, g, b].map((x) => x.toString(16).padStart(2, "0")).join("");
-}
-
-function getContrastTextColor(hex) {
-  const cleanHex = (hex || DEFAULT_BACKGROUND).replace("#", "");
-  const r = parseInt(cleanHex.substring(0, 2), 16);
-  const g = parseInt(cleanHex.substring(2, 4), 16);
-  const b = parseInt(cleanHex.substring(4, 6), 16);
-  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
-  return yiq >= 128 ? "black" : "white";
 }
 
 function stableStringify(value) {

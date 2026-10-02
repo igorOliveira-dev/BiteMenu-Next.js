@@ -16,15 +16,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { calculateComboDiscount } from "@/lib/comboDiscount";
 import { applyCoupon } from "@/lib/couponDiscount";
 import { saveReceipt } from "@/lib/orderReceipts";
-
-function getContrastTextColor(hex) {
-  const cleanHex = (hex || "#ffffff").replace("#", "");
-  const r = parseInt(cleanHex.substring(0, 2), 16);
-  const g = parseInt(cleanHex.substring(2, 4), 16);
-  const b = parseInt(cleanHex.substring(4, 6), 16);
-  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
-  return yiq >= 128 ? "black" : "white";
-}
+import { getContrastTextColor } from "@/utils/color";
 
 export default function CartDrawer({
   menu,

@@ -36,15 +36,9 @@ import { useLayoutEffect } from "react";
 import { supabaseImg } from "@/lib/imageUtils";
 import ActionsMenu from "@/components/ActionMenu";
 import CouponsModal from "./CouponsModal";
+import { getContrastTextColor as contrastText } from "@/utils/color";
 
-function getContrastTextColor(hex) {
-  const cleanHex = (hex || "").replace("#", "");
-  const r = parseInt(cleanHex.substring(0, 2), 16);
-  const g = parseInt(cleanHex.substring(2, 4), 16);
-  const b = parseInt(cleanHex.substring(4, 6), 16);
-  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
-  return yiq >= 128 ? "black" : "white";
-}
+const getContrastTextColor = (hex) => contrastText(hex, "#000000");
 
 function buildCopyName(originalName, existingNames = []) {
   // remove sufixo "(cópia)" ou "(cópia N)" já existente no final do nome
