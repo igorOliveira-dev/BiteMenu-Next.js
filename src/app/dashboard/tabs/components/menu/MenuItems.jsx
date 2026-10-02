@@ -2167,7 +2167,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   const getCategoryLimitByRole = (role) => {
     if (role === "free") return 4;
     if (role === "plus") return 10;
-    if (role === "pro") return 50;
+    if (role === "pro") return 20;
     if (role === "admin") return Infinity;
     return 4;
   };
@@ -3474,6 +3474,7 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
           menuId={menu?.id}
           currency={menu?.currency}
           canCreate={ownerRole === "admin" || ownerRole === "pro"}
+          showUpgrade={ownerRole === "free"}
           onClose={() => setCouponsModalOpen(false)}
         />
       )}
@@ -3692,7 +3693,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                 : null
           }
           onCta={() => {
-            window.location.href = "/dashboard/pricing";
+            // promo/destaque e limites do free resolvem no Plus; limites do Plus, no Pro
+            const target = planModalFeature.endsWith("_limit") && ownerRole !== "free" ? "pro" : "plus";
+            window.location.href = `/dashboard/pricing?plan=${target}`;
           }}
         />
       )}

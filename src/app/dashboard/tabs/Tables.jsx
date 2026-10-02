@@ -381,7 +381,7 @@ const Tables = () => {
                 : "Seu plano atual atingiu o limite de mesas."
           }
           onCta={() => {
-            window.location.href = "/dashboard/pricing";
+            window.location.href = `/dashboard/pricing?plan=${ownerRole === "free" ? "plus" : "pro"}`;
           }}
         />
       )}

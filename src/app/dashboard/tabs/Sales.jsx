@@ -21,6 +21,7 @@ import { useConfirm } from "@/providers/ConfirmProvider";
 import SalesSummary from "./components/sales/SalesSummary";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import useUser from "@/hooks/useUser";
+import UpdatePlanModal from "./components/UpdatePlanModal";
 import PrintDocumentButton, {
   normalizeSaleForPrint,
 } from "./components/print/PrintDocumentButton";
@@ -133,6 +134,7 @@ const Sales = ({ setSelectedTab }) => {
   const { menu, loading } = useMenu();
   const { profile } = useUser();
   const customAlert = useAlert();
+  const [printUpsell, setPrintUpsell] = useState(false);
   const confirm = useConfirm();
 
   const [salesSummary, setSalesSummary] = useState({ count: 0, total: 0, average: 0 });
@@ -775,10 +777,12 @@ const Sales = ({ setSelectedTab }) => {
                                 profile?.role === "admin"
                               }
                               onDenied={() =>
-                                customAlert(
-                                  "Recurso disponível apenas para o plano Pro",
-                                  "error",
-                                )
+                                profile?.role === "free"
+                                  ? setPrintUpsell(true)
+                                  : customAlert(
+                                      "Recurso disponível apenas para o plano Pro",
+                                      "error",
+                                    )
                               }
                               fileNamePrefix="venda"
                               receiptTitle="VENDA"
@@ -1399,6 +1403,17 @@ const Sales = ({ setSelectedTab }) => {
             </form>
           </div>
         </GenericModal>
+      )}
+      {printUpsell && (
+        <UpdatePlanModal
+          onClose={() => setPrintUpsell(false)}
+          title="Impressão de pedidos é do plano Pro"
+          text="Imprima cada pedido com um clique e mande direto pra cozinha. Também libera o dashboard e o relatório de vendas."
+          ctaText="Conhecer o Pro"
+          onCta={() => {
+            window.location.href = "/dashboard/pricing?plan=pro";
+          }}
+        />
       )}
     </div>
   );

@@ -22,7 +22,7 @@ const SalesSummary = ({
   const [showUpdatePlanModal, setShowUpdatePlanModal] = useState(false);
 
   const upgradePlan = () => {
-    window.location.href = "/dashboard/pricing";
+    window.location.href = "/dashboard/pricing?plan=pro";
   };
 
   if (loading || loadingSales) return <Loading />;

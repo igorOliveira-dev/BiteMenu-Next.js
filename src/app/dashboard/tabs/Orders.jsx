@@ -21,6 +21,7 @@ import { useConfirm } from "@/providers/ConfirmProvider";
 import OrdersFilter from "./components/orders/OrdersFilter";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import useUser from "@/hooks/useUser";
+import UpdatePlanModal from "./components/UpdatePlanModal";
 import PrintDocumentButton, {
   normalizeOrderForPrint,
 } from "./components/print/PrintDocumentButton";
@@ -98,6 +99,7 @@ const Orders = ({
   const { menu, loading } = useMenu();
   const { profile, loadingProfile } = useUser();
   const customAlert = useAlert();
+  const [printUpsell, setPrintUpsell] = useState(false);
   const confirm = useConfirm();
 
   const [showConfig, setShowConfig] = useState(false);
@@ -980,10 +982,12 @@ const Orders = ({
                                 profile?.role === "admin"
                               }
                               onDenied={() =>
-                                customAlert(
-                                  "Recurso disponível apenas para o plano Pro",
-                                  "error",
-                                )
+                                profile?.role === "free"
+                                  ? setPrintUpsell(true)
+                                  : customAlert(
+                                      "Recurso disponível apenas para o plano Pro",
+                                      "error",
+                                    )
                               }
                               fileNamePrefix="pedido"
                               receiptTitle="PEDIDO"
@@ -1786,6 +1790,17 @@ const Orders = ({
           </div>
         </GenericModal>
       ) : null}
+      {printUpsell && (
+        <UpdatePlanModal
+          onClose={() => setPrintUpsell(false)}
+          title="Impressão de pedidos é do plano Pro"
+          text="Imprima cada pedido com um clique e mande direto pra cozinha. Também libera o dashboard e o relatório de vendas."
+          ctaText="Conhecer o Pro"
+          onCta={() => {
+            window.location.href = "/dashboard/pricing?plan=pro";
+          }}
+        />
+      )}
     </div>
   );
 };

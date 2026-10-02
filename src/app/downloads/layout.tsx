@@ -27,7 +27,7 @@ export default function DownloadLayout({ children }: { children: React.ReactNode
 
     if (!allowed) {
       if (!alertTriggered) {
-        customAlert("Você precisa ser um usuário Plus ou Pro para baixar o aplicativo do Bite Menu.", "slow");
+        customAlert("Você precisa ser um usuário Pro para baixar o aplicativo do Bite Menu.", "slow");
         setAlertTriggered(true);
       }
 
@@ -43,7 +43,7 @@ export default function DownloadLayout({ children }: { children: React.ReactNode
     );
   }
 
-  const allowed = profile.role === "plus" || profile.role === "pro" || profile.role === "admin";
+  const allowed = profile.role === "pro" || profile.role === "admin";
 
   if (!allowed) {
     return null;

@@ -105,7 +105,7 @@ function MoneyField({ symbol, ...props }) {
   );
 }
 
-export default function CouponsModal({ menuId, currency, canCreate, onClose }) {
+export default function CouponsModal({ menuId, currency, canCreate, showUpgrade, onClose }) {
   const alert = useAlert();
   const symbol = getCurrencySymbol(currency);
   const confirm = useConfirm();
@@ -234,6 +234,11 @@ export default function CouponsModal({ menuId, currency, canCreate, onClose }) {
       {!canCreate ? (
         <div className="rounded-2xl border border-amber-500/20 bg-amber-500/20 p-4 text-sm">
           Criar cupons é uma função exclusiva do Bite Menu Pro. Faça upgrade para criar os seus!
+          {showUpgrade && (
+            <a href="/dashboard/pricing?plan=pro" className="block mt-3 text-center cta-button">
+              Conhecer o Pro
+            </a>
+          )}
         </div>
       ) : draft ? (
         <div className="space-y-3">

@@ -15,6 +15,7 @@ const CYCLE_LABEL = { monthly: "mensal", yearly: "anual" };
 const PER_CYCLE = { monthly: "por mês", yearly: "por ano" };
 
 const formatDate = (iso) => brDate(iso) || "-";
+const parseBRL = (value) => Number(String(value).replace(",", "."));
 const formatBRL = (value) => Number(value ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 async function authFetch(url, options = {}) {
@@ -192,11 +193,19 @@ const PlansSection = () => {
   const [cycle, setCycle] = useState("monthly"); // "monthly" | "yearly"
   const [billing, setBilling] = useState(null); // assinatura atual (quem já assina)
   const [changeTarget, setChangeTarget] = useState(null);
+  const [highlight, setHighlight] = useState(null); // plano sugerido por ?plan= (anúncios do dashboard)
   const { user, profile } = useUser();
   const alert = useAlert();
 
   const subscriptionId = profile?.validapay_subscription_id;
   const maintenance = plansBlockedFor(user?.email);
+
+  // Links dos anúncios: ?plan=plus|pro&cycle=monthly|yearly (assinatura atual sobrescreve o ciclo abaixo)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("cycle") === "yearly") setCycle("yearly");
+    setHighlight(params.get("plan"));
+  }, []);
 
   useEffect(() => {
     if (!subscriptionId) return;
@@ -284,12 +293,24 @@ const PlansSection = () => {
         ))}
       </div>
 
+      <p className="-mt-4 mb-8 max-w-[700px] text-center text-sm opacity-80">
+        Pague com <strong>Pix Automático</strong>, cartão ou boleto. No Pix Automático você autoriza uma vez no app do
+        banco e o débito é automático, sem cartão de crédito.
+      </p>
+
       <div className="w-full max-w-[1248px] flex justify-around flex-wrap gap-6 lg:gap-12">
         {plans.map((plan) => (
           <div
             key={plan.name}
-            className="p-4 px-6 bg-degraded-t-speckled border-2 border-[var(--translucid)] rounded-xl w-64 flex flex-col gap-6 justify-between transition"
+            className={`relative p-4 px-6 bg-degraded-t-speckled border-2 rounded-xl w-64 flex flex-col gap-6 justify-between transition ${
+              highlight === plan.id ? "border-[var(--red)]" : "border-[var(--translucid)]"
+            }`}
           >
+            {highlight === plan.id && (
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-0.5 rounded-full bg-[var(--red)] text-white text-xs font-semibold">
+                Recomendado pra você
+              </span>
+            )}
             <div>
               <h2 className="font-bold mb-2 text-center">{plan.name}</h2>
               <hr className="border-translucid mb-4" />
@@ -300,6 +321,9 @@ const PlansSection = () => {
                     <span className="text-base color-gray mr-1">R$</span>
                     {plan.yearlyPrice}
                     <span className="text-base color-gray">/ano</span>
+                  </p>
+                  <p className="text-sm font-semibold text-[var(--red)] mt-1">
+                    Economize {formatBRL(parseBRL(plan.yearlyAnchor) - parseBRL(plan.yearlyPrice))}
                   </p>
                 </div>
               ) : (

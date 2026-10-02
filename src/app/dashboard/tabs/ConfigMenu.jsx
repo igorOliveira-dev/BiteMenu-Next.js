@@ -1355,7 +1355,7 @@ const ConfigMenu = (props) => {
               <button
                 type="button"
                 onClick={() => {
-                  window.location.href = "https://www.bitemenu.com.br/dashboard/pricing";
+                  window.location.href = "/dashboard/pricing?plan=plus";
                 }}
                 className="h-11 cursor-pointer rounded-xl bg-[#d42020] px-5 text-sm font-semibold text-white transition hover:opacity-90"
               >
