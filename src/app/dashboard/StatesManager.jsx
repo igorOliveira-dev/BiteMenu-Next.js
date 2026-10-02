@@ -209,6 +209,7 @@ export default function StatesManager({
     "pixKey",
     "hours",
     "currency",
+    "timezone",
   ],
   onSave,
   defaultFolderPrefix,
@@ -275,6 +276,7 @@ export default function StatesManager({
       pixKey: menuFromServer.pix_key ?? null,
       hours: menuFromServer.hours ?? null,
       currency: menuFromServer.currency ?? "BRL",
+      timezone: menuFromServer.timezone ?? "America/Sao_Paulo",
     };
     setServerState(normalized);
     setLocalState(normalized);
@@ -403,6 +405,7 @@ export default function StatesManager({
         pix_key: localState.pixKey || null,
         hours: localState.hours,
         currency: localState.currency || "BRL",
+        timezone: localState.timezone || "America/Sao_Paulo",
       };
 
       // folderPrefix: use prop defaultFolderPrefix se fornecida, senão userId/menuId
@@ -482,6 +485,7 @@ export default function StatesManager({
           pixKey: data.pix_key ?? null,
           hours: data.hours ?? null,
           currency: data.currency ?? "BRL",
+          timezone: data.timezone ?? "America/Sao_Paulo",
         };
 
         setServerState(normalized);
@@ -515,6 +519,7 @@ export default function StatesManager({
           pixKey: data.pix_key ?? null,
           hours: data.hours ?? null,
           currency: data.currency ?? "BRL",
+          timezone: data.timezone ?? "America/Sao_Paulo",
           minimumOrderValue:
             data.minimum_order_value !== undefined && data.minimum_order_value !== null
               ? String(data.minimum_order_value)
@@ -627,6 +632,7 @@ export default function StatesManager({
                     pixKey: "Chave PIX",
                     hours: "Horário",
                     currency: "Moeda",
+                    timezone: "Fuso horário",
                   };
 
                   const displayName = displayNameMap[key] || key;

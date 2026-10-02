@@ -17,6 +17,16 @@ import useManualStore from "@/hooks/useManualStore";
 import XButton from "@/components/XButton";
 import { useThemeColor } from "@/providers/ThemeColorProvider";
 import { useCookieConsent } from "@/providers/CookieConsentProvider";
+import {
+  dayNames,
+  formatOffset,
+  getClosingTime,
+  getNextOpenInfo,
+  isOpenNow,
+  nowInZone,
+  shiftTime,
+  zoneOffset,
+} from "@/utils/storeHours";
 
 function getContrastTextColor(hex) {
   const DEFAULT_BACKGROUND = "#ffffff";
@@ -26,11 +36,6 @@ function getContrastTextColor(hex) {
   const b = parseInt(cleanHex.substring(4, 6), 16);
   const yiq = (r * 299 + g * 587 + b * 114) / 1000;
   return yiq >= 128 ? "black" : "white";
-}
-
-function toMinutes(str) {
-  const [h, m] = str.split(":").map(Number);
-  return h * 60 + m;
 }
 
 function findScrollParent(el) {
@@ -71,86 +76,13 @@ function scrollToCategoryId(id, offset = 15) {
   return true;
 }
 
-function isOpenNow(hours) {
-  const now = new Date();
-  const timeString = now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
-  const localNow = new Date(timeString);
-  const day = localNow.toLocaleString("en-US", { weekday: "short" }).toLowerCase();
-  const todayHours = hours?.[day] || null;
-  if (!todayHours) return false;
-  const [openStr, closeStr] = todayHours.split("-");
-  const openMins = toMinutes(openStr);
-  const closeMins = toMinutes(closeStr);
-  const nowMins = localNow.getHours() * 60 + localNow.getMinutes();
-  return nowMins >= openMins && nowMins <= closeMins;
-}
-
-function getClosingTime(hours) {
-  const now = new Date();
-  const timeString = now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
-  const localNow = new Date(timeString);
-
-  const day = localNow.toLocaleString("en-US", { weekday: "short" }).toLowerCase();
-  const todayHours = hours?.[day] || null;
-  if (!todayHours) return null;
-
-  const [, closeStr] = todayHours.split("-");
-  return closeStr;
-}
-
-const weekOrder = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
-
-function getNextOpenInfo(hours) {
-  if (!hours) return null;
-
-  const now = new Date();
-  const timeString = now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
-  const localNow = new Date(timeString);
-
-  const todayKey = localNow.toLocaleString("en-US", { weekday: "short" }).toLowerCase();
-  const nowMins = localNow.getHours() * 60 + localNow.getMinutes();
-  const todayIndex = weekOrder.indexOf(todayKey);
-
-  // 1. Ainda pode abrir hoje?
-  const todayHours = hours[todayKey];
-  if (todayHours) {
-    const [openStr] = todayHours.split("-");
-    if (toMinutes(openStr) > nowMins) {
-      return { label: "hoje", time: openStr };
-    }
-  }
-
-  // 2. Procura nos próximos dias
-  for (let offset = 1; offset <= 6; offset++) {
-    const dayKey = weekOrder[(todayIndex + offset) % 7];
-    const dayHours = hours[dayKey];
-    if (dayHours) {
-      const [openStr] = dayHours.split("-");
-      const label = offset === 1 ? "amanhã" : dayNames[dayKey];
-      return { label, time: openStr };
-    }
-  }
-
-  return null;
-}
-
-const dayNames = {
-  mon: "Segunda-feira",
-  tue: "Terça-feira",
-  wed: "Quarta-feira",
-  thu: "Quinta-feira",
-  fri: "Sexta-feira",
-  sat: "Sábado",
-  sun: "Domingo",
-};
-
-function formatHours(hours) {
+function formatHours(hours, toViewer) {
   if (!hours) return [];
   return Object.entries(dayNames).map(([key, label]) => {
     const range = hours[key];
     if (!range) return { day: label, hours: "Fechado" };
     const [open, close] = range.split("-");
-    return { day: label, hours: `${open} às ${close}` };
+    return { day: label, hours: `${toViewer(open)} às ${toViewer(close)}` };
   });
 }
 
@@ -204,16 +136,16 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
 
   const manualStore = useManualStore(menu.id);
   const open = useMemo(
-    () => (manualStore.control ? manualStore.open : isOpenNow(menu.hours)),
-    [menu.hours, manualStore],
+    () => (manualStore.control ? manualStore.open : isOpenNow(menu.hours, menu.timezone)),
+    [menu.hours, menu.timezone, manualStore],
   );
   const closingTime = useMemo(
-    () => (manualStore.control ? null : getClosingTime(menu.hours)),
-    [menu.hours, manualStore.control],
+    () => (manualStore.control ? null : getClosingTime(menu.hours, menu.timezone)),
+    [menu.hours, menu.timezone, manualStore.control],
   );
   const nextOpenInfo = useMemo(
-    () => (manualStore.control ? null : getNextOpenInfo(menu.hours)),
-    [menu.hours, manualStore.control],
+    () => (manualStore.control ? null : getNextOpenInfo(menu.hours, menu.timezone)),
+    [menu.hours, menu.timezone, manualStore.control],
   );
 
   const contrast = useMemo(() => getContrastTextColor(menu.background_color), [menu.background_color]);
@@ -224,10 +156,19 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
   const openColor = contrast === "white" ? "#4ade80" : "#15803d"; // verde claro / verde escuro
   const closedColor = contrast === "white" ? "#f87171" : "#b91c1c"; // vermelho claro / vermelho escuro
 
-  const now = new Date();
-  const timeString = now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
-  const localNow = new Date(timeString);
-  const todayKey = localNow.toLocaleString("en-US", { weekday: "short" }).toLowerCase();
+  const todayKey = nowInZone(menu.timezone).dayKey;
+
+  // horários exibidos no fuso de quem abre; aberto/fechado segue no fuso da loja.
+  // fuso do cliente lido só no cliente pra não divergir do SSR
+  // ponytail: usa o offset de hoje pra semana toda, ignora horário de verão em outros dias
+  const [viewerTz, setViewerTz] = useState(null);
+  useEffect(() => setViewerTz(Intl.DateTimeFormat().resolvedOptions().timeZone), []);
+  const viewerOffset = useMemo(() => (viewerTz ? zoneOffset(viewerTz) : null), [viewerTz]);
+  const tzDiff = useMemo(
+    () => (viewerOffset === null ? 0 : viewerOffset - zoneOffset(menu.timezone)),
+    [viewerOffset, menu.timezone],
+  );
+  const toViewer = (time) => shiftTime(time, tzDiff);
 
   const [itemModalOpen, setItemModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -614,12 +555,17 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
           >
             {open
               ? closingTime
-                ? `Aberto até às ${closingTime}h`
+                ? `Aberto até às ${toViewer(closingTime)}h`
                 : "Aberto agora"
               : nextOpenInfo
-                ? `Abre ${nextOpenInfo.label} às ${nextOpenInfo.time}h`
+                ? `Abre ${nextOpenInfo.label} às ${toViewer(nextOpenInfo.time)}h`
                 : "Fechado"}
           </div>
+          {tzDiff ? (
+            <p className="-mt-2 mb-2 text-xs" style={{ color: grayToUse }}>
+              Fuso da loja: {formatOffset(zoneOffset(menu.timezone))}
+            </p>
+          ) : null}
 
           {menu.address && (
             <p className="flex items-center gap-1 mt-1 text-xs" style={{ color: grayToUse }}>
@@ -912,7 +858,10 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
           onClose={closeHoursModal}
         >
           <div className="space-y-2" style={{ color: foregroundToUse }}>
-            {formatHours(menu.hours).map(({ day, hours }, idx) => {
+            {tzDiff ? (
+              <p className="px-2 text-xs opacity-70">Horários no seu fuso ({formatOffset(viewerOffset)})</p>
+            ) : null}
+            {formatHours(menu.hours, toViewer).map(({ day, hours }, idx) => {
               const dayKey = Object.keys(dayNames)[idx];
               const isToday = dayKey === todayKey;
               return (
