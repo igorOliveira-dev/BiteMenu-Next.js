@@ -11,7 +11,7 @@ const page = () => {
       <div className="max-w-2xl flex flex-col gap-6 p-4 pt-12">
         <h1 className="default-h1">Política de Privacidade – Bite Menu</h1>
 
-        <p>Última atualização: 26/07/2026</p>
+        <p>Última atualização: 02/10/2026</p>
 
         <p>
           O <strong>Bite Menu</strong> valoriza sua privacidade e está comprometido com a proteção dos seus dados pessoais.
@@ -33,10 +33,6 @@ const page = () => {
               <strong>Consumidores e visitantes:</strong> pessoas que acessam os cardápios, com ou sem cadastro, incluindo os
               que realizam pedidos.
             </li>
-            <li>
-              <strong>Compradores finais (Pagamentos Bite Menu):</strong> clientes dos estabelecimentos que realizam
-              pagamentos online via Stripe Checkout ao finalizar um pedido.
-            </li>
           </ul>
           <p>O Bite Menu desempenha papéis distintos conforme o tipo de dado e o fluxo de tratamento:</p>
           <ul className="list-disc ml-6">
@@ -50,26 +46,10 @@ const page = () => {
               exclusivamente conforme as instruções dos próprios estabelecimentos, que são os controladores responsáveis por
               esses dados.
             </li>
-            <li>
-              <strong>Plataforma tecnológica intermediadora</strong> no contexto do Pagamentos Bite Menu: viabiliza a
-              integração com o Stripe Connect Express para que os estabelecimentos recebam pagamentos online, sem coletar nem
-              ter acesso aos dados de pagamento dos compradores finais nem aos dados de verificação de identidade (KYC)
-              submetidos diretamente ao Stripe durante o credenciamento.
-            </li>
           </ul>
           <p>
-            O <strong>Stripe</strong> atua como <strong>controlador independente</strong> dos dados coletados por ele
-            diretamente — em especial os dados de verificação de identidade dos estabelecimentos (KYC/AML) e os dados de
-            pagamento dos compradores finais —, nos termos de sua própria{" "}
-            <a
-              href="https://stripe.com/privacy"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline text-blue-500 hover:text-blue-700"
-            >
-              Política de Privacidade
-            </a>
-            .
+            O pagamento dos pedidos é combinado diretamente entre o estabelecimento e seus clientes (dinheiro, PIX, cartão
+            na entrega etc.). O Bite Menu não processa nem intermedia esses pagamentos.
           </p>
         </section>
 
@@ -95,23 +75,8 @@ const page = () => {
             <li>Arquivos enviados, como logotipo e banner do cardápio;</li>
             <li>Dados dos cardápios criados (produtos, categorias, preços e configurações);</li>
             <li>Telefone de contato;</li>
-            <li>Dados relacionados à assinatura dos planos Bite Menu (processados via ValidaPay);</li>
-            <li>
-              Identificador da conta Stripe conectada (apenas quando o estabelecimento habilita o Pagamentos Bite Menu).
-            </li>
+            <li>Dados relacionados à assinatura dos planos Bite Menu (processados via ValidaPay).</li>
           </ul>
-
-          <p>
-            <strong>Credenciamento no Pagamentos Bite Menu (KYC via Stripe):</strong> Ao aderir ao Pagamentos Bite Menu, o
-            estabelecimento é redirecionado ao ambiente seguro do Stripe para concluir o processo de credenciamento (
-            <em>onboarding</em>). Nesse fluxo, o Stripe coleta diretamente do estabelecimento as informações exigidas para
-            verificação de identidade (KYC – <em>Know Your Customer</em>) e prevenção à lavagem de dinheiro (AML –{" "}
-            <em>Anti-Money Laundering</em>), tais como CPF ou CNPJ, dados bancários para recebimento, documento de identidade
-            com foto e demais documentos exigidos pela regulamentação vigente. O Bite Menu{" "}
-            <strong>não coleta, não armazena e não tem acesso</strong> aos dados de KYC submetidos pelo estabelecimento ao
-            Stripe. Em nosso banco de dados, armazenamos apenas um identificador que confirma se a conta Stripe do
-            estabelecimento está conectada e ativa.
-          </p>
 
           <p>As informações coletadas pelo Bite Menu são utilizadas para:</p>
           <ul className="list-disc ml-6">
@@ -119,7 +84,6 @@ const page = () => {
             <li>Permitir a criação, edição e exibição de cardápios digitais;</li>
             <li>Processar pedidos e facilitar a comunicação entre o estabelecimento e seus clientes;</li>
             <li>Gerenciar a assinatura e o faturamento dos planos;</li>
-            <li>Habilitar e manter a integração com o Stripe Connect Express para recebimentos online;</li>
             <li>Enviar comunicações operacionais e, quando autorizado, novidades e atualizações sobre o serviço;</li>
             <li>Cumprir obrigações legais, fiscais e contratuais.</li>
           </ul>
@@ -131,7 +95,7 @@ const page = () => {
           <ul className="list-disc ml-6">
             <li>
               <strong>Execução de contrato</strong> (inciso V): para criação e gestão de conta, exibição de cardápios,
-              processamento de pedidos, cobrança da assinatura e habilitação do Pagamentos Bite Menu;
+              processamento de pedidos e cobrança da assinatura;
             </li>
             <li>
               <strong>Cumprimento de obrigação legal ou regulatória</strong> (inciso II): para emissão de notas fiscais e
@@ -145,13 +109,13 @@ const page = () => {
 
           <p>
             Os dados são armazenados em servidores seguros e criptografados. O Bite Menu compartilha informações dos
-            estabelecimentos apenas com fornecedores de infraestrutura necessários ao funcionamento da plataforma (Supabase e
-            Stripe), com o Stripe para fins de processamento de assinaturas e habilitação do Pagamentos Bite Menu, e, quando
-            legalmente exigido, com autoridades competentes.
+            estabelecimentos apenas com fornecedores de infraestrutura necessários ao funcionamento da plataforma
+            (Supabase), com a ValidaPay para fins de processamento das assinaturas e, quando legalmente exigido, com
+            autoridades competentes.
           </p>
           <p>
-            Os dados de pagamento da assinatura não são armazenados pelo Bite Menu, mas pelo Stripe, que atua como
-            processador de pagamentos.
+            Os dados de pagamento da assinatura não são armazenados pelo Bite Menu, mas pela ValidaPay, que atua como
+            processadora de pagamentos.
           </p>
         </section>
 
@@ -261,17 +225,11 @@ const page = () => {
             <li>
               <strong>Supabase</strong> (banco de dados e autenticação) – servidores nos Estados Unidos;
             </li>
-            <li>
-              <strong>Stripe</strong> (processamento de assinaturas dos planos e, para usuários do Pagamentos Bite Menu,
-              credenciamento via Stripe Connect Express e processamento de transações online dos clientes dos
-              estabelecimentos) – servidores nos Estados Unidos e em outras jurisdições.
-            </li>
           </ul>
           <p>
             Essas transferências são realizadas em conformidade com o art. 33 da LGPD, com base em garantias contratuais
-            adequadas, incluindo cláusulas-padrão de proteção de dados (o Stripe adota medidas contratuais específicas para
-            transferências internacionais provenientes do Brasil). Esses fornecedores adotam padrões de segurança
-            equivalentes ou superiores aos exigidos pela legislação brasileira. Para mais informações, consulte a{" "}
+            adequadas. Esses fornecedores adotam padrões de segurança equivalentes ou superiores aos exigidos pela
+            legislação brasileira. Para mais informações, consulte a{" "}
             <a
               href="https://supabase.com/privacy"
               target="_blank"
@@ -279,15 +237,6 @@ const page = () => {
               className="underline text-blue-500 hover:text-blue-700"
             >
               Política de Privacidade do Supabase
-            </a>{" "}
-            e a{" "}
-            <a
-              href="https://stripe.com/privacy"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline text-blue-500 hover:text-blue-700"
-            >
-              Política de Privacidade do Stripe
             </a>
             .
           </p>
@@ -318,17 +267,17 @@ const page = () => {
             <strong>contato@bitemenu.com.br</strong>. Responderemos dentro do prazo legal estabelecido pela LGPD.
           </p>
           <p>
-            <strong>Dados tratados diretamente pelo Stripe:</strong> Para exercer direitos sobre dados coletados pelo Stripe
-            — como dados de cartão de crédito ou informações de verificação de identidade (KYC) submetidas durante o
-            credenciamento no Stripe Connect —, o titular deve contatar o Stripe diretamente pelo e-mail{" "}
-            <strong>dpo@stripe.com</strong> ou pelos canais indicados na{" "}
+            <strong>Dados de pagamento da assinatura:</strong> Os dados inseridos diretamente na página de pagamento da
+            ValidaPay (como dados de cartão de crédito) não são acessados pelo Bite Menu. Solicitações sobre esses dados
+            podem ser enviadas ao Bite Menu, que as encaminhará à ValidaPay, ou diretamente à ValidaPay pelos canais
+            indicados em{" "}
             <a
-              href="https://stripe.com/privacy"
+              href="https://validapay.com.br"
               target="_blank"
               rel="noopener noreferrer"
               className="underline text-blue-500 hover:text-blue-700"
             >
-              Política de Privacidade do Stripe
+              validapay.com.br
             </a>
             .
           </p>
@@ -353,16 +302,8 @@ const page = () => {
               resolução de eventuais disputas, ou conforme determinado pelo estabelecimento controlador;
             </li>
             <li>
-              <strong>Dados financeiros e fiscais (assinaturas e transações):</strong> pelo prazo mínimo de 5 (cinco) anos,
-              conforme exigido pela legislação tributária e contábil brasileira;
-            </li>
-            <li>
-              <strong>Confirmações de transações do Pagamentos Bite Menu:</strong> identificadores e status de transações são
-              retidos pelo mesmo prazo dos dados financeiros, para fins de comprovação fiscal e resolução de disputas;
-            </li>
-            <li>
-              <strong>Dados de KYC e verificação de identidade:</strong> retidos pelo Stripe conforme suas próprias políticas
-              e obrigações regulatórias. O Bite Menu não retém esses dados;
+              <strong>Dados financeiros e fiscais (assinaturas):</strong> pelo prazo mínimo de 5 (cinco) anos, conforme
+              exigido pela legislação tributária e contábil brasileira.
             </li>
           </ul>
           <p>
@@ -406,191 +347,9 @@ const page = () => {
           </p>
         </section>
 
-        {/* 11. Pagamentos Bite Menu – Recebimentos Online pelos Estabelecimentos */}
+        {/* 11. Responsabilidades dos Estabelecimentos */}
         <section className="flex flex-col gap-2 mb-4">
-          <h2 className="default-h2">11. Pagamentos Bite Menu – Recebimentos Online pelos Estabelecimentos</h2>
-
-          <p>
-            <strong>Funcionalidade em fase de testes:</strong> Os recursos e condições descritos nesta seção podem ser
-            alterados durante o período de testes, sem o aviso prévio previsto na Seção 14, dado o caráter experimental da
-            funcionalidade.
-          </p>
-
-          <p>
-            O <strong>Pagamentos Bite Menu</strong> permite que estabelecimentos recebam pagamentos online dos seus clientes
-            diretamente em sua conta bancária, por meio da integração com o <strong>Stripe Connect Express</strong>. O Bite
-            Menu é uma <strong>plataforma de tecnologia</strong> e não atua como instituição financeira, operadora de
-            pagamentos ou adquirente. Todo o processamento financeiro é realizado pelo Stripe, empresa devidamente
-            regulamentada para operar serviços de pagamento. Ao aderir ao Pagamentos Bite Menu, o estabelecimento concorda
-            com os{" "}
-            <a
-              href="https://stripe.com/br/legal/connect-account"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline text-blue-500 hover:text-blue-700"
-            >
-              Termos de Serviço do Stripe Connect
-            </a>
-            , celebrando uma relação direta com o Stripe para fins regulatórios e de processamento financeiro.
-          </p>
-
-          <p>
-            <strong>Como funciona o Stripe Connect Express:</strong> O Stripe Connect Express é um modelo de integração em
-            que o Stripe gerencia diretamente a conta financeira de cada estabelecimento (conta conectada). Nesse modelo:
-          </p>
-          <ul className="list-disc ml-6">
-            <li>
-              O estabelecimento possui uma conta própria no Stripe, vinculada à plataforma do Bite Menu, e acessa o painel do
-              Stripe para visualizar saldos, histórico de transações e dados financeiros;
-            </li>
-            <li>
-              Os valores pagos pelos clientes finais são transferidos diretamente para a conta bancária do estabelecimento,
-              conforme os prazos definidos exclusivamente pelo Stripe. O Bite Menu{" "}
-              <strong>não retém, não custódia e não tem controle</strong> sobre os valores pagos pelos clientes;
-            </li>
-            <li>
-              O Bite Menu recebe automaticamente uma taxa de plataforma de 3% sobre o valor bruto de cada transação
-              processada com sucesso, descontada pelo Stripe antes do repasse ao estabelecimento. Essa taxa não é
-              reembolsável em caso de cancelamento ou estorno.
-            </li>
-          </ul>
-
-          <p>
-            <strong>Credenciamento e verificação de identidade (onboarding e KYC):</strong> Para habilitar o recebimento de
-            pagamentos, o estabelecimento deve concluir o processo de credenciamento diretamente no Stripe. Nesse processo, o{" "}
-            <strong>Stripe</strong> — como controlador independente — coleta, armazena e verifica as informações necessárias
-            para o cumprimento de obrigações regulatórias de KYC e AML, incluindo:
-          </p>
-          <ul className="list-disc ml-6">
-            <li>CPF (para pessoas físicas) ou CNPJ (para pessoas jurídicas);</li>
-            <li>Dados bancários para recebimento (agência, conta e titularidade);</li>
-            <li>Documento de identidade com foto (RG, CNH ou equivalente);</li>
-            <li>Endereço comercial e demais documentos exigidos pela regulamentação vigente.</li>
-          </ul>
-          <p>
-            O Stripe pode realizar verificações adicionais, quando exigido pela regulamentação aplicável. Essas verificações
-            são conduzidas pelo Stripe sob suas próprias obrigações legais e regulatórias, de forma independente ao Bite
-            Menu.
-          </p>
-          <p>
-            O Bite Menu <strong>não coleta, não armazena e não tem acesso</strong> aos dados de KYC submetidos pelo
-            estabelecimento ao Stripe. Em nosso banco de dados, armazenamos apenas um identificador que confirma se a conta
-            Stripe do estabelecimento está conectada e ativa, e o status geral da integração.
-          </p>
-
-          <p>
-            <strong>Dados que o Bite Menu recebe sobre as transações:</strong> Após a confirmação do pagamento pelo Stripe
-            (via webhook), o Bite Menu armazena apenas:
-          </p>
-          <ul className="list-disc ml-6">
-            <li>Identificador da transação no Stripe;</li>
-            <li>Status do pagamento (pago, pendente, falho);</li>
-            <li>Valor bruto da transação e da taxa de plataforma;</li>
-            <li>Referência ao pedido associado no Bite Menu.</li>
-          </ul>
-          <p>
-            O Bite Menu <strong>não armazena</strong> dados de cartão de crédito, dados bancários do estabelecimento nem
-            informações financeiras detalhadas dos compradores finais. Toda essa informação é mantida e gerenciada
-            exclusivamente pelo Stripe.
-          </p>
-
-          <p>
-            <strong>Base legal:</strong> O tratamento dos dados relativos ao Pagamentos Bite Menu (identificador de conta
-            conectada e confirmações de transação) fundamenta-se na execução de contrato (art. 7º, V da LGPD), necessário
-            para viabilizar o recebimento de pagamentos online pelo estabelecimento, e no cumprimento de obrigação legal
-            (art. 7º, II da LGPD) para fins fiscais e contábeis.
-          </p>
-        </section>
-
-        {/* 12. Tratamento dos Dados do Comprador Final */}
-        <section className="flex flex-col gap-2 mb-4">
-          <h2 className="default-h2">12. Tratamento dos Dados do Comprador Final</h2>
-          <p>
-            Quando um cliente de um estabelecimento finaliza um pedido e opta por pagar via "pagamento online" naquele
-            estabelecimento, ele é redirecionado ao <strong>Stripe Checkout</strong>, uma interface segura hospedada e
-            operada diretamente pelo Stripe. Nesse fluxo:
-          </p>
-          <ul className="list-disc ml-6">
-            <li>
-              Os dados de pagamento do comprador — incluindo número do cartão de crédito, data de validade e código de
-              segurança (CVV) — são inseridos diretamente na plataforma do Stripe e{" "}
-              <strong>nunca trafegam pelos servidores do Bite Menu</strong>;
-            </li>
-            <li>
-              O Stripe atua como <strong>controlador independente</strong> dos dados de pagamento do comprador, aplicando os
-              padrões de segurança PCI-DSS nível 1 e sua própria política de privacidade;
-            </li>
-            <li>
-              O Bite Menu não tem acesso aos dados completos do instrumento de pagamento (como número do cartão, CVV ou dados
-              bancários).
-            </li>
-          </ul>
-
-          <p>
-            <strong>Dados de pedido do comprador:</strong> Os dados pessoais fornecidos pelo comprador para a realização do
-            pedido (nome, telefone, endereço) são tratados conforme descrito na Seção 4 desta política, com o estabelecimento
-            como controlador e o Bite Menu como operador. Esses dados preexistem ao fluxo de pagamento e não são expandidos
-            em razão do uso do Stripe.
-          </p>
-
-          <p>
-            <strong>Informações recebidas do Stripe sobre a transação:</strong> Após a confirmação do pagamento, o Bite Menu
-            recebe do Stripe apenas as informações de status da transação (identificador, status e valor), sem dados pessoais
-            adicionais do comprador além dos já armazenados no contexto do pedido.
-          </p>
-
-          <p>
-            <strong>Responsabilidade do estabelecimento perante o comprador:</strong> O estabelecimento, como controlador dos
-            dados dos seus clientes, é responsável por:
-          </p>
-          <ul className="list-disc ml-6">
-            <li>
-              Informar adequadamente seus clientes de que o pagamento online é processado pelo Stripe, sujeito à{" "}
-              <a
-                href="https://stripe.com/privacy"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline text-blue-500 hover:text-blue-700"
-              >
-                Política de Privacidade do Stripe
-              </a>
-              ;
-            </li>
-            <li>
-              Gerir a relação comercial com o comprador, incluindo atendimento, cancelamentos e decisões sobre reembolsos;
-            </li>
-            <li>
-              Cumprir as obrigações fiscais aplicáveis sobre os valores recebidos, incluindo a emissão de nota fiscal quando
-              exigida por lei.
-            </li>
-          </ul>
-
-          <p>
-            <strong>Exercício de direitos pelo comprador:</strong> Para direitos relacionados aos dados de pagamento
-            coletados diretamente pelo Stripe (dados de cartão, autenticações e histórico de transações), o comprador deve
-            contatar o Stripe pelos canais indicados na{" "}
-            <a
-              href="https://stripe.com/privacy"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline text-blue-500 hover:text-blue-700"
-            >
-              Política de Privacidade do Stripe
-            </a>
-            . Para dados relativos ao pedido (nome, telefone, endereço), o comprador pode contatar o estabelecimento ou o
-            Bite Menu pelo e-mail <strong>contato@bitemenu.com.br</strong>.
-          </p>
-
-          <p>
-            <strong>Base legal:</strong> O tratamento do status de transação recebido do Stripe pelo Bite Menu fundamenta-se
-            na execução de contrato (art. 7º, V da LGPD) e no legítimo interesse (art. 7º, IX da LGPD) de atualizar o status
-            do pedido e garantir a integridade do fluxo de compra para o estabelecimento e o comprador.
-          </p>
-        </section>
-
-        {/* 13. Responsabilidades dos Estabelecimentos */}
-        <section className="flex flex-col gap-2 mb-4">
-          <h2 className="default-h2">13. Responsabilidades dos Estabelecimentos</h2>
+          <h2 className="default-h2">11. Responsabilidades dos Estabelecimentos</h2>
           <p>
             Os estabelecimentos que utilizam o Bite Menu para coletar dados dos seus consumidores finais atuam como{" "}
             <strong>controladores</strong> desses dados, sendo o Bite Menu o operador. Ao utilizar a plataforma, os
@@ -610,50 +369,14 @@ const page = () => {
           </ul>
 
           <p>
-            <strong>Responsabilidades adicionais para usuários do Pagamentos Bite Menu:</strong>
-          </p>
-          <ul className="list-disc ml-6">
-            <li>
-              Manter a conta Stripe ativa, verificada e em conformidade com os{" "}
-              <a
-                href="https://stripe.com/br/legal/connect-account"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline text-blue-500 hover:text-blue-700"
-              >
-                Termos de Serviço do Stripe Connect
-              </a>{" "}
-              e demais políticas do Stripe;
-            </li>
-            <li>
-              Informar seus clientes que o pagamento online é processado pelo Stripe, sujeito à Política de Privacidade do
-              Stripe;
-            </li>
-            <li>
-              Gerenciar a relação comercial com os compradores finais, incluindo atendimento, cancelamentos e decisões sobre
-              reembolsos, cuja responsabilidade é exclusiva do estabelecimento;
-            </li>
-            <li>
-              Acompanhar e responder a eventuais chargebacks (contestações de pagamento iniciadas pelo comprador junto à
-              operadora do cartão) diretamente pelo painel do Stripe, sem envolvimento do Bite Menu;
-            </li>
-            <li>
-              Cumprir as obrigações fiscais aplicáveis sobre os valores recebidos, incluindo a emissão de nota fiscal quando
-              exigida pela legislação vigente.
-            </li>
-          </ul>
-
-          <p>
             O Bite Menu trata os dados dos consumidores finais exclusivamente conforme as instruções dos estabelecimentos e
-            para as finalidades descritas nesta política. O Bite Menu não se responsabiliza por falhas no processamento de
-            pagamentos, atrasos em repasses, retenções de valores pelo Stripe, erros de transação ou quaisquer perdas
-            financeiras decorrentes do uso da integração com o Stripe.
+            para as finalidades descritas nesta política.
           </p>
         </section>
 
-        {/* 14. Alterações nesta Política */}
+        {/* 12. Alterações nesta Política */}
         <section className="flex flex-col gap-2 mb-4">
-          <h2 className="default-h2">14. Alterações nesta Política</h2>
+          <h2 className="default-h2">12. Alterações nesta Política</h2>
           <p>
             Podemos atualizar esta política periodicamente. Os usuários sempre serão informados sobre alterações relevantes.
             A versão mais recente estará sempre disponível em{" "}
@@ -667,18 +390,18 @@ const page = () => {
           </p>
         </section>
 
-        {/* 15. Contato */}
+        {/* 13. Contato */}
         <section className="flex flex-col gap-2 mb-4">
-          <h2 className="default-h2">15. Contato</h2>
+          <h2 className="default-h2">13. Contato</h2>
           <p>
             Em caso de dúvidas, solicitações ou reclamações sobre esta Política de Privacidade ou sobre o tratamento de dados
             pelo Bite Menu, entre em contato pelo e-mail <strong>contato@bitemenu.com.br</strong>.
           </p>
         </section>
 
-        {/* 16. Aceite */}
+        {/* 14. Aceite */}
         <section className="flex flex-col gap-2 mb-4">
-          <h2 className="default-h2">16. Aceite</h2>
+          <h2 className="default-h2">14. Aceite</h2>
           <p>
             O aceite desta Política de Privacidade é registrado de forma <strong>explícita</strong> no momento do cadastro ou
             no primeiro acesso após uma atualização relevante desta política, com data, hora e identificação do usuário
@@ -688,8 +411,8 @@ const page = () => {
           <p>Em caso de atualização relevante desta política, solicitaremos novo aceite ao acessar a plataforma.</p>
           <p className="text-sm color-gray mt-4">
             O Bite Menu está em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018 – LGPD) e segue boas
-            práticas internacionais de segurança da informação. As transações financeiras são processadas com criptografia e
-            certificação PCI-DSS nível 1 por meio do Stripe.
+            práticas internacionais de segurança da informação. Os pagamentos das assinaturas são processados com
+            criptografia por meio da ValidaPay.
           </p>
         </section>
       </div>
