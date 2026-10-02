@@ -19,6 +19,8 @@ import { useConfirm } from "@/providers/ConfirmProvider";
 import { useAlert } from "@/providers/AlertProvider";
 import { supabase } from "@/lib/supabaseClient";
 import { brDate } from "@/lib/brDate";
+import { legacyPlanInfo } from "@/lib/legacyPlan";
+import LegacyPlanNotice from "@/components/LegacyPlanNotice";
 
 const PAYMENT_METHODS = {
   CREDIT_CARD: { label: "Cartão de crédito", Icon: FaCreditCard },
@@ -170,9 +172,6 @@ export default function PlanDetails({ setSelectedTab }) {
 
   const p = { ...profile, ...patch };
 
-  const legacyUntil = p.legacy_plan_until
-    ? new Date(`${p.legacy_plan_until}T00:00:00`).toLocaleDateString("pt-BR")
-    : null;
   const accessUntil = p.plan_until ? brDate(p.plan_until) : null;
 
   const cancelSubscription = async () => {
@@ -221,22 +220,7 @@ export default function PlanDetails({ setSelectedTab }) {
         <h2 className="xs:font-semibold">Detalhes do Plano</h2>
       </div>
 
-      {legacyUntil && ["plus", "pro"].includes(p.role) && (
-        <div className="p-4 mb-4 border border-amber-500/30 bg-amber-500/10 rounded max-w-[1024px] flex flex-col gap-2">
-          <p className="font-semibold">Aviso importante sobre sua assinatura</p>
-          <p>
-            Trocamos o sistema de pagamentos do Bite Menu. Por isso, sua assinatura antiga será encerrada em{" "}
-            <strong>{legacyUntil}</strong>, e nenhuma nova cobrança será feita nela.
-          </p>
-          <p>
-            Até lá, seu plano <span className="capitalize font-semibold">{p.role}</span> continua funcionando
-            normalmente. Para não voltar ao plano Free, assine novamente pelo novo sistema de pagamentos.
-          </p>
-          <a href="/dashboard/pricing" className="cta-button small self-start mt-1">
-            Assinar novamente
-          </a>
-        </div>
-      )}
+      <LegacyPlanNotice info={legacyPlanInfo(p)} className="mb-4 max-w-[1024px]" />
 
       {p.validapay_subscription_id && p.cancel_at_period_end && (
         <div className="flex flex-wrap items-center justify-between gap-3 p-4 mb-4 rounded-2xl border-2 border-red-500/30 bg-red-500/10 max-w-[1024px]">

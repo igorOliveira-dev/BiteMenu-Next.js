@@ -5,7 +5,7 @@ import { brDate } from "@/lib/brDate";
 // E-mails da assinatura enviados pelo Bite Menu (os automáticos da ValidaPay ficam desligados).
 // Disparados pelo webhook da ValidaPay; idempotencyKey = id do evento, pra retentativa não duplicar e-mail.
 
-const SITE = "https://www.bitemenu.com.br";
+export const SITE = "https://www.bitemenu.com.br";
 const PLAN_DETAILS_URL = `${SITE}/dashboard?tab=planDetails`;
 const PRICING_URL = `${SITE}/dashboard/pricing`;
 
@@ -16,12 +16,12 @@ const date = (iso) => brDate(iso, { day: "2-digit", month: "long", year: "numeri
 const planName = (plan) => plans.find((p) => p.id === plan)?.name ?? "Bite Menu";
 const perCycle = (interval) => (interval === "YEARLY" ? "por ano" : "por mês");
 
-const button = (href, label) => `
+export const button = (href, label) => `
   <p style="margin: 28px 0;">
     <a href="${href}" style="background:#d42020;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;">${label}</a>
   </p>`;
 
-function shell(title, body) {
+export function shell(title, body) {
   return `
     <div style="background:#f8ecec;padding:24px 12px;font-family:Arial,Helvetica,sans-serif;">
       <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:16px;padding:28px;color:#171717;">

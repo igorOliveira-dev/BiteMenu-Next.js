@@ -8,3 +8,15 @@ export function brDate(iso, options = {}) {
   const date = new Date(dateOnly ? `${iso.slice(0, 10)}T12:00:00Z` : iso);
   return date.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", ...options });
 }
+
+// Hoje em Brasília, como "AAAA-MM-DD"
+export function brToday() {
+  return new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+}
+
+// Soma dias a uma data "AAAA-MM-DD" (sem fuso envolvido)
+export function addDays(ymd, days) {
+  const d = new Date(`${ymd}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}

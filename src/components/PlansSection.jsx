@@ -8,6 +8,8 @@ import { useAlert } from "@/providers/AlertProvider";
 import { supabase } from "@/lib/supabaseClient";
 import GenericModal from "./GenericModal";
 import { brDate } from "@/lib/brDate";
+import { legacyPlanInfo } from "@/lib/legacyPlan";
+import LegacyPlanNotice from "./LegacyPlanNotice";
 
 const CYCLE_LABEL = { monthly: "mensal", yearly: "anual" };
 const PER_CYCLE = { monthly: "por mês", yearly: "por ano" };
@@ -260,12 +262,8 @@ const PlansSection = () => {
         </div>
       )}
 
-      {!maintenance && profile?.legacy_plan_until && (
-        <div className="w-full max-w-[700px] mb-8 p-4 rounded-xl bg-amber-500/10 border-2 border-amber-500/40 text-sm text-center">
-          <strong>Trocamos nosso sistema de pagamentos.</strong>
-          <br />
-          Sua assinatura antiga termina em 28/10/2026. Assine novamente aqui para manter seu plano sem interrupção.
-        </div>
+      {!maintenance && (
+        <LegacyPlanNotice info={legacyPlanInfo(profile)} showPlansLink={false} className="w-full max-w-[700px] mb-8" />
       )}
 
       <div className="flex p-1 mb-8 rounded-full bg-translucid border-2 border-[var(--translucid)] text-sm">
