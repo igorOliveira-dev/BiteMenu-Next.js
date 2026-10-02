@@ -1,5 +1,6 @@
 import { resend, RESEND_FROM_EMAIL } from "@/lib/resend";
 import { plans } from "@/consts/Plans";
+import { brDate } from "@/lib/brDate";
 
 // E-mails da assinatura enviados pelo Bite Menu (os automáticos da ValidaPay ficam desligados).
 // Disparados pelo webhook da ValidaPay; idempotencyKey = id do evento, pra retentativa não duplicar e-mail.
@@ -11,8 +12,7 @@ const PRICING_URL = `${SITE}/dashboard/pricing`;
 const esc = (text) =>
   String(text ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const brl = (value) => Number(value ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const date = (iso) =>
-  iso ? new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric", timeZone: "UTC" }) : "";
+const date = (iso) => brDate(iso, { day: "2-digit", month: "long", year: "numeric" });
 const planName = (plan) => plans.find((p) => p.id === plan)?.name ?? "Bite Menu";
 const perCycle = (interval) => (interval === "YEARLY" ? "por ano" : "por mês");
 

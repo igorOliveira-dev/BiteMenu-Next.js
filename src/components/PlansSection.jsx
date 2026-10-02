@@ -7,11 +7,12 @@ import useUser from "@/hooks/useUser";
 import { useAlert } from "@/providers/AlertProvider";
 import { supabase } from "@/lib/supabaseClient";
 import GenericModal from "./GenericModal";
+import { brDate } from "@/lib/brDate";
 
 const CYCLE_LABEL = { monthly: "mensal", yearly: "anual" };
 const PER_CYCLE = { monthly: "por mês", yearly: "por ano" };
 
-const formatDate = (iso) => (iso ? new Date(iso).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "-");
+const formatDate = (iso) => brDate(iso) || "-";
 const formatBRL = (value) => Number(value ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 async function authFetch(url, options = {}) {

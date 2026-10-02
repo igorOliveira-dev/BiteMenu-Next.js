@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { FaExclamationTriangle, FaBarcode } from "react-icons/fa";
 import useUser from "@/hooks/useUser";
 import { supabase } from "@/lib/supabaseClient";
+import { brDate } from "@/lib/brDate";
 
-const formatDate = (iso) => (iso ? new Date(iso).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "");
+const formatDate = (iso) => brDate(iso);
 const formatBRL = (value) =>
   Number(value ?? 0).toLocaleString("pt-BR", {
     style: "currency",

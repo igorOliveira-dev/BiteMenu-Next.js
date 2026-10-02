@@ -18,6 +18,7 @@ import useUser, { updateCachedProfile } from "@/hooks/useUser";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import { useAlert } from "@/providers/AlertProvider";
 import { supabase } from "@/lib/supabaseClient";
+import { brDate } from "@/lib/brDate";
 
 const PAYMENT_METHODS = {
   CREDIT_CARD: { label: "Cartão de crédito", Icon: FaCreditCard },
@@ -126,7 +127,7 @@ const BillingCard = ({ billing, canCancel, canceling, onCancel }) => {
   );
 };
 
-const formatDate = (iso) => (iso ? new Date(iso).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "-");
+const formatDate = (iso) => brDate(iso) || "-";
 const formatBRL = (value) =>
   value != null ? Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "-";
 
@@ -172,7 +173,7 @@ export default function PlanDetails({ setSelectedTab }) {
   const legacyUntil = p.legacy_plan_until
     ? new Date(`${p.legacy_plan_until}T00:00:00`).toLocaleDateString("pt-BR")
     : null;
-  const accessUntil = p.plan_until ? new Date(p.plan_until).toLocaleDateString("pt-BR") : null;
+  const accessUntil = p.plan_until ? brDate(p.plan_until) : null;
 
   const cancelSubscription = async () => {
     const ok = await confirm("Cancelar a assinatura? Você continua com o plano até o fim do período já pago.");
