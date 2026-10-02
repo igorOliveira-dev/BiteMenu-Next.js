@@ -1,4 +1,11 @@
-import { validapay, getUserFromRequest, priceInfo, activePriceId, DAYS_TO_PAY_AFTER_DUE } from "@/lib/validapay";
+import {
+  validapay,
+  getUserFromRequest,
+  priceInfo,
+  activePriceId,
+  findPendingBoletoSubscription,
+  DAYS_TO_PAY_AFTER_DUE,
+} from "@/lib/validapay";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 const OPEN_INVOICE = ["PENDING", "AWAITING_PAYMENT", "OVERDUE"];
@@ -48,7 +55,16 @@ export async function GET(req) {
       .eq("id", user.id)
       .single();
     if (error) throw error;
-    if (!profile.validapay_subscription_id) return Response.json(null);
+    // Primeira compra no boleto: a assinatura só entra no profile quando o boleto compensa,
+    // mas o aviso com o boleto já aparece (só o BillingAlert chama sem assinatura no profile)
+    if (!profile.validapay_subscription_id) {
+      const pendingSub = await findPendingBoletoSubscription(user.email);
+      const alert = pendingSub && paymentAlert(pendingSub);
+      if (!alert) return Response.json(null);
+      return Response.json({
+        alert: { ...alert, pending: true, plan: priceInfo(activePriceId(pendingSub.items))?.plan ?? null },
+      });
+    }
 
     const sub = await validapay(`/v1/subscriptions/${profile.validapay_subscription_id}`);
 

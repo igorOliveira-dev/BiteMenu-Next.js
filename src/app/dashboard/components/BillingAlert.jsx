@@ -13,14 +13,17 @@ const formatBRL = (value) =>
     currency: "BRL",
   });
 
-// Aviso no topo do dashboard: boleto em aberto ou cobrança da assinatura vencida.
-export default function BillingAlert({ setSelectedTab }) {
+// Aviso de boleto em aberto ou cobrança da assinatura vencida (espaço de banners do cardápio e Detalhes do Plano).
+export default function BillingAlert({ setSelectedTab, className = "" }) {
   const { profile } = useUser();
   const [alert, setAlert] = useState(null);
+  const profileId = profile?.id;
   const subscriptionId = profile?.validapay_subscription_id;
 
+  // Sem assinatura no profile também consulta: a primeira compra no boleto só entra no profile
+  // quando compensa, e até lá o aviso mostra o boleto em aberto
   useEffect(() => {
-    if (!subscriptionId) return;
+    if (!profileId) return;
     let cancelled = false;
 
     supabase.auth
@@ -37,11 +40,11 @@ export default function BillingAlert({ setSelectedTab }) {
     return () => {
       cancelled = true;
     };
-  }, [subscriptionId]);
+  }, [profileId, subscriptionId]);
 
   if (!alert) return null;
 
-  const plan = <span className="capitalize font-semibold">{profile.role}</span>;
+  const plan = <span className="capitalize font-semibold">{alert.plan ?? profile.role}</span>;
   const deadline = alert.payUntil ? (
     <>
       {" "}
@@ -50,7 +53,15 @@ export default function BillingAlert({ setSelectedTab }) {
   ) : null;
 
   let message;
-  if (!alert.overdue) {
+  if (alert.pending) {
+    // Primeira compra: ainda não há plano pago pra perder, então sem o aviso de voltar pro Free
+    message = (
+      <>
+        Seu boleto de <strong>{formatBRL(alert.amount)}</strong> do plano {plan} {alert.overdue ? "venceu" : "vence"} em{" "}
+        <strong>{formatDate(alert.dueDate)}</strong>. Depois de pago, o plano é liberado em até 3 dias úteis.
+      </>
+    );
+  } else if (!alert.overdue) {
     message = (
       <>
         Seu boleto de <strong>{formatBRL(alert.amount)}</strong> do plano {plan} vence em{" "}
@@ -76,7 +87,7 @@ export default function BillingAlert({ setSelectedTab }) {
 
   return (
     <div
-      className={`m-2 mb-0 p-3 sm:p-4 rounded-2xl border-2 flex flex-wrap items-center gap-3 text-sm ${
+      className={`${className} p-3 sm:p-4 rounded-2xl border-2 flex flex-wrap items-center gap-3 text-sm ${
         alert.overdue ? "border-red-500/30 bg-red-500/10" : "border-amber-500/40 bg-amber-500/10"
       }`}
     >
