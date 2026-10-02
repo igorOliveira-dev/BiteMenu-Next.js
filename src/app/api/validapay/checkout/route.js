@@ -1,4 +1,4 @@
-import { validapay, getUserFromRequest, PRICE_IDS, findLiveSubscription } from "@/lib/validapay";
+import { validapay, getUserFromRequest, PRICE_IDS, findLiveSubscription, DAYS_TO_PAY_AFTER_DUE } from "@/lib/validapay";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { plansBlockedFor } from "@/consts/Plans";
 
@@ -22,7 +22,12 @@ export async function POST(req) {
     if (error) throw error;
 
     if (profile.validapay_subscription_id) {
-      return json({ error: "Você já possui uma assinatura. Para mudar de plano, use a opção Trocar de plano." }, 400);
+      return json(
+        {
+          error: "Você já possui uma assinatura. Para mudar de plano, use a opção Trocar de plano.",
+        },
+        400,
+      );
     }
 
     if (await findLiveSubscription(user.email)) {
@@ -47,13 +52,23 @@ export async function POST(req) {
         // o cliente autoriza uma vez no banco e as renovações são debitadas sozinhas.
         allowedPaymentMethods: ["pix_automatico", "creditcard", "boleto"],
         subscriptionAllowedPaymentMethods: ["pix_automatico", "creditcard", "boleto"],
-        customer: { name: profile.display_name || undefined, email: user.email },
+        expirationAfterDueDate: DAYS_TO_PAY_AFTER_DUE,
+        boletoDueDays: 3, // sem isso o primeiro boleto vence no mesmo dia
+
+        customer: {
+          name: profile.display_name || undefined,
+          email: user.email,
+        },
         companyName: "Bite Menu",
         successUrl: `${baseUrl}/dashboard?tab=planDetails`,
         failureUrl: `${baseUrl}/dashboard/pricing`,
         termsOfServiceUrl: `${baseUrl}/termos-de-uso`,
         privacyPolicyUrl: `${baseUrl}/politica-de-privacidade`,
-        metadata: { userId: user.id, plan: planId, cycle: cycle === "yearly" ? "yearly" : "monthly" },
+        metadata: {
+          userId: user.id,
+          plan: planId,
+          cycle: cycle === "yearly" ? "yearly" : "monthly",
+        },
       },
     });
 

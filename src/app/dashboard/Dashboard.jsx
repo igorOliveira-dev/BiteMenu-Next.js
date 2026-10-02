@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SalesDashboard from "./tabs/SalesDashboard";
 import PlanDetails from "./tabs/PlanDetails";
+import BillingAlert from "./components/BillingAlert";
 import GenericModal from "@/components/GenericModal";
 import QrCodeModal from "./tabs/components/menu/QrCodeModal";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
@@ -282,6 +283,7 @@ const Dashboard = ({
         ref={mainRef}
         className="w-[100dvw] lg:w-[calc(100dvw-256px)] h-[calc(100dvh-143px)] lg:h-[calc(100dvh-100px)] overflow-auto scrollbar-none"
       >
+        <BillingAlert setSelectedTab={setSelectedTab} />
         <div className={selectedTab === "menu" ? "block" : "hidden"}>
           <Menu
             setSelectedTab={setSelectedTab}

@@ -49,6 +49,10 @@ export async function validapay(path, { method = "GET", body } = {}) {
   return data;
 }
 
+// Dias depois do vencimento em que a cobrança ainda pode ser paga; passou disso a ValidaPay
+// encerra a assinatura por falta de pagamento (subscription.expired → Free).
+export const DAYS_TO_PAY_AFTER_DUE = 7;
+
 // Preços cadastrados na ValidaPay: um produto por plano, com preço mensal e anual
 export const PRICE_IDS = {
   plus: { monthly: process.env.VALIDAPAY_PRICE_PLUS_MONTHLY, yearly: process.env.VALIDAPAY_PRICE_PLUS_YEARLY },

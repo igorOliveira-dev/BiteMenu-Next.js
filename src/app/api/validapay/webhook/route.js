@@ -1,4 +1,11 @@
-import { validapay, planFromPriceId, activePriceId, isValidSignature, userIdFromSubscription } from "@/lib/validapay";
+import {
+  validapay,
+  planFromPriceId,
+  activePriceId,
+  isValidSignature,
+  userIdFromSubscription,
+  DAYS_TO_PAY_AFTER_DUE,
+} from "@/lib/validapay";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { sendSubscriptionEmail } from "@/lib/emails/subscriptionEmails";
 
@@ -52,7 +59,8 @@ export async function POST(req) {
   if (!evt.subscriptionId || !(isPaid || isEnded || isCancelScheduled || isNotifyOnly)) return new Response("ok");
 
   // Mesmo id em todas as retentativas do evento: evita e-mail duplicado
-  const eventId = req.headers.get("x-webhook-id") ?? `${evt.event}:${evt.subscriptionId}:${evt.chargeId ?? evt.timestamp}`;
+  const eventId =
+    req.headers.get("x-webhook-id") ?? `${evt.event}:${evt.subscriptionId}:${evt.chargeId ?? evt.timestamp}`;
 
   try {
     const profile = await findProfile(evt);
@@ -69,7 +77,8 @@ export async function POST(req) {
 
     if (isPaid) {
       const sub = await validapay(`/v1/subscriptions/${evt.subscriptionId}`);
-      const plan = planFromPriceId(activePriceId(sub.items)) ?? planFromPriceId(activePriceId(evt.items)) ?? evt.metadata?.plan;
+      const plan =
+        planFromPriceId(activePriceId(sub.items)) ?? planFromPriceId(activePriceId(evt.items)) ?? evt.metadata?.plan;
       if (!["plus", "pro"].includes(plan)) {
         console.error(`[ValidaPay Webhook] Plano não identificado na assinatura ${evt.subscriptionId}`);
         return new Response("ok");
@@ -78,8 +87,20 @@ export async function POST(req) {
         role: plan,
         validapay_subscription_id: evt.subscriptionId,
         legacy_plan_until: null, // reassinou: não cai no rebaixamento dos planos Stripe
-        ...(evt.event === "subscription.activated" && { cancel_at_period_end: false, plan_until: null }),
+        ...(evt.event === "subscription.activated" && {
+          cancel_at_period_end: false,
+          plan_until: null,
+        }),
       };
+
+      // Prazo pra pagar as próximas cobranças (o da sessão vale só pra primeira). Falha aqui não
+      // derruba o webhook: o plano já foi resolvido e a ValidaPay mantém o padrão dela.
+      if (evt.event === "subscription.activated" && sub.expirationAfterDueDate !== DAYS_TO_PAY_AFTER_DUE) {
+        await validapay(`/v1/subscriptions/${evt.subscriptionId}`, {
+          method: "PATCH",
+          body: { expirationAfterDueDate: DAYS_TO_PAY_AFTER_DUE },
+        }).catch((err) => console.error("[ValidaPay Webhook] Falha ao definir prazo de pagamento:", err));
+      }
 
       // payment.success acompanha activated/renewed; o e-mail sai só pelos dois
       if (evt.event === "subscription.activated" || evt.event === "subscription.renewed") {
@@ -94,10 +115,18 @@ export async function POST(req) {
         ];
       }
     } else if (isCancelScheduled && isCurrent) {
-      patch = { cancel_at_period_end: true, plan_until: evt.effectiveAt ?? null };
+      patch = {
+        cancel_at_period_end: true,
+        plan_until: evt.effectiveAt ?? null,
+      };
       email = ["cancelScheduled", { plan: profile.role, effectiveAt: evt.effectiveAt }];
     } else if (isEnded && isCurrent) {
-      patch = { role: "free", validapay_subscription_id: null, cancel_at_period_end: false, plan_until: null };
+      patch = {
+        role: "free",
+        validapay_subscription_id: null,
+        cancel_at_period_end: false,
+        plan_until: null,
+      };
       email = [evt.event === "subscription.expired" ? "expired" : "canceled", { plan: profile.role }];
     } else if (evt.event === "charge.created" && evt.paymentType === "BOLETO") {
       // Primeira compra ainda não tem assinatura no profile; renovação precisa ser da assinatura atual
