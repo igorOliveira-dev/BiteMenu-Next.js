@@ -13,8 +13,20 @@ import {
   FaShoppingCart,
   FaStar,
 } from "react-icons/fa";
-import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from "@dnd-kit/sortable";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { FaGripVertical } from "react-icons/fa";
 import Image from "next/image";
@@ -24,7 +36,13 @@ import { supabase } from "@/lib/supabaseClient";
 import useMenu from "@/hooks/useMenu";
 import useOwnerRole from "@/hooks/useOwnerRole";
 import { formatCurrency, getCurrencySymbol } from "@/lib/formatCurrency";
-import { FaPen, FaTrash, FaChevronRight, FaChevronUp, FaChevronDown } from "react-icons/fa";
+import {
+  FaPen,
+  FaTrash,
+  FaChevronRight,
+  FaChevronUp,
+  FaChevronDown,
+} from "react-icons/fa";
 import { useAlert } from "@/providers/AlertProvider";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import { uploadItemImage } from "@/lib/uploadImage";
@@ -58,14 +76,20 @@ function buildCopyName(originalName, existingNames = []) {
   return candidate.slice(0, 25); // respeita o maxLength do campo nome
 }
 
-const uid = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `tmp-${Date.now()}`);
+const uid = () =>
+  typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `tmp-${Date.now()}`;
 
 function findScrollParent(el) {
   let parent = el?.parentElement;
   while (parent) {
     const style = getComputedStyle(parent);
     const overflowY = style.overflowY;
-    if ((overflowY === "auto" || overflowY === "scroll") && parent.scrollHeight > parent.clientHeight) {
+    if (
+      (overflowY === "auto" || overflowY === "scroll") &&
+      parent.scrollHeight > parent.clientHeight
+    ) {
       return parent;
     }
     parent = parent.parentElement;
@@ -73,7 +97,13 @@ function findScrollParent(el) {
   return window;
 }
 
-function ItemActionsMenu({ anchorRef, onClose, children, menuBg, borderColor }) {
+function ItemActionsMenu({
+  anchorRef,
+  onClose,
+  children,
+  menuBg,
+  borderColor,
+}) {
   const menuRef = useRef(null);
   const [pos, setPos] = useState(null);
   const [ready, setReady] = useState(false);
@@ -100,10 +130,14 @@ function ItemActionsMenu({ anchorRef, onClose, children, menuBg, borderColor }) 
       } else {
         top = anchorRect.top - menuRect.height - gap;
       }
-      top = Math.min(Math.max(top, margin), viewportHeight - menuRect.height - margin);
+      top = Math.min(
+        Math.max(top, margin),
+        viewportHeight - menuRect.height - margin,
+      );
 
       const spaceRightAligned = anchorRect.right - menuRect.width;
-      const spaceLeftAligned = viewportWidth - (anchorRect.left + menuRect.width);
+      const spaceLeftAligned =
+        viewportWidth - (anchorRect.left + menuRect.width);
 
       let left;
       if (spaceRightAligned < margin && spaceLeftAligned >= margin) {
@@ -111,7 +145,10 @@ function ItemActionsMenu({ anchorRef, onClose, children, menuBg, borderColor }) 
       } else {
         left = anchorRect.right - menuRect.width;
       }
-      left = Math.min(Math.max(left, margin), viewportWidth - menuRect.width - margin);
+      left = Math.min(
+        Math.max(left, margin),
+        viewportWidth - menuRect.width - margin,
+      );
 
       setPos({ top, left });
       setReady(true);
@@ -126,12 +163,16 @@ function ItemActionsMenu({ anchorRef, onClose, children, menuBg, borderColor }) 
     const scrollParent = findScrollParent(anchorRef.current);
     const target = scrollParent === window ? window : scrollParent;
 
-    const initialTop = scrollParent === window ? window.scrollY : scrollParent.scrollTop;
-    const initialLeft = scrollParent === window ? window.scrollX : scrollParent.scrollLeft;
+    const initialTop =
+      scrollParent === window ? window.scrollY : scrollParent.scrollTop;
+    const initialLeft =
+      scrollParent === window ? window.scrollX : scrollParent.scrollLeft;
 
     function handleScroll() {
-      const currentTop = scrollParent === window ? window.scrollY : scrollParent.scrollTop;
-      const currentLeft = scrollParent === window ? window.scrollX : scrollParent.scrollLeft;
+      const currentTop =
+        scrollParent === window ? window.scrollY : scrollParent.scrollTop;
+      const currentLeft =
+        scrollParent === window ? window.scrollX : scrollParent.scrollLeft;
 
       const dy = Math.abs(currentTop - initialTop);
       const dx = Math.abs(currentLeft - initialLeft);
@@ -183,7 +224,13 @@ function ItemActionsMenu({ anchorRef, onClose, children, menuBg, borderColor }) 
   );
 }
 
-function SearchableSelect({ value, onChange, options, placeholder = "Selecione...", emptyLabel = "Nenhum resultado" }) {
+function SearchableSelect({
+  value,
+  onChange,
+  options,
+  placeholder = "Selecione...",
+  emptyLabel = "Nenhum resultado",
+}) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const wrapperRef = useRef(null);
@@ -241,7 +288,9 @@ function SearchableSelect({ value, onChange, options, placeholder = "Selecione..
             style={{ maxHeight: 200 }}
           >
             {filteredOptions.length === 0 ? (
-              <div className="p-3 text-sm color-gray text-center">{emptyLabel}</div>
+              <div className="p-3 text-sm color-gray text-center">
+                {emptyLabel}
+              </div>
             ) : (
               filteredOptions.map((opt) => (
                 <button
@@ -267,6 +316,31 @@ function SearchableSelect({ value, onChange, options, placeholder = "Selecione..
   );
 }
 
+// Linha arrastável genérica; children recebe as props da alça de arraste
+function SortableRow({ id, className, children }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.75 : 1,
+      }}
+      className={className}
+    >
+      {children({ ...attributes, ...listeners })}
+    </div>
+  );
+}
+
 function SortableMenuItem({
   item,
   cat,
@@ -282,7 +356,14 @@ function SortableMenuItem({
   getContrastTextColor,
   currency,
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: item.id,
   });
 
@@ -328,7 +409,10 @@ function SortableMenuItem({
             onClick={() => setMenuOpen((prev) => !prev)}
             className="cursor-pointer absolute top-2 right-2 p-2 rounded"
             style={{
-              backgroundColor: getContrastTextColor(backgroundColor) === "white" ? "#ffffff25" : "#00000025",
+              backgroundColor:
+                getContrastTextColor(backgroundColor) === "white"
+                  ? "#ffffff25"
+                  : "#00000025",
               color: foregroundToUse,
             }}
           >
@@ -350,10 +434,18 @@ function SortableMenuItem({
                 }}
                 className="w-full flex items-center gap-2 px-3 py-3 text-sm text-left cursor-pointer transition"
                 style={{ color: menuText }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = menuHover)}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = menuHover)
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "transparent")
+                }
               >
-                {item.visible === false ? <FaEye size={13} /> : <FaEyeSlash size={13} />}
+                {item.visible === false ? (
+                  <FaEye size={13} />
+                ) : (
+                  <FaEyeSlash size={13} />
+                )}
                 {item.visible === false ? "Exibir item" : "Ocultar item"}
               </button>
 
@@ -365,8 +457,12 @@ function SortableMenuItem({
                 }}
                 className="w-full flex items-center gap-2 px-3 py-3 text-sm text-left cursor-pointer transition"
                 style={{ color: menuText }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = menuHover)}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = menuHover)
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "transparent")
+                }
               >
                 <FaPen size={13} />
                 Editar item
@@ -380,8 +476,12 @@ function SortableMenuItem({
                 }}
                 className="w-full flex items-center gap-2 px-3 py-3 text-sm text-left cursor-pointer transition"
                 style={{ color: menuText }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = menuHover)}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = menuHover)
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "transparent")
+                }
               >
                 <FaCopy size={13} />
                 Duplicar item
@@ -394,8 +494,12 @@ function SortableMenuItem({
                   setMenuOpen(false);
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left cursor-pointer transition text-red-500"
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = menuHover)}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = menuHover)
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "transparent")
+                }
               >
                 <FaTrash size={13} />
                 Excluir item
@@ -411,7 +515,14 @@ function SortableMenuItem({
                 style={{ touchAction: "none", flexShrink: 0 }}
               >
                 <img
-                  src={item.thumb_url || supabaseImg(item.image_url, { width: 120, height: 120, quality: 75 })}
+                  src={
+                    item.thumb_url ||
+                    supabaseImg(item.image_url, {
+                      width: 120,
+                      height: 120,
+                      quality: 75,
+                    })
+                  }
                   alt={item.name}
                   loading="lazy"
                   decoding="async"
@@ -422,10 +533,16 @@ function SortableMenuItem({
             )}
 
             <div className="min-w-0">
-              <div className="text-xl line-clamp-1" style={{ color: foregroundToUse }}>
+              <div
+                className="text-xl line-clamp-1"
+                style={{ color: foregroundToUse }}
+              >
                 {item.name}
               </div>
-              <div className="text-sm line-clamp-1" style={{ color: grayToUse }}>
+              <div
+                className="text-sm line-clamp-1"
+                style={{ color: grayToUse }}
+              >
                 {item.description}
               </div>
             </div>
@@ -434,15 +551,24 @@ function SortableMenuItem({
           <div className="mt-2">
             {item.promo_price && canShowPromoPrice ? (
               <div className="flex items-baseline gap-2">
-                <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
+                <div
+                  className="text-2xl font-bold"
+                  style={{ color: foregroundToUse }}
+                >
                   {formatCurrency(item.promo_price, currency)}
                 </div>
-                <span className="text-sm line-through" style={{ color: grayToUse }}>
+                <span
+                  className="text-sm line-through"
+                  style={{ color: grayToUse }}
+                >
                   {formatCurrency(item.price, currency)}
                 </span>
               </div>
             ) : (
-              <div className="text-2xl font-bold" style={{ color: foregroundToUse }}>
+              <div
+                className="text-2xl font-bold"
+                style={{ color: foregroundToUse }}
+              >
                 {item.price ? formatCurrency(item.price, currency) : "-"}
               </div>
             )}
@@ -455,7 +581,11 @@ function SortableMenuItem({
 
 // ------------------------------------------------------------------------------
 
-export default function MenuItems({ backgroundColor, detailsColor, changedFields }) {
+export default function MenuItems({
+  backgroundColor,
+  detailsColor,
+  changedFields,
+}) {
   const { menu, loading: menuLoading } = useMenu();
   const ownerRole = useOwnerRole(menu?.owner_id);
 
@@ -483,10 +613,18 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     setCollapsedCategories((prev) => ({ ...prev, [catId]: !prev[catId] }));
   };
 
-  const menuBg = getContrastTextColor(backgroundColor) === "white" ? "#2b2b2b" : "#ffffff";
-  const menuBorder = getContrastTextColor(backgroundColor) === "white" ? "#ffffff20" : "#00000015";
-  const menuHover = getContrastTextColor(backgroundColor) === "white" ? "#ffffff10" : "#00000008";
-  const menuText = getContrastTextColor(backgroundColor) === "white" ? "#eaeaea" : "#171717";
+  const menuBg =
+    getContrastTextColor(backgroundColor) === "white" ? "#2b2b2b" : "#ffffff";
+  const menuBorder =
+    getContrastTextColor(backgroundColor) === "white"
+      ? "#ffffff20"
+      : "#00000015";
+  const menuHover =
+    getContrastTextColor(backgroundColor) === "white"
+      ? "#ffffff10"
+      : "#00000008";
+  const menuText =
+    getContrastTextColor(backgroundColor) === "white" ? "#eaeaea" : "#171717";
 
   const closingAdditionalsCfgFromPop = useRef(false);
   const closingOptionGroupsFromPop = useRef(false);
@@ -503,7 +641,8 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState(null);
 
-  const hasPlusPermissions = ownerRole === "admin" || ownerRole === "plus" || ownerRole === "pro";
+  const hasPlusPermissions =
+    ownerRole === "admin" || ownerRole === "plus" || ownerRole === "pro";
 
   const [showCatIndicator, setShowCatIndicator] = useState(false);
 
@@ -575,14 +714,19 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   }, [menu?.id]);
 
   const allItemsFlat = useMemo(
-    () => (categories || []).flatMap((c) => (c.menu_items || []).map((it) => ({ ...it, categoryName: c.name }))),
+    () =>
+      (categories || []).flatMap((c) =>
+        (c.menu_items || []).map((it) => ({ ...it, categoryName: c.name })),
+      ),
     [categories],
   );
 
-  const getItemName = (itemId) => allItemsFlat.find((it) => it.id === itemId)?.name ?? "Item removido";
+  const getItemName = (itemId) =>
+    allItemsFlat.find((it) => it.id === itemId)?.name ?? "Item removido";
 
   const getCategoryName = (categoryId) =>
-    (categories || []).find((c) => c.id === categoryId)?.name ?? "Categoria removida";
+    (categories || []).find((c) => c.id === categoryId)?.name ??
+    "Categoria removida";
 
   // fetch categories/items
   useEffect(() => {
@@ -629,7 +773,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
         const mapped = (data || []).map((c) => {
           const items = Array.isArray(c.menu_items)
-            ? [...c.menu_items].sort((a, b) => Number(a.position ?? 0) - Number(b.position ?? 0))
+            ? [...c.menu_items].sort(
+                (a, b) => Number(a.position ?? 0) - Number(b.position ?? 0),
+              )
             : [];
           return { ...c, menu_items: items };
         });
@@ -725,7 +871,13 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       if (modalOpen) {
         closingCrudFromPop.current = true;
         setModalOpen(false);
-        setModalPayload({ type: null, mode: null, categoryId: null, itemId: null, data: {} });
+        setModalPayload({
+          type: null,
+          mode: null,
+          categoryId: null,
+          itemId: null,
+          data: {},
+        });
         queueMicrotask(() => (closingCrudFromPop.current = false));
         return;
       }
@@ -733,13 +885,23 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [modalOpen, planModalOpen, additionalsCfgOpen, additionalsCfgDraft, optionGroupsModalOpen, importModalOpen]);
+  }, [
+    modalOpen,
+    planModalOpen,
+    additionalsCfgOpen,
+    additionalsCfgDraft,
+    optionGroupsModalOpen,
+    importModalOpen,
+  ]);
 
   // verifica se existe alguma categoria criada
   useEffect(() => {
     if (!loading && categories?.length === 0) {
       console.log("Sem categorias encontradas");
-      alert("Clique no botão '+ categoria' para começar a adicionar seus itens!", "slow");
+      alert(
+        "Clique no botão '+ categoria' para começar a adicionar seus itens!",
+        "slow",
+      );
       setShowCatIndicator(true);
     }
   }, [loading]);
@@ -819,7 +981,13 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     setCfgGroupIdx(null);
     setOptionGroupsModalOpen(false);
     setModalOpen(false);
-    setModalPayload({ type: null, mode: null, categoryId: null, itemId: null, data: {} });
+    setModalPayload({
+      type: null,
+      mode: null,
+      categoryId: null,
+      itemId: null,
+      data: {},
+    });
 
     if (history.state?.modal && !closingCrudFromPop.current) {
       ignoreNextPop.current = true;
@@ -832,7 +1000,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   // Fechar modal de grupos de opções
   const closeOptionGroupsModal = () => {
     setOptionGroupsModalOpen(false);
-    if (history.state?.optionGroupsModal && !closingOptionGroupsFromPop.current) {
+    if (
+      history.state?.optionGroupsModal &&
+      !closingOptionGroupsFromPop.current
+    ) {
       ignoreNextPop.current = true;
       history.back();
     }
@@ -854,7 +1025,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     setAdditionalsCfgOpen(false);
     setAdditionalsCfgDraft(null);
     setCfgGroupIdx(null);
-    if (history.state?.additionalsCfgModal && !closingAdditionalsCfgFromPop.current) {
+    if (
+      history.state?.additionalsCfgModal &&
+      !closingAdditionalsCfgFromPop.current
+    ) {
       ignoreNextPop.current = true;
       history.back();
     }
@@ -867,7 +1041,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     while (parent) {
       const style = getComputedStyle(parent);
       const overflowY = style.overflowY;
-      if ((overflowY === "auto" || overflowY === "scroll") && parent.scrollHeight > parent.clientHeight) {
+      if (
+        (overflowY === "auto" || overflowY === "scroll") &&
+        parent.scrollHeight > parent.clientHeight
+      ) {
         return parent;
       }
       parent = parent.parentElement;
@@ -944,7 +1121,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
     if (!menu?.id) return null;
 
-    const newPos = (categories?.reduce((max, c) => Math.max(max, c.position ?? -1), -1) ?? -1) + 1;
+    const newPos =
+      (categories?.reduce((max, c) => Math.max(max, c.position ?? -1), -1) ??
+        -1) + 1;
 
     const tempId = uid();
     const temp = { id: tempId, name, position: newPos, menu_items: [] };
@@ -961,7 +1140,11 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       if (error) throw error;
 
       setCategories((prev = []) =>
-        prev.map((c) => (c.id === tempId ? { ...data, menu_items: [], position: data.position ?? newPos } : c)),
+        prev.map((c) =>
+          c.id === tempId
+            ? { ...data, menu_items: [], position: data.position ?? newPos }
+            : c,
+        ),
       );
 
       alert?.("Categoria criada", "success");
@@ -981,12 +1164,17 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   };
 
   const deleteCategory = async (categoryId) => {
-    const ok = await confirm("Remover categoria? Essa ação removerá os itens também.");
+    const ok = await confirm(
+      "Remover categoria? Essa ação removerá os itens também.",
+    );
     if (!ok) return;
     const before = categories;
     setCategories((prev = []) => prev.filter((c) => c.id !== categoryId));
     try {
-      const { error } = await supabase.from("categories").delete().eq("id", categoryId);
+      const { error } = await supabase
+        .from("categories")
+        .delete()
+        .eq("id", categoryId);
       if (error) throw error;
       alert?.("Categoria removida", "success");
       return true;
@@ -1002,10 +1190,20 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   // createItem atualizado para suportar image_url
   const createItem = async (
     categoryId,
-    { name = "Novo item", price = "", promo_price = null, description = "", image_url = "", thumb_url = "" } = {},
+    {
+      name = "Novo item",
+      price = "",
+      promo_price = null,
+      description = "",
+      image_url = "",
+      thumb_url = "",
+    } = {},
   ) => {
     const safeCategories = Array.isArray(categories) ? categories : [];
-    const totalItems = safeCategories.reduce((sum, c) => sum + (c.menu_items?.length || 0), 0);
+    const totalItems = safeCategories.reduce(
+      (sum, c) => sum + (c.menu_items?.length || 0),
+      0,
+    );
 
     const itemLimit = getItemLimitByRole(ownerRole);
 
@@ -1020,7 +1218,11 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       return null;
     }
 
-    const newPos = (targetCat.menu_items || []).reduce((max, it) => Math.max(max, it.position ?? -1), -1) + 1;
+    const newPos =
+      (targetCat.menu_items || []).reduce(
+        (max, it) => Math.max(max, it.position ?? -1),
+        -1,
+      ) + 1;
 
     const tempId = uid();
 
@@ -1040,7 +1242,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
     setCategories((prev = []) =>
       (Array.isArray(prev) ? prev : []).map((c) =>
-        c.id === categoryId ? { ...c, menu_items: [...(c.menu_items || []), tempItem] } : c,
+        c.id === categoryId
+          ? { ...c, menu_items: [...(c.menu_items || []), tempItem] }
+          : c,
       ),
     );
 
@@ -1068,7 +1272,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
             ? {
                 ...c,
                 menu_items: (c.menu_items || []).map((it) =>
-                  it.id === tempId ? { ...data, position: data.position ?? newPos } : it,
+                  it.id === tempId
+                    ? { ...data, position: data.position ?? newPos }
+                    : it,
                 ),
               }
             : c,
@@ -1082,7 +1288,14 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
       setCategories((prev = []) =>
         (Array.isArray(prev) ? prev : []).map((c) =>
-          c.id === categoryId ? { ...c, menu_items: (c.menu_items || []).filter((it) => it.id !== tempId) } : c,
+          c.id === categoryId
+            ? {
+                ...c,
+                menu_items: (c.menu_items || []).filter(
+                  (it) => it.id !== tempId,
+                ),
+              }
+            : c,
         ),
       );
 
@@ -1093,7 +1306,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
   const updateItem = async (itemId, patch) => {
     const safeCategories = Array.isArray(categories) ? categories : [];
-    const totalItems = safeCategories.reduce((sum, c) => sum + (c.menu_items?.length || 0), 0);
+    const totalItems = safeCategories.reduce(
+      (sum, c) => sum + (c.menu_items?.length || 0),
+      0,
+    );
 
     const itemLimit = getItemLimitByRole(ownerRole);
 
@@ -1107,19 +1323,28 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     setCategories((prev = []) =>
       prev.map((c) => ({
         ...c,
-        menu_items: (c.menu_items || []).map((it) => (it.id === itemId ? { ...it, ...patch } : it)),
+        menu_items: (c.menu_items || []).map((it) =>
+          it.id === itemId ? { ...it, ...patch } : it,
+        ),
       })),
     );
 
     try {
-      const { data, error } = await supabase.from("menu_items").update(patch).eq("id", itemId).select().single();
+      const { data, error } = await supabase
+        .from("menu_items")
+        .update(patch)
+        .eq("id", itemId)
+        .select()
+        .single();
 
       if (error) throw error;
 
       setCategories((prev = []) =>
         prev.map((c) => ({
           ...c,
-          menu_items: (c.menu_items || []).map((it) => (it.id === itemId ? { ...it, ...data } : it)),
+          menu_items: (c.menu_items || []).map((it) =>
+            it.id === itemId ? { ...it, ...data } : it,
+          ),
         })),
       );
 
@@ -1137,32 +1362,50 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     const ok = await confirm("Remover item?");
     if (!ok) return;
     const before = categories;
-    const itemToDelete = categories.find((c) => c.id === categoryId)?.menu_items?.find((it) => it.id === itemId);
+    const itemToDelete = categories
+      .find((c) => c.id === categoryId)
+      ?.menu_items?.find((it) => it.id === itemId);
 
     setCategories((prev = []) =>
       prev.map((c) =>
-        c.id === categoryId ? { ...c, menu_items: (c.menu_items || []).filter((it) => it.id !== itemId) } : c,
+        c.id === categoryId
+          ? {
+              ...c,
+              menu_items: (c.menu_items || []).filter((it) => it.id !== itemId),
+            }
+          : c,
       ),
     );
 
     try {
       // se o item tiver imagem, remove também do bucket
       if (itemToDelete?.image_url) {
-        const pathStart = itemToDelete.image_url.indexOf("/object/public/product-images/");
+        const pathStart = itemToDelete.image_url.indexOf(
+          "/object/public/product-images/",
+        );
         if (pathStart !== -1) {
-          const path = itemToDelete.image_url.substring(pathStart + "/object/public/product-images/".length);
+          const path = itemToDelete.image_url.substring(
+            pathStart + "/object/public/product-images/".length,
+          );
           await supabase.storage.from("product-images").remove([path]);
         }
       }
       if (itemToDelete?.thumb_url) {
-        const pathStart = itemToDelete.thumb_url.indexOf("/object/public/product-images/");
+        const pathStart = itemToDelete.thumb_url.indexOf(
+          "/object/public/product-images/",
+        );
         if (pathStart !== -1) {
-          const path = itemToDelete.thumb_url.substring(pathStart + "/object/public/product-images/".length);
+          const path = itemToDelete.thumb_url.substring(
+            pathStart + "/object/public/product-images/".length,
+          );
           await supabase.storage.from("product-images").remove([path]);
         }
       }
 
-      const { error } = await supabase.from("menu_items").delete().eq("id", itemId);
+      const { error } = await supabase
+        .from("menu_items")
+        .delete()
+        .eq("id", itemId);
       if (error) throw error;
 
       alert?.("Item removido", "success");
@@ -1177,7 +1420,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
   const duplicateItem = async (categoryId, item) => {
     const safeCategories = Array.isArray(categories) ? categories : [];
-    const totalItems = safeCategories.reduce((sum, c) => sum + (c.menu_items?.length || 0), 0);
+    const totalItems = safeCategories.reduce(
+      (sum, c) => sum + (c.menu_items?.length || 0),
+      0,
+    );
     const itemLimit = getItemLimitByRole(ownerRole);
 
     if (totalItems >= itemLimit) {
@@ -1236,7 +1482,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
             c.id === categoryId
               ? {
                   ...c,
-                  menu_items: (c.menu_items || []).map((it) => (it.id === newItem.id ? { ...it } : it)),
+                  menu_items: (c.menu_items || []).map((it) =>
+                    it.id === newItem.id ? { ...it } : it,
+                  ),
                 }
               : c,
           ),
@@ -1261,7 +1509,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     setCategories((prev = []) =>
       prev.map((c) => ({
         ...c,
-        menu_items: (c.menu_items || []).map((it) => (it.id === itemId ? { ...it, visible: newVisible } : it)),
+        menu_items: (c.menu_items || []).map((it) =>
+          it.id === itemId ? { ...it, visible: newVisible } : it,
+        ),
       })),
     );
 
@@ -1279,7 +1529,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       setCategories((prev = []) =>
         prev.map((c) => ({
           ...c,
-          menu_items: (c.menu_items || []).map((it) => (it.id === itemId ? { ...it, ...data } : it)),
+          menu_items: (c.menu_items || []).map((it) =>
+            it.id === itemId ? { ...it, ...data } : it,
+          ),
         })),
       );
 
@@ -1292,13 +1544,16 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       setCategories((prev = []) =>
         prev.map((c) => ({
           ...c,
-          menu_items: (c.menu_items || []).map((it) => (it.id === itemId ? { ...it, visible: currentVisible } : it)),
+          menu_items: (c.menu_items || []).map((it) =>
+            it.id === itemId ? { ...it, visible: currentVisible } : it,
+          ),
         })),
       );
     }
   };
 
-  const categoryHasVisibleItems = (cat) => (cat.menu_items || []).some((it) => it.visible !== false);
+  const categoryHasVisibleItems = (cat) =>
+    (cat.menu_items || []).some((it) => it.visible !== false);
 
   const toggleCategoryVisibility = async (categoryId, makeVisible) => {
     const cat = categories.find((c) => c.id === categoryId);
@@ -1316,17 +1571,31 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     setCategories((prev = []) =>
       prev.map((c) =>
         c.id === categoryId
-          ? { ...c, menu_items: (c.menu_items || []).map((it) => ({ ...it, visible: makeVisible })) }
+          ? {
+              ...c,
+              menu_items: (c.menu_items || []).map((it) => ({
+                ...it,
+                visible: makeVisible,
+              })),
+            }
           : c,
       ),
     );
 
     try {
-      const { error } = await supabase.from("menu_items").update({ visible: makeVisible }).in("id", itemIds);
+      const { error } = await supabase
+        .from("menu_items")
+        .update({ visible: makeVisible })
+        .in("id", itemIds);
 
       if (error) throw error;
 
-      alert?.(makeVisible ? "Todos os itens foram exibidos" : "Todos os itens foram ocultados", "success");
+      alert?.(
+        makeVisible
+          ? "Todos os itens foram exibidos"
+          : "Todos os itens foram ocultados",
+        "success",
+      );
     } catch (err) {
       console.error("toggleCategoryVisibility error:", err);
       setCategories(before);
@@ -1362,13 +1631,19 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   const saveCombo = async () => {
     const { scope, trigger_type } = comboDraft;
 
-    if (scope === "item" && !comboDraft.item_id) return alert?.("Selecione um item.", "error");
-    if (scope === "category" && !comboDraft.category_id) return alert?.("Selecione uma categoria.", "error");
+    if (scope === "item" && !comboDraft.item_id)
+      return alert?.("Selecione um item.", "error");
+    if (scope === "category" && !comboDraft.category_id)
+      return alert?.("Selecione uma categoria.", "error");
 
-    const triggerVal = parseFloat(String(comboDraft.trigger_value).replace(",", "."));
+    const triggerVal = parseFloat(
+      String(comboDraft.trigger_value).replace(",", "."),
+    );
     if (isNaN(triggerVal) || triggerVal <= 0) {
       return alert?.(
-        trigger_type === "quantity" ? "Informe uma quantidade válida." : "Informe um valor mínimo válido.",
+        trigger_type === "quantity"
+          ? "Informe uma quantidade válida."
+          : "Informe um valor mínimo válido.",
         "error",
       );
     }
@@ -1376,8 +1651,11 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       return alert?.("A quantidade mínima deve ser 2 ou mais.", "error");
     }
 
-    const discountVal = parseFloat(String(comboDraft.discount_value).replace(",", "."));
-    if (isNaN(discountVal) || discountVal <= 0) return alert?.("Informe um valor de desconto válido.", "error");
+    const discountVal = parseFloat(
+      String(comboDraft.discount_value).replace(",", "."),
+    );
+    if (isNaN(discountVal) || discountVal <= 0)
+      return alert?.("Informe um valor de desconto válido.", "error");
     if (comboDraft.discount_type === "percentage" && discountVal > 100) {
       return alert?.("Desconto percentual não pode passar de 100%.", "error");
     }
@@ -1395,11 +1673,20 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
     try {
       if (comboDraft.id) {
-        const { data, error } = await supabase.from("combos").update(payload).eq("id", comboDraft.id).select().single();
+        const { data, error } = await supabase
+          .from("combos")
+          .update(payload)
+          .eq("id", comboDraft.id)
+          .select()
+          .single();
         if (error) throw error;
         setCombos((prev) => prev.map((c) => (c.id === data.id ? data : c)));
       } else {
-        const { data, error } = await supabase.from("combos").insert(payload).select().single();
+        const { data, error } = await supabase
+          .from("combos")
+          .insert(payload)
+          .select()
+          .single();
         if (error) throw error;
         setCombos((prev) => [...(prev || []), data]);
       }
@@ -1418,7 +1705,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     const before = combos;
     setCombos((prev) => prev.filter((c) => c.id !== comboId));
     try {
-      const { error } = await supabase.from("combos").delete().eq("id", comboId);
+      const { error } = await supabase
+        .from("combos")
+        .delete()
+        .eq("id", comboId);
       if (error) throw error;
       alert?.("Combo removido", "success");
     } catch (err) {
@@ -1482,7 +1772,11 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     setModalOpen(true);
   };
 
-  const openItemModal = async (mode = "create", categoryId = null, item = null) => {
+  const openItemModal = async (
+    mode = "create",
+    categoryId = null,
+    item = null,
+  ) => {
     let optionGroups = [];
 
     if (mode === "edit" && item?.id) {
@@ -1501,7 +1795,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         optionGroups = (groups || []).map((g) => ({
           ...g,
           // garante que choices vêm ordenadas por position
-          option_choices: [...(g.option_choices || [])].sort((a, b) => a.position - b.position),
+          option_choices: [...(g.option_choices || [])].sort(
+            (a, b) => a.position - b.position,
+          ),
         }));
       } catch (err) {
         console.error("Erro ao buscar option_groups:", err);
@@ -1558,7 +1854,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
   const persistCategoryItemsOrder = async (categoryId, orderedItems) => {
     const updates = orderedItems.map((it, index) =>
-      supabase.from("menu_items").update({ position: index, category_id: categoryId }).eq("id", it.id),
+      supabase
+        .from("menu_items")
+        .update({ position: index, category_id: categoryId })
+        .eq("id", it.id),
     );
 
     const results = await Promise.all(updates);
@@ -1582,12 +1881,20 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       prev.map((cat) => {
         if (cat.id !== categoryId) return cat;
 
-        const oldIndex = (cat.menu_items || []).findIndex((it) => it.id === active.id);
-        const newIndex = (cat.menu_items || []).findIndex((it) => it.id === over.id);
+        const oldIndex = (cat.menu_items || []).findIndex(
+          (it) => it.id === active.id,
+        );
+        const newIndex = (cat.menu_items || []).findIndex(
+          (it) => it.id === over.id,
+        );
 
         if (oldIndex === -1 || newIndex === -1) return cat;
 
-        reorderedItems = arrayMove(cat.menu_items || [], oldIndex, newIndex).map((it, index) => ({
+        reorderedItems = arrayMove(
+          cat.menu_items || [],
+          oldIndex,
+          newIndex,
+        ).map((it, index) => ({
           ...it,
           position: index,
         }));
@@ -1660,9 +1967,13 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       // monta promessas de update
       const categoryUpdates = ordering.map((cat, idx) => {
         // pula temporários
-        if (typeof cat.id === "string" && cat.id.startsWith("tmp-")) return Promise.resolve(null);
+        if (typeof cat.id === "string" && cat.id.startsWith("tmp-"))
+          return Promise.resolve(null);
         // atualiza position
-        return supabase.from("categories").update({ position: idx }).eq("id", cat.id);
+        return supabase
+          .from("categories")
+          .update({ position: idx })
+          .eq("id", cat.id);
       });
 
       const itemUpdates = [];
@@ -1671,7 +1982,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
           if (typeof it.id === "string" && it.id.startsWith("tmp-")) return;
           // atualiza position e category_id (caso o item tenha sido movido entre categorias no futuro)
           itemUpdates.push(
-            supabase.from("menu_items").update({ position: itemIdx, category_id: cat.id }).eq("id", it.id),
+            supabase
+              .from("menu_items")
+              .update({ position: itemIdx, category_id: cat.id })
+              .eq("id", it.id),
           );
         });
       });
@@ -1682,7 +1996,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         const errored = results.find((r) => r && r.error);
         if (errored) {
           console.error("Erro ao salvar ordenação:", errored);
-          alert?.("Algumas posições podem não ter sido salvas. Veja o console.", "error");
+          alert?.(
+            "Algumas posições podem não ter sido salvas. Veja o console.",
+            "error",
+          );
         } else {
           alert?.("Ordenação salva", "success");
         }
@@ -1729,14 +2046,19 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
           return;
         }
         if (promoNum >= priceNum) {
-          alert?.("O preço promocional precisa ser menor que o preço normal.", "error");
+          alert?.(
+            "O preço promocional precisa ser menor que o preço normal.",
+            "error",
+          );
           return;
         }
       }
       data.promo_price = promoNum;
 
       // === Validação dos option_groups ===
-      const groups = Array.isArray(data.option_groups) ? data.option_groups : [];
+      const groups = Array.isArray(data.option_groups)
+        ? data.option_groups
+        : [];
       for (let gi = 0; gi < groups.length; gi++) {
         const g = groups[gi];
         if (!String(g.name || "").trim()) {
@@ -1747,7 +2069,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         const minC = Number(g.min_choices ?? 0);
         const maxC = Number(g.max_choices ?? 0);
         if (minC > 0 && maxC > 0 && minC > maxC) {
-          alert?.(`No grupo "${g.name}": mínimo não pode ser maior que o máximo.`, "error");
+          alert?.(
+            `No grupo "${g.name}": mínimo não pode ser maior que o máximo.`,
+            "error",
+          );
           setSaving(false);
           return;
         }
@@ -1755,27 +2080,48 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         for (let ci = 0; ci < choices.length; ci++) {
           const c = choices[ci];
           if (!String(c.name || "").trim()) {
-            alert?.(`No grupo "${g.name}", opção #${ci + 1}: nome não pode ficar vazio.`, "error");
+            alert?.(
+              `No grupo "${g.name}", opção #${ci + 1}: nome não pode ficar vazio.`,
+              "error",
+            );
             setSaving(false);
             return;
           }
           const p = parseFloat(String(c.price).replace(",", "."));
-          choices[ci] = { ...c, name: String(c.name).trim(), price: isNaN(p) ? 0 : p };
+          choices[ci] = {
+            ...c,
+            name: String(c.name).trim(),
+            price: isNaN(p) ? 0 : p,
+          };
         }
-        groups[gi] = { ...g, min_choices: minC, max_choices: maxC, option_choices: choices };
+        groups[gi] = {
+          ...g,
+          min_choices: minC,
+          max_choices: maxC,
+          option_choices: choices,
+        };
       }
       data.option_groups = groups;
     }
 
     const updateCategory = async (categoryId, patch) => {
       const before = categories;
-      setCategories((prev = []) => prev.map((c) => (c.id === categoryId ? { ...c, ...patch } : c)));
+      setCategories((prev = []) =>
+        prev.map((c) => (c.id === categoryId ? { ...c, ...patch } : c)),
+      );
 
       try {
-        const { data, error } = await supabase.from("categories").update(patch).eq("id", categoryId).select().single();
+        const { data, error } = await supabase
+          .from("categories")
+          .update(patch)
+          .eq("id", categoryId)
+          .select()
+          .single();
         if (error) throw error;
 
-        setCategories((prev = []) => prev.map((c) => (c.id === categoryId ? { ...c, ...data } : c)));
+        setCategories((prev = []) =>
+          prev.map((c) => (c.id === categoryId ? { ...c, ...data } : c)),
+        );
         alert?.("Categoria atualizada", "success");
         return data;
       } catch (err) {
@@ -1828,7 +2174,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         return;
       }
 
-      const item = categories.flatMap((c) => c.menu_items || []).find((it) => it.id === modalPayload.itemId);
+      const item = categories
+        .flatMap((c) => c.menu_items || [])
+        .find((it) => it.id === modalPayload.itemId);
 
       if (!item.image_url) {
         alert("Você só pode destacar itens com imagem.", "error");
@@ -1852,7 +2200,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     setCategories((prev) =>
       prev.map((c) => ({
         ...c,
-        menu_items: c.menu_items.map((it) => (it.id === itemId ? { ...it, starred: newStarred } : it)),
+        menu_items: c.menu_items.map((it) =>
+          it.id === itemId ? { ...it, starred: newStarred } : it,
+        ),
       })),
     );
 
@@ -1869,11 +2219,16 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       setCategories((prev) =>
         prev.map((c) => ({
           ...c,
-          menu_items: c.menu_items.map((it) => (it.id === itemId ? { ...it, ...data } : it)),
+          menu_items: c.menu_items.map((it) =>
+            it.id === itemId ? { ...it, ...data } : it,
+          ),
         })),
       );
 
-      alert?.(newStarred ? "Item destacado no seu menu!" : "Destaque removido", "success");
+      alert?.(
+        newStarred ? "Item destacado no seu menu!" : "Destaque removido",
+        "success",
+      );
     } catch (err) {
       console.error(err);
       alert("Erro ao destacar item", "error");
@@ -1883,10 +2238,15 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   // ---------- option groups ----------
   const saveOptionGroups = async (itemId, groups) => {
     // 1. Busca grupos existentes para saber quais deletar
-    const { data: existing } = await supabase.from("option_groups").select("id").eq("item_id", itemId);
+    const { data: existing } = await supabase
+      .from("option_groups")
+      .select("id")
+      .eq("item_id", itemId);
 
     const existingIds = new Set((existing || []).map((g) => g.id));
-    const incomingIds = new Set(groups.filter((g) => g.id && !g.id.startsWith("tmp-")).map((g) => g.id));
+    const incomingIds = new Set(
+      groups.filter((g) => g.id && !g.id.startsWith("tmp-")).map((g) => g.id),
+    );
 
     // Ids que não vieram mais → deletar (cascade apaga as choices)
     const toDelete = [...existingIds].filter((id) => !incomingIds.has(id));
@@ -1921,21 +2281,40 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       } else {
         await supabase
           .from("option_groups")
-          .update({ name: g.name, min_choices: g.min_choices ?? 0, max_choices: g.max_choices ?? 0, position: gi })
+          .update({
+            name: g.name,
+            min_choices: g.min_choices ?? 0,
+            max_choices: g.max_choices ?? 0,
+            position: gi,
+          })
           .eq("id", g.id);
         groupId = g.id;
       }
 
       // Choices
       const choices = Array.isArray(g.option_choices) ? g.option_choices : [];
-      const { data: existingChoices } = await supabase.from("option_choices").select("id").eq("group_id", groupId);
+      const { data: existingChoices } = await supabase
+        .from("option_choices")
+        .select("id")
+        .eq("group_id", groupId);
 
-      const existingChoiceIds = new Set((existingChoices || []).map((c) => c.id));
-      const incomingChoiceIds = new Set(choices.filter((c) => c.id && !c.id.startsWith("tmp-")).map((c) => c.id));
+      const existingChoiceIds = new Set(
+        (existingChoices || []).map((c) => c.id),
+      );
+      const incomingChoiceIds = new Set(
+        choices
+          .filter((c) => c.id && !c.id.startsWith("tmp-"))
+          .map((c) => c.id),
+      );
 
-      const choicesToDelete = [...existingChoiceIds].filter((id) => !incomingChoiceIds.has(id));
+      const choicesToDelete = [...existingChoiceIds].filter(
+        (id) => !incomingChoiceIds.has(id),
+      );
       if (choicesToDelete.length > 0) {
-        await supabase.from("option_choices").delete().in("id", choicesToDelete);
+        await supabase
+          .from("option_choices")
+          .delete()
+          .in("id", choicesToDelete);
       }
 
       for (let ci = 0; ci < choices.length; ci++) {
@@ -1965,6 +2344,25 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     }
   };
 
+  // Reordena grupos (gi undefined) ou opções do grupo gi; a position é salva pelo índice em saveOptionGroups
+  const handleOptionDragEnd = (gi, { active, over }) => {
+    if (!over || active.id === over.id) return;
+    setModalPayload((p) => {
+      const groups = [...(p.data.option_groups || [])];
+      const list = gi === undefined ? groups : groups[gi].option_choices || [];
+      const from = list.findIndex((x) => x.id === active.id);
+      const to = list.findIndex((x) => x.id === over.id);
+      if (from < 0 || to < 0) return p;
+      if (gi === undefined)
+        return {
+          ...p,
+          data: { ...p.data, option_groups: arrayMove(groups, from, to) },
+        };
+      groups[gi] = { ...groups[gi], option_choices: arrayMove(list, from, to) };
+      return { ...p, data: { ...p.data, option_groups: groups } };
+    });
+  };
+
   // Oculta/exibe uma opção neste item específico, direto no banco (sem precisar confirmar os modais)
   const toggleChoiceHiddenNow = async (gi, ci) => {
     const group = modalPayload.data.option_groups?.[gi];
@@ -1987,9 +2385,15 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     if (!choice.id || choice.id.startsWith("tmp-")) return;
 
     try {
-      const { error } = await supabase.from("option_choices").update({ hidden: newHidden }).eq("id", choice.id);
+      const { error } = await supabase
+        .from("option_choices")
+        .update({ hidden: newHidden })
+        .eq("id", choice.id);
       if (error) throw error;
-      alert?.(newHidden ? "Opção ocultada neste item" : "Opção exibida neste item", "success");
+      alert?.(
+        newHidden ? "Opção ocultada neste item" : "Opção exibida neste item",
+        "success",
+      );
     } catch (err) {
       console.error("toggleChoiceHiddenNow error:", err);
       alert?.("Erro ao alterar visibilidade da opção", "error");
@@ -2006,7 +2410,11 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   };
 
   // Função que sincroniza no banco (grupo + opção com mesmo nome, em outros itens)
-  const syncChoiceVisibilityAcrossMenu = async (groupName, choiceName, hidden) => {
+  const syncChoiceVisibilityAcrossMenu = async (
+    groupName,
+    choiceName,
+    hidden,
+  ) => {
     const actionLabel = hidden ? "Ocultar" : "Exibir";
     const ok = await confirm(
       `${actionLabel} a opção "${choiceName}" do grupo "${groupName}" em todos os itens do cardápio que a possuem?`,
@@ -2092,7 +2500,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     if (!choice.id || choice.id.startsWith("tmp-")) return;
 
     try {
-      const { error } = await supabase.from("option_choices").delete().eq("id", choice.id);
+      const { error } = await supabase
+        .from("option_choices")
+        .delete()
+        .eq("id", choice.id);
       if (error) throw error;
       alert?.("Opção removida", "success");
     } catch (err) {
@@ -2111,7 +2522,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   };
 
   const fetchAllOptionGroups = async () => {
-    const allItems = categories.flatMap((c) => c.menu_items || []).filter((it) => it.id !== modalPayload.itemId);
+    const allItems = categories
+      .flatMap((c) => c.menu_items || [])
+      .filter((it) => it.id !== modalPayload.itemId);
 
     if (allItems.length === 0) return [];
 
@@ -2137,7 +2550,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
           .filter((g) => g.item_id === it.id)
           .map((g) => ({
             ...g,
-            option_choices: [...(g.option_choices || [])].sort((a, b) => a.position - b.position),
+            option_choices: [...(g.option_choices || [])].sort(
+              (a, b) => a.position - b.position,
+            ),
           })),
       }))
       .filter((entry) => entry.groups.length > 0); // omite itens sem grupos
@@ -2148,7 +2563,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
     const gN = (groupName || "").trim().toLowerCase();
     const cN = (choiceName || "").trim().toLowerCase();
     if (!gN || !cN) return false;
-    return menuChoicesIndex.some((e) => e.groupName === gN && e.choiceName === cN);
+    return menuChoicesIndex.some(
+      (e) => e.groupName === gN && e.choiceName === cN,
+    );
   };
 
   const getItemLimitByRole = (role) => {
@@ -2181,21 +2598,30 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   const modalItem = useMemo(() => {
     if (!modalPayload.itemId || !categories) return null;
 
-    return categories.flatMap((c) => c.menu_items || []).find((it) => it.id === modalPayload.itemId);
+    return categories
+      .flatMap((c) => c.menu_items || [])
+      .find((it) => it.id === modalPayload.itemId);
   }, [modalPayload.itemId, categories]);
 
   const isStarred = !!modalItem?.starred;
 
   const starredItems = useMemo(() => {
     if (!categories) return [];
-    return categories.flatMap((c) => c.menu_items || []).filter((it) => it.starred && it.visible !== false);
+    return categories
+      .flatMap((c) => c.menu_items || [])
+      .filter((it) => it.starred && it.visible !== false);
   }, [categories]);
 
   const hasStarred = starredItems.length > 0 && canHighlightItems;
 
-  const translucidToUse = getContrastTextColor(backgroundColor) === "white" ? "#ffffff15" : "#00000015";
-  const grayToUse = getContrastTextColor(backgroundColor) === "white" ? "#cccccc" : "#333333";
-  const foregroundToUse = getContrastTextColor(backgroundColor) === "white" ? "#fafafa" : "#171717";
+  const translucidToUse =
+    getContrastTextColor(backgroundColor) === "white"
+      ? "#ffffff15"
+      : "#00000015";
+  const grayToUse =
+    getContrastTextColor(backgroundColor) === "white" ? "#cccccc" : "#333333";
+  const foregroundToUse =
+    getContrastTextColor(backgroundColor) === "white" ? "#fafafa" : "#171717";
 
   const commitAdditionalsCfg = () => {
     if (!additionalsCfgDraft) return;
@@ -2215,7 +2641,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
   if (!menu) return <div className="p-4">Você ainda não criou um menu.</div>;
 
   return (
-    <div className={`p-4 ${changedFields.length > 0 ? "pb-48 lg:pb-34" : "pb-12 lg:pb-0"}`}>
+    <div
+      className={`p-4 ${changedFields.length > 0 ? "pb-48 lg:pb-34" : "pb-12 lg:pb-0"}`}
+    >
       <div className="mb-4">
         <div className="flex gap-2">
           {categories.length > 0 && (
@@ -2269,12 +2697,19 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
             backgroundColor: translucidToUse,
           }}
         >
-          <div className="mb-2 text-lg font-semibold" style={{ color: foregroundToUse }}>
+          <div
+            className="mb-2 text-lg font-semibold"
+            style={{ color: foregroundToUse }}
+          >
             Nenhuma categoria criada
           </div>
 
-          <p className="mb-5 max-w-md text-sm leading-relaxed" style={{ color: grayToUse }}>
-            Organize seu cardápio criando categorias como <span style={{ color: foregroundToUse }}>Lanches</span>,{" "}
+          <p
+            className="mb-5 max-w-md text-sm leading-relaxed"
+            style={{ color: grayToUse }}
+          >
+            Organize seu cardápio criando categorias como{" "}
+            <span style={{ color: foregroundToUse }}>Lanches</span>,{" "}
             <span style={{ color: foregroundToUse }}>Bebidas</span> ou{" "}
             <span style={{ color: foregroundToUse }}>Sobremesas</span>.
           </p>
@@ -2293,7 +2728,11 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       {categories.length > 0 && (
         <div
           className="flex sticky -top-1 border-y-2 overflow-x-auto whitespace-nowrap scrollbar-none z-50 mb-2 items-center"
-          style={{ backgroundColor: backgroundColor, borderColor: translucidToUse, color: foregroundToUse }}
+          style={{
+            backgroundColor: backgroundColor,
+            borderColor: translucidToUse,
+            color: foregroundToUse,
+          }}
         >
           <button
             onClick={() => openCategoryModal("create")}
@@ -2353,7 +2792,11 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                       {it.image_url && (
                         <div className="relative mb-2">
                           <img
-                            src={supabaseImg(it.image_url, { height: 320, width: 320, quality: 80 })}
+                            src={supabaseImg(it.image_url, {
+                              height: 320,
+                              width: 320,
+                              quality: 80,
+                            })}
                             alt={it.name}
                             loading="lazy"
                             decoding="async"
@@ -2361,9 +2804,15 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                           />
 
                           <button
-                            ref={(el) => (starredMenuBtnRefs.current[it.id] = el)}
+                            ref={(el) =>
+                              (starredMenuBtnRefs.current[it.id] = el)
+                            }
                             type="button"
-                            onClick={() => setStarredMenuOpenId((prev) => (prev === it.id ? null : it.id))}
+                            onClick={() =>
+                              setStarredMenuOpenId((prev) =>
+                                prev === it.id ? null : it.id,
+                              )
+                            }
                             className="cursor-pointer absolute top-2 right-2 p-2 rounded"
                             style={{
                               backgroundColor: "#00000055",
@@ -2375,7 +2824,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
                           {starredMenuOpenId === it.id && (
                             <ItemActionsMenu
-                              anchorRef={{ current: starredMenuBtnRefs.current[it.id] }}
+                              anchorRef={{
+                                current: starredMenuBtnRefs.current[it.id],
+                              }}
                               onClose={() => setStarredMenuOpenId(null)}
                               menuBg={menuBg}
                               borderColor={menuBorder}
@@ -2388,8 +2839,14 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                                 }}
                                 className="w-full flex items-center gap-2 px-3 py-3 text-sm text-left cursor-pointer transition"
                                 style={{ color: menuText }}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = menuHover)}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                                onMouseEnter={(e) =>
+                                  (e.currentTarget.style.backgroundColor =
+                                    menuHover)
+                                }
+                                onMouseLeave={(e) =>
+                                  (e.currentTarget.style.backgroundColor =
+                                    "transparent")
+                                }
                               >
                                 <FaPen size={13} />
                                 Editar item
@@ -2403,8 +2860,14 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                                 }}
                                 className="w-full flex items-center gap-2 px-3 py-3 text-sm text-left cursor-pointer transition"
                                 style={{ color: menuText }}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = menuHover)}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                                onMouseEnter={(e) =>
+                                  (e.currentTarget.style.backgroundColor =
+                                    menuHover)
+                                }
+                                onMouseLeave={(e) =>
+                                  (e.currentTarget.style.backgroundColor =
+                                    "transparent")
+                                }
                               >
                                 <FaStar size={13} />
                                 Remover destaque
@@ -2413,25 +2876,40 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                           )}
                         </div>
                       )}
-                      <div className="text-lg font-semibold line-clamp-1" style={{ color: foregroundToUse }}>
+                      <div
+                        className="text-lg font-semibold line-clamp-1"
+                        style={{ color: foregroundToUse }}
+                      >
                         {it.name}
                       </div>
-                      <div className="text-sm line-clamp-1 mb-1" style={{ color: grayToUse }}>
+                      <div
+                        className="text-sm line-clamp-1 mb-1"
+                        style={{ color: grayToUse }}
+                      >
                         {it.description}
                       </div>
                     </div>
                     <div>
                       {it.promo_price && canShowPromoPrice ? (
                         <div>
-                          <span className="text-sm line-through" style={{ color: grayToUse }}>
+                          <span
+                            className="text-sm line-through"
+                            style={{ color: grayToUse }}
+                          >
                             {formatCurrency(it.price, menu?.currency)}
                           </span>
-                          <div className="font-bold text-2xl" style={{ color: foregroundToUse }}>
+                          <div
+                            className="font-bold text-2xl"
+                            style={{ color: foregroundToUse }}
+                          >
                             {formatCurrency(it.promo_price, menu?.currency)}
                           </div>
                         </div>
                       ) : (
-                        <div className="font-bold text-2xl" style={{ color: foregroundToUse }}>
+                        <div
+                          className="font-bold text-2xl"
+                          style={{ color: foregroundToUse }}
+                        >
                           {formatCurrency(it.price, menu?.currency)}
                         </div>
                       )}
@@ -2459,13 +2937,24 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                   type="button"
                   className="cursor-pointer p-1 flex-shrink-0"
                   style={{ color: foregroundToUse }}
-                  title={collapsedCategories[cat.id] ? "Expandir categoria" : "Recolher categoria"}
+                  title={
+                    collapsedCategories[cat.id]
+                      ? "Expandir categoria"
+                      : "Recolher categoria"
+                  }
                 >
-                  {collapsedCategories[cat.id] ? <FaChevronRight size={14} /> : <FaChevronDown size={14} />}
+                  {collapsedCategories[cat.id] ? (
+                    <FaChevronRight size={14} />
+                  ) : (
+                    <FaChevronDown size={14} />
+                  )}
                 </button>
 
                 <div className="flex items-center flex-wrap gap-x-2 min-w-0">
-                  <strong style={{ color: foregroundToUse }} className="line-clamp-1">
+                  <strong
+                    style={{ color: foregroundToUse }}
+                    className="line-clamp-1"
+                  >
                     {cat.name}
                   </strong>
                   <span className="text-sm" style={{ color: grayToUse }}>
@@ -2477,10 +2966,17 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
               <button
                 ref={(el) => (categoryMenuBtnRefs.current[cat.id] = el)}
                 type="button"
-                onClick={() => setCategoryMenuOpenId((prev) => (prev === cat.id ? null : cat.id))}
+                onClick={() =>
+                  setCategoryMenuOpenId((prev) =>
+                    prev === cat.id ? null : cat.id,
+                  )
+                }
                 className="cursor-pointer p-2 mr-2 rounded flex-shrink-0"
                 style={{
-                  backgroundColor: getContrastTextColor(backgroundColor) === "white" ? "#ffffff25" : "#00000025",
+                  backgroundColor:
+                    getContrastTextColor(backgroundColor) === "white"
+                      ? "#ffffff25"
+                      : "#00000025",
                   color: foregroundToUse,
                 }}
               >
@@ -2503,11 +2999,21 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                     }}
                     className="w-full flex items-center gap-2 px-3 py-3 text-sm text-left cursor-pointer transition"
                     style={{ color: menuText }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = menuHover)}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = menuHover)
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor = "transparent")
+                    }
                   >
-                    {categoryHasVisibleItems(cat) ? <FaEyeSlash size={13} /> : <FaEye size={13} />}
-                    {categoryHasVisibleItems(cat) ? "Ocultar todos os itens" : "Exibir todos os itens"}
+                    {categoryHasVisibleItems(cat) ? (
+                      <FaEyeSlash size={13} />
+                    ) : (
+                      <FaEye size={13} />
+                    )}
+                    {categoryHasVisibleItems(cat)
+                      ? "Ocultar todos os itens"
+                      : "Exibir todos os itens"}
                   </button>
                   <button
                     type="button"
@@ -2517,8 +3023,12 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                     }}
                     className="w-full flex items-center gap-2 px-3 py-3 text-sm text-left cursor-pointer transition"
                     style={{ color: menuText }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = menuHover)}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = menuHover)
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor = "transparent")
+                    }
                   >
                     <FaPen size={13} />
                     Editar categoria
@@ -2532,8 +3042,12 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                     }}
                     className="w-full flex items-center gap-2 px-3 py-3 text-sm text-left cursor-pointer transition"
                     style={{ color: menuText }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = menuHover)}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = menuHover)
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor = "transparent")
+                    }
                   >
                     <FaPlus size={12} />
                     Adicionar item
@@ -2546,8 +3060,12 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                       setCategoryMenuOpenId(null);
                     }}
                     className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left cursor-pointer transition text-red-500"
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = menuHover)}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = menuHover)
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor = "transparent")
+                    }
                   >
                     <FaTrash size={13} />
                     Excluir categoria
@@ -2575,12 +3093,19 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                           backgroundColor: translucidToUse,
                         }}
                       >
-                        <div className="mb-2 text-base font-semibold" style={{ color: foregroundToUse }}>
+                        <div
+                          className="mb-2 text-base font-semibold"
+                          style={{ color: foregroundToUse }}
+                        >
                           Essa categoria está vazia
                         </div>
 
-                        <p className="mb-4 max-w-sm text-sm leading-relaxed" style={{ color: grayToUse }}>
-                          Adicione itens para que eles apareçam no cardápio dos clientes.
+                        <p
+                          className="mb-4 max-w-sm text-sm leading-relaxed"
+                          style={{ color: grayToUse }}
+                        >
+                          Adicione itens para que eles apareçam no cardápio dos
+                          clientes.
                         </p>
 
                         <button
@@ -2659,7 +3184,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                 value={modalPayload.data.name}
                 onChange={(e) => {
                   const v = e.target.value.slice(0, 20);
-                  setModalPayload((p) => ({ ...p, data: { ...p.data, name: v } }));
+                  setModalPayload((p) => ({
+                    ...p,
+                    data: { ...p.data, name: v },
+                  }));
                 }}
                 maxLength={20}
                 className="w-full p-2 rounded border border-translucid bg-translucid mb-2"
@@ -2678,14 +3206,20 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                   <label className="text-center flex flex-col items-center justify-center w-30 h-30 border-2 border-dashed border-translucid rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
                     {modalPayload.data.image_url ? (
                       <img
-                        src={supabaseImg(modalPayload.data.image_url, { width: 200, height: 200, quality: 75 })}
+                        src={supabaseImg(modalPayload.data.image_url, {
+                          width: 200,
+                          height: 200,
+                          quality: 75,
+                        })}
                         alt="Prévia"
                         className="object-cover w-full h-full"
                         loading="lazy"
                         decoding="async"
                       />
                     ) : (
-                      <span className="color-gray m-4 text-sm">Clique aqui para inserir uma imagem</span>
+                      <span className="color-gray m-4 text-sm">
+                        Clique aqui para inserir uma imagem
+                      </span>
                     )}
 
                     <input
@@ -2707,7 +3241,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                             minQuality: 0.75,
                           });
 
-                          const thumbFile = await fileToThumbnailWebp(webpFile, { size: 216, quality: 0.82 });
+                          const thumbFile = await fileToThumbnailWebp(
+                            webpFile,
+                            { size: 216, quality: 0.82 },
+                          );
 
                           const { url, thumbUrl } = await uploadItemImage(
                             webpFile,
@@ -2719,13 +3256,20 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
                           setModalPayload((p) => ({
                             ...p,
-                            data: { ...p.data, image_url: url, thumb_url: thumbUrl },
+                            data: {
+                              ...p.data,
+                              image_url: url,
+                              thumb_url: thumbUrl,
+                            },
                           }));
                         } catch (err) {
                           console.error("upload image error:", err);
                           const msg = String(err?.message || "");
                           if (msg.includes("Não foi possível comprimir")) {
-                            alert?.("Essa imagem é pesada demais. Tente recortar ou escolher outra.", "error");
+                            alert?.(
+                              "Essa imagem é pesada demais. Tente recortar ou escolher outra.",
+                              "error",
+                            );
                           } else {
                             alert?.("Tipo de imagem não suportado.", "error");
                           }
@@ -2740,7 +3284,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                   {modalPayload.data.image_url && (
                     <button
                       onClick={() =>
-                        setModalPayload((p) => ({ ...p, data: { ...p.data, image_url: "", thumb_url: "" } }))
+                        setModalPayload((p) => ({
+                          ...p,
+                          data: { ...p.data, image_url: "", thumb_url: "" },
+                        }))
                       }
                       className="mt-1 text-sm text-red-500 hover:underline"
                       type="button"
@@ -2758,7 +3305,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                       value={modalPayload.data.name}
                       onChange={(e) => {
                         const v = e.target.value.slice(0, 25);
-                        setModalPayload((p) => ({ ...p, data: { ...p.data, name: v } }));
+                        setModalPayload((p) => ({
+                          ...p,
+                          data: { ...p.data, name: v },
+                        }));
                       }}
                       maxLength={25}
                       className="w-full p-2 rounded border border-translucid bg-translucid mb-2"
@@ -2780,8 +3330,12 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                             value = value.replace(/[^0-9.,]/g, "");
                             value = value.replace(",", ".");
                             const parts = value.split(".");
-                            if (parts.length > 2) value = parts[0] + "." + parts.slice(1).join("");
-                            setModalPayload((p) => ({ ...p, data: { ...p.data, price: value } }));
+                            if (parts.length > 2)
+                              value = parts[0] + "." + parts.slice(1).join("");
+                            setModalPayload((p) => ({
+                              ...p,
+                              data: { ...p.data, price: value },
+                            }));
                           }}
                           maxLength={10}
                           className="w-full p-2 pl-6 xs:pl-7.5 rounded border border-translucid bg-translucid"
@@ -2797,11 +3351,17 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                         </span>
                         <input
                           type="text"
-                          value={canShowPromoPrice ? (modalPayload.data.promo_price ?? "") : ""}
+                          value={
+                            canShowPromoPrice
+                              ? (modalPayload.data.promo_price ?? "")
+                              : ""
+                          }
                           onChange={(e) => {
                             if (!canShowPromoPrice) {
                               if (!planModalOpen) {
-                                alert("Assine o plano Plus ou Pro para criar promoções!");
+                                alert(
+                                  "Assine o plano Plus ou Pro para criar promoções!",
+                                );
                                 setPlanModalFeature("promo_price");
                                 setPlanModalOpen(true);
                               }
@@ -2812,7 +3372,8 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                             value = value.replace(/[^0-9.,]/g, "");
                             value = value.replace(",", ".");
                             const parts = value.split(".");
-                            if (parts.length > 2) value = parts[0] + "." + parts.slice(1).join("");
+                            if (parts.length > 2)
+                              value = parts[0] + "." + parts.slice(1).join("");
 
                             const num = Number(value);
                             if (value !== "" && !isNaN(num) && num === 0) {
@@ -2838,7 +3399,12 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                 <div className="text-sm color-gray">Descrição:</div>
                 <textarea
                   value={modalPayload.data.description}
-                  onChange={(e) => setModalPayload((p) => ({ ...p, data: { ...p.data, description: e.target.value } }))}
+                  onChange={(e) =>
+                    setModalPayload((p) => ({
+                      ...p,
+                      data: { ...p.data, description: e.target.value },
+                    }))
+                  }
                   className="w-full p-2 rounded border border-translucid bg-translucid mb-2"
                   placeholder="Escreva a descrição (opcional)"
                 />
@@ -2865,15 +3431,23 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                   onClick={() => highlightItem()}
                   className="p-2 rounded flex items-center justify-center gap-2 font-semibold w-[50%] cursor-pointer transition"
                   style={{
-                    backgroundColor: isStarred ? "var(--theme-yellow)" : "transparent",
-                    color: isStarred ? "var(--low-gray)" : "var(--theme-yellow)",
+                    backgroundColor: isStarred
+                      ? "var(--theme-yellow)"
+                      : "transparent",
+                    color: isStarred
+                      ? "var(--low-gray)"
+                      : "var(--theme-yellow)",
                     border: "2px solid",
                     borderColor: "var(--theme-yellow)",
                   }}
                 >
                   <FaStar />
-                  <span className="hide-on-400px">{isStarred ? "Item destacado" : "Destacar item"}</span>
-                  <span className="show-on-400px">{isStarred ? "Destacado" : "Destacar"}</span>
+                  <span className="hide-on-400px">
+                    {isStarred ? "Item destacado" : "Destacar item"}
+                  </span>
+                  <span className="show-on-400px">
+                    {isStarred ? "Destacado" : "Destacar"}
+                  </span>
                 </button>
               </div>
             </>
@@ -2891,23 +3465,31 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                       ref={(el) => {
                         if (el) domRefs.current[`cat-${cat.id ?? catIdx}`] = el;
                         else delete domRefs.current[`cat-${cat.id ?? catIdx}`];
-                        if (el && cat.id != null) domRefs.current[`cat-${cat.id}`] = el;
+                        if (el && cat.id != null)
+                          domRefs.current[`cat-${cat.id}`] = el;
                       }}
                       className="p-2 rounded bg-translucid"
-                      style={{ transition: "transform 200ms ease, box-shadow 200ms ease" }}
+                      style={{
+                        transition:
+                          "transform 200ms ease, box-shadow 200ms ease",
+                      }}
                     >
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-3">
                           <button
                             className="cursor-pointer"
                             onClick={() => toggleCollapse(cat.id)}
-                            title={collapsed ? "Mostrar itens" : "Recolher itens"}
+                            title={
+                              collapsed ? "Mostrar itens" : "Recolher itens"
+                            }
                           >
                             {collapsed ? <FaChevronRight /> : <FaChevronDown />}
                           </button>
                           <div className="flex flex-col">
                             <strong>{cat.name}</strong>
-                            <span className="text-sm color-gray">({(cat.menu_items || []).length} itens)</span>
+                            <span className="text-sm color-gray">
+                              ({(cat.menu_items || []).length} itens)
+                            </span>
                           </div>
                         </div>
 
@@ -2922,7 +3504,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                           </button>
                           <button
                             onClick={() => moveCategory(catIdx, 1)}
-                            disabled={catIdx === (modalPayload.data?.ordering?.length ?? 1) - 1}
+                            disabled={
+                              catIdx ===
+                              (modalPayload.data?.ordering?.length ?? 1) - 1
+                            }
                             className="disabled:opacity-50 p-1 cursor-pointer"
                             title="Mover categoria para baixo"
                           >
@@ -2935,9 +3520,12 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                         className="overflow-hidden"
                         style={{
                           maxHeight: collapsed ? 0 : undefined,
-                          transition: "max-height 200ms ease, opacity 180ms ease, transform 180ms ease",
+                          transition:
+                            "max-height 200ms ease, opacity 180ms ease, transform 180ms ease",
                           opacity: collapsed ? 0 : 1,
-                          transform: collapsed ? "translateY(-6px)" : "translateY(0)",
+                          transform: collapsed
+                            ? "translateY(-6px)"
+                            : "translateY(0)",
                         }}
                       >
                         <div className="space-y-2 pt-1 pb-1">
@@ -2945,9 +3533,16 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                             <div
                               key={it.id ?? `it-${itIdx}`}
                               ref={(el) => {
-                                if (el) domRefs.current[`it-${it.id ?? `${catIdx}-${itIdx}`}`] = el;
-                                else delete domRefs.current[`it-${it.id ?? `${catIdx}-${itIdx}`}`];
-                                if (el && it.id != null) domRefs.current[`it-${it.id}`] = el;
+                                if (el)
+                                  domRefs.current[
+                                    `it-${it.id ?? `${catIdx}-${itIdx}`}`
+                                  ] = el;
+                                else
+                                  delete domRefs.current[
+                                    `it-${it.id ?? `${catIdx}-${itIdx}`}`
+                                  ];
+                                if (el && it.id != null)
+                                  domRefs.current[`it-${it.id}`] = el;
                               }}
                               className="flex items-center justify-between bg-transparent px-2 py-1 rounded bg-translucid"
                             >
@@ -2963,7 +3558,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                                 </button>
                                 <button
                                   onClick={() => moveItem(catIdx, itIdx, 1)}
-                                  disabled={itIdx === (cat.menu_items?.length ?? 1) - 1}
+                                  disabled={
+                                    itIdx === (cat.menu_items?.length ?? 1) - 1
+                                  }
                                   className="disabled:opacity-50 p-1 cursor-pointer"
                                   title="Mover item para baixo"
                                 >
@@ -3003,8 +3600,19 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                       fill="none"
                       viewBox="0 0 24 24"
                     >
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v8z"
+                      />
                     </svg>
                     Salvando...
                   </>
@@ -3018,7 +3626,12 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       )}
 
       {modalOpen && optionGroupsModalOpen && modalPayload.type === "item" && (
-        <GenericModal wfull maxWidth={"500px"} title="Grupos de opções" onClose={closeOptionGroupsModal}>
+        <GenericModal
+          wfull
+          maxWidth={"500px"}
+          title="Grupos de opções"
+          onClose={closeOptionGroupsModal}
+        >
           <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-1">
             {(modalPayload.data.option_groups || []).length === 0 && (
               <p className="text-sm color-gray text-center py-4">
@@ -3026,153 +3639,287 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
               </p>
             )}
 
-            {(modalPayload.data.option_groups || []).map((group, gi) => (
-              <div key={group.id ?? gi} className="rounded-lg border border-translucid p-2 space-y-2">
-                {/* Cabeçalho do grupo */}
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={group.name}
-                    onChange={(e) =>
-                      setModalPayload((p) => {
-                        const next = [...(p.data.option_groups || [])];
-                        next[gi] = { ...next[gi], name: e.target.value };
-                        return { ...p, data: { ...p.data, option_groups: next } };
-                      })
-                    }
-                    className="flex-1 p-1.5 text-sm rounded border border-translucid bg-translucid font-semibold"
-                    placeholder="Nome do grupo (ex: Borda da pizza)"
-                  />
-
-                  <button
-                    type="button"
-                    title="Configurar obrigatoriedade"
-                    onClick={() => {
-                      setAdditionalsCfgDraft({
-                        min_choices: String(group.min_choices ?? 0),
-                        max_choices: String(group.max_choices ?? 0),
-                      });
-                      setCfgGroupIdx(gi);
-                      setAdditionalsCfgOpen(true);
-                    }}
-                    className="cursor-pointer p-1.5 rounded bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white"
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={(e) => handleOptionDragEnd(undefined, e)}
+            >
+              <SortableContext
+                items={(modalPayload.data.option_groups || []).map((g) => g.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {(modalPayload.data.option_groups || []).map((group, gi) => (
+                  <SortableRow
+                    key={group.id ?? gi}
+                    id={group.id}
+                    className="rounded-lg border border-translucid p-2 space-y-2"
                   >
-                    <FaCog size={12} />
-                  </button>
+                    {(dragHandle) => (
+                      <>
+                        {/* Cabeçalho do grupo */}
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            title="Arrastar para reordenar"
+                            {...dragHandle}
+                            className="cursor-grab touch-none color-gray px-1"
+                          >
+                            <FaGripVertical size={12} />
+                          </button>
+                          <input
+                            type="text"
+                            value={group.name}
+                            onChange={(e) =>
+                              setModalPayload((p) => {
+                                const next = [...(p.data.option_groups || [])];
+                                next[gi] = {
+                                  ...next[gi],
+                                  name: e.target.value,
+                                };
+                                return {
+                                  ...p,
+                                  data: { ...p.data, option_groups: next },
+                                };
+                              })
+                            }
+                            className="flex-1 p-1.5 text-sm rounded border border-translucid bg-translucid font-semibold"
+                            placeholder="Nome do grupo (ex: Borda da pizza)"
+                          />
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setModalPayload((p) => {
-                        const next = [...(p.data.option_groups || [])];
-                        next.splice(gi, 1);
-                        return { ...p, data: { ...p.data, option_groups: next } };
-                      })
-                    }
-                    className="p-1.5 rounded bg-red-600 hover:bg-red-700 text-white"
-                  >
-                    <FaTrash size={12} />
-                  </button>
-                </div>
+                          <button
+                            type="button"
+                            title="Configurar obrigatoriedade"
+                            onClick={() => {
+                              setAdditionalsCfgDraft({
+                                min_choices: String(group.min_choices ?? 0),
+                                max_choices: String(group.max_choices ?? 0),
+                              });
+                              setCfgGroupIdx(gi);
+                              setAdditionalsCfgOpen(true);
+                            }}
+                            className="cursor-pointer p-1.5 rounded bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white"
+                          >
+                            <FaCog size={12} />
+                          </button>
 
-                {/* Badge min/max */}
-                <div className="text-xs color-gray">
-                  {group.min_choices > 0 ? `Obrigatório (mín. ${group.min_choices})` : "Opcional"}
-                  {group.max_choices > 0 ? ` · máx. ${group.max_choices}` : " · sem limite"}
-                </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setModalPayload((p) => {
+                                const next = [...(p.data.option_groups || [])];
+                                next.splice(gi, 1);
+                                return {
+                                  ...p,
+                                  data: { ...p.data, option_groups: next },
+                                };
+                              })
+                            }
+                            className="p-1.5 rounded bg-red-600 hover:bg-red-700 text-white"
+                          >
+                            <FaTrash size={12} />
+                          </button>
+                        </div>
 
-                {/* Choices */}
-                <div className="space-y-1.5">
-                  {(group.option_choices || []).map((choice, ci) => {
-                    const canSyncAcrossMenu = hasMatchElsewhere(group.name, choice.name);
+                        {/* Badge min/max */}
+                        <div className="text-xs color-gray">
+                          {group.min_choices > 0
+                            ? `Obrigatório (mín. ${group.min_choices})`
+                            : "Opcional"}
+                          {group.max_choices > 0
+                            ? ` · máx. ${group.max_choices}`
+                            : " · sem limite"}
+                        </div>
 
-                    return (
-                      <div
-                        key={choice.id ?? ci}
-                        className={`flex items-center gap-1.5 ${choice.hidden ? "opacity-50" : ""}`}
-                      >
-                        <input
-                          type="text"
-                          value={choice.name}
-                          onChange={(e) =>
+                        {/* Choices */}
+                        <DndContext
+                          sensors={sensors}
+                          collisionDetection={closestCenter}
+                          onDragEnd={(e) => handleOptionDragEnd(gi, e)}
+                        >
+                          <SortableContext
+                            items={(group.option_choices || []).map(
+                              (c) => c.id,
+                            )}
+                            strategy={verticalListSortingStrategy}
+                          >
+                            <div className="space-y-1.5">
+                              {(group.option_choices || []).map(
+                                (choice, ci) => {
+                                  const canSyncAcrossMenu = hasMatchElsewhere(
+                                    group.name,
+                                    choice.name,
+                                  );
+
+                                  return (
+                                    <SortableRow
+                                      key={choice.id ?? ci}
+                                      id={choice.id}
+                                      className={`flex items-center gap-1.5 ${choice.hidden ? "opacity-50" : ""}`}
+                                    >
+                                      {(dragHandle) => (
+                                        <>
+                                          <button
+                                            type="button"
+                                            title="Arrastar para reordenar"
+                                            {...dragHandle}
+                                            className="cursor-grab touch-none color-gray flex-none"
+                                          >
+                                            <FaGripVertical size={11} />
+                                          </button>
+                                          <input
+                                            type="text"
+                                            value={choice.name}
+                                            onChange={(e) =>
+                                              setModalPayload((p) => {
+                                                const groups = [
+                                                  ...(p.data.option_groups ||
+                                                    []),
+                                                ];
+                                                const choices = [
+                                                  ...(groups[gi]
+                                                    .option_choices || []),
+                                                ];
+                                                choices[ci] = {
+                                                  ...choices[ci],
+                                                  name: e.target.value,
+                                                };
+                                                groups[gi] = {
+                                                  ...groups[gi],
+                                                  option_choices: choices,
+                                                };
+                                                return {
+                                                  ...p,
+                                                  data: {
+                                                    ...p.data,
+                                                    option_groups: groups,
+                                                  },
+                                                };
+                                              })
+                                            }
+                                            className="flex-1 min-w-0 p-1.5 text-sm rounded border border-translucid bg-translucid"
+                                            placeholder="Nome da opção"
+                                          />
+                                          <input
+                                            type="text"
+                                            value={String(choice.price)}
+                                            onChange={(e) => {
+                                              let value = e.target.value
+                                                .replace(/[^0-9.,-]/g, "")
+                                                .replace(",", ".");
+                                              setModalPayload((p) => {
+                                                const groups = [
+                                                  ...(p.data.option_groups ||
+                                                    []),
+                                                ];
+                                                const choices = [
+                                                  ...(groups[gi]
+                                                    .option_choices || []),
+                                                ];
+                                                choices[ci] = {
+                                                  ...choices[ci],
+                                                  price: value,
+                                                };
+                                                groups[gi] = {
+                                                  ...groups[gi],
+                                                  option_choices: choices,
+                                                };
+                                                return {
+                                                  ...p,
+                                                  data: {
+                                                    ...p.data,
+                                                    option_groups: groups,
+                                                  },
+                                                };
+                                              });
+                                            }}
+                                            className="w-16 flex-none p-1.5 text-sm rounded border border-translucid bg-translucid"
+                                            placeholder="0.00"
+                                          />
+                                          <ActionsMenu
+                                            options={[
+                                              {
+                                                label: choice.hidden
+                                                  ? "Exibir opção neste item"
+                                                  : "Ocultar opção neste item",
+                                                icon: choice.hidden ? (
+                                                  <FaEye size={12} />
+                                                ) : (
+                                                  <FaEyeSlash size={12} />
+                                                ),
+                                                onClick: () =>
+                                                  toggleChoiceHiddenNow(gi, ci),
+                                              },
+                                              canSyncAcrossMenu && {
+                                                label: choice.hidden
+                                                  ? "Exibir opção em todos os itens"
+                                                  : "Ocultar opção em todos os itens",
+                                                icon: choice.hidden ? (
+                                                  <FaEye size={12} />
+                                                ) : (
+                                                  <FaEyeSlash size={12} />
+                                                ),
+                                                onClick: () =>
+                                                  syncChoiceVisibilityAcrossMenu(
+                                                    group.name,
+                                                    choice.name,
+                                                    !choice.hidden,
+                                                  ),
+                                              },
+                                              {
+                                                label: "Excluir opção",
+                                                icon: <FaTrash size={12} />,
+                                                danger: true,
+                                                onClick: () =>
+                                                  deleteChoiceNow(gi, ci),
+                                              },
+                                            ].filter(Boolean)}
+                                          />
+                                        </>
+                                      )}
+                                    </SortableRow>
+                                  );
+                                },
+                              )}
+                            </div>
+                          </SortableContext>
+                        </DndContext>
+
+                        {/* Adicionar opção */}
+                        <button
+                          type="button"
+                          onClick={() =>
                             setModalPayload((p) => {
                               const groups = [...(p.data.option_groups || [])];
-                              const choices = [...(groups[gi].option_choices || [])];
-                              choices[ci] = { ...choices[ci], name: e.target.value };
-                              groups[gi] = { ...groups[gi], option_choices: choices };
-                              return { ...p, data: { ...p.data, option_groups: groups } };
+                              const choices = [
+                                ...(groups[gi].option_choices || []),
+                              ];
+                              choices.push({
+                                id: `tmp-${uid()}`,
+                                name: "",
+                                price: "",
+                                hidden: false,
+                                position: choices.length,
+                              });
+                              groups[gi] = {
+                                ...groups[gi],
+                                option_choices: choices,
+                              };
+                              return {
+                                ...p,
+                                data: { ...p.data, option_groups: groups },
+                              };
                             })
                           }
-                          className="flex-1 min-w-0 p-1.5 text-sm rounded border border-translucid bg-translucid"
-                          placeholder="Nome da opção"
-                        />
-                        <input
-                          type="text"
-                          value={String(choice.price)}
-                          onChange={(e) => {
-                            let value = e.target.value.replace(/[^0-9.,-]/g, "").replace(",", ".");
-                            setModalPayload((p) => {
-                              const groups = [...(p.data.option_groups || [])];
-                              const choices = [...(groups[gi].option_choices || [])];
-                              choices[ci] = { ...choices[ci], price: value };
-                              groups[gi] = { ...groups[gi], option_choices: choices };
-                              return { ...p, data: { ...p.data, option_groups: groups } };
-                            });
-                          }}
-                          className="w-16 flex-none p-1.5 text-sm rounded border border-translucid bg-translucid"
-                          placeholder="0.00"
-                        />
-                        <ActionsMenu
-                          options={[
-                            {
-                              label: choice.hidden ? "Exibir opção neste item" : "Ocultar opção neste item",
-                              icon: choice.hidden ? <FaEye size={12} /> : <FaEyeSlash size={12} />,
-                              onClick: () => toggleChoiceHiddenNow(gi, ci),
-                            },
-                            canSyncAcrossMenu && {
-                              label: choice.hidden
-                                ? "Exibir opção em todos os itens"
-                                : "Ocultar opção em todos os itens",
-                              icon: choice.hidden ? <FaEye size={12} /> : <FaEyeSlash size={12} />,
-                              onClick: () => syncChoiceVisibilityAcrossMenu(group.name, choice.name, !choice.hidden),
-                            },
-                            {
-                              label: "Excluir opção",
-                              icon: <FaTrash size={12} />,
-                              danger: true,
-                              onClick: () => deleteChoiceNow(gi, ci),
-                            },
-                          ].filter(Boolean)}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Adicionar opção */}
-                <button
-                  type="button"
-                  onClick={() =>
-                    setModalPayload((p) => {
-                      const groups = [...(p.data.option_groups || [])];
-                      const choices = [...(groups[gi].option_choices || [])];
-                      choices.push({
-                        id: `tmp-${uid()}`,
-                        name: "",
-                        price: "",
-                        hidden: false,
-                        position: choices.length,
-                      });
-                      groups[gi] = { ...groups[gi], option_choices: choices };
-                      return { ...p, data: { ...p.data, option_groups: groups } };
-                    })
-                  }
-                  className="w-full text-sm cursor-pointer px-2 py-1 rounded border border-dashed border-[var(--gray)] color-gray hover:opacity-80 transition"
-                >
-                  + Opção
-                </button>
-              </div>
-            ))}
+                          className="w-full text-sm cursor-pointer px-2 py-1 rounded border border-dashed border-[var(--gray)] color-gray hover:opacity-80 transition"
+                        >
+                          + Opção
+                        </button>
+                      </>
+                    )}
+                  </SortableRow>
+                ))}
+              </SortableContext>
+            </DndContext>
           </div>
 
           {/* Rodapé do modal de grupos */}
@@ -3230,107 +3977,144 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
         </GenericModal>
       )}
 
-      {modalOpen && additionalsCfgOpen && modalPayload.type === "item" && cfgGroupIdx !== null && (
-        <GenericModal
-          backdropDontClose
-          wfull
-          maxWidth={"420px"}
-          title="Configurar grupo"
-          onClose={closeAdditionalsCfgModal}
-        >
-          <div className="space-y-4">
-            <label className="block">
-              <div className="text-sm color-gray mb-1">Mínimo de escolhas</div>
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="0"
-                value={additionalsCfgDraft?.min_choices ?? ""}
-                onChange={(e) => {
-                  const raw = e.target.value.replace(/[^0-9]/g, "");
-                  setAdditionalsCfgDraft((d) => ({ ...d, min_choices: raw }));
-                }}
-                className="w-full p-2 rounded border border-translucid bg-translucid"
-              />
-              <div className="text-xs mt-1 color-gray">0 = opcional; 1 ou mais = obrigatório</div>
-            </label>
+      {modalOpen &&
+        additionalsCfgOpen &&
+        modalPayload.type === "item" &&
+        cfgGroupIdx !== null && (
+          <GenericModal
+            backdropDontClose
+            wfull
+            maxWidth={"420px"}
+            title="Configurar grupo"
+            onClose={closeAdditionalsCfgModal}
+          >
+            <div className="space-y-4">
+              <label className="block">
+                <div className="text-sm color-gray mb-1">
+                  Mínimo de escolhas
+                </div>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="0"
+                  value={additionalsCfgDraft?.min_choices ?? ""}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/[^0-9]/g, "");
+                    setAdditionalsCfgDraft((d) => ({ ...d, min_choices: raw }));
+                  }}
+                  className="w-full p-2 rounded border border-translucid bg-translucid"
+                />
+                <div className="text-xs mt-1 color-gray">
+                  0 = opcional; 1 ou mais = obrigatório
+                </div>
+              </label>
 
-            <label className="block">
-              <div className="text-sm color-gray mb-1">Máximo de escolhas</div>
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="0"
-                value={additionalsCfgDraft?.max_choices ?? ""}
-                onChange={(e) => {
-                  const raw = e.target.value.replace(/[^0-9]/g, "");
-                  setAdditionalsCfgDraft((d) => ({ ...d, max_choices: raw }));
-                }}
-                className="w-full p-2 rounded border border-translucid bg-translucid"
-              />
-              <div className="text-xs mt-1 color-gray">0 = sem limite</div>
-            </label>
+              <label className="block">
+                <div className="text-sm color-gray mb-1">
+                  Máximo de escolhas
+                </div>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="0"
+                  value={additionalsCfgDraft?.max_choices ?? ""}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/[^0-9]/g, "");
+                    setAdditionalsCfgDraft((d) => ({ ...d, max_choices: raw }));
+                  }}
+                  className="w-full p-2 rounded border border-translucid bg-translucid"
+                />
+                <div className="text-xs mt-1 color-gray">0 = sem limite</div>
+              </label>
 
-            <div className="flex justify-end gap-2 mt-4">
-              <button
-                type="button"
-                onClick={closeAdditionalsCfgModal}
-                className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const minC = Number(additionalsCfgDraft?.min_choices ?? 0);
-                  const maxC = Number(additionalsCfgDraft?.max_choices ?? 0);
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  type="button"
+                  onClick={closeAdditionalsCfgModal}
+                  className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const minC = Number(additionalsCfgDraft?.min_choices ?? 0);
+                    const maxC = Number(additionalsCfgDraft?.max_choices ?? 0);
 
-                  if (minC > 0 && maxC > 0 && minC > maxC) {
-                    alert?.("Mínimo não pode ser maior que o máximo.", "error");
-                    return;
-                  }
+                    if (minC > 0 && maxC > 0 && minC > maxC) {
+                      alert?.(
+                        "Mínimo não pode ser maior que o máximo.",
+                        "error",
+                      );
+                      return;
+                    }
 
-                  setModalPayload((p) => {
-                    const groups = [...(p.data.option_groups || [])];
-                    groups[cfgGroupIdx] = {
-                      ...groups[cfgGroupIdx],
-                      min_choices: minC,
-                      max_choices: maxC,
-                    };
-                    return { ...p, data: { ...p.data, option_groups: groups } };
-                  });
+                    setModalPayload((p) => {
+                      const groups = [...(p.data.option_groups || [])];
+                      groups[cfgGroupIdx] = {
+                        ...groups[cfgGroupIdx],
+                        min_choices: minC,
+                        max_choices: maxC,
+                      };
+                      return {
+                        ...p,
+                        data: { ...p.data, option_groups: groups },
+                      };
+                    });
 
-                  closeAdditionalsCfgModal();
-                }}
-                className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded"
-              >
-                Confirmar
-              </button>
+                    closeAdditionalsCfgModal();
+                  }}
+                  className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded"
+                >
+                  Confirmar
+                </button>
+              </div>
             </div>
-          </div>
-        </GenericModal>
-      )}
+          </GenericModal>
+        )}
 
       {/* modal de importação */}
       {modalOpen && importModalOpen && (
-        <GenericModal wfull maxWidth={"420px"} title="Importar grupos de opções" onClose={closeImportModal}>
+        <GenericModal
+          wfull
+          maxWidth={"420px"}
+          title="Importar grupos de opções"
+          onClose={closeImportModal}
+        >
           {importableGroups.length === 0 ? (
-            <p className="text-sm color-gray text-center py-4">Nenhum grupo encontrado em outros itens.</p>
+            <p className="text-sm color-gray text-center py-4">
+              Nenhum grupo encontrado em outros itens.
+            </p>
           ) : (
             <div className="space-y-2 max-h-[55vh] overflow-y-auto pr-1">
               {importableGroups.map((entry) => {
                 const isExpanded = expandedImportItemId === entry.itemId;
                 return (
-                  <div key={entry.itemId} className="rounded border border-translucid overflow-hidden">
+                  <div
+                    key={entry.itemId}
+                    className="rounded border border-translucid overflow-hidden"
+                  >
                     <button
                       type="button"
-                      onClick={() => setExpandedImportItemId(isExpanded ? null : entry.itemId)}
+                      onClick={() =>
+                        setExpandedImportItemId(
+                          isExpanded ? null : entry.itemId,
+                        )
+                      }
                       className="w-full flex items-center justify-between px-3 py-2 bg-translucid hover:opacity-80 transition cursor-pointer"
                     >
-                      <span className="text-sm font-semibold">{entry.itemName}</span>
+                      <span className="text-sm font-semibold">
+                        {entry.itemName}
+                      </span>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs color-gray">{entry.groups.length} grupo(s)</span>
-                        {isExpanded ? <FaChevronUp size={11} /> : <FaChevronDown size={11} />}
+                        <span className="text-xs color-gray">
+                          {entry.groups.length} grupo(s)
+                        </span>
+                        {isExpanded ? (
+                          <FaChevronUp size={11} />
+                        ) : (
+                          <FaChevronDown size={11} />
+                        )}
                       </div>
                     </button>
 
@@ -3354,16 +4138,24 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                             onChange={() => {
                               setSelectedImportIds((prev) => {
                                 const next = new Set(prev);
-                                next.has(g.id) ? next.delete(g.id) : next.add(g.id);
+                                next.has(g.id)
+                                  ? next.delete(g.id)
+                                  : next.add(g.id);
                                 return next;
                               });
                             }}
                           />
                           <div className="min-w-0">
-                            <div className="font-semibold text-sm">{g.name}</div>
+                            <div className="font-semibold text-sm">
+                              {g.name}
+                            </div>
                             <div className="text-xs color-gray">
-                              {g.min_choices > 0 ? `Obrigatório (mín. ${g.min_choices})` : "Opcional"}
-                              {g.max_choices > 0 ? ` · máx. ${g.max_choices}` : " · sem limite"}
+                              {g.min_choices > 0
+                                ? `Obrigatório (mín. ${g.min_choices})`
+                                : "Opcional"}
+                              {g.max_choices > 0
+                                ? ` · máx. ${g.max_choices}`
+                                : " · sem limite"}
                             </div>
                             {(g.option_choices || []).length > 0 && (
                               <div className="text-xs color-gray mt-0.5 truncate">
@@ -3381,7 +4173,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
           )}
 
           <div className="flex justify-end gap-2 mt-4">
-            <button onClick={closeImportModal} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded">
+            <button
+              onClick={closeImportModal}
+              className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded"
+            >
               Cancelar
             </button>
             <button
@@ -3393,14 +4188,20 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                   .map((g) => ({
                     ...g,
                     id: `tmp-${uid()}`,
-                    option_choices: (g.option_choices || []).map((c) => ({ ...c, id: `tmp-${uid()}` })),
+                    option_choices: (g.option_choices || []).map((c) => ({
+                      ...c,
+                      id: `tmp-${uid()}`,
+                    })),
                   }));
 
                 setModalPayload((p) => ({
                   ...p,
                   data: {
                     ...p.data,
-                    option_groups: [...(p.data.option_groups || []), ...toImport],
+                    option_groups: [
+                      ...(p.data.option_groups || []),
+                      ...toImport,
+                    ],
                   },
                 }));
 
@@ -3415,17 +4216,25 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
       )}
 
       {combosModalOpen && (
-        <GenericModal wfull maxWidth={"420px"} py={"24px"} title="Combos" onClose={closeCombosModal}>
+        <GenericModal
+          wfull
+          maxWidth={"420px"}
+          py={"24px"}
+          title="Combos"
+          onClose={closeCombosModal}
+        >
           <p className="text-sm color-gray mb-3">
-            Configure descontos automáticos por quantidade ou valor gasto, aplicados a um item, categoria ou ao carrinho
-            todo.
+            Configure descontos automáticos por quantidade ou valor gasto,
+            aplicados a um item, categoria ou ao carrinho todo.
           </p>
 
           {hasPlusPermissions ? (
             <>
               <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
                 {(combos || []).length === 0 && (
-                  <p className="text-sm color-gray text-center py-4">Nenhum combo criado ainda.</p>
+                  <p className="text-sm color-gray text-center py-4">
+                    Nenhum combo criado ainda.
+                  </p>
                 )}
                 {(combos || []).map((combo) => {
                   const { target, trigger, discount } = describeCombo(combo);
@@ -3435,16 +4244,24 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                       className="flex items-center justify-between p-2 rounded border border-translucid bg-translucid"
                     >
                       <div className="min-w-0">
-                        <div className="text-sm font-semibold line-clamp-1">{target}</div>
+                        <div className="text-sm font-semibold line-clamp-1">
+                          {target}
+                        </div>
                         <div className="text-xs color-gray">
                           {trigger} → {discount}
                         </div>
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
-                        <button onClick={() => openComboForm(combo)} className="p-2 cursor-pointer">
+                        <button
+                          onClick={() => openComboForm(combo)}
+                          className="p-2 cursor-pointer"
+                        >
                           <FaPen size={13} />
                         </button>
-                        <button onClick={() => deleteCombo(combo.id)} className="p-2 cursor-pointer text-red-500">
+                        <button
+                          onClick={() => deleteCombo(combo.id)}
+                          className="p-2 cursor-pointer text-red-500"
+                        >
                           <FaTrash size={13} />
                         </button>
                       </div>
@@ -3463,7 +4280,8 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
             </>
           ) : (
             <div className="rounded-2xl border border-amber-500/20 bg-amber-500/20 p-4 text-sm">
-              Criar combos é uma função exclusiva do Bite Menu Plus ou Pro. Faça upgrade para criar os seus!
+              Criar combos é uma função exclusiva do Bite Menu Plus ou Pro. Faça
+              upgrade para criar os seus!
             </div>
           )}
         </GenericModal>
@@ -3508,7 +4326,8 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                         ...d,
                         scope: opt.value,
                         item_id: opt.value === "item" ? d.item_id : "",
-                        category_id: opt.value === "category" ? d.category_id : "",
+                        category_id:
+                          opt.value === "category" ? d.category_id : "",
                         // carrinho só faz sentido por valor, mas deixamos livre pra escolher também por quantidade total
                       }))
                     }
@@ -3526,7 +4345,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                 <div className="text-sm color-gray mb-1">Item</div>
                 <SearchableSelect
                   value={comboDraft.item_id}
-                  onChange={(val) => setComboDraft((d) => ({ ...d, item_id: val }))}
+                  onChange={(val) =>
+                    setComboDraft((d) => ({ ...d, item_id: val }))
+                  }
                   placeholder="Selecione um item"
                   emptyLabel="Nenhum item encontrado"
                   options={allItemsFlat.map((it) => ({
@@ -3542,7 +4363,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                 <div className="text-sm color-gray mb-1">Categoria</div>
                 <SearchableSelect
                   value={comboDraft.category_id}
-                  onChange={(val) => setComboDraft((d) => ({ ...d, category_id: val }))}
+                  onChange={(val) =>
+                    setComboDraft((d) => ({ ...d, category_id: val }))
+                  }
                   placeholder="Selecione uma categoria"
                   emptyLabel="Nenhuma categoria encontrada"
                   options={(categories || []).map((c) => ({
@@ -3559,14 +4382,18 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setComboDraft((d) => ({ ...d, trigger_type: "quantity" }))}
+                  onClick={() =>
+                    setComboDraft((d) => ({ ...d, trigger_type: "quantity" }))
+                  }
                   className={`flex-1 p-2 rounded-lg border-2 border-[var(--translucid)] cursor-pointer text-sm font-semibold transition ${comboDraft.trigger_type === "quantity" ? "bg-green-600/80 text-white" : "hover:bg-[var(--translucid)]"}`}
                 >
                   Por quantidade
                 </button>
                 <button
                   type="button"
-                  onClick={() => setComboDraft((d) => ({ ...d, trigger_type: "value" }))}
+                  onClick={() =>
+                    setComboDraft((d) => ({ ...d, trigger_type: "value" }))
+                  }
                   className={`flex-1 p-2 rounded-lg border-2 border-[var(--translucid)] cursor-pointer text-sm font-semibold transition ${comboDraft.trigger_type === "value" ? "bg-green-600/80 text-white" : "hover:bg-[var(--translucid)]"}`}
                 >
                   Por valor gasto
@@ -3576,7 +4403,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
             <label className="block">
               <div className="text-sm color-gray mb-1">
-                {comboDraft.trigger_type === "quantity" ? "Quantidade mínima" : "Valor mínimo"}
+                {comboDraft.trigger_type === "quantity"
+                  ? "Quantidade mínima"
+                  : "Valor mínimo"}
               </div>
               <input
                 type="text"
@@ -3592,7 +4421,11 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                   setComboDraft((d) => ({ ...d, trigger_value: value }));
                 }}
                 className="w-full p-2 rounded border border-translucid bg-translucid"
-                placeholder={comboDraft.trigger_type === "quantity" ? "Ex: 6" : "Ex: 100.00"}
+                placeholder={
+                  comboDraft.trigger_type === "quantity"
+                    ? "Ex: 6"
+                    : "Ex: 100.00"
+                }
               />
             </label>
 
@@ -3602,14 +4435,21 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setComboDraft((d) => ({ ...d, discount_type: "percentage" }))}
+                  onClick={() =>
+                    setComboDraft((d) => ({
+                      ...d,
+                      discount_type: "percentage",
+                    }))
+                  }
                   className={`flex-1 p-2 rounded-lg border-2 border-[var(--translucid)] cursor-pointer text-sm font-semibold transition ${comboDraft.discount_type === "percentage" ? "bg-green-600/80 text-white" : "hover:bg-[var(--translucid)]"}`}
                 >
                   Porcentagem (%)
                 </button>
                 <button
                   type="button"
-                  onClick={() => setComboDraft((d) => ({ ...d, discount_type: "fixed" }))}
+                  onClick={() =>
+                    setComboDraft((d) => ({ ...d, discount_type: "fixed" }))
+                  }
                   className={`flex-1 p-2 rounded-lg border-2 border-[var(--translucid)] cursor-pointer text-sm font-semibold transition ${comboDraft.discount_type === "fixed" ? "bg-green-600/80 text-white" : "hover:bg-[var(--translucid)]"}`}
                 >
                   Valor fixo ({getCurrencySymbol(menu?.currency)})
@@ -3619,7 +4459,9 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
 
             <label className="block">
               <div className="text-sm color-gray mb-1">
-                {comboDraft.discount_type === "percentage" ? "Percentual de desconto" : "Valor do desconto"}
+                {comboDraft.discount_type === "percentage"
+                  ? "Percentual de desconto"
+                  : "Valor do desconto"}
               </div>
               <input
                 type="text"
@@ -3627,11 +4469,15 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
                 onChange={(e) =>
                   setComboDraft((d) => ({
                     ...d,
-                    discount_value: e.target.value.replace(/[^0-9.,]/g, "").replace(",", "."),
+                    discount_value: e.target.value
+                      .replace(/[^0-9.,]/g, "")
+                      .replace(",", "."),
                   }))
                 }
                 className="w-full p-2 rounded border border-translucid bg-translucid"
-                placeholder={comboDraft.discount_type === "percentage" ? "15" : "20.00"}
+                placeholder={
+                  comboDraft.discount_type === "percentage" ? "15" : "20.00"
+                }
               />
             </label>
 
@@ -3694,7 +4540,10 @@ export default function MenuItems({ backgroundColor, detailsColor, changedFields
           }
           onCta={() => {
             // promo/destaque e limites do free resolvem no Plus; limites do Plus, no Pro
-            const target = planModalFeature.endsWith("_limit") && ownerRole !== "free" ? "pro" : "plus";
+            const target =
+              planModalFeature.endsWith("_limit") && ownerRole !== "free"
+                ? "pro"
+                : "plus";
             window.location.href = `/dashboard/pricing?plan=${target}`;
           }}
         />
