@@ -11,7 +11,7 @@ const page = () => {
       <div className="max-w-2xl flex flex-col gap-6 p-4 pt-12">
         <h1 className="default-h1">Termos de Uso – Bite Menu</h1>
 
-        <p>Última atualização: 02/10/2026</p>
+        <p>Última atualização: 04/10/2026</p>
 
         <p>
           Bem-vindo ao <strong>Bite Menu</strong>. Antes de utilizar a plataforma, leia atentamente estes Termos de Uso. Eles
@@ -67,7 +67,7 @@ const page = () => {
             </li>
             <li>
               <strong>Consumidor Final / Comprador:</strong> pessoa que acessa o cardápio de um estabelecimento para
-              visualizar produtos e fazer pedidos.
+              visualizar produtos, fazer pedidos ou realizar pagamentos.
             </li>
             <li>
               <strong>Cardápio Digital:</strong> a página pública do estabelecimento no Bite Menu, acessível via link ou QR
@@ -82,8 +82,8 @@ const page = () => {
               os recursos e limites disponíveis.
             </li>
             <li>
-              <strong>ValidaPay:</strong> a processadora de pagamentos utilizada pelo Bite Menu para a cobrança das
-              assinaturas dos planos pagos.
+              <strong>ValidaPay:</strong> a processadora de pagamentos utilizada pelo Bite Menu para as cobranças de
+              assinatura dos planos pagos.
             </li>
           </ul>
         </section>
@@ -457,9 +457,9 @@ const page = () => {
             os titulares de dados, conforme previsto no art. 20 da LGPD.
           </p>
           <p>
-            A ValidaPay, processadora das assinaturas, pode realizar análises automatizadas dos pagamentos para fins de
-            prevenção a fraudes e cumprimento de obrigações regulatórias, de acordo com suas próprias políticas. Essas
-            análises são de responsabilidade exclusiva da ValidaPay e regidas por seus próprios termos.
+            Alguns serviços de terceiros integrados à plataforma — em especial a ValidaPay, no processamento das assinaturas
+            — podem realizar análises automatizadas para fins de prevenção a fraudes, de acordo com suas próprias políticas.
+            Essas análises são de responsabilidade exclusiva da ValidaPay e regidas por seus próprios termos.
           </p>
         </section>
 
@@ -529,8 +529,8 @@ const page = () => {
           </p>
           <p className="text-sm color-gray mt-4">
             O Bite Menu é uma plataforma de tecnologia desenvolvida para estabelecimentos do setor de alimentação. Não somos
-            uma instituição financeira, operadora de pagamentos ou adquirente. O processamento dos pagamentos das
-            assinaturas é prestado pela ValidaPay, empresa independente.
+            uma instituição financeira, operadora de pagamentos ou adquirente. Os serviços de processamento de pagamentos são
+            prestados pela ValidaPay, empresa independente e devidamente regulamentada.
           </p>
         </section>
       </div>

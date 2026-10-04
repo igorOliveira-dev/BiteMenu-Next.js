@@ -11,7 +11,7 @@ const page = () => {
       <div className="max-w-2xl flex flex-col gap-6 p-4 pt-12">
         <h1 className="default-h1">Política de Privacidade – Bite Menu</h1>
 
-        <p>Última atualização: 02/10/2026</p>
+        <p>Última atualização: 04/10/2026</p>
 
         <p>
           O <strong>Bite Menu</strong> valoriza sua privacidade e está comprometido com a proteção dos seus dados pessoais.
@@ -47,10 +47,6 @@ const page = () => {
               esses dados.
             </li>
           </ul>
-          <p>
-            O pagamento dos pedidos é combinado diretamente entre o estabelecimento e seus clientes (dinheiro, PIX, cartão
-            na entrega etc.). O Bite Menu não processa nem intermedia esses pagamentos.
-          </p>
         </section>
 
         {/* 2. Dados Pessoais */}
@@ -75,7 +71,7 @@ const page = () => {
             <li>Arquivos enviados, como logotipo e banner do cardápio;</li>
             <li>Dados dos cardápios criados (produtos, categorias, preços e configurações);</li>
             <li>Telefone de contato;</li>
-            <li>Dados relacionados à assinatura dos planos Bite Menu (processados via ValidaPay).</li>
+            <li>Dados relacionados à assinatura dos planos Bite Menu (processados via ValidaPay);</li>
           </ul>
 
           <p>As informações coletadas pelo Bite Menu são utilizadas para:</p>
@@ -110,12 +106,12 @@ const page = () => {
           <p>
             Os dados são armazenados em servidores seguros e criptografados. O Bite Menu compartilha informações dos
             estabelecimentos apenas com fornecedores de infraestrutura necessários ao funcionamento da plataforma
-            (Supabase), com a ValidaPay para fins de processamento das assinaturas e, quando legalmente exigido, com
+            (Supabase), com a ValidaPay para fins de processamento de assinaturas e, quando legalmente exigido, com
             autoridades competentes.
           </p>
           <p>
-            Os dados de pagamento da assinatura não são armazenados pelo Bite Menu, mas pela ValidaPay, que atua como
-            processadora de pagamentos.
+            Os dados de pagamento da assinatura não são armazenados pelo Bite Menu, mas pela ValidaPay, que atua
+            como processadora de pagamentos.
           </p>
         </section>
 
@@ -228,8 +224,8 @@ const page = () => {
           </ul>
           <p>
             Essas transferências são realizadas em conformidade com o art. 33 da LGPD, com base em garantias contratuais
-            adequadas. Esses fornecedores adotam padrões de segurança equivalentes ou superiores aos exigidos pela
-            legislação brasileira. Para mais informações, consulte a{" "}
+            adequadas, incluindo cláusulas-padrão de proteção de dados. Esses fornecedores adotam padrões de segurança
+            equivalentes ou superiores aos exigidos pela legislação brasileira. Para mais informações, consulte a{" "}
             <a
               href="https://supabase.com/privacy"
               target="_blank"
@@ -267,21 +263,6 @@ const page = () => {
             <strong>contato@bitemenu.com.br</strong>. Responderemos dentro do prazo legal estabelecido pela LGPD.
           </p>
           <p>
-            <strong>Dados de pagamento da assinatura:</strong> Os dados inseridos diretamente na página de pagamento da
-            ValidaPay (como dados de cartão de crédito) não são acessados pelo Bite Menu. Solicitações sobre esses dados
-            podem ser enviadas ao Bite Menu, que as encaminhará à ValidaPay, ou diretamente à ValidaPay pelos canais
-            indicados em{" "}
-            <a
-              href="https://validapay.com.br"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline text-blue-500 hover:text-blue-700"
-            >
-              validapay.com.br
-            </a>
-            .
-          </p>
-          <p>
             <strong>Dados dos consumidores finais (pedidos):</strong> Como o Bite Menu atua como operador em relação aos
             dados dos consumidores, as solicitações de direitos devem ser endereçadas primariamente ao estabelecimento
             controlador. O Bite Menu dará suporte às solicitações encaminhadas pelo estabelecimento.
@@ -302,8 +283,8 @@ const page = () => {
               resolução de eventuais disputas, ou conforme determinado pelo estabelecimento controlador;
             </li>
             <li>
-              <strong>Dados financeiros e fiscais (assinaturas):</strong> pelo prazo mínimo de 5 (cinco) anos, conforme
-              exigido pela legislação tributária e contábil brasileira.
+              <strong>Dados financeiros e fiscais (assinaturas e transações):</strong> pelo prazo mínimo de 5 (cinco) anos,
+              conforme exigido pela legislação tributária e contábil brasileira;
             </li>
           </ul>
           <p>
@@ -325,14 +306,17 @@ const page = () => {
             Ao contratar um plano pago, o estabelecimento é redirecionado a uma página segura da ValidaPay, onde informa
             seu CPF ou CNPJ e escolhe pagar por PIX, boleto ou cartão de crédito. O Bite Menu envia à ValidaPay apenas o
             nome e o e-mail da conta para pré-preencher o pagamento, e <strong>não armazena nem tem acesso</strong> a
-            informações sensíveis como número de cartão, código de segurança (CVV) ou data de validade.
+            informações sensíveis como número de cartão ou código de segurança (CVV).
           </p>
           <p>As informações que o Bite Menu recebe da ValidaPay sobre as assinaturas incluem:</p>
           <ul className="list-disc ml-6">
             <li>Identificador da assinatura;</li>
             <li>Status da assinatura (ativa, cancelada, cancelamento agendado, expirada);</li>
             <li>Plano contratado e período de vigência;</li>
-            <li>E-mail e CPF/CNPJ informados no pagamento, usados apenas para vincular a assinatura à conta.</li>
+            <li>
+              E-mail e CPF/CNPJ informados no pagamento, usados apenas para vincular a assinatura à conta e cumprir
+              obrigações legais e fiscais.
+            </li>
           </ul>
           <p>Esses dados são usados exclusivamente para:</p>
           <ul className="list-disc ml-6">
@@ -346,6 +330,7 @@ const page = () => {
             e no cumprimento de obrigação legal (art. 7º, II da LGPD) para fins fiscais e contábeis.
           </p>
         </section>
+
 
         {/* 11. Responsabilidades dos Estabelecimentos */}
         <section className="flex flex-col gap-2 mb-4">
@@ -370,7 +355,8 @@ const page = () => {
 
           <p>
             O Bite Menu trata os dados dos consumidores finais exclusivamente conforme as instruções dos estabelecimentos e
-            para as finalidades descritas nesta política.
+            para as finalidades descritas nesta política. O Bite Menu não se responsabiliza por falhas no processamento de
+            pagamentos, erros de transação ou quaisquer perdas financeiras decorrentes de serviços de terceiros.
           </p>
         </section>
 
@@ -411,8 +397,8 @@ const page = () => {
           <p>Em caso de atualização relevante desta política, solicitaremos novo aceite ao acessar a plataforma.</p>
           <p className="text-sm color-gray mt-4">
             O Bite Menu está em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018 – LGPD) e segue boas
-            práticas internacionais de segurança da informação. Os pagamentos das assinaturas são processados com
-            criptografia por meio da ValidaPay.
+            práticas internacionais de segurança da informação. As transações financeiras são processadas com criptografia por
+            meio da ValidaPay.
           </p>
         </section>
       </div>

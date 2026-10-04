@@ -79,7 +79,7 @@ Regra:
 
 NÃO alterar diretamente integrações com:
 
-- Gateway de pagamento (ValidaPay, só para as assinaturas dos planos)
+- Gateway de pagamento (ValidaPay)
 - Supabase (auth, queries críticas, RLS)
 
 Isso inclui:
@@ -102,7 +102,7 @@ Se necessário:
 - Next.js 16 (App Router)
 - JavaScript / TypeScript
 - Supabase (DB, Auth, Storage)
-- Pagamentos: ValidaPay (assinaturas dos planos)
+- Pagamentos: ValidaPay
 - Tailwind CSS
 - PWA (`next-pwa`)
 
