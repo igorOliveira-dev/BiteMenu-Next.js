@@ -977,6 +977,7 @@ const Orders = ({
                                 deliveryFeeOnSales,
                               })}
                               currency={menu?.currency}
+                              menuName={menu?.title}
                               canPrint={
                                 profile?.role === "pro" ||
                                 profile?.role === "admin"

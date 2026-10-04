@@ -527,18 +527,120 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   margin: 0;
 }
 
-.print-layout h3 {
+.print-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+  border-bottom: 0.5mm solid black;
+}
+
+.print-header img {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  filter: grayscale(1) contrast(2);
+}
+
+.print-header-info {
+  min-width: 0;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.print-header-info h1 {
+  margin: 0 0 2px;
+  text-align: left;
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+.print-number {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2px 8px;
+  line-height: 1.1;
+}
+
+.print-number span {
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.print-number strong {
+  font-size: 22px;
+}
+
+.print-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.print-row > span:last-child {
+  white-space: nowrap;
+}
+
+.print-total {
   font-size: 18px;
+  font-weight: bold;
+  margin: 4px 0;
+}
+
+.print-item {
+  margin-bottom: 4px;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.print-sub {
+  padding-left: 12px;
+  font-size: 12px;
+}
+
+.print-box {
+  border: 0.3mm solid black;
+  border-radius: 4px;
+  padding: 4px 6px;
+  margin: 4px 0;
+}
+
+.print-note {
+  border: 0.3mm dashed black;
+  padding: 2px 6px;
+  margin: 2px 0 2px 12px;
   font-weight: bold;
 }
 
-.print-layout h1 {
+.print-banner {
+  border: 0.5mm solid black;
   text-align: center;
-  margin-bottom: 10px;
+  font-size: 18px;
+  font-weight: bold;
+  padding: 4px;
+  margin: 4px 0;
 }
 
+/* 58mm: pouco espaço, sem logo e faixa menor */
+.print-layout.paper-58mm .print-header img {
+  display: none;
+}
+
+.print-layout.paper-58mm .print-banner {
+  font-size: 14px;
+}
+
+/* espessura em mm: em px a linha arredonda diferente conforme o papel/escala */
 .print-layout hr {
-  margin: 4px 0;
+  height: 0;
+  border: 0;
+  border-top: 0.3mm dashed black;
+  margin: 6px 0;
 }
 
 .print-layout.paper-a4 {

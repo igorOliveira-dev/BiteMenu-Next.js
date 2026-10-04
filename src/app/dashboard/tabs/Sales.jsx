@@ -772,6 +772,7 @@ const Sales = ({ setSelectedTab }) => {
                             <PrintDocumentButton
                               document={normalizeSaleForPrint(sale)}
                               currency={menu?.currency}
+                              menuName={menu?.title}
                               canPrint={
                                 profile?.role === "pro" ||
                                 profile?.role === "admin"

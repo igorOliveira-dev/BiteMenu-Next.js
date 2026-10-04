@@ -51,6 +51,7 @@ export function normalizeOrderForPrint(order, { deliveryFeeOnSales } = {}) {
     address: order.address,
     paymentMethod: order.payment_method,
     service: order.service,
+    tableLabel: order.table_label || null,
     itemsList: order.items_list || [],
     subtotal,
     discount,
@@ -105,6 +106,38 @@ const defaultModeDescriptions = {
   },
 };
 
+// Cabeçalho comum aos 3 modos: logo, título, número em destaque e id curto.
+// Vendas não guardam order_number: o id curto vira o destaque.
+function PrintHeader({ title, document }) {
+  const shortId = `#${document.id?.slice(0, 6)}`;
+  const hasNumber = document.orderNumber != null;
+
+  return (
+    <div className="print-header">
+      <img src="/LogoTipo-sem-fundo.png" alt="Bite Menu" />
+      <div className="print-header-info">
+        <h1>{title}</h1>
+        <p>{new Date(document.createdAt).toLocaleString("pt-BR")}</p>
+        {hasNumber && <p>ID {shortId}</p>}
+      </div>
+      <div className="print-number">
+        <span>{hasNumber ? "Nº" : "ID"}</span>
+        <strong>{hasNumber ? document.orderNumber : shortId}</strong>
+      </div>
+    </div>
+  );
+}
+
+// linha "rótulo .... valor"
+function PrintRow({ label, value, className = "" }) {
+  return (
+    <div className={`print-row ${className}`}>
+      <span>{label}</span>
+      <span>{value}</span>
+    </div>
+  );
+}
+
 /**
  * Botão + modal de opções + layout oculto de impressão, tudo autocontido.
  * Reutilizável para pedidos (orders) e vendas (sales) — basta passar o
@@ -113,6 +146,7 @@ const defaultModeDescriptions = {
 export default function PrintDocumentButton({
   document,
   currency,
+  menuName,
   canPrint,
   onDenied,
   triggerClassName,
@@ -139,12 +173,10 @@ export default function PrintDocumentButton({
 
   if (!document) return null;
 
-  // vendas não guardam order_number: mostram só o id curto
-  const shortId = `#${document.id?.slice(0, 6)}`;
-  const numberLabel =
-    document.orderNumber != null
-      ? `${document.orderNumber} (${shortId})`
-      : shortId;
+  // o label da mesa já vem com o prefixo escolhido pelo dono (ex.: "Mesa 5")
+  const serviceText = [serviceLabels[document.service], document.tableLabel]
+    .filter(Boolean)
+    .join(" · ");
 
   const totalItens = (document.itemsList || []).reduce(
     (acc, item) => acc + (Number(item.qty) || 0),
@@ -256,94 +288,106 @@ export default function PrintDocumentButton({
         <div ref={printRef} className={`print-layout ${paperSize}`}>
           {printMode === "full" && (
             <>
-              <h1>{receiptTitle}</h1>
-              <p>
-                <strong>Nº:</strong> {numberLabel}
-              </p>
-              <p>{new Date(document.createdAt).toLocaleString("pt-BR")}</p>
-              <hr />
+              <PrintHeader title={receiptTitle} document={document} />
+              {menuName && <p>{menuName}</p>}
               <p>
                 <strong>Cliente:</strong> {document.costumerName}
               </p>
               <p>
                 <strong>Telefone:</strong> {document.costumerPhone}
               </p>
-              {document.neighborhood && (
-                <p>
-                  <strong>Bairro:</strong> {document.neighborhood}
-                </p>
-              )}
-              {document.address && (
-                <p>
-                  <strong>Endereço:</strong> {document.address}
-                </p>
-              )}
               <p>
-                <strong>Pagamento:</strong>{" "}
-                {paymentLabels[document.paymentMethod]}
+                <strong>Serviço:</strong> {serviceText}
               </p>
-              <p>
-                <strong>Serviço:</strong> {serviceLabels[document.service]}
-              </p>
+              {document.service === "delivery" &&
+                (document.address || document.neighborhood) && (
+                  <div className="print-box">
+                    <strong>ENDEREÇO DE ENTREGA</strong>
+                    {document.address && <div>{document.address}</div>}
+                    {document.neighborhood && (
+                      <div>Bairro: {document.neighborhood}</div>
+                    )}
+                  </div>
+                )}
               <hr />
-              {document.itemsList.map((item, index) => (
-                <div
-                  key={index}
-                  style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
-                >
-                  <strong>
-                    {item.qty}x {item.name}
-                  </strong>
-                  {(item.additionals || []).map((add, i) => (
-                    <div key={i}>+ {add.name}</div>
-                  ))}
-                  {item.note && <div>Obs: {item.note}</div>}
-                </div>
-              ))}
+              {document.itemsList.map((item, index) => {
+                const adds = item.additionals || [];
+                const unit =
+                  (Number(item.price) || 0) +
+                  adds.reduce((sa, a) => sa + (Number(a.price) || 0), 0);
+                return (
+                  <div key={index} className="print-item">
+                    <PrintRow
+                      label={
+                        <strong>
+                          {item.qty}x {item.name}
+                        </strong>
+                      }
+                      value={formatCurrency(
+                        unit * (Number(item.qty) || 0),
+                        currency,
+                      )}
+                    />
+                    {adds.map((add, i) => (
+                      <div key={i} className="print-sub">
+                        + {add.name}
+                      </div>
+                    ))}
+                    {item.note && (
+                      <div className="print-sub">Obs: {item.note}</div>
+                    )}
+                  </div>
+                );
+              })}
               <hr />
-              <p>
-                <strong>Itens:</strong> {totalItens}
-              </p>
-              <p>
-                <strong>Subtotal:</strong>{" "}
-                {formatCurrency(document.subtotal, currency)}
-              </p>
+              <PrintRow label="Itens" value={totalItens} />
+              <PrintRow
+                label="Pagamento"
+                value={paymentLabels[document.paymentMethod] || "—"}
+              />
+              <PrintRow
+                label="Subtotal"
+                value={formatCurrency(document.subtotal, currency)}
+              />
               {document.discount > 0 && (
-                <p>
-                  <strong>Desconto:</strong> -
-                  {formatCurrency(document.discount, currency)}
-                </p>
+                <PrintRow
+                  label="Desconto"
+                  value={`-${formatCurrency(document.discount, currency)}`}
+                />
               )}
               {document.service === "delivery" && (
-                <p>
-                  <strong>Entrega:</strong>{" "}
-                  {formatCurrency(document.deliveryFee, currency)}
-                </p>
+                <PrintRow
+                  label="Entrega"
+                  value={formatCurrency(document.deliveryFee, currency)}
+                />
               )}
-              <hr />
-              <p style={{ fontSize: "18px", fontWeight: "bold" }}>
-                TOTAL: {formatCurrency(document.total, currency)}
-              </p>
+              <PrintRow
+                className="print-total"
+                label="TOTAL"
+                value={formatCurrency(document.total, currency)}
+              />
               {document.netTotal != null && (
-                <p style={{ fontSize: "14px" }}>
-                  Líquido: {formatCurrency(document.netTotal, currency)}
-                </p>
+                <PrintRow
+                  label="Líquido"
+                  value={formatCurrency(document.netTotal, currency)}
+                />
               )}
             </>
           )}
 
           {printMode === "kitchen" && (
             <>
-              <h1>COZINHA</h1>
-              <p>
-                <strong>Nº:</strong> {numberLabel}
-              </p>
-              <p>{new Date(document.createdAt).toLocaleString("pt-BR")}</p>
-              <p>
-                <strong>
-                  {serviceLabels[document.service]?.toUpperCase()}
-                </strong>
-              </p>
+              <PrintHeader title="COZINHA" document={document} />
+              {serviceText && (
+                <div className="print-banner">
+                  {serviceText.toUpperCase()}
+                </div>
+              )}
+              {menuName && (
+                <p>
+                  {menuName}
+                </p>
+              )}
               {document.costumerName && (
                 <p>
                   <strong>Cliente:</strong> {document.costumerName}
@@ -351,61 +395,64 @@ export default function PrintDocumentButton({
               )}
               <hr />
               {document.itemsList.map((item, index) => (
-                <div
-                  key={index}
-                  style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
-                >
-                  <h3>
+                <div key={index} className="print-item">
+                  <strong>
                     {item.qty}x {item.name}
-                  </h3>
+                  </strong>
                   {(item.additionals || []).map((add, i) => (
-                    <div key={i}>+ {add.name}</div>
+                    <div key={i} className="print-sub">
+                      + {add.name}
+                    </div>
                   ))}
                   {item.note && (
-                    <div style={{ fontWeight: "bold" }}>
+                    <div className="print-note">
                       OBS: {item.note.toUpperCase()}
                     </div>
                   )}
                   <hr />
                 </div>
               ))}
+              <PrintRow label="Total de itens" value={totalItens} />
             </>
           )}
 
           {printMode === "counter" && (
             <>
-              <h1>COMANDA</h1>
-              <p>
-                <strong>Nº:</strong> {numberLabel}
-              </p>
-              <p>{new Date(document.createdAt).toLocaleString("pt-BR")}</p>
+              <PrintHeader title="COMANDA" document={document} />
               {document.costumerName && (
+                <div className="print-banner">{document.costumerName}</div>
+              )}
+              {menuName && (
                 <p>
-                  <strong>Cliente:</strong> {document.costumerName}
+                  {menuName}
                 </p>
               )}
+              <p>
+                <strong>Serviço:</strong> {serviceText}
+              </p>
               <hr />
               {document.itemsList.map((item, index) => (
-                <div
-                  key={index}
-                  style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
-                >
+                <div key={index} className="print-item">
                   <strong>
                     {item.qty}x {item.name}
                   </strong>
                   {(item.additionals || []).map((add, i) => (
-                    <div key={i}>+ {add.name}</div>
+                    <div key={i} className="print-sub">
+                      + {add.name}
+                    </div>
                   ))}
-                  {item.note && <div>Obs: {item.note}</div>}
+                  {item.note && (
+                    <div className="print-sub">Obs: {item.note}</div>
+                  )}
                 </div>
               ))}
               <hr />
-              <p>
-                <strong>Itens:</strong> {totalItens}
-              </p>
-              <p style={{ fontSize: "18px", fontWeight: "bold" }}>
-                TOTAL: {formatCurrency(document.total, currency)}
-              </p>
+              <PrintRow label="Itens" value={totalItens} />
+              <PrintRow
+                className="print-total"
+                label="TOTAL"
+                value={formatCurrency(document.total, currency)}
+              />
             </>
           )}
         </div>
