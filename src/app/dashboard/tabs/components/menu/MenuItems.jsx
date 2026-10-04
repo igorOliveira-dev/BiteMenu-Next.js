@@ -569,6 +569,9 @@ function SortableMenuItem({
                 className="text-2xl font-bold"
                 style={{ color: foregroundToUse }}
               >
+                {item.variations?.options?.length > 0 && (
+                  <span className="block text-xs font-normal">a partir de</span>
+                )}
                 {item.price ? formatCurrency(item.price, currency) : "-"}
               </div>
             )}
@@ -596,6 +599,7 @@ export default function MenuItems({
   const [additionalsCfgDraft, setAdditionalsCfgDraft] = useState(null);
   const [cfgGroupIdx, setCfgGroupIdx] = useState(null);
   const [optionGroupsModalOpen, setOptionGroupsModalOpen] = useState(false);
+  const [variationsModalOpen, setVariationsModalOpen] = useState(false);
 
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [importableGroups, setImportableGroups] = useState([]);
@@ -628,6 +632,7 @@ export default function MenuItems({
 
   const closingAdditionalsCfgFromPop = useRef(false);
   const closingOptionGroupsFromPop = useRef(false);
+  const closingVariationsFromPop = useRef(false);
   const [menuChoicesIndex, setMenuChoicesIndex] = useState([]);
   const [menuChoicesIndexLoading, setMenuChoicesIndexLoading] = useState(false);
   const closingImportFromPop = useRef(false);
@@ -749,6 +754,7 @@ export default function MenuItems({
             name,
             price,
             promo_price,
+            variations,
             description,
             additionals,
             image_url,
@@ -818,6 +824,12 @@ export default function MenuItems({
   }, [optionGroupsModalOpen]);
 
   useEffect(() => {
+    if (variationsModalOpen) {
+      history.pushState({ variationsModal: true }, "");
+    }
+  }, [variationsModalOpen]);
+
+  useEffect(() => {
     if (importModalOpen) {
       history.pushState({ importModal: true }, "");
     }
@@ -850,6 +862,13 @@ export default function MenuItems({
         closingImportFromPop.current = true;
         setImportModalOpen(false);
         queueMicrotask(() => (closingImportFromPop.current = false));
+        return;
+      }
+
+      if (variationsModalOpen) {
+        closingVariationsFromPop.current = true;
+        closeVariationsModal();
+        queueMicrotask(() => (closingVariationsFromPop.current = false));
         return;
       }
 
@@ -891,6 +910,7 @@ export default function MenuItems({
     additionalsCfgOpen,
     additionalsCfgDraft,
     optionGroupsModalOpen,
+    variationsModalOpen,
     importModalOpen,
   ]);
 
@@ -1008,6 +1028,17 @@ export default function MenuItems({
       history.back();
     }
     closingOptionGroupsFromPop.current = false;
+  };
+
+  // Fechar modal de variação (descarta linhas vazias)
+  const closeVariationsModal = () => {
+    setVariationsModalOpen(false);
+    updateVariations(dropEmptyVariationRows);
+    if (history.state?.variationsModal && !closingVariationsFromPop.current) {
+      ignoreNextPop.current = true;
+      history.back();
+    }
+    closingVariationsFromPop.current = false;
   };
 
   // Fechar modal de importação
@@ -1194,6 +1225,7 @@ export default function MenuItems({
       name = "Novo item",
       price = "",
       promo_price = null,
+      variations = null,
       description = "",
       image_url = "",
       thumb_url = "",
@@ -1232,6 +1264,7 @@ export default function MenuItems({
       name,
       price,
       promo_price,
+      variations,
       description,
       image_url,
       thumb_url,
@@ -1256,6 +1289,7 @@ export default function MenuItems({
           name,
           price,
           promo_price,
+          variations,
           description,
           image_url,
           thumb_url,
@@ -1440,6 +1474,7 @@ export default function MenuItems({
       name: newName,
       price: item.price,
       promo_price: item.promo_price,
+      variations: item.variations ?? null,
       description: item.description,
       image_url: item.image_url,
       thumb_url: item.thumb_url,
@@ -1772,6 +1807,153 @@ export default function MenuItems({
     setModalOpen(true);
   };
 
+  const fetchItemGroups = async (itemId) => {
+    const { data: groups, error } = await supabase
+      .from("option_groups")
+      .select(
+        `id, name, min_choices, max_choices, position,
+             option_choices ( id, name, price, hidden, position )`,
+      )
+      .eq("item_id", itemId)
+      .order("position", { ascending: true });
+    if (error) throw error;
+    // garante que choices vêm ordenadas por position
+    return (groups || []).map((g) => ({
+      ...g,
+      option_choices: [...(g.option_choices || [])].sort(
+        (a, b) => a.position - b.position,
+      ),
+    }));
+  };
+
+  // valida e normaliza grupos; null (com alerta) se inválido
+  const normalizeOptionGroups = (groups) => {
+    const out = [];
+    for (let gi = 0; gi < groups.length; gi++) {
+      const g = groups[gi];
+      if (!String(g.name || "").trim()) {
+        alert?.(`O nome do grupo #${gi + 1} não pode ficar vazio.`, "error");
+        return null;
+      }
+      const minC = Number(g.min_choices ?? 0);
+      const maxC = Number(g.max_choices ?? 0);
+      if (minC > 0 && maxC > 0 && minC > maxC) {
+        alert?.(
+          `No grupo "${g.name}": mínimo não pode ser maior que o máximo.`,
+          "error",
+        );
+        return null;
+      }
+      const choices = [];
+      for (const [ci, c] of (g.option_choices || []).entries()) {
+        if (!String(c.name || "").trim()) {
+          alert?.(
+            `No grupo "${g.name}", opção #${ci + 1}: nome não pode ficar vazio.`,
+            "error",
+          );
+          return null;
+        }
+        const p = parseFloat(String(c.price).replace(",", "."));
+        choices.push({
+          ...c,
+          name: String(c.name).trim(),
+          price: isNaN(p) ? 0 : p,
+        });
+      }
+      out.push({
+        ...g,
+        min_choices: minC,
+        max_choices: maxC,
+        option_choices: choices,
+      });
+    }
+    return out;
+  };
+
+  // valida variação; null se inválida, { variations: null } se não tem
+  const normalizeVariations = (v, quiet = false) => {
+    const opts = v?.options || [];
+    if (opts.length === 0) return { variations: null };
+    if (!String(v.name || "").trim()) {
+      if (!quiet) alert?.("Dê um nome para a variação (ex: Tamanho).", "error");
+      return null;
+    }
+    const options = [];
+    for (let i = 0; i < opts.length; i++) {
+      const name = String(opts[i].name || "").trim();
+      const price = parseFloat(String(opts[i].price).replace(",", "."));
+      if (!name || isNaN(price)) {
+        if (!quiet)
+          alert?.(`Variação #${i + 1}: preencha nome e preço.`, "error");
+        return null;
+      }
+      options.push({ name, price });
+    }
+    return {
+      variations: { name: v.name.trim(), options },
+      price: Math.min(...options.map((o) => o.price)),
+    };
+  };
+
+  const dropEmptyVariationRows = (v) => {
+    if (!v) return null;
+    const options = (v.options || []).filter(
+      (o) => String(o.name).trim() || String(o.price).trim(),
+    );
+    return options.length ? { ...v, options } : null;
+  };
+
+  // Item já existente: ações com confirmar/excluir vão direto pro banco.
+  // Item novo: fica tudo local até o "Salvar" do item.
+  const isPersistedItem = () =>
+    modalPayload.mode === "edit" && !!modalPayload.itemId;
+
+  const persistOptionGroups = async (groups) => {
+    if (!isPersistedItem()) return true;
+    const itemId = modalPayload.itemId;
+    const normalized = normalizeOptionGroups(groups);
+    if (!normalized) return false;
+    try {
+      await saveOptionGroups(itemId, normalized);
+      const fresh = await fetchItemGroups(itemId);
+      setModalPayload((p) =>
+        p.itemId === itemId
+          ? { ...p, data: { ...p.data, option_groups: fresh } }
+          : p,
+      );
+      alert?.("Grupos de opções salvos", "success");
+      return true;
+    } catch (err) {
+      console.error("persistOptionGroups error:", err);
+      alert?.("Erro ao salvar grupos de opções", "error");
+      return false;
+    }
+  };
+
+  const persistVariations = async (v, quiet = false) => {
+    if (!isPersistedItem()) return true;
+    const itemId = modalPayload.itemId;
+    const n = normalizeVariations(v, quiet);
+    if (!n) return false;
+    const patch = n.variations
+      ? { variations: n.variations, price: n.price, promo_price: null }
+      : { variations: null };
+    if (!(await updateItem(itemId, patch))) return false;
+    setModalPayload((p) =>
+      p.itemId === itemId
+        ? {
+            ...p,
+            data: {
+              ...p.data,
+              variations: n.variations,
+              ...(n.variations ? { price: n.price, promo_price: "" } : {}),
+            },
+          }
+        : p,
+    );
+    return true;
+  };
+
   const openItemModal = async (
     mode = "create",
     categoryId = null,
@@ -1781,24 +1963,7 @@ export default function MenuItems({
 
     if (mode === "edit" && item?.id) {
       try {
-        const { data: groups, error: gErr } = await supabase
-          .from("option_groups")
-          .select(
-            `id, name, min_choices, max_choices, position,
-                 option_choices ( id, name, price, hidden, position )`,
-          )
-          .eq("item_id", item.id)
-          .order("position", { ascending: true });
-
-        if (gErr) throw gErr;
-
-        optionGroups = (groups || []).map((g) => ({
-          ...g,
-          // garante que choices vêm ordenadas por position
-          option_choices: [...(g.option_choices || [])].sort(
-            (a, b) => a.position - b.position,
-          ),
-        }));
+        optionGroups = await fetchItemGroups(item.id);
       } catch (err) {
         console.error("Erro ao buscar option_groups:", err);
         alert?.("Erro ao carregar grupos de opções", "error");
@@ -1814,6 +1979,7 @@ export default function MenuItems({
         name: item?.name ?? "Novo item",
         price: item?.price ?? "",
         promo_price: item?.promo_price ?? "",
+        variations: item?.variations ?? null,
         description: item?.description ?? "",
         image_url: item?.image_url ?? "",
         thumb_url: item?.thumb_url ?? "",
@@ -1825,6 +1991,15 @@ export default function MenuItems({
     setCfgGroupIdx(null);
     setModalOpen(true);
   };
+
+  const updateVariations = (fn) =>
+    setModalPayload((p) => ({
+      ...p,
+      data: {
+        ...p.data,
+        variations: fn(p.data.variations || { name: "", options: [] }),
+      },
+    }));
 
   const openSortModal = () => {
     const ordering = JSON.parse(JSON.stringify(categories || []));
@@ -2030,6 +2205,18 @@ export default function MenuItems({
         return;
       }
 
+      // variação: preço do item vira o da opção mais barata ("a partir de")
+      const v = normalizeVariations(data.variations);
+      if (!v) {
+        setSaving(false);
+        return;
+      }
+      data.variations = v.variations;
+      if (v.variations) {
+        data.price = v.price;
+        data.promo_price = "";
+      }
+
       const priceNum = parseFloat(String(data.price).replace(",", "."));
       if (isNaN(priceNum)) {
         alert?.("O preço deve ser um número válido.", "error");
@@ -2055,51 +2242,10 @@ export default function MenuItems({
       }
       data.promo_price = promoNum;
 
-      // === Validação dos option_groups ===
-      const groups = Array.isArray(data.option_groups)
-        ? data.option_groups
-        : [];
-      for (let gi = 0; gi < groups.length; gi++) {
-        const g = groups[gi];
-        if (!String(g.name || "").trim()) {
-          alert?.(`O nome do grupo #${gi + 1} não pode ficar vazio.`, "error");
-          setSaving(false);
-          return;
-        }
-        const minC = Number(g.min_choices ?? 0);
-        const maxC = Number(g.max_choices ?? 0);
-        if (minC > 0 && maxC > 0 && minC > maxC) {
-          alert?.(
-            `No grupo "${g.name}": mínimo não pode ser maior que o máximo.`,
-            "error",
-          );
-          setSaving(false);
-          return;
-        }
-        const choices = Array.isArray(g.option_choices) ? g.option_choices : [];
-        for (let ci = 0; ci < choices.length; ci++) {
-          const c = choices[ci];
-          if (!String(c.name || "").trim()) {
-            alert?.(
-              `No grupo "${g.name}", opção #${ci + 1}: nome não pode ficar vazio.`,
-              "error",
-            );
-            setSaving(false);
-            return;
-          }
-          const p = parseFloat(String(c.price).replace(",", "."));
-          choices[ci] = {
-            ...c,
-            name: String(c.name).trim(),
-            price: isNaN(p) ? 0 : p,
-          };
-        }
-        groups[gi] = {
-          ...g,
-          min_choices: minC,
-          max_choices: maxC,
-          option_choices: choices,
-        };
+      const groups = normalizeOptionGroups(data.option_groups || []);
+      if (!groups) {
+        setSaving(false);
+        return;
       }
       data.option_groups = groups;
     }
@@ -2144,6 +2290,7 @@ export default function MenuItems({
           name: data.name,
           price: data.price,
           promo_price: data.promo_price,
+          variations: data.variations,
           description: data.description,
           image_url: data.image_url ?? "",
           thumb_url: data.thumb_url ?? "",
@@ -2156,6 +2303,7 @@ export default function MenuItems({
           name: data.name,
           price: data.price,
           promo_price: data.promo_price,
+          variations: data.variations,
           description: data.description,
           image_url: data.image_url ?? "",
           thumb_url: data.thumb_url ?? "",
@@ -2604,6 +2752,10 @@ export default function MenuItems({
   }, [modalPayload.itemId, categories]);
 
   const isStarred = !!modalItem?.starred;
+  const variationPrices = (modalPayload.data?.variations?.options || [])
+    .map((o) => parseFloat(String(o.price).replace(",", ".")))
+    .filter((n) => !isNaN(n));
+  const hasVariations = !!modalPayload.data?.variations?.options?.length;
 
   const starredItems = useMemo(() => {
     if (!categories) return [];
@@ -2910,6 +3062,11 @@ export default function MenuItems({
                           className="font-bold text-2xl"
                           style={{ color: foregroundToUse }}
                         >
+                          {it.variations?.options?.length > 0 && (
+                            <span className="block text-xs font-normal">
+                              a partir de
+                            </span>
+                          )}
                           {formatCurrency(it.price, menu?.currency)}
                         </div>
                       )}
@@ -3315,83 +3472,102 @@ export default function MenuItems({
                     />
                   </label>
 
-                  <div className="flex gap-2">
-                    <label className="block mb-2 w-[75px] xs:w-[100px]">
+                  {hasVariations ? (
+                    <div className="mb-2">
                       <div className="text-sm color-gray">Preço:</div>
-                      <div className="flex items-center mb-2">
-                        <span className="absolute text-sm p-1 xs:text-base xs:p-2">
-                          {getCurrencySymbol(menu?.currency)}
+                      <div>
+                        <span className="font-semibold">
+                          A partir de{" "}
+                          {variationPrices.length
+                            ? formatCurrency(
+                                Math.min(...variationPrices),
+                                menu?.currency,
+                              )
+                            : "-"}
                         </span>
-                        <input
-                          type="text"
-                          value={modalPayload.data.price}
-                          onChange={(e) => {
-                            let value = e.target.value;
-                            value = value.replace(/[^0-9.,]/g, "");
-                            value = value.replace(",", ".");
-                            const parts = value.split(".");
-                            if (parts.length > 2)
-                              value = parts[0] + "." + parts.slice(1).join("");
-                            setModalPayload((p) => ({
-                              ...p,
-                              data: { ...p.data, price: value },
-                            }));
-                          }}
-                          maxLength={10}
-                          className="w-full p-2 pl-6 xs:pl-7.5 rounded border border-translucid bg-translucid"
-                          placeholder="00.00"
-                        />
                       </div>
-                    </label>
-                    <label className="block mb-2 w-[75px] xs:w-[100px]">
-                      <div className="text-sm color-gray">Promoção:</div>
-                      <div className="flex items-center mb-2">
-                        <span className="absolute text-sm p-1 xs:text-base xs:p-2">
-                          {getCurrencySymbol(menu?.currency)}
-                        </span>
-                        <input
-                          type="text"
-                          value={
-                            canShowPromoPrice
-                              ? (modalPayload.data.promo_price ?? "")
-                              : ""
-                          }
-                          onChange={(e) => {
-                            if (!canShowPromoPrice) {
-                              if (!planModalOpen) {
-                                alert(
-                                  "Assine o plano Plus ou Pro para criar promoções!",
-                                );
-                                setPlanModalFeature("promo_price");
-                                setPlanModalOpen(true);
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <label className="block mb-2 w-[75px] xs:w-[100px]">
+                        <div className="text-sm color-gray">Preço:</div>
+                        <div className="flex items-center mb-2">
+                          <span className="absolute text-sm p-1 xs:text-base xs:p-2">
+                            {getCurrencySymbol(menu?.currency)}
+                          </span>
+                          <input
+                            type="text"
+                            value={modalPayload.data.price}
+                            onChange={(e) => {
+                              let value = e.target.value;
+                              value = value.replace(/[^0-9.,]/g, "");
+                              value = value.replace(",", ".");
+                              const parts = value.split(".");
+                              if (parts.length > 2)
+                                value =
+                                  parts[0] + "." + parts.slice(1).join("");
+                              setModalPayload((p) => ({
+                                ...p,
+                                data: { ...p.data, price: value },
+                              }));
+                            }}
+                            maxLength={10}
+                            className="w-full p-2 pl-6 xs:pl-7.5 rounded border border-translucid bg-translucid"
+                            placeholder="00.00"
+                          />
+                        </div>
+                      </label>
+                      <label className="block mb-2 w-[75px] xs:w-[100px]">
+                        <div className="text-sm color-gray">Promoção:</div>
+                        <div className="flex items-center mb-2">
+                          <span className="absolute text-sm p-1 xs:text-base xs:p-2">
+                            {getCurrencySymbol(menu?.currency)}
+                          </span>
+                          <input
+                            type="text"
+                            value={
+                              canShowPromoPrice
+                                ? (modalPayload.data.promo_price ?? "")
+                                : ""
+                            }
+                            onChange={(e) => {
+                              if (!canShowPromoPrice) {
+                                if (!planModalOpen) {
+                                  alert(
+                                    "Assine o plano Plus ou Pro para criar promoções!",
+                                  );
+                                  setPlanModalFeature("promo_price");
+                                  setPlanModalOpen(true);
+                                }
+                                return;
                               }
-                              return;
-                            }
 
-                            let value = e.target.value;
-                            value = value.replace(/[^0-9.,]/g, "");
-                            value = value.replace(",", ".");
-                            const parts = value.split(".");
-                            if (parts.length > 2)
-                              value = parts[0] + "." + parts.slice(1).join("");
+                              let value = e.target.value;
+                              value = value.replace(/[^0-9.,]/g, "");
+                              value = value.replace(",", ".");
+                              const parts = value.split(".");
+                              if (parts.length > 2)
+                                value =
+                                  parts[0] + "." + parts.slice(1).join("");
 
-                            const num = Number(value);
-                            if (value !== "" && !isNaN(num) && num === 0) {
-                              value = "";
-                            }
+                              const num = Number(value);
+                              if (value !== "" && !isNaN(num) && num === 0) {
+                                value = "";
+                              }
 
-                            setModalPayload((p) => ({
-                              ...p,
-                              data: { ...p.data, promo_price: value },
-                            }));
-                          }}
-                          maxLength={10}
-                          className="w-full p-2 pl-6 xs:pl-7.5 rounded border border-translucid bg-translucid"
-                          placeholder="00.00"
-                        />
-                      </div>
-                    </label>
-                  </div>
+                              setModalPayload((p) => ({
+                                ...p,
+                                data: { ...p.data, promo_price: value },
+                              }));
+                            }}
+                            maxLength={10}
+                            className="w-full p-2 pl-6 xs:pl-7.5 rounded border border-translucid bg-translucid"
+                            placeholder="00.00"
+                          />
+                        </div>
+                      </label>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -3409,6 +3585,32 @@ export default function MenuItems({
                   placeholder="Escreva a descrição (opcional)"
                 />
               </label>
+
+              {/* Variação — botão de atalho */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (!modalPayload.data.variations) {
+                    updateVariations(() => ({
+                      name: "Tamanho",
+                      options: [
+                        { name: "", price: "" },
+                        { name: "", price: "" },
+                      ],
+                    }));
+                  }
+                  setVariationsModalOpen(true);
+                }}
+                className="w-full mb-2 cursor-pointer px-3 py-2 rounded border border-translucid bg-translucid hover:opacity-80 transition flex items-center justify-between"
+              >
+                <span className="text-sm">Variação</span>
+                <span className="flex items-center gap-2 text-sm color-gray">
+                  {hasVariations
+                    ? `${modalPayload.data.variations.name || "Variação"} · ${modalPayload.data.variations.options.length} opção(ões)`
+                    : "Nenhuma"}
+                  <FaChevronRight size={11} />
+                </span>
+              </button>
 
               {/* Option Groups — botão de atalho */}
               <button
@@ -3686,44 +3888,64 @@ export default function MenuItems({
                             placeholder="Nome do grupo (ex: Borda da pizza)"
                           />
 
-                          <button
-                            type="button"
-                            title="Configurar obrigatoriedade"
-                            onClick={() => {
-                              setAdditionalsCfgDraft({
-                                min_choices: String(group.min_choices ?? 0),
-                                max_choices: String(group.max_choices ?? 0),
-                              });
-                              setCfgGroupIdx(gi);
-                              setAdditionalsCfgOpen(true);
-                            }}
-                            className="cursor-pointer p-1.5 rounded bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white"
-                          >
-                            <FaCog size={12} />
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setModalPayload((p) => {
-                                const next = [...(p.data.option_groups || [])];
-                                next.splice(gi, 1);
-                                return {
-                                  ...p,
-                                  data: { ...p.data, option_groups: next },
-                                };
-                              })
-                            }
-                            className="p-1.5 rounded bg-red-600 hover:bg-red-700 text-white"
-                          >
-                            <FaTrash size={12} />
-                          </button>
+                          <ActionsMenu
+                            options={[
+                              {
+                                label: "Configurar obrigatoriedade",
+                                icon: <FaCog size={12} />,
+                                onClick: () => {
+                                  setAdditionalsCfgDraft({
+                                    min_choices: String(group.min_choices ?? 0),
+                                    max_choices: String(group.max_choices ?? 0),
+                                  });
+                                  setCfgGroupIdx(gi);
+                                  setAdditionalsCfgOpen(true);
+                                },
+                              },
+                              {
+                                label: "Excluir grupo",
+                                icon: <FaTrash size={12} />,
+                                danger: true,
+                                onClick: async () => {
+                                  const ok = await confirm(
+                                    `Remover o grupo "${group.name}"?`,
+                                  );
+                                  if (!ok) return;
+                                  setModalPayload((p) => {
+                                    const next = [
+                                      ...(p.data.option_groups || []),
+                                    ];
+                                    next.splice(gi, 1);
+                                    return {
+                                      ...p,
+                                      data: { ...p.data, option_groups: next },
+                                    };
+                                  });
+                                  if (
+                                    !isPersistedItem() ||
+                                    String(group.id).startsWith("tmp-")
+                                  )
+                                    return;
+                                  const { error } = await supabase
+                                    .from("option_groups")
+                                    .delete()
+                                    .eq("id", group.id);
+                                  if (error) {
+                                    console.error(error);
+                                    alert?.("Erro ao remover grupo", "error");
+                                  } else {
+                                    alert?.("Grupo removido", "success");
+                                  }
+                                },
+                              },
+                            ]}
+                          />
                         </div>
 
                         {/* Badge min/max */}
                         <div className="text-xs color-gray">
                           {group.min_choices > 0
-                            ? `Obrigatório (mín. ${group.min_choices})`
+                            ? `mín. ${group.min_choices}`
                             : "Opcional"}
                           {group.max_choices > 0
                             ? ` · máx. ${group.max_choices}`
@@ -3968,10 +4190,162 @@ export default function MenuItems({
 
             <button
               type="button"
-              onClick={closeOptionGroupsModal}
+              onClick={async () => {
+                if (
+                  await persistOptionGroups(
+                    modalPayload.data.option_groups || [],
+                  )
+                )
+                  closeOptionGroupsModal();
+              }}
               className="cursor-pointer px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm"
             >
-              Confirmar
+              Salvar
+            </button>
+          </div>
+        </GenericModal>
+      )}
+
+      {modalOpen && variationsModalOpen && modalPayload.type === "item" && (
+        <GenericModal
+          wfull
+          maxWidth={"500px"}
+          title="Variação"
+          onClose={closeVariationsModal}
+        >
+          <p className="text-sm color-gray mb-3">
+            O cliente escolhe uma opção e o preço dela vira o preço do item (ex:
+            Tamanho → Pequeno, Médio, Grande).
+          </p>
+          <div className="max-h-[65vh] overflow-y-auto pr-1">
+            {modalPayload.data.variations && (
+              <>
+                <input
+                  type="text"
+                  value={modalPayload.data.variations.name}
+                  onChange={(e) =>
+                    updateVariations((v) => ({
+                      ...v,
+                      name: e.target.value.slice(0, 25),
+                    }))
+                  }
+                  maxLength={25}
+                  placeholder="Nome (ex: Tamanho)"
+                  className="w-full p-2 rounded border border-translucid bg-translucid mb-3"
+                />
+                {(modalPayload.data.variations.options || []).map((o, i) => (
+                  <div key={i} className="flex gap-2 mb-2 items-center">
+                    <input
+                      type="text"
+                      value={o.name}
+                      onChange={(e) =>
+                        updateVariations((v) => ({
+                          ...v,
+                          options: v.options.map((x, j) =>
+                            j === i
+                              ? { ...x, name: e.target.value.slice(0, 25) }
+                              : x,
+                          ),
+                        }))
+                      }
+                      maxLength={25}
+                      placeholder="Ex: Pequeno"
+                      className="flex-1 min-w-0 p-2 rounded border border-translucid bg-translucid"
+                    />
+                    <div className="relative flex items-center w-[90px] xs:w-[110px]">
+                      <span className="absolute text-sm p-1 xs:text-base xs:p-2">
+                        {getCurrencySymbol(menu?.currency)}
+                      </span>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={o.price}
+                        onChange={(e) => {
+                          const val = e.target.value
+                            .replace(/[^0-9.,]/g, "")
+                            .replace(",", ".");
+                          updateVariations((v) => ({
+                            ...v,
+                            options: v.options.map((x, j) =>
+                              j === i ? { ...x, price: val } : x,
+                            ),
+                          }));
+                        }}
+                        maxLength={10}
+                        placeholder="00.00"
+                        className="w-full p-2 pl-6 xs:pl-7.5 rounded border border-translucid bg-translucid"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        // linha vazia sai direto, sem confirmar
+                        if (
+                          (String(o.name).trim() || String(o.price).trim()) &&
+                          !(await confirm(
+                            `Remover a opção "${o.name || "sem nome"}"?`,
+                          ))
+                        )
+                          return;
+                        const v = modalPayload.data.variations;
+                        const options = v.options.filter((_, j) => j !== i);
+                        const next = options.length ? { ...v, options } : null;
+                        updateVariations(() => next);
+                        // salva já se o resto estiver válido; senão fica pro "Salvar" do modal
+                        persistVariations(dropEmptyVariationRows(next), true);
+                      }}
+                      className="h-9 w-9 flex shrink-0 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/40 text-sm font-semibold transition hover:opacity-90 cursor-pointer"
+                      aria-label="Remover opção"
+                    >
+                      <FaTrash size={13} />
+                    </button>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+
+          <div className="flex justify-between items-center mt-4 gap-2">
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  updateVariations((v) => ({
+                    ...v,
+                    options: [...v.options, { name: "", price: "" }],
+                  }))
+                }
+                className="cursor-pointer px-3 py-2 rounded bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white text-sm transition"
+              >
+                + Opção
+              </button>
+              {hasVariations && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!(await confirm("Remover variação?"))) return;
+                    updateVariations(() => null);
+                    closeVariationsModal();
+                    persistVariations(null);
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 rounded-2xl border border-red-500/20 bg-red-500/40 text-sm font-semibold transition hover:opacity-90 cursor-pointer"
+                >
+                  <FaTrash size={12} /> Remover
+                </button>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={async () => {
+                const next = dropEmptyVariationRows(
+                  modalPayload.data.variations,
+                );
+                if (await persistVariations(next)) closeVariationsModal();
+              }}
+              className="cursor-pointer px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm"
+            >
+              Salvar
             </button>
           </div>
         </GenericModal>
@@ -4049,20 +4423,19 @@ export default function MenuItems({
                       return;
                     }
 
-                    setModalPayload((p) => {
-                      const groups = [...(p.data.option_groups || [])];
-                      groups[cfgGroupIdx] = {
-                        ...groups[cfgGroupIdx],
-                        min_choices: minC,
-                        max_choices: maxC,
-                      };
-                      return {
-                        ...p,
-                        data: { ...p.data, option_groups: groups },
-                      };
-                    });
+                    const groups = [...(modalPayload.data.option_groups || [])];
+                    groups[cfgGroupIdx] = {
+                      ...groups[cfgGroupIdx],
+                      min_choices: minC,
+                      max_choices: maxC,
+                    };
+                    setModalPayload((p) => ({
+                      ...p,
+                      data: { ...p.data, option_groups: groups },
+                    }));
 
                     closeAdditionalsCfgModal();
+                    persistOptionGroups(groups);
                   }}
                   className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded"
                 >
@@ -4194,18 +4567,17 @@ export default function MenuItems({
                     })),
                   }));
 
+                const groups = [
+                  ...(modalPayload.data.option_groups || []),
+                  ...toImport,
+                ];
                 setModalPayload((p) => ({
                   ...p,
-                  data: {
-                    ...p.data,
-                    option_groups: [
-                      ...(p.data.option_groups || []),
-                      ...toImport,
-                    ],
-                  },
+                  data: { ...p.data, option_groups: groups },
                 }));
 
                 closeImportModal();
+                persistOptionGroups(groups);
               }}
               className="cursor-pointer px-4 py-2 bg-green-600 disabled:opacity-50 text-white rounded"
             >
