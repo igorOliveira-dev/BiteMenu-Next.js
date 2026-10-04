@@ -67,7 +67,7 @@ const page = () => {
             </li>
             <li>
               <strong>Consumidor Final / Comprador:</strong> pessoa que acessa o cardápio de um estabelecimento para
-              visualizar produtos, fazer pedidos ou realizar pagamentos.
+              visualizar produtos e fazer pedidos.
             </li>
             <li>
               <strong>Cardápio Digital:</strong> a página pública do estabelecimento no Bite Menu, acessível via link ou QR
@@ -196,9 +196,9 @@ const page = () => {
             <strong>contato@bitemenu.com.br</strong>, sem necessidade de justificativa e sem multa por rescisão antecipada.
           </p>
           <p>
-            O usuário perde acesso imediatamente aos recursos do plano pago e sua conta é convertida para o plano free após o
-            cancelamento, mas mantém acesso ao cardápio digital e aos dados do painel, podendo voltar a utilizar os planos
-            pagos futuramente.
+            Após o cancelamento, o Usuário mantém acesso aos recursos do plano pago até o fim do período já pago. Encerrado
+            esse período, a conta é convertida para o plano Free, mantendo o acesso ao cardápio digital e aos dados do
+            painel, podendo voltar a utilizar os planos pagos futuramente.
           </p>
           <p>
             <strong>Reembolsos:</strong> Salvo disposição legal em contrário ou em situações de erro de cobrança comprovado,
@@ -370,7 +370,7 @@ const page = () => {
             serviço, sempre que possível.
           </p>
           <p>
-            O Bite Menu utiliza infraestrutura de terceiros (incluindo Supabase e Vercel) e não se responsabiliza por
+            O Bite Menu utiliza infraestrutura de terceiros (incluindo Supabase e Oracle Cloud) e não se responsabiliza por
             interrupções causadas por falhas nesses serviços. O funcionamento do envio de pedidos via WhatsApp também depende
             de serviços de terceiros (Meta Platforms, Inc.) sobre os quais o Bite Menu não tem controle.
           </p>
