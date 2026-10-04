@@ -972,7 +972,7 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
                           formatCurrency(selectedItem.variations.options[selectedVariation].price, menu?.currency)
                         ) : (
                           <>
-                            {selectedItem.variations?.options?.length > 0 && <span className="text-sm font-normal">a partir de </span>}
+                            {selectedItem.variations?.options?.length > 0 && <><span className="text-sm font-normal">a partir de </span><br /></>}
                             {formatCurrency(selectedItem.price, menu?.currency)}
                           </>
                         )}
