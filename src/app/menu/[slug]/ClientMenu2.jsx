@@ -6,6 +6,7 @@ import Image from "next/image";
 import GenericModal from "@/components/GenericModal";
 import { useCartContext } from "@/contexts/CartContext";
 import CartDrawer from "./components/CartDrawer";
+import VariationPicker from "./components/VariationPicker";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { useAlert } from "@/providers/AlertProvider";
 import MenuFooter from "./components/MenuFooter";
@@ -165,6 +166,7 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState({});
+  const [selectedVariation, setSelectedVariation] = useState(null);
   const [note, setNote] = useState("");
   const { bannerHeight } = useCookieConsent();
 
@@ -228,6 +230,7 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
     setItemModalOpen(true);
     setQuantity(1);
     setSelectedOptions({});
+    setSelectedVariation(null);
     setNote("");
   }, []);
 
@@ -281,9 +284,10 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
 
   const totalPrice = useMemo(() => {
     if (!selectedItem) return 0;
-    const base = Number(
-      selectedItem.promo_price && canShowPromoPrice ? selectedItem.promo_price : selectedItem.price || 0,
-    );
+    const chosen = selectedItem.variations?.options?.[selectedVariation];
+    const base = chosen
+      ? Number(chosen.price)
+      : Number(selectedItem.promo_price && canShowPromoPrice ? selectedItem.promo_price : selectedItem.price || 0);
 
     const groups = selectedItem.option_groups || [];
     const optionsTotal = groups.reduce((acc, g) => {
@@ -295,7 +299,7 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
     }, 0);
 
     return (base + optionsTotal) * quantity;
-  }, [selectedItem, quantity, selectedOptions, canShowPromoPrice]);
+  }, [selectedItem, quantity, selectedOptions, selectedVariation, canShowPromoPrice]);
 
   const openImagePreview = () => setImagePreviewOpen(true);
   const closeImagePreview = () => {
@@ -305,6 +309,15 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
 
   const handleAddToCart = async () => {
     if (!selectedItem) return;
+
+    const chosen = selectedItem.variations?.options?.[selectedVariation];
+    if (selectedItem.variations?.options?.length > 0 && !chosen) {
+      alert?.(`Escolha uma opção em "${selectedItem.variations.name}".`, "error", {
+        backgroundColor: `${menu.details_color}90`,
+        textColor: getContrastTextColor(menu.details_color),
+      });
+      return;
+    }
 
     const groups = selectedItem.option_groups || [];
 
@@ -339,9 +352,11 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
 
     cart.addItem(menu.id, {
       id: selectedItem.id,
-      name: selectedItem.name,
+      name: chosen ? `${selectedItem.name} (${chosen.name})` : selectedItem.name,
       image_url: selectedItem.image_url || null,
-      price: Number(selectedItem.promo_price && canShowPromoPrice ? selectedItem.promo_price : selectedItem.price || 0),
+      price: chosen
+        ? Number(chosen.price)
+        : Number(selectedItem.promo_price && canShowPromoPrice ? selectedItem.promo_price : selectedItem.price || 0),
       qty: Number(quantity || 1),
       additionals: selected, // mantém o nome "additionals" para não quebrar CartDrawer/checkout, ou renomeie em conjunto
       note: note || "",
@@ -685,6 +700,7 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
                         </div>
                       ) : (
                         <p className="font-bold text-base mt-2" style={{ color: foregroundToUse }}>
+                          {it.variations?.options?.length > 0 && <span className="block text-xs font-normal">a partir de</span>}
                           {formatCurrency(it.price, menu?.currency)}
                         </p>
                       )}
@@ -770,6 +786,7 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
                               </div>
                             ) : (
                               <span className="font-bold text-lg" style={{ color: foregroundToUse }}>
+                                {it.variations?.options?.length > 0 && <span className="block text-xs font-normal">a partir de</span>}
                                 {formatCurrency(it.price, menu?.currency)}
                               </span>
                             )}
@@ -951,7 +968,14 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
                   <>
                     {selectedItem.price ? (
                       <span className="text-3xl font-semibold" style={{ color: foregroundToUse }}>
-                        {formatCurrency(selectedItem.price, menu?.currency)}
+                        {selectedItem.variations?.options?.[selectedVariation] ? (
+                          formatCurrency(selectedItem.variations.options[selectedVariation].price, menu?.currency)
+                        ) : (
+                          <>
+                            {selectedItem.variations?.options?.length > 0 && <span className="text-sm font-normal">a partir de </span>}
+                            {formatCurrency(selectedItem.price, menu?.currency)}
+                          </>
+                        )}
                       </span>
                     ) : null}
                   </>
@@ -970,6 +994,18 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
                 />
               </div>
             ) : null}
+
+            {menu.orders === "none" && (
+              <VariationPicker
+                variations={selectedItem.variations}
+                selected={selectedVariation}
+                currency={menu?.currency}
+                accent={menu.details_color}
+                foreground={foregroundToUse}
+                gray={grayToUse}
+                translucid={translucidToUse}
+              />
+            )}
 
             {menu.orders === "none" &&
             Array.isArray(selectedItem.option_groups) &&
@@ -993,6 +1029,16 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
 
             {menu.orders !== "none" ? (
               <>
+                <VariationPicker
+                  variations={selectedItem.variations}
+                  selected={selectedVariation}
+                  onSelect={setSelectedVariation}
+                  currency={menu?.currency}
+                  accent={menu.details_color}
+                  foreground={foregroundToUse}
+                  gray={grayToUse}
+                  translucid={translucidToUse}
+                />
                 {Array.isArray(selectedItem.option_groups) && selectedItem.option_groups.length > 0 && (
                   <div className="space-y-4 mb-2">
                     {selectedItem.option_groups.map((g) => {
@@ -1005,8 +1051,8 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
                           <div className="font-semibold flex items-center gap-2" style={{ color: foregroundToUse }}>
                             <span>{g.name}</span>
                             <span className="text-xs font-normal" style={{ color: grayToUse }}>
-                              {min > 0 ? `(obrigatório, mín. ${min})` : "(opcional)"}
-                              {max > 0 ? ` · máx. ${max}` : ""}
+                              {min > 0 ? `mín. ${min}` : null}
+                              {max > 0 ? ` · máx. ${max}` : null}
                             </span>
                           </div>
 
@@ -1033,7 +1079,7 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
                                       {c.name}{" "}
                                       {Number(c.price) !== 0 && (
                                         <span className="text-sm" style={{ color: grayToUse }}>
-                                          {formatCurrency(c.price, menu?.currency)}
+                                          +{formatCurrency(c.price, menu?.currency)}
                                         </span>
                                       )}
                                     </div>

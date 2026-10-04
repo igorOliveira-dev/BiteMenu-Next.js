@@ -40,6 +40,7 @@ export const getMenuBySlug = cache(async (slug) => {
           description,
           price,
           promo_price,
+          variations,
           image_url,
           thumb_url,
           additionals,

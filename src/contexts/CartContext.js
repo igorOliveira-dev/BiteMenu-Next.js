@@ -16,6 +16,7 @@ function cartReducer(state, action) {
 
       const equal = (a, b) =>
         a.id === b.id &&
+        a.name === b.name && // variação vai no nome
         JSON.stringify(a.additionals || []) === JSON.stringify(b.additionals || []) &&
         (a.note || "") === (b.note || "");
 
