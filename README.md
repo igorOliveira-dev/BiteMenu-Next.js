@@ -39,8 +39,8 @@ Sem instalação de app. Funciona em qualquer navegador mobile.
 | Plano | Preço        | Produtos | Categorias |
 | ----- | ------------ | -------- | ---------- |
 | Free  | Grátis       | 20       | 4          |
-| Plus  | R$ 24,90/mês | 50       | 10         |
-| Pro   | R$ 44,90/mês | 200      | 20         |
+| Plus  | R$ 29,90/mês | 50       | 10         |
+| Pro   | R$ 49,90/mês | 200      | 20         |
 
 Sem taxas por transação. O pagamento acontece diretamente entre o cliente e o estabelecimento.
 
@@ -52,6 +52,6 @@ Para ver mais detalhes dos planos, acesse: [Documentação de planos](https://ww
 
 - [Next.js](https://nextjs.org/) (App Router)
 - [Supabase](https://supabase.com/) — banco de dados, autenticação e storage
-- Pagamentos: em migração para o [Asaas](https://www.asaas.com/)
+- Pagamentos: [ValidaPay](https://validapay.com.br)
 - [Tailwind CSS](https://tailwindcss.com/)
 - PWA via `next-pwa`

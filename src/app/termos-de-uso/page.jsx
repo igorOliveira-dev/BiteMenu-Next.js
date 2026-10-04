@@ -11,7 +11,7 @@ const page = () => {
       <div className="max-w-2xl flex flex-col gap-6 p-4 pt-12">
         <h1 className="default-h1">Termos de Uso – Bite Menu</h1>
 
-        <p>Última atualização: 26/07/2026</p>
+        <p>Última atualização: 04/10/2026</p>
 
         <p>
           Bem-vindo ao <strong>Bite Menu</strong>. Antes de utilizar a plataforma, leia atentamente estes Termos de Uso. Eles
@@ -67,7 +67,7 @@ const page = () => {
             </li>
             <li>
               <strong>Consumidor Final / Comprador:</strong> pessoa que acessa o cardápio de um estabelecimento para
-              visualizar produtos, fazer pedidos ou realizar pagamentos.
+              visualizar produtos e fazer pedidos.
             </li>
             <li>
               <strong>Cardápio Digital:</strong> a página pública do estabelecimento no Bite Menu, acessível via link ou QR
@@ -82,13 +82,8 @@ const page = () => {
               os recursos e limites disponíveis.
             </li>
             <li>
-              <strong>Pagamentos Bite Menu:</strong> funcionalidade opcional, em fase de testes, que permite ao
-              estabelecimento receber pagamentos online dos seus consumidores finais por meio do Stripe Connect Express.
-            </li>
-            <li>
-              <strong>Stripe / Conta Conectada:</strong> o Stripe é o processador de pagamentos utilizado pelo Bite Menu para
-              cobranças de assinatura e, no contexto do Pagamentos Bite Menu, para o credenciamento e processamento de
-              transações dos estabelecimentos com seus clientes.
+              <strong>ValidaPay:</strong> a processadora de pagamentos utilizada pelo Bite Menu para as cobranças de
+              assinatura dos planos pagos.
             </li>
           </ul>
         </section>
@@ -201,9 +196,9 @@ const page = () => {
             <strong>contato@bitemenu.com.br</strong>, sem necessidade de justificativa e sem multa por rescisão antecipada.
           </p>
           <p>
-            O usuário perde acesso imediatamente aos recursos do plano pago e sua conta é convertida para o plano free após o
-            cancelamento, mas mantém acesso ao cardápio digital e aos dados do painel, podendo voltar a utilizar os planos
-            pagos futuramente.
+            Após o cancelamento, o Usuário mantém acesso aos recursos do plano pago até o fim do período já pago. Encerrado
+            esse período, a conta é convertida para o plano Free, mantendo o acesso ao cardápio digital e aos dados do
+            painel, podendo voltar a utilizar os planos pagos futuramente.
           </p>
           <p>
             <strong>Reembolsos:</strong> Salvo disposição legal em contrário ou em situações de erro de cobrança comprovado,
@@ -340,134 +335,9 @@ const page = () => {
           </p>
         </section>
 
-        {/* 11. Pagamentos Bite Menu (Funcionalidade em Fase de Testes) */}
+        {/* 11. Propriedade Intelectual */}
         <section className="flex flex-col gap-2 mb-4">
-          <h2 className="default-h2">11. Pagamentos Bite Menu (Funcionalidade em Fase de Testes)</h2>
-
-          <p>
-            <strong>Funcionalidade em fase de testes:</strong> Os recursos, condições e termos descritos nesta seção podem
-            ser alterados sem o aviso prévio de 30 dias normalmente aplicável, dado o caráter experimental da funcionalidade.
-          </p>
-
-          <p>
-            <strong>Natureza da funcionalidade:</strong> O Pagamentos Bite Menu é uma funcionalidade opcional que viabiliza a
-            integração entre o cardápio digital do estabelecimento e o <strong>Stripe Connect Express</strong>, permitindo
-            que consumidores finais realizem pagamentos online diretamente ao estabelecimento. O Bite Menu é uma{" "}
-            <strong>plataforma de tecnologia</strong> e não atua como instituição financeira, operadora de pagamentos,
-            adquirente ou custodiante de valores. Todo o processamento financeiro é de responsabilidade do{" "}
-            <strong>Stripe</strong>, empresa devidamente regulamentada para operar serviços de pagamento. Na fase de testes,
-            o Pagamentos Bite Menu processa pagamentos exclusivamente via cartão de crédito, podendo o Bite Menu incluir
-            outros métodos de pagamento futuramente, a seu critério.
-          </p>
-
-          <p>
-            <strong>Termos do Stripe:</strong> Ao aderir ao Pagamentos Bite Menu, o estabelecimento celebra uma relação
-            direta com o Stripe, aceitando os{" "}
-            <a
-              href="https://stripe.com/br/legal/connect-account"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline text-blue-500 hover:text-blue-700"
-            >
-              Termos de Serviço do Stripe Connect
-            </a>
-            , que complementam estes Termos de Uso. Em caso de conflito entre as disposições do Stripe e estes Termos no que
-            se refere ao processamento financeiro, prevalecerão os termos do Stripe sobre sua própria operação.
-          </p>
-
-          <p>
-            <strong>Credenciamento (onboarding e KYC):</strong> Para habilitar o recebimento de pagamentos, o estabelecimento
-            deve concluir o processo de credenciamento diretamente com o Stripe, que coleta e verifica as informações de
-            identidade (KYC) e conformidade regulatória (AML) necessárias. O Bite Menu não coleta, não armazena e não tem
-            acesso a esses dados. Caso o Stripe não aprove ou suspenda o credenciamento do estabelecimento, o Bite Menu não
-            tem responsabilidade por tal decisão nem capacidade de revertê-la.
-          </p>
-
-          <p>
-            <strong>Taxa de plataforma:</strong> O Bite Menu cobra uma taxa de <strong>3% (três por cento)</strong> sobre o
-            valor bruto de cada transação bem-sucedida processada via Pagamentos Bite Menu. Essa taxa é descontada
-            automaticamente pelo Stripe antes do repasse ao estabelecimento e <strong>não é reembolsável</strong> em nenhuma
-            hipótese, inclusive em caso de cancelamento do pedido, reembolso ao consumidor ou estorno, pois está vinculada ao
-            processamento da transação e não ao resultado comercial do pedido.
-          </p>
-
-          <p>
-            <strong>Taxa do Stripe:</strong> Além da taxa de plataforma do Bite Menu, o Stripe cobra sua própria taxa sobre
-            cada transação processada, definida de acordo com sua própria precificação. O Bite Menu não recebe, não controla
-            e não tem influência sobre essa taxa. Ambas as taxas — a do Bite Menu e a do Stripe — são descontadas
-            automaticamente pelo Stripe antes do repasse ao estabelecimento, que recebe o valor líquido diretamente em sua
-            conta bancária. Para conhecer os valores exatos aplicáveis à sua conta, consulte a
-            <a
-              href="https://stripe.com/br/pricing"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline text-blue-500 hover:text-blue-700"
-            >
-              página de preços do Stripe
-            </a>
-            .
-          </p>
-
-          <p>
-            <strong>Repasse dos valores:</strong> Os prazos e condições para o repasse dos valores ao estabelecimento são
-            definidos <strong>exclusivamente pelo Stripe</strong> e podem variar conforme o perfil da conta, o método de
-            pagamento e o histórico de transações. O Bite Menu não tem controle, responsabilidade nem capacidade de
-            intervenção sobre prazos de repasse, retenções ou bloqueios de valores realizados pelo Stripe. Em caso de dúvidas
-            sobre repasses, o estabelecimento deve contatar diretamente o{" "}
-            <a
-              href="https://support.stripe.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline text-blue-500 hover:text-blue-700"
-            >
-              suporte do Stripe
-            </a>
-            .
-          </p>
-
-          <p>
-            <strong>Reembolsos:</strong> A decisão de reembolsar total ou parcialmente um pedido é{" "}
-            <strong>exclusivamente do estabelecimento</strong>, que é quem tem a relação comercial com o consumidor final. O
-            processamento técnico dos reembolsos é realizado pelo Stripe. A taxa de 3% do Bite Menu sobre a transação
-            original não é restituída em caso de reembolso. A taxa do Stripe sobre a transação original também pode não ser
-            devolvida, conforme as políticas do Stripe vigentes.
-          </p>
-
-          <p>
-            <strong>Chargebacks:</strong> Contestações de pagamento (chargebacks) iniciadas pelo consumidor junto à operadora
-            do cartão são gerenciadas diretamente pelo Stripe. O Bite Menu não oferece suporte em processos de chargeback,
-            cabendo ao estabelecimento acompanhar, responder e fornecer evidências diretamente pelos canais disponibilizados
-            pelo Stripe. O estabelecimento é responsável por manter registros de pedidos e comprovantes que possam ser
-            utilizados em disputas.
-          </p>
-
-          <p>
-            <strong>Responsabilidades do estabelecimento no Pagamentos Bite Menu:</strong>
-          </p>
-          <ul className="list-disc ml-6">
-            <li>Manter a conta Stripe ativa, verificada e em conformidade com os termos do Stripe Connect;</li>
-            <li>
-              Informar seus consumidores que o pagamento online é processado pelo Stripe, conforme a Política de Privacidade
-              do Stripe;
-            </li>
-            <li>
-              Cumprir todas as obrigações fiscais sobre os valores recebidos, incluindo emissão de nota fiscal quando exigida
-              pela legislação;
-            </li>
-            <li>Responder por eventuais chargebacks e reembolsos perante o Stripe e os consumidores finais;</li>
-            <li>Não utilizar o Pagamentos Bite Menu para fins ilegais, incluindo lavagem de dinheiro ou fraude.</li>
-          </ul>
-
-          <p>
-            O Bite Menu não se responsabiliza por falhas no processamento de pagamentos, recusas de transação, atrasos ou
-            retenções de repasse, erros do Stripe, indisponibilidade do sistema de pagamento ou quaisquer perdas financeiras
-            decorrentes do uso ou não uso do Pagamentos Bite Menu.
-          </p>
-        </section>
-
-        {/* 12. Propriedade Intelectual */}
-        <section className="flex flex-col gap-2 mb-4">
-          <h2 className="default-h2">12. Propriedade Intelectual</h2>
+          <h2 className="default-h2">11. Propriedade Intelectual</h2>
           <p>
             O Bite Menu e todos os seus componentes — incluindo código-fonte, design, interface, marca, logotipo, textos
             institucionais, estrutura da plataforma e demais elementos originais — são de titularidade exclusiva do Bite Menu
@@ -487,9 +357,9 @@ const page = () => {
           <p>O Conteúdo do Usuário permanece de titularidade do Usuário, conforme disposto na Seção 9.</p>
         </section>
 
-        {/* 13. Disponibilidade da Plataforma */}
+        {/* 12. Disponibilidade da Plataforma */}
         <section className="flex flex-col gap-2 mb-4">
-          <h2 className="default-h2">13. Disponibilidade da Plataforma</h2>
+          <h2 className="default-h2">12. Disponibilidade da Plataforma</h2>
           <p>
             O Bite Menu emprega esforços razoáveis para manter a plataforma disponível de forma contínua. No entanto, não
             garante disponibilidade ininterrupta, uma vez que podem ocorrer interrupções por manutenção programada,
@@ -500,7 +370,7 @@ const page = () => {
             serviço, sempre que possível.
           </p>
           <p>
-            O Bite Menu utiliza infraestrutura de terceiros (incluindo Supabase e Vercel) e não se responsabiliza por
+            O Bite Menu utiliza infraestrutura de terceiros (incluindo Supabase e Oracle Cloud) e não se responsabiliza por
             interrupções causadas por falhas nesses serviços. O funcionamento do envio de pedidos via WhatsApp também depende
             de serviços de terceiros (Meta Platforms, Inc.) sobre os quais o Bite Menu não tem controle.
           </p>
@@ -511,9 +381,9 @@ const page = () => {
           </p>
         </section>
 
-        {/* 14. Limitação de Responsabilidade */}
+        {/* 13. Limitação de Responsabilidade */}
         <section className="flex flex-col gap-2 mb-4">
-          <h2 className="default-h2">14. Limitação de Responsabilidade</h2>
+          <h2 className="default-h2">13. Limitação de Responsabilidade</h2>
           <p>Na máxima extensão permitida pela legislação brasileira aplicável, o Bite Menu não se responsabiliza por:</p>
           <ul className="list-disc ml-6">
             <li>
@@ -525,11 +395,6 @@ const page = () => {
               consumidores finais, incluindo problemas de entrega, qualidade dos produtos ou atendimento;
             </li>
             <li>
-              Falhas, atrasos, retenções ou recusas no processamento de pagamentos pelo Stripe no contexto do Bite Menu
-              Pagamentos;
-            </li>
-            <li>Perdas financeiras decorrentes de chargebacks, estornos ou fraudes no uso do Pagamentos Bite Menu;</li>
-            <li>
               Perda de dados decorrente de exclusão voluntária da conta, falhas de sincronização causadas pelo usuário ou
               eventos de força maior;
             </li>
@@ -540,9 +405,9 @@ const page = () => {
           </ul>
         </section>
 
-        {/* 15. Suspensão e Encerramento de Conta */}
+        {/* 14. Suspensão e Encerramento de Conta */}
         <section className="flex flex-col gap-2 mb-4">
-          <h2 className="default-h2">15. Suspensão e Encerramento de Conta</h2>
+          <h2 className="default-h2">14. Suspensão e Encerramento de Conta</h2>
           <p>
             O Bite Menu poderá, a seu critério, suspender temporariamente ou encerrar definitivamente a conta do Usuário, com
             ou sem aviso prévio conforme a gravidade da situação, nos seguintes casos:
@@ -569,9 +434,9 @@ const page = () => {
           </p>
         </section>
 
-        {/* 16. Relação entre as Partes */}
+        {/* 15. Relação entre as Partes */}
         <section className="flex flex-col gap-2 mb-4">
-          <h2 className="default-h2">16. Relação entre as Partes</h2>
+          <h2 className="default-h2">15. Relação entre as Partes</h2>
           <p>
             Estes Termos estabelecem uma relação de prestação de serviços de tecnologia entre o Bite Menu e o Usuário. Nada
             nestes Termos cria ou deve ser interpretado como criação de vínculo empregatício, societário, de franquia, de
@@ -584,24 +449,23 @@ const page = () => {
           </p>
         </section>
 
-        {/* 17. Decisões Automatizadas */}
+        {/* 16. Decisões Automatizadas */}
         <section className="flex flex-col gap-2 mb-4">
-          <h2 className="default-h2">17. Decisões Automatizadas</h2>
+          <h2 className="default-h2">16. Decisões Automatizadas</h2>
           <p>
             O Bite Menu não realiza decisões automatizadas que produzam efeitos jurídicos ou afetem de maneira significativa
             os titulares de dados, conforme previsto no art. 20 da LGPD.
           </p>
           <p>
-            Alguns serviços de terceiros integrados à plataforma — em especial o Stripe, no contexto do Pagamentos Bite Menu
-            — podem realizar análises automatizadas para fins de prevenção a fraudes, verificação de identidade e cumprimento
-            de obrigações regulatórias (KYC/AML), de acordo com suas próprias políticas. Essas análises são de
-            responsabilidade exclusiva do Stripe e regidas por seus próprios termos.
+            Alguns serviços de terceiros integrados à plataforma — em especial a ValidaPay, no processamento das assinaturas
+            — podem realizar análises automatizadas para fins de prevenção a fraudes, de acordo com suas próprias políticas.
+            Essas análises são de responsabilidade exclusiva da ValidaPay e regidas por seus próprios termos.
           </p>
         </section>
 
-        {/* 18. Privacidade e Proteção de Dados */}
+        {/* 17. Privacidade e Proteção de Dados */}
         <section className="flex flex-col gap-2 mb-4">
-          <h2 className="default-h2">18. Privacidade e Proteção de Dados</h2>
+          <h2 className="default-h2">17. Privacidade e Proteção de Dados</h2>
           <p>
             O tratamento de dados pessoais no âmbito do Bite Menu é regido pela{" "}
             <Link
@@ -620,9 +484,9 @@ const page = () => {
           </p>
         </section>
 
-        {/* 19. Incidentes de Segurança */}
+        {/* 18. Incidentes de Segurança */}
         <section className="flex flex-col gap-2 mb-4">
-          <h2 className="default-h2">19. Incidentes de Segurança</h2>
+          <h2 className="default-h2">18. Incidentes de Segurança</h2>
           <p>
             O Bite Menu adota medidas técnicas e administrativas adequadas para proteger os dados e sistemas da plataforma.
             Caso ocorra incidente de segurança que possa acarretar risco ou dano relevante aos titulares de dados, o Bite
@@ -635,9 +499,9 @@ const page = () => {
           </p>
         </section>
 
-        {/* 20. Alterações nestes Termos */}
+        {/* 19. Alterações nestes Termos */}
         <section className="flex flex-col gap-2 mb-4">
-          <h2 className="default-h2">20. Alterações nestes Termos</h2>
+          <h2 className="default-h2">19. Alterações nestes Termos</h2>
           <p>
             O Bite Menu pode atualizar estes Termos de Uso a qualquer momento. Em caso de alterações relevantes,
             notificaremos os Usuários cadastrados pelo dashboard do Bite Menu.
@@ -656,9 +520,9 @@ const page = () => {
           </p>
         </section>
 
-        {/* 21. Contato */}
+        {/* 20. Contato */}
         <section className="flex flex-col gap-2 mb-4">
-          <h2 className="default-h2">21. Contato</h2>
+          <h2 className="default-h2">20. Contato</h2>
           <p>
             Em caso de dúvidas, solicitações ou reclamações relacionadas a estes Termos de Uso ou ao funcionamento da
             plataforma, entre em contato pelo e-mail <strong>contato@bitemenu.com.br</strong>.
@@ -666,7 +530,7 @@ const page = () => {
           <p className="text-sm color-gray mt-4">
             O Bite Menu é uma plataforma de tecnologia desenvolvida para estabelecimentos do setor de alimentação. Não somos
             uma instituição financeira, operadora de pagamentos ou adquirente. Os serviços de processamento de pagamentos são
-            prestados pelo Stripe, empresa independente e devidamente regulamentada.
+            prestados pela ValidaPay, empresa independente e devidamente regulamentada.
           </p>
         </section>
       </div>

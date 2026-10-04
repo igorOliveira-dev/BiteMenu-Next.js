@@ -79,7 +79,7 @@ Regra:
 
 NÃO alterar diretamente integrações com:
 
-- Gateway de pagamento (hoje nenhum; Asaas em breve)
+- Gateway de pagamento (ValidaPay)
 - Supabase (auth, queries críticas, RLS)
 
 Isso inclui:
@@ -102,7 +102,7 @@ Se necessário:
 - Next.js 16 (App Router)
 - JavaScript / TypeScript
 - Supabase (DB, Auth, Storage)
-- Pagamentos: em migração da Stripe para o Asaas (nenhum gateway integrado no momento)
+- Pagamentos: ValidaPay
 - Tailwind CSS
 - PWA (`next-pwa`)
 

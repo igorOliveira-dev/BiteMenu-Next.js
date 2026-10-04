@@ -5,7 +5,7 @@
 ## Produto
 
 - [Página inicial](https://www.bitemenu.com.br/): visão geral do produto e criação de cardápio grátis
-- [Planos e preços](https://www.bitemenu.com.br/pricing): planos Free, Plus (R$24,90) e Pro (R$44,90)
+- [Planos e preços](https://www.bitemenu.com.br/pricing): planos Free, Plus (R$29,90) e Pro (R$49,90)
 - [Sobre](https://www.bitemenu.com.br/about): sobre o Bite Menu
 - [Perguntas frequentes](https://www.bitemenu.com.br/faqs)
 - [Suporte](https://www.bitemenu.com.br/support)
