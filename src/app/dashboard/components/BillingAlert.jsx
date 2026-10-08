@@ -5,6 +5,8 @@ import { FaExclamationTriangle, FaBarcode } from "react-icons/fa";
 import useUser from "@/hooks/useUser";
 import { supabase } from "@/lib/supabaseClient";
 import { brDate } from "@/lib/brDate";
+import { useConfirm } from "@/providers/ConfirmProvider";
+import { useAlert } from "@/providers/AlertProvider";
 
 const formatDate = (iso) => brDate(iso);
 const formatBRL = (value) =>
@@ -17,6 +19,9 @@ const formatBRL = (value) =>
 export default function BillingAlert({ setSelectedTab, className = "" }) {
   const { profile } = useUser();
   const [alert, setAlert] = useState(null);
+  const [cancelingBoleto, setCancelingBoleto] = useState(false);
+  const confirm = useConfirm();
+  const showAlert = useAlert();
   const profileId = profile?.id;
   const subscriptionId = profile?.validapay_subscription_id;
 
@@ -43,6 +48,30 @@ export default function BillingAlert({ setSelectedTab, className = "" }) {
   }, [profileId, subscriptionId]);
 
   if (!alert) return null;
+
+  // Primeira compra no boleto: cancela pra poder assinar de novo com outra forma de pagamento
+  const cancelBoleto = async () => {
+    const ok = await confirm("Cancelar este boleto? Depois você pode assinar de novo escolhendo outra forma de pagamento.");
+    if (!ok) return;
+
+    setCancelingBoleto(true);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const res = await fetch("/api/validapay/cancel-boleto", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      window.location.href = "/dashboard/pricing";
+    } catch (err) {
+      showAlert(err.message || "Não foi possível cancelar o boleto. Tente novamente.");
+      setCancelingBoleto(false);
+    }
+  };
 
   const plan = <span className="capitalize font-semibold">{alert.plan ?? profile.role}</span>;
   const deadline = alert.payUntil ? (
@@ -96,6 +125,16 @@ export default function BillingAlert({ setSelectedTab, className = "" }) {
       </span>
       <p className="flex-1 min-w-[200px]">{message}</p>
 
+      {alert.pending && alert.boletoUrl && (
+        <button
+          onClick={cancelBoleto}
+          disabled={cancelingBoleto}
+          className="shrink-0 underline cursor-pointer disabled:opacity-50"
+          type="button"
+        >
+          {cancelingBoleto ? "Cancelando..." : "Cancelar boleto"}
+        </button>
+      )}
       {alert.boletoUrl ? (
         <a href={alert.boletoUrl} target="_blank" rel="noopener noreferrer" className="cta-button small shrink-0">
           {alert.overdue ? "Pagar boleto" : "Abrir boleto"}

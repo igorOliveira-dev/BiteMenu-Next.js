@@ -43,6 +43,22 @@ function paymentAlert(sub) {
   };
 }
 
+// Boletos da assinatura, do mais novo pro mais antigo
+function boletos(sub) {
+  return (sub.billingCycles ?? [])
+    .flatMap((c) => c.invoices ?? [])
+    .filter((i) => (i.paymentType ?? sub.paymentType) === "BOLETO" && i.charge?.chargeId)
+    .sort((a, b) => new Date(b.dueDate) - new Date(a.dueDate))
+    .map((i) => ({
+      chargeId: i.charge.chargeId,
+      status: i.status,
+      open: OPEN_INVOICE.includes(i.status),
+      amount: i.summary?.total ?? null,
+      dueDate: i.dueDate ?? null,
+      boletoUrl: `${process.env.VALIDAPAY_API_URL}/v1/charges/${i.charge.chargeId}/boleto.pdf`,
+    }));
+}
+
 // Resumo de faturamento da assinatura do usuário logado (só o que a tela mostra).
 export async function GET(req) {
   try {
@@ -87,6 +103,7 @@ export async function GET(req) {
       cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
       cancelEffectiveAt: sub.cancelAtPeriodEnd ? (sub.cancellation?.effectiveAt ?? null) : null,
       alert: paymentAlert(sub),
+      boletos: boletos(sub),
     });
   } catch (err) {
     console.error("[ValidaPay Subscription] Erro:", err);

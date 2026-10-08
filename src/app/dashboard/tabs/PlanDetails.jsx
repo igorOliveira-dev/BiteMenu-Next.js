@@ -31,6 +31,13 @@ const PAYMENT_METHODS = {
 };
 const CARD_ICONS = { VISA: FaCcVisa, MASTERCARD: FaCcMastercard, MASTER: FaCcMastercard, AMEX: FaCcAmex };
 const INTERVAL_LABELS = { MONTHLY: "Mensal", YEARLY: "Anual" };
+// Formas que o cliente pode escolher (valor enviado à ValidaPay → paymentType da resposta)
+const METHOD_OPTIONS = [
+  { value: "creditcard", type: "CREDIT_CARD" },
+  { value: "pix_automatico", type: "PIX_AUTOMATICO" },
+  { value: "boleto", type: "BOLETO" },
+];
+const BOLETO_STATUS = { PAID: "Pago", CANCELED: "Cancelado", OVERDUE: "Vencido", EXPIRED: "Expirado" };
 
 const BillingRow = ({ Icon, label, children }) => (
   <div className="flex items-center gap-3 p-4">
@@ -44,7 +51,9 @@ const BillingRow = ({ Icon, label, children }) => (
   </div>
 );
 
-const BillingCard = ({ billing, canCancel, canceling, onCancel }) => {
+const BillingCard = ({ billing, canCancel, canceling, onCancel, changingMethod, onChangeMethod }) => {
+  const [picking, setPicking] = useState(false);
+
   if (billing === undefined) {
     return (
       <div className="mt-4 h-[236px] w-full max-w-[1024px] rounded-2xl bg-translucid border-2 border-[var(--translucid)] animate-pulse" />
@@ -97,6 +106,7 @@ const BillingCard = ({ billing, canCancel, canceling, onCancel }) => {
           <BillingRow Icon={CardIcon} label="Forma de pagamento">
             <span className="capitalize">{billing.card.brand?.toLowerCase()}</span>
             <span className="ml-2 font-mono tracking-wider">•••• {billing.card.lastFour}</span>
+            {canCancel && <ChangeMethodButton onClick={() => setPicking(!picking)} />}
           </BillingRow>
         ) : (
           <BillingRow Icon={method?.Icon ?? FaSyncAlt} label="Forma de pagamento">
@@ -104,9 +114,78 @@ const BillingCard = ({ billing, canCancel, canceling, onCancel }) => {
             {billing.paymentType !== "PIX_AUTOMATICO" && (
               <p className="text-xs font-normal color-gray">A fatura chega no seu e-mail antes do vencimento</p>
             )}
+            {canCancel && <ChangeMethodButton onClick={() => setPicking(!picking)} />}
           </BillingRow>
         )}
       </div>
+
+      {picking && (
+        <div className="p-4 border-t-2 border-[var(--translucid)]">
+          <p className="text-sm color-gray mb-3">
+            Se houver cobrança em aberto, ela é reemitida na nova forma e o boleto em aberto é cancelado. Senão, a troca
+            vale a partir da próxima cobrança.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {METHOD_OPTIONS.filter((m) => m.type !== billing.paymentType).map(({ value, type }) => {
+              const { label, Icon } = PAYMENT_METHODS[type];
+              return (
+                <button
+                  key={value}
+                  onClick={() => onChangeMethod(value, label).then((ok) => ok && setPicking(false))}
+                  disabled={changingMethod}
+                  className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg border-2 border-[var(--translucid)] hover:bg-[var(--translucid)] transition cursor-pointer disabled:opacity-50"
+                  type="button"
+                >
+                  <Icon /> {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {billing.boletos?.length > 0 && (
+        <div className="border-t-2 border-[var(--translucid)]">
+          <p className="font-semibold px-4 pt-4 pb-2">Boletos</p>
+          <ul className="divide-y-2 divide-[var(--translucid)]">
+            {billing.boletos.map((b) => (
+              <li key={b.chargeId} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm">
+                <span>
+                  <strong>{formatBRL(b.amount)}</strong> · vence em {formatDate(b.dueDate)}
+                  <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-[var(--translucid)]">
+                    {b.open ? "Em aberto" : (BOLETO_STATUS[b.status] ?? b.status)}
+                  </span>
+                </span>
+                <span className="flex gap-1">
+                  {b.status !== "CANCELED" && (
+                    <a
+                      href={b.boletoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 rounded-lg hover:bg-[var(--translucid)] transition"
+                    >
+                      Abrir
+                    </a>
+                  )}
+                  {/* Cancelar só a cobrança deixaria o ciclo sem pagamento: cancela trocando a forma */}
+                  {b.open && canCancel && (
+                    <button
+                      onClick={() => setPicking(true)}
+                      className="px-3 py-1.5 rounded-lg text-red-500 hover:bg-red-500/10 transition cursor-pointer"
+                      type="button"
+                    >
+                      Cancelar
+                    </button>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {picking && billing.boletos.some((b) => b.open) && (
+            <p className="px-4 pb-3 text-xs color-gray">Para cancelar o boleto em aberto, escolha a nova forma acima.</p>
+          )}
+        </div>
+      )}
 
       {canCancel && (
         <div className="flex justify-between items-center gap-2 p-3 border-t-2 border-[var(--translucid)]">
@@ -130,6 +209,12 @@ const BillingCard = ({ billing, canCancel, canceling, onCancel }) => {
   );
 };
 
+const ChangeMethodButton = ({ onClick }) => (
+  <button onClick={onClick} className="block text-xs font-normal underline cursor-pointer mt-1" type="button">
+    Alterar forma de pagamento
+  </button>
+);
+
 const formatDate = (iso) => brDate(iso) || "-";
 const formatBRL = (value) =>
   value != null ? Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "-";
@@ -146,6 +231,8 @@ export default function PlanDetails({ setSelectedTab }) {
   const [patch, setPatch] = useState({});
   const [canceling, setCanceling] = useState(false);
   const [restoring, setRestoring] = useState(false);
+  const [changingMethod, setChangingMethod] = useState(false);
+  const [billingVersion, setBillingVersion] = useState(0); // muda pra recarregar o faturamento
   const [billing, setBilling] = useState(undefined); // undefined = carregando
   const confirm = useConfirm();
   const alert = useAlert();
@@ -167,7 +254,7 @@ export default function PlanDetails({ setSelectedTab }) {
     return () => {
       cancelled = true;
     };
-  }, [subscriptionId, canceledAt]);
+  }, [subscriptionId, canceledAt, billingVersion]);
 
   if (loading || !profile) return <Loading />;
 
@@ -192,6 +279,37 @@ export default function PlanDetails({ setSelectedTab }) {
       alert(err.message || "Não foi possível cancelar. Tente novamente.");
     } finally {
       setCanceling(false);
+    }
+  };
+
+  // true quando trocou (o seletor fecha)
+  const changePaymentMethod = async (method, label) => {
+    const ok = await confirm(`Trocar a forma de pagamento para ${label}?`);
+    if (!ok) return false;
+
+    setChangingMethod(true);
+    try {
+      const res = await fetch("/api/validapay/payment-method", {
+        method: "POST",
+        headers: { ...(await authHeaders()), "Content-Type": "application/json" },
+        body: JSON.stringify({ method }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      // Cartão / Pix Automático: o cliente informa o cartão ou autoriza o débito na página da ValidaPay
+      if (data.url) {
+        window.location.href = data.url;
+        return true;
+      }
+      setBillingVersion((v) => v + 1);
+      alert(data.type === "NO_CHANGE" ? "Essa já é a sua forma de pagamento." : "Forma de pagamento alterada.");
+      return true;
+    } catch (err) {
+      alert(err.message || "Não foi possível trocar a forma de pagamento. Tente novamente.");
+      return false;
+    } finally {
+      setChangingMethod(false);
     }
   };
 
@@ -270,6 +388,8 @@ export default function PlanDetails({ setSelectedTab }) {
           canCancel={!p.cancel_at_period_end}
           canceling={canceling}
           onCancel={cancelSubscription}
+          changingMethod={changingMethod}
+          onChangeMethod={changePaymentMethod}
         />
       )}
     </div>

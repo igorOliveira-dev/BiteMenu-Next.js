@@ -2,7 +2,7 @@ import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 // VALIDAPAY_API_URL / VALIDAPAY_OAUTH_URL: sandbox ou produção (ver .env)
-const SCOPES = "checkouts/write checkouts/read subscriptions/write subscriptions/read customers/read";
+const SCOPES = "checkouts/write checkouts/read subscriptions/write subscriptions/read customers/read charges/write";
 
 let cachedToken = null; // { value, expiresAt }
 
