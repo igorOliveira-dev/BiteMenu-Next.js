@@ -1,5 +1,6 @@
 import { validapay, getUserFromRequest } from "@/lib/validapay";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { brDate } from "@/lib/brDate";
 
 // Mesmas formas aceitas no checkout
 const METHODS = ["creditcard", "pix_automatico", "boleto"];
@@ -37,8 +38,9 @@ export async function POST(req) {
     if (method === "creditcard" && !hasOpenInvoice) {
       return Response.json(
         {
-          error:
-            "A troca para cartão fica disponível quando a próxima fatura for emitida. Você recebe o aviso por e-mail antes do vencimento.",
+          error: `A troca para cartão fica disponível quando a próxima cobrança for gerada, perto do vencimento${
+            sub.nextCycleChargeDate ? ` (${brDate(sub.nextCycleChargeDate)})` : ""
+          }. Volte aqui nessa data.`,
         },
         { status: 400 },
       );
