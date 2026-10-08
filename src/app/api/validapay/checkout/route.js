@@ -13,6 +13,11 @@ import { plansBlockedFor } from "@/consts/Plans";
 
 const json = (body, status = 200) => Response.json(body, { status });
 
+// Pix Automático só existe em conta PJ; a conta de sandbox é PF
+const PAYMENT_METHODS = process.env.VALIDAPAY_API_URL?.includes("sandbox")
+  ? ["creditcard", "boleto"]
+  : ["pix_automatico", "creditcard", "boleto"];
+
 export async function POST(req) {
   try {
     const user = await getUserFromRequest(req);
@@ -71,8 +76,8 @@ export async function POST(req) {
         priceId,
         // Sem isso a ValidaPay usa o padrão da conta (só PIX). Pix Automático no lugar do PIX comum:
         // o cliente autoriza uma vez no banco e as renovações são debitadas sozinhas.
-        allowedPaymentMethods: ["pix_automatico", "creditcard", "boleto"],
-        subscriptionAllowedPaymentMethods: ["pix_automatico", "creditcard", "boleto"],
+        allowedPaymentMethods: PAYMENT_METHODS,
+        subscriptionAllowedPaymentMethods: PAYMENT_METHODS,
         expirationAfterDueDate: DAYS_TO_PAY_AFTER_DUE,
         boletoDueDays: 3, // sem isso o primeiro boleto vence no mesmo dia
 
