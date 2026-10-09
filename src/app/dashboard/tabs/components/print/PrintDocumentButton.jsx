@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 import { FaPrint } from "react-icons/fa";
 import GenericModal from "@/components/GenericModal";
@@ -128,6 +128,10 @@ function PrintHeader({ title, document }) {
   );
 }
 
+const PRINT_STYLE_KEY = "bitemenu-print-style";
+const PAPER_SIZE_KEY = "bitemenu-print-paper";
+const paperSizes = ["paper-80mm", "paper-58mm", "paper-a4"];
+
 // linha "rótulo .... valor"
 function PrintRow({ label, value, className = "" }) {
   return (
@@ -158,7 +162,19 @@ export default function PrintDocumentButton({
   const [modalOpen, setModalOpen] = useState(false);
   const [printMode, setPrintMode] = useState("full");
   const [paperSize, setPaperSize] = useState("paper-80mm");
+  // estilo antigo (sem cabeçalho), lembrado neste navegador
+  const [classicStyle, setClassicStyle] = useState(false);
   const printRef = useRef(null);
+
+  useEffect(() => {
+    try {
+      setClassicStyle(
+        window.localStorage.getItem(PRINT_STYLE_KEY) === "classic",
+      );
+      const savedPaper = window.localStorage.getItem(PAPER_SIZE_KEY);
+      if (paperSizes.includes(savedPaper)) setPaperSize(savedPaper);
+    } catch {}
+  }, []);
 
   const handlePrint = useReactToPrint({
     contentRef: printRef,
@@ -182,6 +198,20 @@ export default function PrintDocumentButton({
     (acc, item) => acc + (Number(item.qty) || 0),
     0,
   );
+
+  // vendas não guardam order_number: mostram só o id curto (estilo clássico)
+  const shortId = `#${document.id?.slice(0, 6)}`;
+  const numberLabel =
+    document.orderNumber != null
+      ? `${document.orderNumber} (${shortId})`
+      : shortId;
+
+  const handleToggleClassicStyle = (value) => {
+    setClassicStyle(value);
+    try {
+      window.localStorage.setItem(PRINT_STYLE_KEY, value ? "classic" : "new");
+    } catch {}
+  };
 
   return (
     <>
@@ -241,7 +271,12 @@ export default function PrintDocumentButton({
               </label>
               <select
                 value={paperSize}
-                onChange={(e) => setPaperSize(e.target.value)}
+                onChange={(e) => {
+                  setPaperSize(e.target.value);
+                  try {
+                    window.localStorage.setItem(PAPER_SIZE_KEY, e.target.value);
+                  } catch {}
+                }}
                 className="input w-full rounded-xl bg-translucid p-2"
               >
                 <option className="text-black" value="paper-80mm">
@@ -254,6 +289,23 @@ export default function PrintDocumentButton({
                   Folha A4
                 </option>
               </select>
+            </div>
+
+            <div>
+              <label className="flex items-center gap-2">
+                <span className="switch">
+                  <input
+                    type="checkbox"
+                    checked={!classicStyle}
+                    onChange={(e) =>
+                      handleToggleClassicStyle(!e.target.checked)
+                    }
+                  />
+                  <span className="slider"></span>
+                </span>
+
+                <span className="text-sm">Impressão com cabeçalho</span>
+              </label>
             </div>
 
             <div className="flex flex-col gap-2 sm:flex-row">
@@ -285,8 +337,166 @@ export default function PrintDocumentButton({
       ) : null}
 
       <div style={{ position: "absolute", left: "-99999px", top: 0 }}>
-        <div ref={printRef} className={`print-layout ${paperSize}`}>
-          {printMode === "full" && (
+        <div
+          ref={printRef}
+          className={`print-layout ${paperSize} ${classicStyle ? "print-classic" : ""}`}
+        >
+          {classicStyle && printMode === "full" && (
+            <>
+              <h1>{receiptTitle}</h1>
+              <p>
+                <strong>Nº:</strong> {numberLabel}
+              </p>
+              <p>{new Date(document.createdAt).toLocaleString("pt-BR")}</p>
+              <hr />
+              <p>
+                <strong>Cliente:</strong> {document.costumerName}
+              </p>
+              <p>
+                <strong>Telefone:</strong> {document.costumerPhone}
+              </p>
+              {document.neighborhood && (
+                <p>
+                  <strong>Bairro:</strong> {document.neighborhood}
+                </p>
+              )}
+              {document.address && (
+                <p>
+                  <strong>Endereço:</strong> {document.address}
+                </p>
+              )}
+              <p>
+                <strong>Pagamento:</strong>{" "}
+                {paymentLabels[document.paymentMethod]}
+              </p>
+              <p>
+                <strong>Serviço:</strong> {serviceLabels[document.service]}
+              </p>
+              <hr />
+              {document.itemsList.map((item, index) => (
+                <div
+                  key={index}
+                  style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
+                >
+                  <strong>
+                    {item.qty}x {item.name}
+                  </strong>
+                  {(item.additionals || []).map((add, i) => (
+                    <div key={i}>+ {add.name}</div>
+                  ))}
+                  {item.note && <div>Obs: {item.note}</div>}
+                </div>
+              ))}
+              <hr />
+              <p>
+                <strong>Itens:</strong> {totalItens}
+              </p>
+              <p>
+                <strong>Subtotal:</strong>{" "}
+                {formatCurrency(document.subtotal, currency)}
+              </p>
+              {document.discount > 0 && (
+                <p>
+                  <strong>Desconto:</strong> -
+                  {formatCurrency(document.discount, currency)}
+                </p>
+              )}
+              {document.service === "delivery" && (
+                <p>
+                  <strong>Entrega:</strong>{" "}
+                  {formatCurrency(document.deliveryFee, currency)}
+                </p>
+              )}
+              <hr />
+              <p style={{ fontSize: "18px", fontWeight: "bold" }}>
+                TOTAL: {formatCurrency(document.total, currency)}
+              </p>
+              {document.netTotal != null && (
+                <p style={{ fontSize: "14px" }}>
+                  Líquido: {formatCurrency(document.netTotal, currency)}
+                </p>
+              )}
+            </>
+          )}
+
+          {classicStyle && printMode === "kitchen" && (
+            <>
+              <h1>COZINHA</h1>
+              <p>
+                <strong>Nº:</strong> {numberLabel}
+              </p>
+              <p>{new Date(document.createdAt).toLocaleString("pt-BR")}</p>
+              <p>
+                <strong>
+                  {serviceLabels[document.service]?.toUpperCase()}
+                </strong>
+              </p>
+              {document.costumerName && (
+                <p>
+                  <strong>Cliente:</strong> {document.costumerName}
+                </p>
+              )}
+              <hr />
+              {document.itemsList.map((item, index) => (
+                <div
+                  key={index}
+                  style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
+                >
+                  <h3>
+                    {item.qty}x {item.name}
+                  </h3>
+                  {(item.additionals || []).map((add, i) => (
+                    <div key={i}>+ {add.name}</div>
+                  ))}
+                  {item.note && (
+                    <div style={{ fontWeight: "bold" }}>
+                      OBS: {item.note.toUpperCase()}
+                    </div>
+                  )}
+                  <hr />
+                </div>
+              ))}
+            </>
+          )}
+
+          {classicStyle && printMode === "counter" && (
+            <>
+              <h1>COMANDA</h1>
+              <p>
+                <strong>Nº:</strong> {numberLabel}
+              </p>
+              <p>{new Date(document.createdAt).toLocaleString("pt-BR")}</p>
+              {document.costumerName && (
+                <p>
+                  <strong>Cliente:</strong> {document.costumerName}
+                </p>
+              )}
+              <hr />
+              {document.itemsList.map((item, index) => (
+                <div
+                  key={index}
+                  style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
+                >
+                  <strong>
+                    {item.qty}x {item.name}
+                  </strong>
+                  {(item.additionals || []).map((add, i) => (
+                    <div key={i}>+ {add.name}</div>
+                  ))}
+                  {item.note && <div>Obs: {item.note}</div>}
+                </div>
+              ))}
+              <hr />
+              <p>
+                <strong>Itens:</strong> {totalItens}
+              </p>
+              <p style={{ fontSize: "18px", fontWeight: "bold" }}>
+                TOTAL: {formatCurrency(document.total, currency)}
+              </p>
+            </>
+          )}
+
+          {!classicStyle && printMode === "full" && (
             <>
               <PrintHeader title={receiptTitle} document={document} />
               {menuName && <p>{menuName}</p>}
@@ -375,7 +585,7 @@ export default function PrintDocumentButton({
             </>
           )}
 
-          {printMode === "kitchen" && (
+          {!classicStyle && printMode === "kitchen" && (
             <>
               <PrintHeader title="COZINHA" document={document} />
               {serviceText && (
@@ -416,7 +626,7 @@ export default function PrintDocumentButton({
             </>
           )}
 
-          {printMode === "counter" && (
+          {!classicStyle && printMode === "counter" && (
             <>
               <PrintHeader title="COMANDA" document={document} />
               {document.costumerName && (

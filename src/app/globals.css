@@ -643,6 +643,22 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   margin: 6px 0;
 }
 
+/* estilo clássico (antes do cabeçalho novo) */
+.print-layout.print-classic h1 {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.print-layout.print-classic h3 {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.print-layout.print-classic hr {
+  border-top: 1px solid black;
+  margin: 4px 0;
+}
+
 .print-layout.paper-a4 {
   width: 100%;
   max-width: 190mm;
