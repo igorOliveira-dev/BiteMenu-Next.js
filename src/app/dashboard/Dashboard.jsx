@@ -307,7 +307,7 @@ const Dashboard = ({
         ref={mainRef}
         className="w-[100dvw] lg:w-auto lg:flex-1 lg:min-w-0 h-[calc(100dvh-143px)] lg:h-[calc(100dvh-100px)] overflow-auto scrollbar-none"
       >
-        <UpsellBanner selectedTab={selectedTab} />
+        <UpsellBanner selectedTab={selectedTab} collapsed={collapsed} />
         <div className={selectedTab === "menu" ? "block" : "hidden"}>
           <Menu
             setSelectedTab={setSelectedTab}
