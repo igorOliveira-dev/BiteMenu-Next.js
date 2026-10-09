@@ -259,7 +259,7 @@ function SearchableSelect({
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="w-full p-2 rounded border border-translucid bg-translucid text-left flex items-center justify-between gap-2 cursor-pointer"
+        className="w-full p-2 rounded-lg border border-translucid bg-translucid text-left flex items-center justify-between gap-2 cursor-pointer"
       >
         <span className={`truncate ${!selectedOption ? "color-gray" : ""}`}>
           {selectedOption ? selectedOption.label : placeholder}
@@ -269,7 +269,7 @@ function SearchableSelect({
 
       {open && (
         <div
-          className="absolute z-50 -top-1 mt-1 w-full rounded border border-translucid bg-[var(--low-gray)] shadow-lg overflow-hidden"
+          className="absolute z-50 -top-1 mt-1 w-full rounded-lg border border-translucid bg-[var(--low-gray)] shadow-lg overflow-hidden"
           style={{ maxHeight: 260 }}
         >
           <div className="border-b bg-[var(--translucid)] border-[var(--translucid)]">
@@ -407,7 +407,7 @@ function SortableMenuItem({
             type="button"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => setMenuOpen((prev) => !prev)}
-            className="cursor-pointer absolute top-2 right-2 p-2 rounded"
+            className="cursor-pointer absolute top-2 right-2 p-2 rounded-lg"
             style={{
               backgroundColor:
                 getContrastTextColor(backgroundColor) === "white"
@@ -2802,7 +2802,7 @@ export default function MenuItems({
             <>
               <button
                 onClick={openSortModal}
-                className="cursor-pointer px-3 py-1 hover:opacity-75 rounded"
+                className="cursor-pointer px-3 py-1 hover:opacity-75 rounded-lg"
                 style={{
                   backgroundColor: translucidToUse,
                   color: foregroundToUse,
@@ -2814,7 +2814,7 @@ export default function MenuItems({
               </button>
               <button
                 onClick={() => setCombosModalOpen(true)}
-                className="cursor-pointer px-3 py-1 hover:opacity-75 rounded font-bold"
+                className="cursor-pointer px-3 py-1 hover:opacity-75 rounded-lg font-bold"
                 style={{
                   backgroundColor: translucidToUse,
                   color: foregroundToUse,
@@ -2826,7 +2826,7 @@ export default function MenuItems({
               </button>
               <button
                 onClick={() => setCouponsModalOpen(true)}
-                className="cursor-pointer px-3 py-1 hover:opacity-75 rounded font-bold"
+                className="cursor-pointer px-3 py-1 hover:opacity-75 rounded-lg font-bold"
                 style={{
                   backgroundColor: translucidToUse,
                   color: foregroundToUse,
@@ -2888,7 +2888,7 @@ export default function MenuItems({
         >
           <button
             onClick={() => openCategoryModal("create")}
-            className={`cursor-pointer px-3 py-1 bg-blue-600/80 border-2 border-[var(--translucid)] hover:bg-blue-700/80 text-white rounded ${showCatIndicator ? "pulse-btn" : ""}`}
+            className={`cursor-pointer px-3 py-1 bg-blue-600/80 border-2 border-[var(--translucid)] hover:bg-blue-700/80 text-white rounded-lg ${showCatIndicator ? "pulse-btn" : ""}`}
           >
             + Categoria
           </button>
@@ -2921,7 +2921,7 @@ export default function MenuItems({
 
       <div className="space-y-4">
         {hasStarred && (
-          <div className="rounded py-3" id="starred-section">
+          <div className="rounded-lg py-3" id="starred-section">
             <div className="flex items-center gap-2 mb-2">
               <strong style={{ color: foregroundToUse }}>Destaques</strong>
             </div>
@@ -2965,7 +2965,7 @@ export default function MenuItems({
                                 prev === it.id ? null : it.id,
                               )
                             }
-                            className="cursor-pointer absolute top-2 right-2 p-2 rounded"
+                            className="cursor-pointer absolute top-2 right-2 p-2 rounded-lg"
                             style={{
                               backgroundColor: "#00000055",
                               color: "white",
@@ -3128,7 +3128,7 @@ export default function MenuItems({
                     prev === cat.id ? null : cat.id,
                   )
                 }
-                className="cursor-pointer p-2 mr-2 rounded flex-shrink-0"
+                className="cursor-pointer p-2 mr-2 rounded-lg flex-shrink-0"
                 style={{
                   backgroundColor:
                     getContrastTextColor(backgroundColor) === "white"
@@ -3347,7 +3347,7 @@ export default function MenuItems({
                   }));
                 }}
                 maxLength={20}
-                className="w-full p-2 rounded border border-translucid bg-translucid mb-2"
+                className="w-full p-2 rounded-lg border border-translucid bg-translucid mb-2"
                 placeholder="Item"
               />
             </label>
@@ -3468,7 +3468,7 @@ export default function MenuItems({
                         }));
                       }}
                       maxLength={25}
-                      className="w-full p-2 rounded border border-translucid bg-translucid mb-2"
+                      className="w-full p-2 rounded-lg border border-translucid bg-translucid mb-2"
                     />
                   </label>
 
@@ -3512,7 +3512,7 @@ export default function MenuItems({
                               }));
                             }}
                             maxLength={10}
-                            className="w-full p-2 pl-6 xs:pl-7.5 rounded border border-translucid bg-translucid"
+                            className="w-full p-2 pl-6 xs:pl-7.5 rounded-lg border border-translucid bg-translucid"
                             placeholder="00.00"
                           />
                         </div>
@@ -3561,7 +3561,7 @@ export default function MenuItems({
                               }));
                             }}
                             maxLength={10}
-                            className="w-full p-2 pl-6 xs:pl-7.5 rounded border border-translucid bg-translucid"
+                            className="w-full p-2 pl-6 xs:pl-7.5 rounded-lg border border-translucid bg-translucid"
                             placeholder="00.00"
                           />
                         </div>
@@ -3581,7 +3581,7 @@ export default function MenuItems({
                       data: { ...p.data, description: e.target.value },
                     }))
                   }
-                  className="w-full p-2 rounded border border-translucid bg-translucid mb-2"
+                  className="w-full p-2 rounded-lg border border-translucid bg-translucid mb-2"
                   placeholder="Escreva a descrição (opcional)"
                 />
               </label>
@@ -3601,7 +3601,7 @@ export default function MenuItems({
                   }
                   setVariationsModalOpen(true);
                 }}
-                className="w-full mb-2 cursor-pointer px-3 py-2 rounded border border-translucid bg-translucid hover:opacity-80 transition flex items-center justify-between"
+                className="w-full mb-2 cursor-pointer px-3 py-2 rounded-lg border border-translucid bg-translucid hover:opacity-80 transition flex items-center justify-between"
               >
                 <span className="text-sm">Variação</span>
                 <span className="flex items-center gap-2 text-sm color-gray">
@@ -3616,7 +3616,7 @@ export default function MenuItems({
               <button
                 type="button"
                 onClick={() => setOptionGroupsModalOpen(true)}
-                className="w-full mb-2 cursor-pointer px-3 py-2 rounded border border-translucid bg-translucid hover:opacity-80 transition flex items-center justify-between"
+                className="w-full mb-2 cursor-pointer px-3 py-2 rounded-lg border border-translucid bg-translucid hover:opacity-80 transition flex items-center justify-between"
               >
                 <span className="text-sm">Grupos de opções</span>
                 <span className="flex items-center gap-2 text-sm color-gray">
@@ -3631,7 +3631,7 @@ export default function MenuItems({
               <div className="flex h-[40px] items-end justify-end mt-4 gap-4 w-full ">
                 <button
                   onClick={() => highlightItem()}
-                  className="p-2 rounded flex items-center justify-center gap-2 font-semibold w-[50%] cursor-pointer transition"
+                  className="p-2 rounded-lg flex items-center justify-center gap-2 font-semibold w-[50%] cursor-pointer transition"
                   style={{
                     backgroundColor: isStarred
                       ? "var(--theme-yellow)"
@@ -3670,7 +3670,7 @@ export default function MenuItems({
                         if (el && cat.id != null)
                           domRefs.current[`cat-${cat.id}`] = el;
                       }}
-                      className="p-2 rounded bg-translucid"
+                      className="p-2 rounded-lg bg-translucid"
                       style={{
                         transition:
                           "transform 200ms ease, box-shadow 200ms ease",
@@ -3746,7 +3746,7 @@ export default function MenuItems({
                                 if (el && it.id != null)
                                   domRefs.current[`it-${it.id}`] = el;
                               }}
-                              className="flex items-center justify-between bg-transparent px-2 py-1 rounded bg-translucid"
+                              className="flex items-center justify-between bg-transparent px-2 py-1 rounded-lg bg-translucid"
                             >
                               <div className="truncate">{it.name}</div>
                               <div className="flex items-center gap-1">
@@ -3785,14 +3785,14 @@ export default function MenuItems({
               <button
                 onClick={closeModal}
                 disabled={saving}
-                className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded w-[50%] disabled:opacity-60"
+                className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded-lg w-[50%] disabled:opacity-60"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleModalSave}
                 disabled={saving || uploadingImage}
-                className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded w-[50%] disabled:opacity-60 flex items-center justify-center gap-2"
+                className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded-lg w-[50%] disabled:opacity-60 flex items-center justify-center gap-2"
               >
                 {saving ? (
                   <>
@@ -3884,7 +3884,7 @@ export default function MenuItems({
                                 };
                               })
                             }
-                            className="flex-1 p-1.5 text-sm rounded border border-translucid bg-translucid font-semibold"
+                            className="flex-1 p-1.5 text-sm rounded-lg border border-translucid bg-translucid font-semibold"
                             placeholder="Nome do grupo (ex: Borda da pizza)"
                           />
 
@@ -4018,7 +4018,7 @@ export default function MenuItems({
                                                 };
                                               })
                                             }
-                                            className="flex-1 min-w-0 p-1.5 text-sm rounded border border-translucid bg-translucid"
+                                            className="flex-1 min-w-0 p-1.5 text-sm rounded-lg border border-translucid bg-translucid"
                                             placeholder="Nome da opção"
                                           />
                                           <input
@@ -4054,7 +4054,7 @@ export default function MenuItems({
                                                 };
                                               });
                                             }}
-                                            className="w-16 flex-none p-1.5 text-sm rounded border border-translucid bg-translucid"
+                                            className="w-16 flex-none p-1.5 text-sm rounded-lg border border-translucid bg-translucid"
                                             placeholder="0.00"
                                           />
                                           <ActionsMenu
@@ -4132,7 +4132,7 @@ export default function MenuItems({
                               };
                             })
                           }
-                          className="w-full text-sm cursor-pointer px-2 py-1 rounded border border-dashed border-[var(--gray)] color-gray hover:opacity-80 transition"
+                          className="w-full text-sm cursor-pointer px-2 py-1 rounded-lg border border-dashed border-[var(--gray)] color-gray hover:opacity-80 transition"
                         >
                           + Opção
                         </button>
@@ -4168,7 +4168,7 @@ export default function MenuItems({
                     },
                   }))
                 }
-                className="cursor-pointer px-3 py-2 rounded bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white text-sm transition"
+                className="cursor-pointer px-3 py-2 rounded-lg bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white text-sm transition"
               >
                 + Grupo
               </button>
@@ -4182,7 +4182,7 @@ export default function MenuItems({
                   setExpandedImportItemId(null); // <- reset
                   setImportModalOpen(true);
                 }}
-                className="cursor-pointer px-3 py-2 rounded border border-translucid bg-translucid text-sm"
+                className="cursor-pointer px-3 py-2 rounded-lg border border-translucid bg-translucid text-sm"
               >
                 Importar grupos
               </button>
@@ -4198,7 +4198,7 @@ export default function MenuItems({
                 )
                   closeOptionGroupsModal();
               }}
-              className="cursor-pointer px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm"
+              className="cursor-pointer px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm"
             >
               Salvar
             </button>
@@ -4231,7 +4231,7 @@ export default function MenuItems({
                   }
                   maxLength={25}
                   placeholder="Nome (ex: Tamanho)"
-                  className="w-full p-2 rounded border border-translucid bg-translucid mb-3"
+                  className="w-full p-2 rounded-lg border border-translucid bg-translucid mb-3"
                 />
                 {(modalPayload.data.variations.options || []).map((o, i) => (
                   <div key={i} className="flex gap-2 mb-2 items-center">
@@ -4250,7 +4250,7 @@ export default function MenuItems({
                       }
                       maxLength={25}
                       placeholder="Ex: Pequeno"
-                      className="flex-1 min-w-0 p-2 rounded border border-translucid bg-translucid"
+                      className="flex-1 min-w-0 p-2 rounded-lg border border-translucid bg-translucid"
                     />
                     <div className="relative flex items-center w-[90px] xs:w-[110px]">
                       <span className="absolute text-sm p-1 xs:text-base xs:p-2">
@@ -4273,7 +4273,7 @@ export default function MenuItems({
                         }}
                         maxLength={10}
                         placeholder="00.00"
-                        className="w-full p-2 pl-6 xs:pl-7.5 rounded border border-translucid bg-translucid"
+                        className="w-full p-2 pl-6 xs:pl-7.5 rounded-lg border border-translucid bg-translucid"
                       />
                     </div>
                     <button
@@ -4315,7 +4315,7 @@ export default function MenuItems({
                     options: [...v.options, { name: "", price: "" }],
                   }))
                 }
-                className="cursor-pointer px-3 py-2 rounded bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white text-sm transition"
+                className="cursor-pointer px-3 py-2 rounded-lg bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white text-sm transition"
               >
                 + Opção
               </button>
@@ -4343,7 +4343,7 @@ export default function MenuItems({
                 );
                 if (await persistVariations(next)) closeVariationsModal();
               }}
-              className="cursor-pointer px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm"
+              className="cursor-pointer px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm"
             >
               Salvar
             </button>
@@ -4376,7 +4376,7 @@ export default function MenuItems({
                     const raw = e.target.value.replace(/[^0-9]/g, "");
                     setAdditionalsCfgDraft((d) => ({ ...d, min_choices: raw }));
                   }}
-                  className="w-full p-2 rounded border border-translucid bg-translucid"
+                  className="w-full p-2 rounded-lg border border-translucid bg-translucid"
                 />
                 <div className="text-xs mt-1 color-gray">
                   0 = opcional; 1 ou mais = obrigatório
@@ -4396,7 +4396,7 @@ export default function MenuItems({
                     const raw = e.target.value.replace(/[^0-9]/g, "");
                     setAdditionalsCfgDraft((d) => ({ ...d, max_choices: raw }));
                   }}
-                  className="w-full p-2 rounded border border-translucid bg-translucid"
+                  className="w-full p-2 rounded-lg border border-translucid bg-translucid"
                 />
                 <div className="text-xs mt-1 color-gray">0 = sem limite</div>
               </label>
@@ -4405,7 +4405,7 @@ export default function MenuItems({
                 <button
                   type="button"
                   onClick={closeAdditionalsCfgModal}
-                  className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded"
+                  className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded-lg"
                 >
                   Cancelar
                 </button>
@@ -4437,7 +4437,7 @@ export default function MenuItems({
                     closeAdditionalsCfgModal();
                     persistOptionGroups(groups);
                   }}
-                  className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded"
+                  className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded-lg"
                 >
                   Confirmar
                 </button>
@@ -4465,7 +4465,7 @@ export default function MenuItems({
                 return (
                   <div
                     key={entry.itemId}
-                    className="rounded border border-translucid overflow-hidden"
+                    className="rounded-lg border border-translucid overflow-hidden"
                   >
                     <button
                       type="button"
@@ -4501,7 +4501,7 @@ export default function MenuItems({
                       {entry.groups.map((g) => (
                         <label
                           key={g.id}
-                          className={`flex items-start gap-3 p-2 rounded border cursor-pointer transition
+                          className={`flex items-start gap-3 p-2 rounded-lg border cursor-pointer transition
                         ${selectedImportIds.has(g.id) ? "border-blue-500 bg-blue-500/10" : "border-translucid bg-translucid"}`}
                         >
                           <input
@@ -4548,7 +4548,7 @@ export default function MenuItems({
           <div className="flex justify-end gap-2 mt-4">
             <button
               onClick={closeImportModal}
-              className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded"
+              className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded-lg"
             >
               Cancelar
             </button>
@@ -4579,7 +4579,7 @@ export default function MenuItems({
                 closeImportModal();
                 persistOptionGroups(groups);
               }}
-              className="cursor-pointer px-4 py-2 bg-green-600 disabled:opacity-50 text-white rounded"
+              className="cursor-pointer px-4 py-2 bg-green-600 disabled:opacity-50 text-white rounded-lg"
             >
               Importar ({selectedImportIds.size})
             </button>
@@ -4613,7 +4613,7 @@ export default function MenuItems({
                   return (
                     <div
                       key={combo.id}
-                      className="flex items-center justify-between p-2 rounded border border-translucid bg-translucid"
+                      className="flex items-center justify-between p-2 rounded-lg border border-translucid bg-translucid"
                     >
                       <div className="min-w-0">
                         <div className="text-sm font-semibold line-clamp-1">
@@ -4792,7 +4792,7 @@ export default function MenuItems({
                   }
                   setComboDraft((d) => ({ ...d, trigger_value: value }));
                 }}
-                className="w-full p-2 rounded border border-translucid bg-translucid"
+                className="w-full p-2 rounded-lg border border-translucid bg-translucid"
                 placeholder={
                   comboDraft.trigger_type === "quantity"
                     ? "Ex: 6"
@@ -4846,7 +4846,7 @@ export default function MenuItems({
                       .replace(",", "."),
                   }))
                 }
-                className="w-full p-2 rounded border border-translucid bg-translucid"
+                className="w-full p-2 rounded-lg border border-translucid bg-translucid"
                 placeholder={
                   comboDraft.discount_type === "percentage" ? "15" : "20.00"
                 }

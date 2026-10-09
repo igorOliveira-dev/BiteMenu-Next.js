@@ -652,7 +652,7 @@ const Orders = ({
 
   return (
     <div className="px-4 sm:px-2 lg:grid">
-      <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] min-h-[calc(100dvh-110px)] overflow-y-auto rounded-2xl">
+      <div className="md:m-auto lg:m-2 lg:w-[calc(100%-30dvw+16px)] min-h-[calc(100dvh-110px)] overflow-y-auto rounded-2xl">
         <div className="mb-4 flex items-center gap-3">
           <h2 className="text-xl font-semibold">Pedidos recebidos</h2>
           <button
@@ -1063,10 +1063,10 @@ const Orders = ({
 
             {summaryLoading ? (
               <div className="space-y-2">
-                <div className="h-5 w-36 rounded bg-translucid" />
-                <div className="h-10 w-full rounded bg-translucid" />
-                <div className="h-10 w-full rounded bg-translucid" />
-                <div className="h-4 w-28 rounded bg-translucid" />
+                <div className="h-5 w-36 rounded-lg bg-translucid" />
+                <div className="h-10 w-full rounded-lg bg-translucid" />
+                <div className="h-10 w-full rounded-lg bg-translucid" />
+                <div className="h-4 w-28 rounded-lg bg-translucid" />
               </div>
             ) : (
               <>
@@ -1086,7 +1086,7 @@ const Orders = ({
                     <span>Pagos ({summary.paidCount})</span>
                     <span>{paidPct}%</span>
                   </div>
-                  <div className="h-2 w-full overflow-hidden rounded bg-translucid">
+                  <div className="h-2 w-full overflow-hidden rounded-lg bg-translucid">
                     <div
                       className="h-full bg-green-600"
                       style={{ width: `${paidPct}%` }}

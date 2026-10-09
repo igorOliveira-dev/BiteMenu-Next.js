@@ -172,6 +172,37 @@ const Dashboard = ({
     setIsOpen(false);
   };
 
+  // sidebar recolhida (desktop): lido após o mount pra não dar erro de hidratação
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    try {
+      setCollapsed(localStorage.getItem("dashboard-sidebar-collapsed") === "1");
+    } catch {}
+  }, []);
+
+  const toggleCollapsed = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    try {
+      localStorage.setItem("dashboard-sidebar-collapsed", next ? "1" : "0");
+    } catch {}
+  };
+
+  const navItems = [
+    { tab: "menu", label: "Cardápio", Icon: FaUtensils },
+    { tab: "orders", label: "Pedidos", Icon: FaShoppingBag },
+    { tab: "sales", label: "Vendas", Icon: FaChartLine },
+    { tab: "tables", label: "Mesas", Icon: FaChair },
+  ];
+
+  const navClass = (active) =>
+    `cursor-pointer w-full px-1 xxs:px-4 py-5 lg:py-3 lg:rounded-lg hover-bg-translucid transition-colors text-sm xs:text-base flex items-center gap-3 justify-center whitespace-nowrap ${
+      collapsed ? "lg:px-0" : "lg:justify-start lg:px-3"
+    } ${active ? "bg-translucid font-semibold" : ""}`;
+
+  const labelClass = collapsed ? "hidden" : "hidden lg:block";
+
   const copyLink = () => {
     if (!menu) return customAlert("Menu não carregado ainda", "error");
 
@@ -199,80 +230,73 @@ const Dashboard = ({
   return (
     <div className="flex w-[100dvw] pt-[85px] items-center lg:items-start lg:h-[calc(100dvh-110px)] lg:flex-row flex-col-reverse items-center">
       <div className="flex items-center">
-        <aside className="lg:m-2 lg:rounded-lg bg-translucid lg:border-2 border-translucid h-full max-w-[812px] w-[calc(100dvw)] lg:w-60 shadow-[0_0_10px_var(--shadow)] flex flex-col justify-between items-stretch overflow-hidden lg:h-[calc(100dvh-110px)]">
+        <aside
+          className={`lg:m-2 lg:rounded-lg bg-translucid lg:border-2 border-translucid h-full max-w-[812px] w-[calc(100dvw)] ${collapsed ? "lg:w-16" : "lg:w-60"} lg:transition-[width] lg:duration-200 shadow-[0_0_10px_var(--shadow)] flex flex-col justify-between items-stretch overflow-hidden lg:h-[calc(100dvh-110px)]`}
+        >
           {/* Top section */}
-          <div className="w-full flex lg:flex-col">
+          <div className="w-full flex lg:flex-col lg:gap-1 lg:p-2">
             <button
-              onClick={() => setSelectedTab("menu")}
-              className={`w-full px-1 xxs:px-4 py-5 lg:py-4 hover-bg-translucid transition-colors lg:border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "menu" ? "bg-translucid" : ""}`}
+              onClick={toggleCollapsed}
+              aria-expanded={!collapsed}
+              aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
+              title={collapsed ? "Expandir menu" : "Recolher menu"}
+              className={`hidden lg:flex cursor-pointer items-center h-10 rounded-lg hover-bg-translucid transition-colors color-gray mb-1 ${collapsed ? "justify-center" : "justify-end px-3"}`}
             >
-              <FaUtensils className="text-lg shrink-0" />
-              <span className="hidden lg:block">{changedFields.length > 0 ? "Cardápio *" : "Cardápio"}</span>
+              <FaChevronLeft className={`text-sm transition-transform duration-200 ${collapsed ? "rotate-180" : ""}`} />
             </button>
 
-            <button
-              onClick={() => setSelectedTab("orders")}
-              className={`w-full px-1 xxs:px-4 py-5 lg:py-4 hover-bg-translucid transition-colors lg:border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "orders" ? "bg-translucid" : ""}`}
-            >
-              <FaShoppingBag className="text-lg shrink-0" />
-
-              <span className="hidden lg:block flex items-center gap-2">Pedidos</span>
-              {pendingOrdersCount > 0 && (
-                <span className="absolute scale-[0.75] transform-[translate(-50%,50%)] bg-red-500 text-white rounded-full text-xxs sm:text-xs w-[24px] h-[24px] flex items-center justify-center">
-                  {pendingOrdersCount}
+            {navItems.map(({ tab, label, Icon }) => (
+              <button
+                key={tab}
+                onClick={() => setSelectedTab(tab)}
+                title={label}
+                aria-label={label}
+                className={navClass(selectedTab === tab)}
+              >
+                <span className="relative shrink-0">
+                  <Icon className="text-lg" />
+                  {tab === "orders" && pendingOrdersCount > 0 && (
+                    <span className="absolute -top-2 -right-3 bg-red-500 text-white rounded-full text-[10px] min-w-[18px] h-[18px] px-1 flex items-center justify-center">
+                      {pendingOrdersCount}
+                    </span>
+                  )}
                 </span>
-              )}
-            </button>
+                <span className={labelClass}>
+                  {tab === "menu" && changedFields.length > 0 ? `${label} *` : label}
+                </span>
+              </button>
+            ))}
 
-            <button
-              onClick={() => setSelectedTab("sales")}
-              className={`w-full px-1 xxs:px-4 py-5 lg:py-4 hover-bg-translucid transition-colors lg:border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "sales" ? "bg-translucid" : ""}`}
-            >
-              <FaChartLine className="text-lg shrink-0" />
-              <span className="hidden lg:block">Vendas</span>
-            </button>
-
-            <button
-              onClick={() => setSelectedTab("tables")}
-              className={`w-full px-1 xxs:px-4 py-5 lg:py-4 hover-bg-translucid transition-colors lg:border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left ${selectedTab === "tables" ? "bg-translucid" : ""}`}
-            >
-              <FaChair className="text-lg shrink-0" />
-              <span className="hidden lg:block">Mesas</span>
-            </button>
-
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className={`w-full lg:hidden px-1 xxs:px-4 py-5 lg:py-4 hover-bg-translucid transition-colors lg:border-b-2 border-[var(--translucid)] text-sm xs:text-base flex items-center gap-3 justify-center lg:justify-start text-center lg:text-left`}
-            >
+            <button onClick={() => setIsOpen(!isOpen)} aria-label="Mais opções" className={`${navClass(false)} lg:hidden`}>
               <FaBars className="text-lg shrink-0" />
             </button>
           </div>
 
           {/* Bottom section */}
-          <div className="w-full hidden lg:flex flex-col">
-
-            <Link
-              href="/support"
-              className="w-full px-4 py-4 hover-bg-translucid transition-colors border-t-2 border-[var(--translucid)] flex items-center gap-3 text-left"
-            >
+          <div className="w-full hidden lg:flex flex-col gap-1 p-2 border-t-2 border-[var(--translucid)]">
+            <Link href="/support" title="Suporte" aria-label="Suporte" className={navClass(false)}>
               <FaHeadset className="text-lg shrink-0" />
-              <span>Suporte</span>
+              <span className={labelClass}>Suporte</span>
             </Link>
 
             <Link
               href="/politica-de-privacidade"
-              className="w-full px-4 py-4 hover-bg-translucid transition-colors border-t-2 border-[var(--translucid)] flex items-center gap-3 text-left"
+              title="Política de privacidade"
+              aria-label="Política de privacidade"
+              className={navClass(false)}
             >
               <FaShieldAlt className="text-lg shrink-0" />
-              <span>Política de privacidade</span>
+              <span className={labelClass}>Política de privacidade</span>
             </Link>
 
             <button
               onClick={() => setSelectedTab("account")}
-              className={`cursor-pointer w-full px-4 py-4 hover-bg-translucid transition-colors border-t-2 border-[var(--translucid)] flex items-center gap-3 text-left ${selectedTab === "account" ? "bg-translucid" : ""}`}
+              title="Conta"
+              aria-label="Conta"
+              className={navClass(selectedTab === "account")}
             >
               <FaUser className="text-lg shrink-0" />
-              <span>Conta</span>
+              <span className={labelClass}>Conta</span>
             </button>
           </div>
         </aside>
@@ -281,7 +305,7 @@ const Dashboard = ({
       {/* Main content */}
       <main
         ref={mainRef}
-        className="w-[100dvw] lg:w-[calc(100dvw-256px)] h-[calc(100dvh-143px)] lg:h-[calc(100dvh-100px)] overflow-auto scrollbar-none"
+        className="w-[100dvw] lg:w-auto lg:flex-1 lg:min-w-0 h-[calc(100dvh-143px)] lg:h-[calc(100dvh-100px)] overflow-auto scrollbar-none"
       >
         <UpsellBanner selectedTab={selectedTab} />
         <div className={selectedTab === "menu" ? "block" : "hidden"}>

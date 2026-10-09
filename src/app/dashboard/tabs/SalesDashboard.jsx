@@ -598,7 +598,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                className="p-2 rounded hover:bg-[var(--translucid)] transition cursor-pointer"
+                className="p-2 rounded-lg hover:bg-[var(--translucid)] transition cursor-pointer"
                 onClick={() => setSelectedTab("sales")}
                 aria-label="Voltar"
               >
@@ -615,7 +615,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
             <button
               type="button"
-              className="p-2 rounded hover:bg-white/5 transition opacity-90 hover:opacity-100"
+              className="p-2 rounded-lg hover:bg-white/5 transition opacity-90 hover:opacity-100"
               onClick={() => fetchSalesInPeriod(true)}
               aria-label="Atualizar"
             >
@@ -675,7 +675,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
                   setPendingStartDate(e.target.value);
                   setSingleDate("");
                 }}
-                className="input bg-translucid p-2 rounded w-full"
+                className="input bg-translucid p-2 rounded-lg w-full"
               />
             </div>
 
@@ -688,12 +688,12 @@ const SalesDashboard = ({ setSelectedTab }) => {
                   setPendingEndDate(e.target.value);
                   setSingleDate("");
                 }}
-                className="input bg-translucid p-2 rounded w-full"
+                className="input bg-translucid p-2 rounded-lg w-full"
               />
             </div>
 
             <button
-              className="cursor-pointer py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded transition w-full"
+              className="cursor-pointer py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition w-full"
               onClick={() => {
                 // validação de limite já acontece no fetch, mas aqui dá um “feedback” antes
                 setStartDate(pendingStartDate);
