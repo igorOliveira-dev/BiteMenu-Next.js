@@ -189,6 +189,7 @@ export default function StatesManager({
     "titleColor",
     "detailsColor",
     "bannerFile",
+    "bannerMobileFile",
     "logoFile",
     "slug",
     "selectedServices",
@@ -244,6 +245,7 @@ export default function StatesManager({
       titleColor: menuFromServer.title_color ?? "#007BFF",
       detailsColor: menuFromServer.details_color ?? "#28A745",
       bannerFile: menuFromServer.banner_url ?? null,
+      bannerMobileFile: menuFromServer.banner_mobile_url ?? null,
       logoFile: menuFromServer.logo_url ?? null,
       slug: menuFromServer.slug ?? "",
       selectedServices: menuFromServer.services ?? [],
@@ -427,6 +429,8 @@ export default function StatesManager({
       }
 
       payload.banner_url = bannerUrl;
+      // recorte do celular é enviado já pronto pelo modal do banner (Menu.jsx); sem banner, sem recorte
+      payload.banner_mobile_url = bannerUrl && typeof localState.bannerMobileFile === "string" ? localState.bannerMobileFile : null;
       payload.logo_url = logoUrl;
 
       // Atualizar DB — RLS pode bloquear se 'user' não for owner ou se token ausente
@@ -459,6 +463,7 @@ export default function StatesManager({
           titleColor: data.title_color ?? "#007BFF",
           detailsColor: data.details_color ?? "#28A745",
           bannerFile: data.banner_url ?? null,
+          bannerMobileFile: data.banner_mobile_url ?? null,
           logoFile: data.logo_url ?? null,
           slug: data.slug ?? "",
           selectedServices: data.services ?? [],
@@ -505,6 +510,7 @@ export default function StatesManager({
           titleColor: data.title_color ?? "#007BFF",
           detailsColor: data.details_color ?? "#28A745",
           bannerFile: data.banner_url ?? null,
+          bannerMobileFile: data.banner_mobile_url ?? null,
           logoFile: data.logo_url ?? null,
           slug: data.slug ?? "",
           selectedServices: data.services ?? [],
@@ -616,6 +622,7 @@ export default function StatesManager({
                     titleColor: "Cor do título",
                     detailsColor: "Cor dos detalhes",
                     bannerFile: "Banner",
+                    bannerMobileFile: "Banner (celular)",
                     logoFile: "Logo",
                     slug: "Identificador",
                     selectedServices: "Serviços selecionados",

@@ -20,8 +20,10 @@ import Loading from "@/components/Loading";
 import { COLOR_PALETTES } from "@/consts/colorPallets";
 import MenuItems from "./components/menu/MenuItems";
 import QrCodeModal from "./components/menu/QrCodeModal";
+import BannerCropper, { BANNER_CROPS } from "./components/menu/BannerCropper";
+import BannerImage, { BANNER_ASPECT_CLASS } from "@/components/BannerImage";
 import { uploadItemImage } from "@/lib/uploadImage";
-import { fileToWebp } from "@/app/utils/imageToWebp";
+import { fileToWebp, cropToWebp } from "@/app/utils/imageToWebp";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import useUser from "@/hooks/useUser";
 import SurveyBanner from "@/components/CustomBanner";
@@ -86,6 +88,11 @@ const Menu = (props) => {
 
   // banner/logo values live in externalState.bannerFile / logoFile when usingExternal
   const bannerFile = usingExternal ? externalState.bannerFile : null;
+  const bannerMobileFile = usingExternal ? externalState.bannerMobileFile : null;
+  // imagens novas do modal, uma por tela (pode ser o mesmo arquivo nas duas)
+  const NO_BANNER_FILES = { desktop: null, mobile: null };
+  const [bannerFiles, setBannerFiles] = useState(NO_BANNER_FILES);
+  const [bannerCropAreas, setBannerCropAreas] = useState(NO_BANNER_FILES);
   const logoFile = usingExternal ? externalState.logoFile : null;
 
   // temp files for modals (local to the component)
@@ -206,27 +213,17 @@ const Menu = (props) => {
   }, [logoFile]);
 
   // temp previews for modal (with cleanup)
-  const [tempBannerPreview, setTempBannerPreview] = useState(null);
-  const tempBannerRef = useRef(null);
-  useEffect(() => {
-    if (tempBannerRef.current) {
-      URL.revokeObjectURL(tempBannerRef.current);
-      tempBannerRef.current = null;
-    }
-    if (tempBannerFile instanceof File) {
-      const url = URL.createObjectURL(tempBannerFile);
-      tempBannerRef.current = url;
-      setTempBannerPreview(url);
-    } else {
-      setTempBannerPreview(tempBannerFile ?? null);
-    }
-    return () => {
-      if (tempBannerRef.current) {
-        URL.revokeObjectURL(tempBannerRef.current);
-        tempBannerRef.current = null;
-      }
-    };
-  }, [tempBannerFile]);
+  const bannerSources = useMemo(
+    () => ({
+      desktop: bannerFiles.desktop && URL.createObjectURL(bannerFiles.desktop),
+      mobile: bannerFiles.mobile && URL.createObjectURL(bannerFiles.mobile),
+    }),
+    [bannerFiles],
+  );
+  useEffect(
+    () => () => Object.values(bannerSources).forEach((url) => url && URL.revokeObjectURL(url)),
+    [bannerSources],
+  );
 
   const [tempLogoPreview, setTempLogoPreview] = useState(null);
   const tempLogoRef = useRef(null);
@@ -251,13 +248,30 @@ const Menu = (props) => {
   }, [tempLogoFile]);
 
   // file input handlers for modal
+  // imagem principal: vale para as duas telas
+  const setBannerBoth = (file) => {
+    setBannerCropAreas(NO_BANNER_FILES);
+    setBannerFiles({ desktop: file, mobile: file });
+  };
   const handleTempBannerChange = (e) => {
-    if (e.target.files?.length) setTempBannerFile(e.target.files[0]);
+    if (e.target.files?.length) setBannerBoth(e.target.files[0]);
     e.target.value = "";
   };
   const handleTempLogoChange = (e) => {
     if (e.target.files?.length) setTempLogoFile(e.target.files[0]);
     e.target.value = "";
+  };
+
+  // imagem só para uma tela; se a outra tela não tem imagem própria, vira a principal
+  // (banner antigo sem recorte de celular usa a imagem do computador no celular)
+  const pickBannerFor = (mode, file) => {
+    const otherHasOwn =
+      mode === "mobile"
+        ? tempBannerFile || bannerFiles.desktop
+        : bannerFiles.mobile || (tempBannerFile && bannerMobileFile);
+    if (!otherHasOwn) return setBannerBoth(file);
+    setBannerCropAreas((a) => ({ ...a, [mode]: null }));
+    setBannerFiles((f) => ({ ...f, [mode]: file }));
   };
 
   // apply temp files to central state
@@ -267,32 +281,44 @@ const Menu = (props) => {
     try {
       setUploadingBanner(true);
 
-      // remover (só zera)
-      if (!tempBannerFile) {
-        externalSetState((p) => ({ ...p, bannerFile: null }));
+      // nenhuma imagem nova: só remove (se pediu) ou fecha
+      if (!bannerFiles.desktop && !bannerFiles.mobile) {
+        if (!tempBannerFile) externalSetState((p) => ({ ...p, bannerFile: null, bannerMobileFile: null }));
         closeAllModals();
         return;
       }
 
       const userId = menu?.owner_id;
       const oldUrl = typeof bannerFile === "string" ? bannerFile : null;
+      const oldMobileUrl = typeof bannerMobileFile === "string" ? bannerMobileFile : null;
 
-      // ✅ converte / redimensiona / recomprime
-      const webp = await fileToWebp(tempBannerFile, {
-        maxBytes: 700 * 1024,
-        maxDimension: 1640,
-        minDimension: 1200,
-        startQuality: 0.9,
-        minQuality: 0.72,
-        force: true,
-      });
+      // recorta só as telas que receberam imagem nova
+      const [desktopWebp, mobileWebp] = await Promise.all(
+        ["desktop", "mobile"].map(
+          (key) =>
+            bannerFiles[key] &&
+            cropToWebp(bannerFiles[key], bannerCropAreas[key], {
+              aspect: BANNER_CROPS[key].aspect,
+              maxWidth: BANNER_CROPS[key].maxWidth,
+              name: `banner-${key}.webp`,
+            }),
+        ),
+      );
 
-      const result = await uploadItemImage(webp, null, userId, oldUrl, null);
+      // o mobile vai no slot de "thumb" do upload quando as duas mudam juntas
+      let next;
+      if (desktopWebp && mobileWebp) {
+        const r = await uploadItemImage(desktopWebp, mobileWebp, userId, oldUrl, oldMobileUrl);
+        next = { bannerFile: r.url, bannerMobileFile: r.thumbUrl };
+      } else if (desktopWebp) {
+        const r = await uploadItemImage(desktopWebp, null, userId, oldUrl, null);
+        next = { bannerFile: r.url };
+      } else {
+        const r = await uploadItemImage(mobileWebp, null, userId, oldMobileUrl, null);
+        next = { bannerMobileFile: r.url };
+      }
 
-      externalSetState((p) => ({
-        ...p,
-        bannerFile: result.url,
-      }));
+      externalSetState((p) => ({ ...p, ...next }));
       closeAllModals();
     } catch (err) {
       console.error(err);
@@ -398,13 +424,9 @@ const Menu = (props) => {
           <SurveyBanner />
           <div className="min-h-[calc(100dvh-110px)] pb-2" style={{ backgroundColor }}>
             {/* Banner */}
-            <div className="relative w-full max-w-full h-[18dvh] sm:h-[25dvh]">
+            <div className={`relative w-full max-w-full ${BANNER_ASPECT_CLASS}`}>
               {bannerPreview ? (
-                <img
-                  alt="Preview do banner"
-                  src={bannerPreview}
-                  className="object-cover w-full h-full cursor-pointer"
-                />
+                <BannerImage desktop={bannerPreview} mobile={bannerMobileFile} alt="Preview do banner" />
               ) : (
                 <div
                   className="bg-translucid relative w-full h-full rounded-lg flex items-center justify-center"
@@ -419,6 +441,8 @@ const Menu = (props) => {
               <button
                 onClick={() => {
                   setTempBannerFile(bannerFile ?? null);
+                  setBannerFiles(NO_BANNER_FILES);
+                  setBannerCropAreas(NO_BANNER_FILES);
                   setBannerModalOpen(true);
                 }}
                 className="cursor-pointer absolute inset-0 flex items-end justify-end opacity-75 hover:opacity-100 transition"
@@ -640,21 +664,23 @@ const Menu = (props) => {
 
       {bannerModalOpen && (
         <GenericModal title="Alterar banner" onClose={closeAllModals} wfull size="md">
-          <label className="text-center flex flex-col items-center justify-center w-full h-30 border-2 border-dashed border-[var(--gray)] rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
-            {tempBannerPreview ? (
-              <img src={tempBannerPreview} alt="Preview temporário" className="object-cover w-full h-full" />
-            ) : (
-              <span className="color-gray">Clique aqui para inserir seu banner (1640x664)</span>
-            )}
-            <input type="file" accept="image/*" className="hidden" onChange={handleTempBannerChange} />
-          </label>
-          {tempBannerFile && (
-            <button
-              onClick={() => setTempBannerFile(null)}
-              className="cursor-pointer mt-1 text-sm text-red-500 hover:underline"
-            >
-              Remover banner
-            </button>
+          {tempBannerFile || bannerFiles.desktop || bannerFiles.mobile ? (
+            <BannerCropper
+              sources={bannerSources}
+              saved={{ desktop: tempBannerFile, mobile: tempBannerFile && (bannerMobileFile || tempBannerFile) }}
+              onAreaChange={(mode, area) => setBannerCropAreas((a) => ({ ...a, [mode]: area }))}
+              onPick={pickBannerFor}
+              onPickBoth={setBannerBoth}
+              onRemove={() => {
+                setTempBannerFile(null);
+                setBannerFiles(NO_BANNER_FILES);
+              }}
+            />
+          ) : (
+            <label className="text-center flex flex-col items-center justify-center w-full h-30 border-2 border-dashed border-[var(--gray)] rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
+              <span className="color-gray">Clique aqui para inserir seu banner (recomendado 1640px de largura ou mais)</span>
+              <input type="file" accept="image/*" className="hidden" onChange={handleTempBannerChange} />
+            </label>
           )}
           <div className="flex justify-end gap-2 mt-4">
             <button onClick={closeAllModals} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded-lg">

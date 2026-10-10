@@ -11,6 +11,7 @@ import { formatCurrency } from "@/lib/formatCurrency";
 import { useAlert } from "@/providers/AlertProvider";
 import MenuFooter from "./components/MenuFooter";
 import { supabaseImg } from "@/lib/imageUtils";
+import BannerImage, { BANNER_ASPECT_CLASS } from "@/components/BannerImage";
 import { supabase } from "@/lib/supabaseClient";
 import { getCombosByMenuId } from "@/lib/queries/combos";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
@@ -509,14 +510,10 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
       <div className="min-h-screen w-full relative pb-18" style={{ backgroundColor: menu.background_color }}>
         {/* Banner */}
         {isSafeImageUrl(menu.banner_url) && (
-          <div className="relative w-full h-[22dvh] sm:h-[30dvh]">
-            <Image
-              unoptimized // ao voltar a usar otimização, substituir 'unoptimized' por 'priority'
-              alt="Banner do estabelecimento"
-              src={supabaseImg(menu.banner_url, { quality: 70 })}
-              fill
-              className="object-cover"
-              sizes="100vw"
+          <div className={`relative w-full ${BANNER_ASPECT_CLASS}`}>
+            <BannerImage
+              desktop={supabaseImg(menu.banner_url, { quality: 70 })}
+              mobile={isSafeImageUrl(menu.banner_mobile_url) ? supabaseImg(menu.banner_mobile_url, { quality: 70 }) : null}
             />
             <div
               className="absolute inset-0"

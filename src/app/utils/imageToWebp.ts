@@ -121,3 +121,31 @@ export async function fileToWebp(
     `Não foi possível comprimir para ≤ ${Math.round(maxBytes / 1024)}KB sem passar do limite mínimo de qualidade/dimensão.`,
   );
 }
+
+// Recorta a área (em pixels da imagem original) e gera um WebP com no máximo `maxWidth` de largura.
+// Sem área (usuário não mexeu naquele recorte), usa um recorte central na proporção `aspect`.
+export async function cropToWebp(
+  file: File,
+  area: { x: number; y: number; width: number; height: number } | null,
+  { aspect = 1, maxWidth = 1640, quality = 0.85, name = "banner.webp" } = {},
+): Promise<File> {
+  const bitmap = await createImageBitmap(file);
+  if (!area) {
+    const width = Math.min(bitmap.width, bitmap.height * aspect);
+    const height = width / aspect;
+    area = { x: (bitmap.width - width) / 2, y: (bitmap.height - height) / 2, width, height };
+  }
+  const scale = Math.min(1, maxWidth / area.width);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(area.width * scale);
+  canvas.height = Math.round(area.height * scale);
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas 2D não disponível");
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(bitmap, area.x, area.y, area.width, area.height, 0, 0, canvas.width, canvas.height);
+
+  const blob = await canvasToWebpBlob(canvas, quality);
+  return new File([blob], name, { type: "image/webp", lastModified: Date.now() });
+}

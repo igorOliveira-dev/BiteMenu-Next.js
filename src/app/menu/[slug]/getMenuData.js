@@ -15,6 +15,7 @@ export const getMenuBySlug = cache(async (slug) => {
       description,
       address,
       banner_url,
+      banner_mobile_url,
       logo_url,
       background_color,
       title_color,

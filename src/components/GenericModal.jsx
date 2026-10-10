@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import XButton from "./XButton";
 
 // Tamanhos padronizados de modal para a aplicação inteira
@@ -26,11 +26,16 @@ const GenericModal = ({
   hideClose,
 }) => {
   const resolvedMaxWidth = maxWidth || MODAL_SIZES[size] || MODAL_SIZES.md;
+  // só fecha se o clique começou no fundo: arrastar de dentro do modal e soltar fora (ex.: recorte) não fecha
+  const pressedOnBackdrop = useRef(false);
 
   return (
     <div
       className="fixed inset-0 bg-dark-gray-90 backdrop-blur-sm flex items-center justify-center z-150"
-      onClick={backdropDontClose ? undefined : onClose}
+      onMouseDown={(e) => (pressedOnBackdrop.current = e.target === e.currentTarget)}
+      onClick={(e) => {
+        if (!backdropDontClose && pressedOnBackdrop.current && e.target === e.currentTarget) onClose?.();
+      }}
     >
       <div
         className={`rounded-xl shadow-xl p-3 sm:p-6 min-w-70 mx-2 sm:mx-4 ${wfull ? "w-full" : ""}`}
