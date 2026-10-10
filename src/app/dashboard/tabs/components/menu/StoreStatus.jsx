@@ -116,14 +116,14 @@ export default function StoreStatus({ setSelectedTab, hours, timezone }) {
                   onClick={() => handleToggleStoreOpen()}
                   className="cursor-pointer p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border-2 border-[var(--translucid)] transition"
                 >
-                  Não, manter numeração
+                  Manter numeração
                 </button>
                 <button
                   type="button"
                   onClick={() => handleToggleStoreOpen(true)}
                   className="cursor-pointer p-2 font-semibold rounded-lg hover:bg-[var(--translucid)] border-2 border-[var(--translucid)] transition"
                 >
-                  Sim, resetar numeração
+                  Resetar numeração
                 </button>
               </div>
             </>
