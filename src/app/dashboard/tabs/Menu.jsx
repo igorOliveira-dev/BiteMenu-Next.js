@@ -391,7 +391,7 @@ const Menu = (props) => {
           <FiSettings className="text-xl mr-2" />
           Configurar cardápio
         </button>
-        <div className="md:m-auto lg:m-2 lg:w-[calc(70dvw-256px)] min-h-[calc(100dvh-110px)]">
+        <div className="md:m-auto lg:m-2 lg:w-[calc(100%-30dvw+16px)] min-h-[calc(100dvh-110px)]">
           {/* ESPAÇO PARA BANNER!!! */}
           <BillingAlert setSelectedTab={setSelectedTab} className="my-2" />
           <LegacyPlanEndingBanner />
@@ -598,7 +598,7 @@ const Menu = (props) => {
               setTempTitle(v);
             }}
             maxLength={30}
-            className="w-full p-2 rounded border bg-translucid mb-4"
+            className="w-full p-2 rounded-lg border bg-translucid mb-4"
           />
 
           <div className="flex items-center justify-between mt-2">
@@ -610,7 +610,7 @@ const Menu = (props) => {
                 setTempTitle(propTitle);
                 closeAllModals();
               }}
-              className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded"
+              className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded-lg"
             >
               Cancelar
             </button>
@@ -619,7 +619,7 @@ const Menu = (props) => {
                 setTitle(tempTitle);
                 closeAllModals();
               }}
-              className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded"
+              className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded-lg"
             >
               Salvar
             </button>
@@ -657,13 +657,13 @@ const Menu = (props) => {
             </button>
           )}
           <div className="flex justify-end gap-2 mt-4">
-            <button onClick={closeAllModals} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded">
+            <button onClick={closeAllModals} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded-lg">
               Cancelar
             </button>
             <button
               onClick={applyTempBanner}
               disabled={uploadingBanner}
-              className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded disabled:opacity-60"
+              className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded-lg disabled:opacity-60"
             >
               {uploadingBanner ? "Enviando..." : "Salvar"}
             </button>
@@ -687,13 +687,13 @@ const Menu = (props) => {
             </button>
           )}
           <div className="flex justify-end gap-2 mt-4">
-            <button onClick={closeAllModals} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded">
+            <button onClick={closeAllModals} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded-lg">
               Cancelar
             </button>
             <button
               onClick={applyTempLogo}
               disabled={uploadingLogo}
-              className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded disabled:opacity-60"
+              className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded-lg disabled:opacity-60"
             >
               {uploadingLogo ? "Enviando..." : "Salvar"}
             </button>

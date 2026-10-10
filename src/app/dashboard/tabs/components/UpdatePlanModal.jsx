@@ -19,7 +19,7 @@ const UpdatePlanModal = ({
         <div className="flex gap-2 items-end justify-end">
           <button
             onClick={onClose}
-            className="cursor-pointer px-4 py-2 bg-translucid border-2 border-[var(--translucid)] hover:opacity-80 rounded"
+            className="cursor-pointer px-4 py-2 bg-translucid border-2 border-[var(--translucid)] hover:opacity-80 rounded-lg"
             type="button"
           >
             Agora não

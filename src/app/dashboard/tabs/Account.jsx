@@ -161,7 +161,7 @@ const Account = ({ setSelectedTab }) => {
         <div className="flex items-center mb-4">
           <button
             type="button"
-            className="p-2 rounded hover:bg-[var(--translucid)] transition cursor-pointer"
+            className="p-2 rounded-lg hover:bg-[var(--translucid)] transition cursor-pointer"
             onClick={() => setSelectedTab("menu")}
             aria-label="Voltar"
           >
@@ -218,7 +218,7 @@ const Account = ({ setSelectedTab }) => {
                   value={phone}
                   onChange={(value) => setPhone(value)}
                   inputProps={{ required: true }}
-                  inputClass="!w-[220px] !px-3 !py-2 !bg-[var(--translucid)] !border !border-[var(--low-gray)] !rounded !focus:outline-none !focus:ring-2 !focus:ring-blue-400 !pl-14"
+                  inputClass="!w-[220px] !px-3 !py-2 !bg-[var(--translucid)] !border !border-[var(--low-gray)] !rounded-lg !focus:outline-none !focus:ring-2 !focus:ring-blue-400 !pl-14"
                   buttonClass="!border-r !border-[var(--low-gray)] !bg-[transparent] !rounded-l !hover:bg-[var(--low-gray)]"
                   containerClass="!flex !items-center"
                 />

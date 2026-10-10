@@ -113,7 +113,7 @@ export default function DashboardLayoutClient({ children }) {
           width={180}
           alt="Bite Menu"
           onClick={() => (window.location.href = "/dashboard")}
-          className="hidden xs:block"
+          className="hidden xs:block cursor-pointer"
         />
 
         {/* logo tipo - telas pequenas */}
@@ -123,10 +123,10 @@ export default function DashboardLayoutClient({ children }) {
           width={50}
           alt="Bite Menu"
           onClick={() => (window.location.href = "/dashboard")}
-          className="block xs:hidden"
+          className="block xs:hidden cursor-pointer"
         />
 
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
           {/* botao de melhorar plano */}
           {showPlanButton ? (
             <a href="/dashboard/pricing" className="cta-button small has-icon">

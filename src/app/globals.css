@@ -24,7 +24,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #060606;
+    --background: #252323;
     --foreground: #fafafa;
     --gray: #ccc;
     --low-gray: #222;
@@ -58,7 +58,7 @@
 }
 
 [data-theme="dark"] {
-  --background: #060606;
+  --background: #252323;
   --foreground: #fafafa;
   --gray: #ccc;
   --low-gray: #222;
@@ -365,6 +365,26 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 
 .cta-button:hover {
   transform: scale(1.05);
+}
+
+.cta-button:active,
+.custom-gray-button:active {
+  transform: scale(0.97);
+}
+
+.cta-button:disabled,
+.custom-gray-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* foco visível só na navegação por teclado; em @layer base pra não vencer os outline-none das telas */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--foreground);
+    outline-offset: 2px;
+  }
 }
 
 @keyframes planBtnAnim {

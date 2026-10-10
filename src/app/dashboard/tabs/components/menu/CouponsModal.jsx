@@ -41,7 +41,7 @@ const emptyDraft = () => ({
   max_uses: "",
 });
 
-const inputClass = "input w-full rounded bg-translucid p-2 text-sm";
+const inputClass = "input w-full rounded-lg bg-translucid p-2 text-sm";
 
 // Campo dd/mm/aaaa: dá para digitar (com máscara) ou escolher no calendário nativo
 function DateField({ value, onChange }) {
@@ -358,7 +358,7 @@ export default function CouponsModal({ menuId, currency, canCreate, showUpgrade,
             {(coupons || []).map((c) => (
               <div
                 key={c.id}
-                className="flex items-center justify-between p-2 rounded border border-translucid bg-translucid"
+                className="flex items-center justify-between p-2 rounded-lg border border-translucid bg-translucid"
               >
                 <div className="min-w-0">
                   <div className="text-sm font-semibold line-clamp-1">
