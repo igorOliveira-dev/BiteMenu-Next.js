@@ -20,6 +20,7 @@ import Loading from "@/components/Loading";
 import { COLOR_PALETTES } from "@/consts/colorPallets";
 import MenuItems from "./components/menu/MenuItems";
 import QrCodeModal from "./components/menu/QrCodeModal";
+import StoreStatus from "./components/menu/StoreStatus";
 import BannerCropper, { BANNER_CROPS } from "./components/menu/BannerCropper";
 import BannerImage, { BANNER_ASPECT_CLASS } from "@/components/BannerImage";
 import { uploadItemImage } from "@/lib/uploadImage";
@@ -451,6 +452,11 @@ const Menu = (props) => {
                   <FaCamera className="text-2xl text-white" />
                 </div>
               </button>
+              <StoreStatus
+                setSelectedTab={setSelectedTab}
+                hours={usingExternal ? externalState.hours : menu.hours}
+                timezone={usingExternal ? externalState.timezone : menu.timezone}
+              />
             </div>
 
             <div className="flex items-center py-4 px-4">

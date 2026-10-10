@@ -484,6 +484,17 @@ const ConfigMenu = (props) => {
     });
   };
 
+  // aberto a partir do indicador de status no banner (aba Menu)
+  useEffect(() => {
+    let section = null;
+    try {
+      section = sessionStorage.getItem("configMenuSection");
+      sessionStorage.removeItem("configMenuSection");
+    } catch {}
+    if (section) toggleSection(section);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const slug = usingExternal ? externalState?.slug : slugLocal;
   const setSlug = usingExternal ? (value) => externalSetState((p) => ({ ...p, slug: value })) : setSlugLocal;
 

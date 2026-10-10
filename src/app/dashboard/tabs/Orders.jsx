@@ -126,10 +126,6 @@ const Orders = ({
 
   const [soundNewOrder, setSoundNewOrder] = useState(true);
 
-  const [manualStoreControl, setManualStoreControl] = useState(false);
-  const [storeOpen, setStoreOpen] = useState(false);
-  const [resetModalOpen, setResetModalOpen] = useState(false);
-
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [summary, setSummary] = useState({
     count: 0,
@@ -174,14 +170,6 @@ const Orders = ({
       setSoundNewOrder(menu.sound_new_order);
     }
   }, [menu?.sound_new_order]);
-
-  useEffect(() => {
-    setManualStoreControl(!!menu?.manual_control);
-    setStoreOpen(!!menu?.is_open);
-    // só ao carregar o menu: depender dos campos faz o efeito reverter o clique
-    // seguinte com o valor antigo, já que os handlers mutam `menu` após o await
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [menu?.id]);
 
   useEffect(() => {
     if (menu?.delivery_fee_on_sales !== undefined) {
@@ -443,41 +431,6 @@ const Orders = ({
       setSoundNewOrder(!value);
     } else {
       customAlert("Configuração de som atualizada!", "success");
-    }
-  };
-
-  const handleToggleManualStoreControl = async (value) => {
-    setManualStoreControl(value);
-
-    const { error } = await updateMenuById(supabase, menu.id, {
-      manual_control: value,
-    });
-
-    if (error) {
-      customAlert("Erro ao atualizar controle manual da loja.", "error");
-      setManualStoreControl(!value);
-    } else {
-      menu.manual_control = value; // useMenu mantém o menu em cache entre abas
-
-      customAlert("Controle manual da loja atualizado!", "success");
-    }
-  };
-
-  const handleToggleStoreOpen = async (resetCounter = false) => {
-    const value = !storeOpen;
-    setStoreOpen(value);
-
-    const { error } = await updateMenuById(supabase, menu.id, {
-      is_open: value,
-      ...(resetCounter ? { order_counter: 0 } : {}),
-    });
-
-    if (error) {
-      customAlert("Erro ao atualizar status da loja.", "error");
-      setStoreOpen(!value);
-    } else {
-      menu.is_open = value;
-      customAlert(value ? "Loja aberta!" : "Loja fechada!", "success");
     }
   };
 
@@ -768,60 +721,6 @@ const Orders = ({
             Quando ativado, o sistema tocará um som ao chegar um novo pedido.
           </p>
 
-          <hr className="my-3 border-translucid" />
-
-          <p className="mb-2 text-sm font-medium">Abertura da loja</p>
-
-          <label className="flex items-center gap-2">
-            <span className="switch">
-              <input
-                type="checkbox"
-                checked={manualStoreControl}
-                onChange={(e) =>
-                  handleToggleManualStoreControl(e.target.checked)
-                }
-              />
-              <span className="slider"></span>
-            </span>
-
-            <span>Controle manual de abertura e fechamento</span>
-          </label>
-
-          <p className="mt-2 mb-3 text-xs color-gray">
-            Quando ativado, o horário de funcionamento é ignorado e a loja só
-            abre e fecha pelo botão abaixo.
-          </p>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() =>
-                storeOpen ? setResetModalOpen(true) : handleToggleStoreOpen()
-              }
-              disabled={!manualStoreControl}
-              className={`flex-1 cursor-pointer rounded-xl px-3 py-2 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-40 ${
-                storeOpen
-                  ? "bg-red-600 hover:bg-red-700"
-                  : "bg-green-600 hover:bg-green-700"
-              }`}
-            >
-              {storeOpen ? "Fechar loja" : "Abrir loja"}
-            </button>
-
-            {manualStoreControl ? (
-              <span
-                className={`shrink-0 text-sm font-semibold ${
-                  storeOpen ? "text-green-500" : "text-red-500"
-                }`}
-              >
-                {storeOpen ? "Loja aberta" : "Loja fechada"}
-              </span>
-            ) : (
-              <span className="shrink-0 text-sm color-gray">
-                Pelo horário
-              </span>
-            )}
-          </div>
         </div>
 
         {!enabledOrders ? (
@@ -1124,47 +1023,6 @@ const Orders = ({
             )}
           </div>
         </aside>
-      ) : null}
-
-      {resetModalOpen ? (
-        <GenericModal
-          title="Resetar numeração dos pedidos?"
-          onClose={() => setResetModalOpen(false)}
-          wfull
-          maxWidth={"420px"}
-          py={"24px"}
-        >
-          <p className="mb-2 text-sm">
-            Deseja reiniciar a numeração dos pedidos ao fechar a loja?
-          </p>
-          <p className="mb-6 text-xs color-gray">
-            Se estiver fechando para um intervalo, é recomendável escolher
-            &quot;Não&quot;: a numeração continua de onde parou quando você
-            abrir a loja de novo.
-          </p>
-          <div className="grid gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setResetModalOpen(false);
-                handleToggleStoreOpen();
-              }}
-              className="cursor-pointer p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border-2 border-[var(--translucid)] transition"
-            >
-              Não, manter numeração
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setResetModalOpen(false);
-                handleToggleStoreOpen(true);
-              }}
-              className="cursor-pointer p-2 font-semibold rounded-lg hover:bg-[var(--translucid)] border-2 border-[var(--translucid)] transition"
-            >
-              Sim, resetar numeração
-            </button>
-          </div>
-        </GenericModal>
       ) : null}
 
       {orderModalOpen && selectedOrder ? (
