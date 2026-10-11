@@ -31,6 +31,7 @@ import SurveyBanner from "@/components/CustomBanner";
 import { LegacyPlanEndingBanner } from "@/components/LegacyPlanNotice";
 import BillingAlert from "../components/BillingAlert";
 import { getContrastTextColor as contrastText } from "@/utils/color";
+import { formatAddress } from "@/components/AddressFields";
 
 const getContrastTextColor = (hex) => contrastText(hex, "#000000");
 
@@ -60,7 +61,11 @@ const Menu = (props) => {
   const title = usingExternal ? externalState.title : propTitle;
   const setTitle = usingExternal ? (v) => externalSetState((p) => ({ ...p, title: v })) : propSetTitle;
 
-  const address = usingExternal ? externalState.address : propAddress;
+  const address = usingExternal
+    ? externalState.addressDetails
+      ? formatAddress(externalState.addressDetails)
+      : externalState.address
+    : propAddress;
   const setAddress = usingExternal ? (v) => externalSetState((p) => ({ ...p, address: v })) : propSetAddress;
 
   const description = usingExternal ? externalState.description : propDescription;

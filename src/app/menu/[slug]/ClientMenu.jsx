@@ -30,6 +30,7 @@ import {
   zoneOffset,
 } from "@/utils/storeHours";
 import { getContrastTextColor } from "@/utils/color";
+import { mapsUrl } from "@/components/AddressFields";
 
 // util: encontra o primeiro ancestor rolável (ou retorna window)
 function findScrollParent(el) {
@@ -621,10 +622,16 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole }) {
           </div>
 
           {menu.address && (
-            <p className="px-4 flex items-center my-2" style={{ color: grayToUse }}>
+            <a
+              href={mapsUrl(menu.address)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 flex items-center my-2 hover:underline"
+              style={{ color: grayToUse }}
+            >
               <FaMapMarkerAlt className="inline mr-2" />
               {menu.address}
-            </p>
+            </a>
           )}
 
           <p className="mt-1 px-4" style={{ color: grayToUse }}>

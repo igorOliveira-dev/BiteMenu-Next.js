@@ -27,6 +27,7 @@ import { useConfirm } from "@/providers/ConfirmProvider";
 import useUser from "@/hooks/useUser";
 import { supabase } from "@/lib/supabaseClient";
 import { updateMenuById } from "@/lib/queries/menus";
+import AddressFields, { formatAddress, mapsUrl } from "@/components/AddressFields";
 
 const DEFAULT_HOURS = {
   mon: "09:00-18:00",
@@ -229,6 +230,54 @@ function Notice({ children }) {
 
 function TextInput({ className = "", ...props }) {
   return <input {...props} className={cx(INPUT_CLASS, className)} />;
+}
+
+// endereço antigo (texto livre) continua valendo até o dono preencher o formato estruturado
+function AddressEditor({ legacyAddress, details, onChange }) {
+  const formatted = details ? formatAddress(details) : legacyAddress;
+
+  return (
+    <div className="space-y-2">
+      {!details && legacyAddress ? (
+        <Notice>
+          Endereço atual: <strong>{legacyAddress}</strong>
+          <br />
+          Preencha os campos abaixo para padronizar e facilitar a localização no mapa.
+        </Notice>
+      ) : null}
+
+      <AddressFields
+        value={details}
+        onChange={onChange}
+        inputClassName={INPUT_CLASS}
+        canClear={!details && !!legacyAddress}
+      />
+
+      {formatted ? (
+        <div className="space-y-2">
+          <p className="text-xs opacity-70">
+            Como aparece no cardápio: <strong>{formatted}</strong>
+          </p>
+          <iframe
+            title="Localização no mapa"
+            src={`https://maps.google.com/maps?q=${encodeURIComponent(formatted)}&output=embed`}
+            className="h-48 w-full rounded-xl border border-[var(--translucid)]"
+            loading="lazy"
+          />
+          <a
+            href={mapsUrl(formatted)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs underline opacity-70"
+          >
+            <FaMapMarkerAlt /> Abrir no Google Maps
+          </a>
+        </div>
+      ) : details ? (
+        <p className="text-xs opacity-60">Preencha ao menos a rua para o endereço aparecer no cardápio.</p>
+      ) : null}
+    </div>
+  );
 }
 
 function TextArea({ className = "", ...props }) {
@@ -975,21 +1024,29 @@ const ConfigMenu = (props) => {
               <Counter value={propDescription || ""} max={200} />
             </Field>
 
-            <Field label="Endereço">
-              <div className="relative">
-                <FaMapMarkerAlt className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs opacity-60" />
-                <TextInput
-                  className="pl-9"
-                  value={propAddress || ""}
-                  onChange={(e) => {
-                    const value = e.target.value.slice(0, 255);
-                    if (usingExternal) externalSetState((p) => ({ ...p, address: value }));
-                    else if (typeof propSetAddress === "function") propSetAddress(value);
-                  }}
-                  placeholder="Ex.: Rua das Flores, 120 - Centro"
-                  maxLength={255}
+            <Field label="Endereço" hint="Digite o CEP para preencher automaticamente.">
+              {usingExternal ? (
+                <AddressEditor
+                  legacyAddress={externalState.address}
+                  details={externalState.addressDetails}
+                  onChange={(addressDetails) => externalSetState((p) => ({ ...p, addressDetails }))}
                 />
-              </div>
+              ) : (
+                <div className="relative">
+                  <FaMapMarkerAlt className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs opacity-60" />
+                  <TextInput
+                    className="pl-9"
+                    value={propAddress || ""}
+                    onChange={(e) => {
+                      const value = e.target.value.slice(0, 255);
+                      if (usingExternal) externalSetState((p) => ({ ...p, address: value }));
+                      else if (typeof propSetAddress === "function") propSetAddress(value);
+                    }}
+                    placeholder="Ex.: Rua das Flores, 120 - Centro"
+                    maxLength={255}
+                  />
+                </div>
+              )}
             </Field>
 
             <Field label="Link do cardápio">

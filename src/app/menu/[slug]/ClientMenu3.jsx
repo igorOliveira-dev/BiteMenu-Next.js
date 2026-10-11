@@ -30,6 +30,7 @@ import {
   zoneOffset,
 } from "@/utils/storeHours";
 import { getContrastTextColor } from "@/utils/color";
+import { mapsUrl } from "@/components/AddressFields";
 
 function findScrollParent(el) {
   let parent = el.parentElement;
@@ -574,9 +575,15 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole }) {
             ) : null}
 
             {menu.address && (
-              <p className="flex gap-2 items-center  text-sm" style={{ color: grayToUse }}>
+              <a
+                href={mapsUrl(menu.address)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex gap-2 items-center text-sm hover:underline"
+                style={{ color: grayToUse }}
+              >
                 <FaMapMarkerAlt size={10} /> {menu.address}
-              </p>
+              </a>
             )}
 
             {menu.description && (

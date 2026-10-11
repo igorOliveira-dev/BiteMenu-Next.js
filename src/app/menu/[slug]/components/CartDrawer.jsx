@@ -17,6 +17,7 @@ import { calculateComboDiscount } from "@/lib/comboDiscount";
 import { applyCoupon } from "@/lib/couponDiscount";
 import { saveReceipt } from "@/lib/orderReceipts";
 import { getContrastTextColor } from "@/utils/color";
+import AddressFields, { EMPTY_ADDRESS, formatAddress } from "@/components/AddressFields";
 
 export default function CartDrawer({
   menu,
@@ -115,7 +116,7 @@ export default function CartDrawer({
   const [selectedService, setSelectedService] = useState(null);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [costumerName, setCostumerName] = useState("");
-  const [costumerAddress, setCostumerAddress] = useState("");
+  const [costumerAddressParts, setCostumerAddressParts] = useState(EMPTY_ADDRESS);
   const [costumerPhone, setCostumerPhone] = useState("");
 
   const [costumerNeighborhood, setCostumerNeighborhood] = useState("");
@@ -187,6 +188,10 @@ export default function CartDrawer({
   const filteredZones = deliveryZones.filter((zone) => zone.name.toLowerCase().includes(search.toLowerCase()));
 
   const canUseZones = menu?.delivery_fee_mode === "zones" && hasPlusPermissions && deliveryZones.length > 0;
+  // com bairros de entrega, o bairro vem da zona escolhida
+  const costumerAddress = formatAddress(
+    canUseZones ? { ...costumerAddressParts, neighborhood: costumerNeighborhood } : costumerAddressParts,
+  );
 
   const serviceOptions = [
     {
@@ -373,10 +378,11 @@ export default function CartDrawer({
     try {
       const stored = localStorage.getItem("customerInfo");
       if (stored) {
-        const { name = "", phone = "", address = "", neighborhood = "" } = JSON.parse(stored);
+        const { name = "", phone = "", address = "", addressParts } = JSON.parse(stored);
         setCostumerName(name);
         setCostumerPhone(phone);
-        setCostumerAddress(address);
+        // endereço salvo no formato antigo (texto livre) vira a rua, pro cliente completar
+        setCostumerAddressParts(addressParts ?? { ...EMPTY_ADDRESS, street: address });
         console.log("📥 LocalStorage carregado:", { name, phone, address });
       }
     } catch (error) {
@@ -406,6 +412,7 @@ export default function CartDrawer({
       name: costumerName,
       phone: costumerPhone,
       address: costumerAddress,
+      addressParts: costumerAddressParts,
     };
     localStorage.setItem("customerInfo", JSON.stringify(customerInfo));
     console.log("💾 LocalStorage salvo no fechamento:", customerInfo);
@@ -575,8 +582,8 @@ ${customerInfo}`;
       }
     }
 
-    if (selectedService === "delivery" && costumerAddress.trim().length < 10) {
-      customAlert("O endereço deve ter pelo menos 10 letras.", "error");
+    if (selectedService === "delivery" && costumerAddressParts.street.trim().length < 3) {
+      customAlert("Informe a rua do endereço.", "error");
       return false;
     }
 
@@ -1210,18 +1217,16 @@ ${customerInfo}`;
                     )}
 
                     <div>
-                      <label className="block text-sm font-medium">Digite seu endereço:</label>
-                      <input
-                        type="text"
-                        placeholder="Endereço"
-                        value={costumerAddress}
-                        onChange={(e) => {
-                          setCostumerAddress(e.target.value);
-                        }}
-                        maxLength={80}
-                        className="w-full p-2 rounded mb-2"
-                        style={{ backgroundColor: translucidToUse }}
-                      />
+                      <label className="block text-sm font-medium mb-1">Endereço de entrega:</label>
+                      <div className="mb-2">
+                        <AddressFields
+                          value={costumerAddressParts}
+                          onChange={setCostumerAddressParts}
+                          hideNeighborhood={canUseZones}
+                          inputClassName="w-full p-2 rounded"
+                          inputStyle={{ backgroundColor: translucidToUse }}
+                        />
+                      </div>
                     </div>
                   </>
                 )}

@@ -22,6 +22,7 @@ import OrdersFilter from "./components/orders/OrdersFilter";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import useUser from "@/hooks/useUser";
 import UpdatePlanModal from "./components/UpdatePlanModal";
+import { mapsUrl } from "@/components/AddressFields";
 import PrintDocumentButton, {
   normalizeOrderForPrint,
 } from "./components/print/PrintDocumentButton";
@@ -1148,6 +1149,16 @@ const Orders = ({
                         })
                       }
                     />
+                    {selectedOrder.address ? (
+                      <a
+                        href={mapsUrl(selectedOrder.address)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-1 inline-block text-xs underline opacity-70"
+                      >
+                        Ver no mapa
+                      </a>
+                    ) : null}
                   </div>
                 ) : null}
               </SectionCard>

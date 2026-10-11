@@ -13,6 +13,7 @@ import { useConfirm } from "@/providers/ConfirmProvider";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import { getContrastTextColor } from "@/utils/color";
 import { removeUnusedImages } from "@/lib/uploadImage";
+import { formatAddress } from "@/components/AddressFields";
 
 /**
  * StatesManager (versão com checagem de auth e tratamento RLS/storage)
@@ -186,6 +187,7 @@ export default function StatesManager({
     "title",
     "description",
     "address",
+    "addressDetails",
     "backgroundColor",
     "titleColor",
     "detailsColor",
@@ -242,6 +244,7 @@ export default function StatesManager({
       title: menuFromServer.title ?? "",
       description: menuFromServer.description ?? "",
       address: menuFromServer.address ?? "",
+      addressDetails: menuFromServer.address_details ?? null,
       backgroundColor: menuFromServer.background_color ?? "#F8F9FA",
       titleColor: menuFromServer.title_color ?? "#007BFF",
       detailsColor: menuFromServer.details_color ?? "#28A745",
@@ -379,7 +382,10 @@ export default function StatesManager({
       const payload = {
         title: localState.title,
         description: localState.description,
-        address: localState.address,
+        // formato estruturado substitui o texto livre antigo; sem ele, o texto antigo é mantido
+        address: localState.addressDetails ? formatAddress(localState.addressDetails) : localState.address,
+        // só envia quando preenchido: não quebra o salvamento se a coluna ainda não existir
+        ...(localState.addressDetails && { address_details: localState.addressDetails }),
         background_color: localState.backgroundColor,
         title_color: localState.titleColor,
         details_color: localState.detailsColor,
@@ -471,6 +477,7 @@ export default function StatesManager({
           title: data.title ?? "",
           description: data.description ?? "",
           address: data.address ?? "",
+          addressDetails: data.address_details ?? null,
           backgroundColor: data.background_color ?? "#F8F9FA",
           titleColor: data.title_color ?? "#007BFF",
           detailsColor: data.details_color ?? "#28A745",
@@ -518,6 +525,7 @@ export default function StatesManager({
           title: data.title ?? "",
           description: data.description ?? "",
           address: data.address ?? "",
+          addressDetails: data.address_details ?? null,
           backgroundColor: data.background_color ?? "#F8F9FA",
           titleColor: data.title_color ?? "#007BFF",
           detailsColor: data.details_color ?? "#28A745",
@@ -630,6 +638,7 @@ export default function StatesManager({
                     title: "Título",
                     description: "Descrição",
                     address: "Endereço",
+                    addressDetails: "Endereço",
                     backgroundColor: "Cor de fundo",
                     titleColor: "Cor do título",
                     detailsColor: "Cor dos detalhes",
