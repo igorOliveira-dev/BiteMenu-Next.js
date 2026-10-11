@@ -108,13 +108,13 @@ const defaultModeDescriptions = {
 
 // Cabeçalho comum aos 3 modos: logo, título, número em destaque e id curto.
 // Vendas não guardam order_number: o id curto vira o destaque.
-function PrintHeader({ title, document }) {
+function PrintHeader({ title, document, showLogo = true }) {
   const shortId = `#${document.id?.slice(0, 6)}`;
   const hasNumber = document.orderNumber != null;
 
   return (
     <div className="print-header">
-      <img src="/LogoTipo-sem-fundo.png" alt="Bite Menu" />
+      {showLogo && <img src="/LogoTipo-sem-fundo.png" alt="Bite Menu" />}
       <div className="print-header-info">
         <h1>{title}</h1>
         <p>{new Date(document.createdAt).toLocaleString("pt-BR")}</p>
@@ -498,8 +498,15 @@ export default function PrintDocumentButton({
 
           {!classicStyle && printMode === "full" && (
             <>
-              <PrintHeader title={receiptTitle} document={document} />
-              {menuName && <p>{menuName}</p>}
+              <div className="print-brand">
+                <img src="/LogoTipo-sem-fundo.png" alt="Bite Menu" />
+                {menuName && <strong>{menuName}</strong>}
+              </div>
+              <PrintHeader
+                title={receiptTitle}
+                document={document}
+                showLogo={false}
+              />
               <p>
                 <strong>Cliente:</strong> {document.costumerName}
               </p>
