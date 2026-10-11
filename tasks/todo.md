@@ -30,13 +30,13 @@ botão só com `FiSettings` indo pra `configMenu`. Mesma classe de item da esque
 centralizado), `title`/`aria-label` com o nome.
 
 **Critérios de aceite:**
-- [ ] Recolhida: ícone de compartilhar abre o modal de QR; ícone de configurações abre a aba de configuração
-- [ ] Passar o mouse mostra o nome; navegação por Tab com foco visível
-- [ ] Expandida: igual a hoje
+- [x] Recolhida: ícone de compartilhar abre o modal de QR; ícone de configurações abre a aba de configuração
+- [x] Passar o mouse mostra o nome; navegação por Tab com foco visível (regra global `:focus-visible`)
+- [x] Expandida: igual a hoje
 
 **Verificação:**
-- [ ] `npm run build` passa
-- [ ] Manual: clicar nos dois ícones recolhida, claro e escuro
+- [x] `npm run build` passa
+- [x] Manual: clicar nos dois ícones recolhida, claro e escuro
 
 **Dependências:** Task 1
 **Arquivos:** `src/app/dashboard/tabs/Menu.jsx`

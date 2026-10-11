@@ -541,7 +541,27 @@ const Menu = (props) => {
             <FaChevronLeft className={`text-sm transition-transform duration-200 ${collapsed ? "" : "rotate-180"}`} />
           </button>
 
-          {!collapsed && (
+          {collapsed ? (
+            <>
+              <button
+                onClick={() => shareUrl && setShowQrCode(true)}
+                title="Opções de compartilhamento"
+                aria-label="Opções de compartilhamento"
+                className="cursor-pointer flex shrink-0 items-center justify-center h-10 bg-green-600/80 text-white rounded-lg hover:bg-green-700/80 border border-translucid transition"
+              >
+                <FaQrcode className="text-lg" />
+              </button>
+
+              <button
+                onClick={() => setSelectedTab("configMenu")}
+                title="Configurar cardápio"
+                aria-label="Configurar cardápio"
+                className="cursor-pointer flex shrink-0 items-center justify-center h-10 mt-auto bg-low-gray border border-translucid rounded-lg hover:opacity-80 transition"
+              >
+                <FiSettings className="text-xl" />
+              </button>
+            </>
+          ) : (
             <>
               {/* Compartilhar */}
               <section className="rounded-xl border border-translucid bg-translucid p-3">
