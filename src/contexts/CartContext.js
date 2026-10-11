@@ -101,6 +101,18 @@ export function CartProvider({ children }) {
     }
   }, []);
 
+  // Outra aba mexeu no carrinho: puxa a versão dela (senão uma aba sobrescreve a outra)
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key !== STORAGE_KEY) return;
+      try {
+        dispatch({ type: "SET", payload: e.newValue ? JSON.parse(e.newValue) : null });
+      } catch {}
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
