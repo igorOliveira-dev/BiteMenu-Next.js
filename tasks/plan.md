@@ -1,52 +1,47 @@
-# Plano: redesign do dashboard + sidebar recolhível
+# Plano: barra lateral direita recolhível (aba Cardápio)
 
 ## Visão geral
-Dar uma cara mais polida ao dashboard **sem mudar o layout de forma drástica e sem mudar cores**.
-A peça principal: o menu lateral (desktop) ganha um botão de recolher; recolhido, vira uma
-coluna estreita só com ícones, e dá pra navegar entre as abas sem abrir o menu de novo
-(igual ao drawer do print de referência, mas em modo "rail").
+Aplicar na barra direita da aba Cardápio a mesma ideia da sidebar esquerda: um botão de recolher e,
+recolhida, uma coluna estreita só com ícones. Recolhida, ela mostra de cima pra baixo:
+1. botão de compartilhar → só o ícone (`FaQrcode`, o mesmo de hoje), abre o `QrCodeModal`
+2. as 3 cores → só os quadrados; clicar abre um **popover** com o seletor ao lado (à esquerda), sem expandir a barra
+3. no fim, configurações → só o ícone (`FiSettings`), vai pra `configMenu`
 
-Fora do escopo: landing, login/register, cardápio público (`/menu/[slug]`), qualquer coisa de
-Supabase/pagamento.
+Só desktop (`lg+`); no mobile a barra direita já não aparece. Fora do escopo: Supabase, pagamento, outras abas.
 
 ## Como está hoje (lido no código)
-- `src/app/dashboard/Dashboard.jsx` — sidebar é um `<aside>` fixo `lg:w-60`; no mobile vira barra
-  inferior só com ícones + botão hambúrguer (modal). **Não existe recolher no desktop.**
-- `<main>` usa largura fixa `lg:w-[calc(100dvw-256px)]` → precisa acompanhar a largura da sidebar.
-- `FaChevronLeft` já está importado e sem uso.
-- Badge de pedidos pendentes (`pendingOrdersCount`) é `absolute` dentro do botão "Pedidos".
-- Visual vem de classes globais em `src/app/globals.css` (`bg-translucid`, `border-translucid`,
-  `hover-bg-translucid`, `cta-button`, `custom-gray-button`) + Tailwind inline nas abas
-  (muita variação: `rounded`, `rounded-lg`, `rounded-xl`, `rounded-2xl`, `p-2`/`p-3`, `border`/`border-2`).
-- Header: `src/app/dashboard/DashboardLayoutClient.js`.
+- `src/app/dashboard/tabs/Menu.jsx:511` — `<aside>` `fixed right-0`, largura `w-[calc(30dvw-36px)]`,
+  com três blocos: Compartilhar (`section`), Cores (`section` com lista que abre `HexColorPicker` inline,
+  controlada por `openColorIdx` + `colorListRef` com clique-fora já pronto) e o botão "Configurar cardápio" (`mt-auto`).
+- O preview do cardápio ao lado usa `lg:w-[calc(100%-30dvw+16px)]` (`Menu.jsx:394`) → precisa acompanhar a largura recolhida.
+- `FaChevronLeft` já está importado em `Menu.jsx`.
+- Sidebar esquerda (`src/app/dashboard/Dashboard.jsx`) é a referência de estilo: `collapsed` em
+  `localStorage` lido num `useEffect` com try/catch, botão chevron no topo (`h-10 rounded-lg hover-bg-translucid color-gray`),
+  largura `lg:w-16` com `lg:transition-[width] lg:duration-200`, itens com `title`/`aria-label`, `aria-expanded` no botão.
 
 ## Decisões
-- **Sidebar recolhida só no desktop (`lg+`)**. Mobile continua com a barra inferior de ícones (já resolve).
-- Recolhida: largura ~`w-16`, só ícones centralizados, `title`/`aria-label` com o nome da aba,
-  item ativo continua destacado, badge de pedidos continua visível (vira bolinha no canto do ícone).
-- Botão de recolher/expandir no topo da sidebar (`FaChevronLeft`, gira 180° quando recolhida).
-- Estado salvo em `localStorage` (`dashboard-sidebar-collapsed`), lido em `useEffect` com try/catch
-  → sem erro de hidratação; primeiro render é expandido.
-- `<main>` passa a ser `flex-1 min-w-0` em vez do `calc` fixo — acompanha qualquer largura da sidebar.
-- **Cores não mudam.** Nada de valor de cor novo em `:root`/`[data-theme]`. A mudança no
-  `--background` dark (`#252323`) que está não commitada é tratada como a cor atual.
-- Polimento = consistência: um raio padrão (`rounded-xl` cards / `rounded-lg` botões e inputs),
-  `focus-visible` visível, transições suaves, espaçamentos uniformes. Feito por classes globais
-  primeiro (muda tudo de uma vez), depois troca pontual nas abas. Sem componente novo genérico.
+- Estado `collapsed` local em `Menu.jsx` (só ele usa), chave `dashboard-rightbar-collapsed`, mesmo padrão
+  de leitura/escrita da esquerda. Primeiro render expandido → sem erro de hidratação.
+- Recolhida: `w-16`, `p-2`, ícones centralizados; seções perdem título/descrição/borda interna e o "Sugerir cores" some.
+- Chevron no topo: `FaChevronLeft` girado 180° quando expandida (aponta pra direita = "recolher pra direita"),
+  normal quando recolhida (aponta pra esquerda = "expandir").
+- Popover das cores: `absolute right-full mr-2` relativo ao quadrado, com o mesmo `HexColorPicker` + `HexColorInput`
+  de hoje. Reaproveita `openColorIdx` e o clique-fora do `colorListRef` (o popover fica dentro dele).
+  **Atenção:** o `<aside>` tem `overflow-y-auto`, que corta o popover → recolhida, trocar por `overflow-visible`
+  (cabe sem scroll: 3 quadrados + 2 ícones).
+- Preview: largura condicional — `calc(100%-30dvw+16px)` expandida, `calc(100%-64px-16px)` (ajustar na tela) recolhida.
+- Nenhuma cor nova; só classes já usadas no projeto.
 
 ## Tarefas
-Veja `tasks/todo.md`. Ordem: sidebar (o pedido explícito, maior risco de layout) → base global →
-header → abas, uma ou duas por tarefa.
+Ver `tasks/todo.md`.
 
 ## Riscos
 | Risco | Impacto | Mitigação |
 |---|---|---|
-| `<main>` com largura errada ao recolher (overflow horizontal, gráficos do Sales não redimensionam) | Alto | `flex-1 min-w-0`; checar Sales/SalesDashboard com a sidebar nos dois estados |
-| Badge de pedidos some/fica mal posicionado recolhido | Médio | Critério de aceite explícito na Task 1 |
-| Mudar classe global quebra tela que eu não olhei | Médio | Só ajustar propriedades não-cor; screenshot de todas as abas no checkpoint |
-| Diffs enormes em `Orders.jsx`/`Sales.jsx` (1400–1800 linhas) | Médio | Só trocar classes, nunca lógica; uma aba por tarefa |
-| Mudar cor sem querer (ex: trocar `bg-gray-600` por outra) | Médio | Regra: classes de cor ficam como estão |
+| Popover cortado pelo `overflow-y-auto` / `rounded` do aside | Médio | `overflow-visible` quando recolhida; conferir no screenshot |
+| Popover sai da tela em telas baixas (3º quadrado + picker de 140px) | Baixo | Alinhar topo do popover ao quadrado; se cortar, `bottom-0` no último |
+| Preview com largura errada → espaço vazio ou sobreposição | Médio | Medir em 1440px e 1024px nos dois estados |
+| Barra recolhida em telas estreitas da esquerda + direita juntas | Baixo | Testar com as duas recolhidas/expandidas |
 
 ## Perguntas em aberto
-1. A mudança do `--background` dark para `#252323` (não commitada) é a cor final? O plano assume que sim.
-2. Quer animação na transição recolher/expandir (largura ~200ms) ou troca seca? Plano assume animação curta.
+- Nenhuma (decidido: arquivar plano antigo; popover ao lado no clique da cor).
