@@ -20,6 +20,9 @@ import {
   TouchSensor,
   useSensor,
   useSensors,
+  useDroppable,
+  DragOverlay,
+  MeasuringStrategy,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -316,8 +319,93 @@ function SearchableSelect({
   );
 }
 
+// ---------- drag de itens entre categorias (lista principal e modal de ordenação) ----------
+const DROP_CAT = "drop-cat-";
+const SORT_CAT = "sortcat-";
+
+const findItemCatId = (cats, id) =>
+  cats.find((c) => (c.menu_items || []).some((it) => it.id === id))?.id;
+
+const overCatId = (cats, overId) =>
+  String(overId).startsWith(DROP_CAT)
+    ? String(overId).slice(DROP_CAT.length)
+    : findItemCatId(cats, overId);
+
+// onDragOver: leva o item ativo para a categoria sob o cursor
+function moveItemAcrossCats(cats, activeId, overId) {
+  const from = findItemCatId(cats, activeId);
+  const to = overCatId(cats, overId);
+  if (!from || !to || from === to) return cats;
+  const item = cats
+    .find((c) => c.id === from)
+    .menu_items.find((it) => it.id === activeId);
+  return cats.map((c) => {
+    if (c.id === from)
+      return {
+        ...c,
+        menu_items: c.menu_items.filter((it) => it.id !== activeId),
+      };
+    if (c.id === to) {
+      const items = [...(c.menu_items || [])];
+      const idx = items.findIndex((it) => it.id === overId);
+      items.splice(idx === -1 ? items.length : idx, 0, {
+        ...item,
+        category_id: to,
+      });
+      return { ...c, menu_items: items };
+    }
+    return c;
+  });
+}
+
+// onDragEnd: reordena dentro da categoria final e normaliza position
+function reorderItemInCat(cats, activeId, overId) {
+  const catId = findItemCatId(cats, activeId);
+  return cats.map((c) => {
+    if (c.id !== catId) return c;
+    const oldIdx = c.menu_items.findIndex((it) => it.id === activeId);
+    const newIdx = c.menu_items.findIndex((it) => it.id === overId);
+    const items =
+      newIdx === -1 || newIdx === oldIdx
+        ? c.menu_items
+        : arrayMove(c.menu_items, oldIdx, newIdx);
+    return { ...c, menu_items: items.map((it, i) => ({ ...it, position: i })) };
+  });
+}
+
+// Área para soltar itens em categoria vazia
+function EmptyCatDrop({ catId, children }) {
+  const { setNodeRef, isOver } = useDroppable({ id: `${DROP_CAT}${catId}` });
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ outline: isOver ? "2px dashed #3b82f6" : "none" }}
+      className="rounded-xl"
+    >
+      {children}
+    </div>
+  );
+}
+
+// Remede as listas o tempo todo: itens mudam de categoria durante o arraste
+const DND_MEASURING = { droppable: { strategy: MeasuringStrategy.Always } };
+
+// Prévia que segue o cursor durante o arraste (portal para não sofrer com transform do modal)
+function DragPreview({ children }) {
+  if (typeof document === "undefined") return null;
+  return createPortal(
+    <DragOverlay>{children || null}</DragOverlay>,
+    document.body,
+  );
+}
+
 // Linha arrastável genérica; children recebe as props da alça de arraste
-function SortableRow({ id, className, children }) {
+function SortableRow({
+  id,
+  className,
+  children,
+  dragStyle = { opacity: 0.75 },
+}) {
   const {
     attributes,
     listeners,
@@ -332,7 +420,7 @@ function SortableRow({ id, className, children }) {
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
-        opacity: isDragging ? 0.75 : 1,
+        ...(isDragging ? dragStyle : null),
       }}
       className={className}
     >
@@ -355,6 +443,7 @@ function SortableMenuItem({
   canShowPromoPrice,
   getContrastTextColor,
   currency,
+  overlay = false,
 }) {
   const {
     attributes,
@@ -364,7 +453,9 @@ function SortableMenuItem({
     transition,
     isDragging,
   } = useSortable({
-    id: item.id,
+    // a cópia exibida no DragOverlay não pode registrar o mesmo id
+    id: overlay ? `overlay-${item.id}` : item.id,
+    disabled: overlay,
   });
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -379,7 +470,8 @@ function SortableMenuItem({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.75 : 1,
+    opacity: isDragging ? 0.4 : 1,
+    cursor: overlay ? "grabbing" : undefined,
   };
 
   const dragHandleProps = {
@@ -388,7 +480,20 @@ function SortableMenuItem({
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="flex gap-2 items-stretch">
+    <div ref={setNodeRef} style={style} className="flex gap-1 items-stretch">
+      <button
+        type="button"
+        {...dragHandleProps}
+        title="Arrastar item"
+        className="flex items-center justify-center px-1 rounded-lg cursor-grab active:cursor-grabbing"
+        style={{
+          touchAction: "none",
+          color: grayToUse,
+          backgroundColor: isLightBg ? "#ffffff10" : "#00000010",
+        }}
+      >
+        <FaGripVertical />
+      </button>
       <div
         className="flex-1 flex rounded-lg overflow-hidden transition-opacity"
         style={{
@@ -509,11 +614,7 @@ function SortableMenuItem({
 
           <div className="flex items-start gap-3 min-w-0 pr-8">
             {item.image_url && (
-              <div
-                {...dragHandleProps}
-                className="cursor-grab active:cursor-grabbing"
-                style={{ touchAction: "none", flexShrink: 0 }}
-              >
+              <div style={{ flexShrink: 0 }}>
                 <img
                   src={
                     item.thumb_url ||
@@ -673,8 +774,17 @@ export default function MenuItems({
 
   // collapse map for sort modal
   const [sortCollapsed, setSortCollapsed] = useState({});
-  // refs to DOM nodes (used for FLIP)
-  const domRefs = useRef({});
+  // item sendo arrastado (prévia do DragOverlay) e estado antes do arraste
+  const [draggingItem, setDraggingItem] = useState(null);
+  const dragBeforeRef = useRef(null);
+  // evita loop de onDragOver trocando de categoria várias vezes no mesmo frame
+  const crossMoveLockRef = useRef(false);
+  const lockCrossMove = () => {
+    crossMoveLockRef.current = true;
+    requestAnimationFrame(() => {
+      crossMoveLockRef.current = false;
+    });
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -1753,46 +1863,6 @@ export default function MenuItems({
     }
   };
 
-  // ---------- helpers FLIP ----------
-  const captureRects = () => {
-    const map = {};
-    Object.keys(domRefs.current).forEach((key) => {
-      const el = domRefs.current[key];
-      if (el && el.getBoundingClientRect) map[key] = el.getBoundingClientRect();
-    });
-    return map;
-  };
-
-  const runFlip = (beforeRects = {}) => {
-    requestAnimationFrame(() => {
-      const afterRects = captureRects();
-      Object.keys(beforeRects).forEach((key) => {
-        const before = beforeRects[key];
-        const after = afterRects[key];
-        const el = domRefs.current[key];
-        if (!before || !after || !el) return;
-        const dx = before.left - after.left;
-        const dy = before.top - after.top;
-        if (dx === 0 && dy === 0) return;
-        el.style.transform = `translate(${dx}px, ${dy}px)`;
-        el.style.transition = "transform 0s";
-        // force reflow
-        // eslint-disable-next-line no-unused-expressions
-        el.offsetHeight;
-        requestAnimationFrame(() => {
-          el.style.transition = "transform 240ms cubic-bezier(.2,.9,.2,1)";
-          el.style.transform = "";
-          const cleanup = () => {
-            el.style.transition = "";
-            el.style.transform = "";
-            el.removeEventListener("transitionend", cleanup);
-          };
-          el.addEventListener("transitionend", cleanup);
-        });
-      });
-    });
-  };
-
   // ---------- modal helpers ----------
   const openCategoryModal = (mode = "create", category = null) => {
     setModalPayload({
@@ -2007,7 +2077,6 @@ export default function MenuItems({
     ordering.forEach((c) => {
       collapsedMap[c.id] = false;
     });
-    domRefs.current = {};
     setSortCollapsed(collapsedMap);
     setModalPayload({
       type: "sort",
@@ -2016,15 +2085,6 @@ export default function MenuItems({
     });
     setModalOpen(true);
     setTimeout(() => setModalPayload((p) => ({ ...p })), 10);
-  };
-
-  // swap util
-  const swap = (arr, i, j) => {
-    const next = [...arr];
-    const tmp = next[i];
-    next[i] = next[j];
-    next[j] = tmp;
-    return next;
   };
 
   const persistCategoryItemsOrder = async (categoryId, orderedItems) => {
@@ -2043,48 +2103,50 @@ export default function MenuItems({
     }
   };
 
-  const handleItemsDragEnd = async (categoryId, event) => {
-    const { active, over } = event;
+  const findDraggedItem = (cats, id) =>
+    (cats || []).flatMap((c) => c.menu_items || []).find((it) => it.id === id) ??
+    null;
 
-    if (!over || active.id === over.id) return;
+  const handleItemDragStart = ({ active }) => {
+    dragBeforeRef.current = categories;
+    setDraggingItem(findDraggedItem(categories, active.id));
+  };
 
-    const before = categories;
+  const handleItemDragOver = ({ active, over }) => {
+    if (!over || crossMoveLockRef.current) return;
+    const next = moveItemAcrossCats(categories, active.id, over.id);
+    if (next === categories) return;
+    lockCrossMove();
+    setCategories(next);
+  };
 
-    let reorderedItems = null;
+  const handleItemDragCancel = () => {
+    setDraggingItem(null);
+    if (dragBeforeRef.current) setCategories(dragBeforeRef.current);
+  };
 
-    setCategories((prev = []) =>
-      prev.map((cat) => {
-        if (cat.id !== categoryId) return cat;
+  const handleItemsDragEnd = async ({ active, over }) => {
+    setDraggingItem(null);
+    const before = dragBeforeRef.current;
+    if (!before) return;
 
-        const oldIndex = (cat.menu_items || []).findIndex(
-          (it) => it.id === active.id,
-        );
-        const newIndex = (cat.menu_items || []).findIndex(
-          (it) => it.id === over.id,
-        );
+    const next = reorderItemInCat(categories, active.id, over?.id);
+    setCategories(next);
 
-        if (oldIndex === -1 || newIndex === -1) return cat;
-
-        reorderedItems = arrayMove(
-          cat.menu_items || [],
-          oldIndex,
-          newIndex,
-        ).map((it, index) => ({
-          ...it,
-          position: index,
-        }));
-
-        return {
-          ...cat,
-          menu_items: reorderedItems,
-        };
-      }),
-    );
-
-    if (!reorderedItems) return;
+    const fromId = findItemCatId(before, active.id);
+    const toId = findItemCatId(next, active.id);
+    const ids = (cats, id) =>
+      (cats.find((c) => c.id === id)?.menu_items || [])
+        .map((it) => it.id)
+        .join();
+    if (fromId === toId && ids(before, fromId) === ids(next, toId)) return;
 
     try {
-      await persistCategoryItemsOrder(categoryId, reorderedItems);
+      // salva a categoria de destino e, se mudou, a de origem
+      for (const catId of new Set([toId, fromId])) {
+        const cat = next.find((c) => c.id === catId);
+        if (cat) await persistCategoryItemsOrder(catId, cat.menu_items || []);
+      }
     } catch (err) {
       console.error("Erro ao salvar ordem dos itens:", err);
       setCategories(before);
@@ -2092,34 +2154,52 @@ export default function MenuItems({
     }
   };
 
-  // MOVES com FLIP
-  const moveCategory = (index, direction) => {
-    const before = captureRects();
-    setModalPayload((p) => {
-      const ordering = p.data?.ordering ?? [];
-      const to = index + direction;
-      if (to < 0 || to >= ordering.length) return p;
-      const nextOrdering = swap(ordering, index, to);
-      return { ...p, data: { ...p.data, ordering: nextOrdering } };
+  // ---------- drag no modal de ordenação (categorias e itens) ----------
+  const setOrdering = (fn) =>
+    setModalPayload((p) => ({
+      ...p,
+      data: { ...p.data, ordering: fn(p.data?.ordering ?? []) },
+    }));
+
+  const isSortCat = (id) => String(id).startsWith(SORT_CAT);
+
+  // categoria só colide com categoria; item só com item/categoria vazia
+  const sortCollision = (args) =>
+    closestCenter({
+      ...args,
+      droppableContainers: args.droppableContainers.filter(
+        (c) => isSortCat(c.id) === isSortCat(args.active.id),
+      ),
     });
-    requestAnimationFrame(() => runFlip(before));
+
+  const handleSortDragStart = ({ active }) => {
+    if (isSortCat(active.id)) return;
+    setDraggingItem(
+      findDraggedItem(modalPayload.data?.ordering, active.id),
+    );
   };
 
-  const moveItem = (catIndex, itemIndex, direction) => {
-    const before = captureRects();
-    setModalPayload((p) => {
-      const ordering = p.data?.ordering ?? [];
-      const cat = ordering[catIndex];
-      if (!cat) return p;
-      const items = cat.menu_items || [];
-      const to = itemIndex + direction;
-      if (to < 0 || to >= items.length) return p;
-      const newItems = swap(items, itemIndex, to);
-      const newOrdering = [...ordering];
-      newOrdering[catIndex] = { ...cat, menu_items: newItems };
-      return { ...p, data: { ...p.data, ordering: newOrdering } };
-    });
-    requestAnimationFrame(() => runFlip(before));
+  const handleSortDragOver = ({ active, over }) => {
+    if (!over || isSortCat(active.id) || crossMoveLockRef.current) return;
+    const ordering = modalPayload.data?.ordering ?? [];
+    const next = moveItemAcrossCats(ordering, active.id, over.id);
+    if (next === ordering) return;
+    lockCrossMove();
+    setOrdering(() => next);
+  };
+
+  const handleSortDragEnd = ({ active, over }) => {
+    setDraggingItem(null);
+    if (!over) return;
+    if (isSortCat(active.id)) {
+      setOrdering((o) => {
+        const from = o.findIndex((c) => SORT_CAT + c.id === active.id);
+        const to = o.findIndex((c) => SORT_CAT + c.id === over.id);
+        return from === -1 || to === -1 ? o : arrayMove(o, from, to);
+      });
+      return;
+    }
+    setOrdering((o) => reorderItemInCat(o, active.id, over.id));
   };
 
   const toggleCollapse = (catId) => {
@@ -3078,6 +3158,15 @@ export default function MenuItems({
           </div>
         )}
 
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          measuring={DND_MEASURING}
+          onDragStart={handleItemDragStart}
+          onDragOver={handleItemDragOver}
+          onDragEnd={handleItemsDragEnd}
+          onDragCancel={handleItemDragCancel}
+        >
         {categories.map((cat) => (
           <div
             key={cat.id}
@@ -3233,16 +3322,12 @@ export default function MenuItems({
 
             {!collapsedCategories[cat.id] && (
               <>
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={(event) => handleItemsDragEnd(cat.id, event)}
-                >
                   <SortableContext
                     items={(cat.menu_items || []).map((it) => it.id)}
                     strategy={verticalListSortingStrategy}
                   >
                     {(cat.menu_items || []).length === 0 ? (
+                      <EmptyCatDrop catId={cat.id}>
                       <div
                         className="mt-3 flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center"
                         style={{
@@ -3274,6 +3359,7 @@ export default function MenuItems({
                           + Criar primeiro item
                         </button>
                       </div>
+                      </EmptyCatDrop>
                     ) : (
                       <div className="flex flex-col gap-2">
                         {(cat.menu_items || []).map((it) => (
@@ -3297,7 +3383,6 @@ export default function MenuItems({
                       </div>
                     )}
                   </SortableContext>
-                </DndContext>
                 {cat.menu_items?.length > 0 && (
                   <button
                     onClick={() => openItemModal("create", cat.id)}
@@ -3310,6 +3395,27 @@ export default function MenuItems({
             )}
           </div>
         ))}
+        <DragPreview>
+          {draggingItem && (
+            <SortableMenuItem
+              overlay
+              item={draggingItem}
+              cat={{ id: draggingItem.category_id }}
+              openItemModal={openItemModal}
+              deleteItem={deleteItem}
+              duplicateItem={duplicateItem}
+              toggleItemVisibility={toggleItemVisibility}
+              detailsColor={detailsColor}
+              backgroundColor={backgroundColor}
+              foregroundToUse={foregroundToUse}
+              grayToUse={grayToUse}
+              canShowPromoPrice={canShowPromoPrice}
+              getContrastTextColor={getContrastTextColor}
+              currency={menu?.currency}
+            />
+          )}
+        </DragPreview>
+        </DndContext>
       </div>
 
       {/* Modal */}
@@ -3655,127 +3761,144 @@ export default function MenuItems({
             </>
           )}
 
-          {/* Ordenação (com FLIP + colapso) */}
+          {/* Ordenação: arraste categorias e itens (inclusive entre categorias) */}
           {modalPayload.type === "sort" && (
             <>
+              <p className="text-sm color-gray mb-2">
+                Arraste pelo ícone <FaGripVertical className="inline" /> para
+                reordenar. Itens podem ser movidos entre categorias.
+              </p>
               <div className="space-y-3 max-h-[60vh] overflow-auto pr-2">
-                {(modalPayload.data?.ordering || []).map((cat, catIdx) => {
-                  const collapsed = !!sortCollapsed[cat.id];
-                  return (
-                    <div
-                      key={cat.id ?? `cat-${catIdx}`}
-                      ref={(el) => {
-                        if (el) domRefs.current[`cat-${cat.id ?? catIdx}`] = el;
-                        else delete domRefs.current[`cat-${cat.id ?? catIdx}`];
-                        if (el && cat.id != null)
-                          domRefs.current[`cat-${cat.id}`] = el;
-                      }}
-                      className="p-2 rounded-lg bg-translucid"
-                      style={{
-                        transition:
-                          "transform 200ms ease, box-shadow 200ms ease",
-                      }}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-3">
-                          <button
-                            className="cursor-pointer"
-                            onClick={() => toggleCollapse(cat.id)}
-                            title={
-                              collapsed ? "Mostrar itens" : "Recolher itens"
-                            }
-                          >
-                            {collapsed ? <FaChevronRight /> : <FaChevronDown />}
-                          </button>
-                          <div className="flex flex-col">
-                            <strong>{cat.name}</strong>
-                            <span className="text-sm color-gray">
-                              ({(cat.menu_items || []).length} itens)
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => moveCategory(catIdx, -1)}
-                            disabled={catIdx === 0}
-                            className="disabled:opacity-50 p-1 cursor-pointer"
-                            title="Mover categoria para cima"
-                          >
-                            <FaChevronUp />
-                          </button>
-                          <button
-                            onClick={() => moveCategory(catIdx, 1)}
-                            disabled={
-                              catIdx ===
-                              (modalPayload.data?.ordering?.length ?? 1) - 1
-                            }
-                            className="disabled:opacity-50 p-1 cursor-pointer"
-                            title="Mover categoria para baixo"
-                          >
-                            <FaChevronDown />
-                          </button>
-                        </div>
-                      </div>
-
-                      <div
-                        className="overflow-hidden"
-                        style={{
-                          maxHeight: collapsed ? 0 : undefined,
-                          transition:
-                            "max-height 200ms ease, opacity 180ms ease, transform 180ms ease",
-                          opacity: collapsed ? 0 : 1,
-                          transform: collapsed
-                            ? "translateY(-6px)"
-                            : "translateY(0)",
-                        }}
-                      >
-                        <div className="space-y-2 pt-1 pb-1">
-                          {(cat.menu_items || []).map((it, itIdx) => (
-                            <div
-                              key={it.id ?? `it-${itIdx}`}
-                              ref={(el) => {
-                                if (el)
-                                  domRefs.current[
-                                    `it-${it.id ?? `${catIdx}-${itIdx}`}`
-                                  ] = el;
-                                else
-                                  delete domRefs.current[
-                                    `it-${it.id ?? `${catIdx}-${itIdx}`}`
-                                  ];
-                                if (el && it.id != null)
-                                  domRefs.current[`it-${it.id}`] = el;
-                              }}
-                              className="flex items-center justify-between bg-transparent px-2 py-1 rounded-lg bg-translucid"
-                            >
-                              <div className="truncate">{it.name}</div>
-                              <div className="flex items-center gap-1">
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={sortCollision}
+                  measuring={DND_MEASURING}
+                  onDragStart={handleSortDragStart}
+                  onDragOver={handleSortDragOver}
+                  onDragEnd={handleSortDragEnd}
+                >
+                  <SortableContext
+                    items={(modalPayload.data?.ordering || []).map(
+                      (c) => SORT_CAT + c.id,
+                    )}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {(modalPayload.data?.ordering || []).map((cat) => {
+                      const collapsed = !!sortCollapsed[cat.id];
+                      const items = cat.menu_items || [];
+                      return (
+                        <SortableRow
+                          key={cat.id}
+                          id={SORT_CAT + cat.id}
+                          className="p-2 rounded-lg bg-translucid"
+                          dragStyle={{
+                            position: "relative",
+                            zIndex: 10,
+                            boxShadow: "0 8px 24px rgba(0,0,0,.25)",
+                          }}
+                        >
+                          {(handleProps) => (
+                            <>
+                              <div className="flex items-center gap-2 mb-2">
                                 <button
-                                  onClick={() => moveItem(catIdx, itIdx, -1)}
-                                  disabled={itIdx === 0}
-                                  className="disabled:opacity-50 p-1 cursor-pointer"
-                                  title="Mover item para cima"
+                                  type="button"
+                                  {...handleProps}
+                                  className="p-1 cursor-grab active:cursor-grabbing color-gray"
+                                  style={{ touchAction: "none" }}
+                                  title="Arrastar categoria"
                                 >
-                                  <FaChevronUp />
+                                  <FaGripVertical />
                                 </button>
                                 <button
-                                  onClick={() => moveItem(catIdx, itIdx, 1)}
-                                  disabled={
-                                    itIdx === (cat.menu_items?.length ?? 1) - 1
+                                  className="cursor-pointer flex items-center gap-2 min-w-0 text-left"
+                                  onClick={() => toggleCollapse(cat.id)}
+                                  title={
+                                    collapsed
+                                      ? "Mostrar itens"
+                                      : "Recolher itens"
                                   }
-                                  className="disabled:opacity-50 p-1 cursor-pointer"
-                                  title="Mover item para baixo"
                                 >
-                                  <FaChevronDown />
+                                  {collapsed ? (
+                                    <FaChevronRight />
+                                  ) : (
+                                    <FaChevronDown />
+                                  )}
+                                  <strong className="truncate">
+                                    {cat.name}
+                                  </strong>
+                                  <span className="text-sm color-gray shrink-0">
+                                    ({items.length} itens)
+                                  </span>
                                 </button>
                               </div>
-                            </div>
-                          ))}
+
+                              {!collapsed && (
+                                <SortableContext
+                                  items={items.map((it) => it.id)}
+                                  strategy={verticalListSortingStrategy}
+                                >
+                                  {items.length === 0 ? (
+                                    <EmptyCatDrop catId={cat.id}>
+                                      <div className="text-sm color-gray text-center py-3 border border-dashed border-translucid rounded-lg">
+                                        Solte itens aqui
+                                      </div>
+                                    </EmptyCatDrop>
+                                  ) : (
+                                    <div className="space-y-2">
+                                      {items.map((it) => (
+                                        <SortableRow
+                                          key={it.id}
+                                          id={it.id}
+                                          className="flex items-center gap-2 px-2 py-1 rounded-lg bg-translucid"
+                                          dragStyle={{ opacity: 0 }}
+                                        >
+                                          {(itemHandleProps) => (
+                                            <>
+                                              <button
+                                                type="button"
+                                                {...itemHandleProps}
+                                                className="p-1 cursor-grab active:cursor-grabbing color-gray"
+                                                style={{ touchAction: "none" }}
+                                                title="Arrastar item"
+                                              >
+                                                <FaGripVertical size={12} />
+                                              </button>
+                                              <div className="truncate">
+                                                {it.name}
+                                              </div>
+                                            </>
+                                          )}
+                                        </SortableRow>
+                                      ))}
+                                    </div>
+                                  )}
+                                </SortableContext>
+                              )}
+                            </>
+                          )}
+                        </SortableRow>
+                      );
+                    })}
+                  </SortableContext>
+                  <DragPreview>
+                    {draggingItem && (
+                      // mesmas camadas do modal para manter a cor da linha
+                      <div
+                        className="rounded-lg shadow-lg"
+                        style={{ backgroundColor: "var(--low-gray)" }}
+                      >
+                        <div className="rounded-lg bg-translucid">
+                          <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-translucid cursor-grabbing">
+                            <span className="p-1 color-gray">
+                              <FaGripVertical size={12} />
+                            </span>
+                            <div className="truncate">{draggingItem.name}</div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    )}
+                  </DragPreview>
+                </DndContext>
               </div>
             </>
           )}
