@@ -562,7 +562,7 @@ const Menu = (props) => {
                 aria-label="Opções de compartilhamento"
                 className="cursor-pointer flex shrink-0 items-center justify-center h-10 bg-green-600/80 text-white rounded-lg hover:bg-green-700/80 border border-translucid transition"
               >
-                <FaQrcode className="text-lg" />
+                <FaShareAlt className="text-lg" />
               </button>
 
               <div ref={colorListRef} className="flex flex-col items-center gap-2 pt-1">
