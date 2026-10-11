@@ -290,8 +290,6 @@ const Menu = (props) => {
       }
 
       const userId = menu?.owner_id;
-      const oldUrl = typeof bannerFile === "string" ? bannerFile : null;
-      const oldMobileUrl = typeof bannerMobileFile === "string" ? bannerMobileFile : null;
 
       // recorta só as telas que receberam imagem nova
       const [desktopWebp, mobileWebp] = await Promise.all(
@@ -309,13 +307,13 @@ const Menu = (props) => {
       // o mobile vai no slot de "thumb" do upload quando as duas mudam juntas
       let next;
       if (desktopWebp && mobileWebp) {
-        const r = await uploadItemImage(desktopWebp, mobileWebp, userId, oldUrl, oldMobileUrl);
+        const r = await uploadItemImage(desktopWebp, mobileWebp, userId);
         next = { bannerFile: r.url, bannerMobileFile: r.thumbUrl };
       } else if (desktopWebp) {
-        const r = await uploadItemImage(desktopWebp, null, userId, oldUrl, null);
+        const r = await uploadItemImage(desktopWebp, null, userId);
         next = { bannerFile: r.url };
       } else {
-        const r = await uploadItemImage(mobileWebp, null, userId, oldMobileUrl, null);
+        const r = await uploadItemImage(mobileWebp, null, userId);
         next = { bannerMobileFile: r.url };
       }
 
@@ -342,8 +340,6 @@ const Menu = (props) => {
       }
 
       const userId = menu?.owner_id;
-      const oldUrl = typeof logoFile === "string" ? logoFile : null;
-
       const webp = await fileToWebp(tempLogoFile, {
         maxBytes: 80 * 1024,
         maxDimension: 256,
@@ -353,7 +349,7 @@ const Menu = (props) => {
         force: true,
       });
 
-      const result = await uploadItemImage(webp, null, userId, oldUrl, null);
+      const result = await uploadItemImage(webp, null, userId);
 
       externalSetState((p) => ({
         ...p,

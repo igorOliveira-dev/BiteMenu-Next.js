@@ -48,7 +48,7 @@ import {
 } from "react-icons/fa";
 import { useAlert } from "@/providers/AlertProvider";
 import { useConfirm } from "@/providers/ConfirmProvider";
-import { uploadItemImage } from "@/lib/uploadImage";
+import { uploadItemImage, removeUnusedImages } from "@/lib/uploadImage";
 import UpdatePlanModal from "../UpdatePlanModal";
 import { fileToThumbnailWebp, fileToWebp } from "@/app/utils/imageToWebp";
 import { FaEllipsisVertical } from "react-icons/fa6";
@@ -1522,35 +1522,14 @@ export default function MenuItems({
     );
 
     try {
-      // se o item tiver imagem, remove também do bucket
-      if (itemToDelete?.image_url) {
-        const pathStart = itemToDelete.image_url.indexOf(
-          "/object/public/product-images/",
-        );
-        if (pathStart !== -1) {
-          const path = itemToDelete.image_url.substring(
-            pathStart + "/object/public/product-images/".length,
-          );
-          await supabase.storage.from("product-images").remove([path]);
-        }
-      }
-      if (itemToDelete?.thumb_url) {
-        const pathStart = itemToDelete.thumb_url.indexOf(
-          "/object/public/product-images/",
-        );
-        if (pathStart !== -1) {
-          const path = itemToDelete.thumb_url.substring(
-            pathStart + "/object/public/product-images/".length,
-          );
-          await supabase.storage.from("product-images").remove([path]);
-        }
-      }
-
       const { error } = await supabase
         .from("menu_items")
         .delete()
         .eq("id", itemId);
       if (error) throw error;
+
+      // só depois do banco: remove a imagem do bucket se nenhum outro item usa
+      await removeUnusedImages([itemToDelete?.image_url, itemToDelete?.thumb_url]);
 
       alert?.("Item removido", "success");
       return true;
@@ -2379,7 +2358,10 @@ export default function MenuItems({
           await saveOptionGroups(newItem.id, data.option_groups);
         }
       } else if (mode === "edit" && itemId) {
-        await updateItem(itemId, {
+        const oldItem = categories
+          .flatMap((c) => c.menu_items || [])
+          .find((it) => it.id === itemId);
+        const saved = await updateItem(itemId, {
           name: data.name,
           price: data.price,
           promo_price: data.promo_price,
@@ -2388,6 +2370,9 @@ export default function MenuItems({
           image_url: data.image_url ?? "",
           thumb_url: data.thumb_url ?? "",
         });
+        if (saved && oldItem?.image_url !== saved.image_url) {
+          await removeUnusedImages([oldItem?.image_url, oldItem?.thumb_url]);
+        }
         await saveOptionGroups(itemId, data.option_groups ?? []);
       }
     }
@@ -3513,8 +3498,6 @@ export default function MenuItems({
                             webpFile,
                             thumbFile,
                             menu?.owner_id,
-                            modalPayload.data.image_url,
-                            modalPayload.data.thumb_url,
                           );
 
                           setModalPayload((p) => ({
@@ -3533,12 +3516,14 @@ export default function MenuItems({
                               "Essa imagem é pesada demais. Tente recortar ou escolher outra.",
                               "error",
                             );
-                          } else {
+                          } else if (err instanceof DOMException) {
                             alert?.("Tipo de imagem não suportado.", "error");
+                          } else {
+                            alert?.("Erro ao enviar imagem. Tente novamente.", "error");
                           }
                         } finally {
                           setUploadingImage(false);
-                          e.currentTarget.value = "";
+                          e.target.value = "";
                         }
                       }}
                     />

@@ -12,6 +12,7 @@ import { FaChevronLeft } from "react-icons/fa";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import { getContrastTextColor } from "@/utils/color";
+import { removeUnusedImages } from "@/lib/uploadImage";
 
 /**
  * StatesManager (versão com checagem de auth e tratamento RLS/storage)
@@ -454,6 +455,17 @@ export default function StatesManager({
           }
           throw error;
         }
+
+        // banner/logo trocados no modal: o arquivo antigo só sai do bucket depois de salvar
+        await removeUnusedImages(
+          [
+            [serverState?.bannerFile, data.banner_url],
+            [serverState?.bannerMobileFile, data.banner_mobile_url],
+            [serverState?.logoFile, data.logo_url],
+          ]
+            .filter(([old, now]) => typeof old === "string" && old !== now)
+            .map(([old]) => old),
+        );
 
         const normalized = {
           title: data.title ?? "",

@@ -1,41 +1,10 @@
 import { supabase } from "./supabaseClient";
 
-export async function uploadItemImage(
-  file,
-  thumbFile,
-  userId,
-  oldImageUrl = null,
-  oldThumbUrl = null,
-) {
-  if (!file) return { url: oldImageUrl || null, thumbUrl: oldThumbUrl || null };
+const MARKER = "/object/public/product-images/";
 
-  const marker = "/object/public/product-images/";
-
-  // remove imagem antiga (original)
-  if (oldImageUrl) {
-    try {
-      const pathStart = oldImageUrl.indexOf(marker);
-      if (pathStart !== -1) {
-        const oldPath = oldImageUrl.substring(pathStart + marker.length);
-        await supabase.storage.from("product-images").remove([oldPath]);
-      }
-    } catch (err) {
-      console.error("Falha ao remover imagem antiga:", err);
-    }
-  }
-
-  // remove thumbnail antigo
-  if (oldThumbUrl) {
-    try {
-      const pathStart = oldThumbUrl.indexOf(marker);
-      if (pathStart !== -1) {
-        const oldThumbPath = oldThumbUrl.substring(pathStart + marker.length);
-        await supabase.storage.from("product-images").remove([oldThumbPath]);
-      }
-    } catch (err) {
-      console.error("Falha ao remover thumbnail antigo:", err);
-    }
-  }
+// Só envia; o arquivo antigo é apagado depois que o banco salvar (removeUnusedImages)
+export async function uploadItemImage(file, thumbFile, userId) {
+  if (!file) return { url: null, thumbUrl: null };
 
   const id = crypto.randomUUID();
   const filePath = `menu-items/${userId ?? "unknown"}/${id}.webp`;
@@ -71,4 +40,31 @@ export async function uploadItemImage(
     .from("product-images")
     .getPublicUrl(filePath);
   return { url: publicUrlData?.publicUrl ?? null, thumbUrl };
+}
+
+// Apaga do bucket as imagens que nenhum item usa mais.
+// Itens duplicados compartilham a mesma imagem, então checa no banco antes de apagar.
+export async function removeUnusedImages(urls) {
+  const list = [...new Set(urls.filter((u) => u && u.includes(MARKER)))];
+  if (!list.length) return;
+
+  try {
+    const [byImage, byThumb] = await Promise.all([
+      supabase.from("menu_items").select("image_url").in("image_url", list),
+      supabase.from("menu_items").select("thumb_url").in("thumb_url", list),
+    ]);
+    if (byImage.error || byThumb.error) return; // na dúvida, não apaga
+
+    const used = new Set([
+      ...byImage.data.map((r) => r.image_url),
+      ...byThumb.data.map((r) => r.thumb_url),
+    ]);
+    const paths = list
+      .filter((u) => !used.has(u))
+      .map((u) => u.substring(u.indexOf(MARKER) + MARKER.length));
+
+    if (paths.length) await supabase.storage.from("product-images").remove(paths);
+  } catch (err) {
+    console.error("Falha ao remover imagens antigas:", err);
+  }
 }
