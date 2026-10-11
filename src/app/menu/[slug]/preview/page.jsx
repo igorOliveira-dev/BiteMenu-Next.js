@@ -3,7 +3,8 @@ import ClientMenu from "../ClientMenu";
 import ClientMenu2 from "../ClientMenu2";
 import ClientMenu3 from "../ClientMenu3";
 import { CartProvider } from "@/contexts/CartContext";
-import { getMenuBySlug, getOwnerInfo } from "../getMenuData";
+import { getMenuBySlug, getOwnerInfo, getOptionStock } from "../getMenuData";
+import { applyStock, STOCK_ROLES } from "@/lib/stock";
 
 // Uso interno: pré-visualização de layout a partir do dashboard (ConfigMenu.jsx).
 // Fica fora de /menu/[slug] para não forçar renderização dinâmica na rota pública.
@@ -13,11 +14,13 @@ export default async function MenuPreviewPage({ params, searchParams }) {
   const { slug } = await params;
   const { preview_layout } = (await searchParams) ?? {};
 
-  const menu = await getMenuBySlug(slug);
+  const rawMenu = await getMenuBySlug(slug);
 
-  if (!menu) return <NotFoundMenu />;
+  if (!rawMenu) return <NotFoundMenu />;
 
-  const { ownerPhone, ownerRole } = await getOwnerInfo(menu);
+  const { ownerPhone, ownerRole } = await getOwnerInfo(rawMenu);
+  const optionStock = STOCK_ROLES.includes(ownerRole) ? await getOptionStock(rawMenu.id) : [];
+  const menu = applyStock(rawMenu, ownerRole, optionStock);
 
   const effectiveLayout = preview_layout || menu.layout;
 

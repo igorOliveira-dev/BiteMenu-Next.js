@@ -6,6 +6,7 @@ import Menu from "./tabs/Menu";
 import Orders from "./tabs/Orders";
 import Sales from "./tabs/Sales";
 import Tables from "./tabs/Tables";
+import Stock from "./tabs/Stock";
 import { useAlert } from "@/providers/AlertProvider";
 import ConfigMenu from "./tabs/ConfigMenu";
 import { FaBars, FaChevronLeft, FaHeadset, FaQrcode } from "react-icons/fa";
@@ -342,6 +343,11 @@ const Dashboard = ({
         {selectedTab === "tables" && (
           <div className="block">
             <Tables />
+          </div>
+        )}
+        {selectedTab === "stock" && (
+          <div className="block">
+            <Stock setSelectedTab={setSelectedTab} />
           </div>
         )}
         {selectedTab === "salesDashboard" && (

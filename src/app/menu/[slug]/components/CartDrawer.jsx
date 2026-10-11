@@ -15,6 +15,7 @@ import { useAlert } from "@/providers/AlertProvider";
 import { useSearchParams, useRouter } from "next/navigation";
 import { calculateComboDiscount } from "@/lib/comboDiscount";
 import { applyCoupon } from "@/lib/couponDiscount";
+import { STOCK_ROLES, stockPayload } from "@/lib/stock";
 import { saveReceipt } from "@/lib/orderReceipts";
 import { getContrastTextColor } from "@/utils/color";
 import AddressFields, { EMPTY_ADDRESS, formatAddress } from "@/components/AddressFields";
@@ -85,7 +86,7 @@ export default function CartDrawer({
   }, [menu?.categories]);
 
   // mova esta linha para ANTES do useMemo do discountAmount
-  const hasPlusPermissions = ["plus", "pro", "admin"].includes(ownerRole ?? "free");
+  const hasPlusPermissions = ["plus", "pro", "business", "admin"].includes(ownerRole ?? "free");
 
   const { totalDiscount: comboDiscount } = useMemo(() => {
     if (!hasPlusPermissions) return { totalDiscount: 0 };
@@ -127,7 +128,7 @@ export default function CartDrawer({
   // do pedido usam os mesmos valores sem mudanças.
   // ponytail: valida só no navegador (o total do pedido já é calculado aqui);
   // se precisar de blindagem, recalcular o total no servidor.
-  const canUseCoupon = ["pro", "admin"].includes(ownerRole ?? "free");
+  const canUseCoupon = ["pro", "business", "admin"].includes(ownerRole ?? "free");
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState(null);
 
@@ -169,6 +170,26 @@ export default function CartDrawer({
     setCoupon(null);
     setCouponInput("");
     customAlert("Este cupom atingiu o limite de usos ou expirou. Confira o novo total.", "error");
+    return false;
+  };
+
+  // Valida e dá baixa no estoque (plano Business) ao confirmar, tudo ou nada.
+  // Faltou algo: nada é baixado e o cliente ajusta o carrinho. Erro de rede/RPC não bloqueia a venda.
+  const consumeStock = async () => {
+    if (!STOCK_ROLES.includes(ownerRole)) return true;
+    const { data, error } = await supabase.rpc("consume_stock", {
+      p_menu_id: menu.id,
+      p_items: stockPayload(currentItems),
+    });
+    if (error || typeof data?.ok !== "boolean") {
+      console.error("consume_stock error:", error || data);
+      return true;
+    }
+    if (data.ok) return true;
+    customAlert(
+      `Estoque insuficiente: ${data.missing.map((s) => `${s.name} (restam ${s.available})`).join(", ")}. Ajuste o carrinho.`,
+      "error",
+    );
     return false;
   };
   // ────────────────────────────────────────────────────────────────────────
@@ -611,7 +632,7 @@ ${customerInfo}`;
       }
     }
 
-    if (!(await consumeCoupon())) return;
+    if (!(await consumeCoupon()) || !(await consumeStock())) return;
 
     if (tableInfo) {
       finalizeTableOrder();
@@ -636,7 +657,7 @@ ${customerInfo}`;
       return;
     }
 
-    if (!(await consumeCoupon())) return;
+    if (!(await consumeCoupon()) || !(await consumeStock())) return;
 
     if (tableInfo) {
       if (selectedPayment === "pix" && menu.pix_key !== null) {

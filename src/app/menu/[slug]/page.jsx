@@ -3,7 +3,8 @@ import ClientMenu from "./ClientMenu";
 import { CartProvider } from "@/contexts/CartContext";
 import ClientMenu2 from "./ClientMenu2";
 import ClientMenu3 from "./ClientMenu3";
-import { getMenuBySlug, getOwnerInfo } from "./getMenuData";
+import { getMenuBySlug, getOwnerInfo, getOptionStock } from "./getMenuData";
+import { applyStock, STOCK_ROLES } from "@/lib/stock";
 
 export const revalidate = 300; // 5 minutos — cardápios raramente mudam em alta frequência
 
@@ -67,11 +68,13 @@ export async function generateMetadata({ params }) {
 export default async function MenuPage({ params }) {
   const { slug } = await params;
 
-  const menu = await getMenuBySlug(slug);
+  const rawMenu = await getMenuBySlug(slug);
 
-  if (!menu) return <NotFoundMenu />;
+  if (!rawMenu) return <NotFoundMenu />;
 
-  const { ownerPhone, ownerRole } = await getOwnerInfo(menu);
+  const { ownerPhone, ownerRole } = await getOwnerInfo(rawMenu);
+  const optionStock = STOCK_ROLES.includes(ownerRole) ? await getOptionStock(rawMenu.id) : [];
+  const menu = applyStock(rawMenu, ownerRole, optionStock);
 
   const effectiveLayout = menu.layout;
 

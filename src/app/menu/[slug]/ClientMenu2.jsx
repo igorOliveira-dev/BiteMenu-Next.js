@@ -5,6 +5,7 @@ import { FaMapMarkerAlt, FaMinus, FaPlus, FaShoppingCart, FaWhatsapp } from "rea
 import Image from "next/image";
 import GenericModal from "@/components/GenericModal";
 import { useCartContext } from "@/contexts/CartContext";
+import { stockError } from "@/lib/stock";
 import CartDrawer from "./components/CartDrawer";
 import VariationPicker from "./components/VariationPicker";
 import { formatCurrency } from "@/lib/formatCurrency";
@@ -281,7 +282,7 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
     return () => el.removeEventListener("scroll", checkScroll);
   }, [selectedItem]);
 
-  const hasPlusPermissions = ownerRole === "plus" || ownerRole === "pro" || ownerRole === "admin";
+  const hasPlusPermissions = ["plus", "pro", "business", "admin"].includes(ownerRole);
   const canShowPromoPrice = hasPlusPermissions;
 
   const totalPrice = useMemo(() => {
@@ -349,8 +350,17 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
       const selectedIds = selectedOptions[g.id] || [];
       return (g.option_choices || [])
         .filter((c) => selectedIds.includes(c.id))
-        .map((c) => ({ group: g.name, name: c.name, price: Number(c.price) }));
+        .map((c) => ({ id: c.id, group: g.name, name: c.name, price: Number(c.price) }));
     });
+
+    const outOfStock = stockError(ownerRole, cart.getItems(menu.id), selectedItem, Number(quantity || 1), selected.map((s) => s.id));
+    if (outOfStock) {
+      alert?.(outOfStock, "error", {
+        backgroundColor: `${menu.details_color}90`,
+        textColor: getContrastTextColor(menu.details_color),
+      });
+      return;
+    }
 
     cart.addItem(menu.id, {
       id: selectedItem.id,

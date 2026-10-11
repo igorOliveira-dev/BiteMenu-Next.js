@@ -49,6 +49,7 @@ export const getMenuBySlug = cache(async (slug) => {
           mandatory_additional,
           additionals_limit,
           visible,
+          stock,
           option_groups (
             id,
             name,
@@ -97,4 +98,10 @@ export async function getOwnerInfo(menu) {
   }
 
   return { ownerPhone, ownerRole };
+}
+
+// Estoque das opções (plano Business), por nome: ver src/lib/stock.js
+export async function getOptionStock(menuId) {
+  const { data } = await supabase.from("option_stock").select("name_key, stock").eq("menu_id", menuId);
+  return data || [];
 }

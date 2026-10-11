@@ -534,7 +534,12 @@ const Menu = (props) => {
               {description}
             </p>
 
-            <MenuItems backgroundColor={backgroundColor} detailsColor={detailsColor} changedFields={changedFields} />
+            <MenuItems
+              backgroundColor={backgroundColor}
+              detailsColor={detailsColor}
+              changedFields={changedFields}
+              onOpenStock={() => setSelectedTab("stock")}
+            />
           </div>
         </div>
 
