@@ -172,7 +172,7 @@ const Admin = () => {
   }
 
   if (showOnlyPlusPro) {
-    visibleMenus = visibleMenus.filter((m) => ["plus", "pro"].includes(m.owner_role));
+    visibleMenus = visibleMenus.filter((m) => ["plus", "pro", "business"].includes(m.owner_role));
   }
 
   if (utmSource) {
@@ -306,7 +306,7 @@ const Admin = () => {
                   ? "border-red-500"
                   : menu.owner_role === "plus"
                     ? "border-blue-500"
-                    : menu.owner_role === "pro"
+                    : menu.owner_role === "pro" || menu.owner_role === "business"
                       ? "border-4 border-blue-900"
                       : "border-translucid"
               } rounded-lg flex flex-col gap-2`}

@@ -364,7 +364,7 @@ export default function PlanDetails({ setSelectedTab }) {
         <p className="text-sm color-gray">Plano atual:</p>
         <p className="capitalize default-h1 mb-2">{p.role}</p>
 
-        {p.role !== "pro" && p.role !== "admin" && !p.validapay_subscription_id && (
+        {!["pro", "business", "admin"].includes(p.role) && !p.validapay_subscription_id && (
           <div className="flex flex-col items-center">
             <a href="/dashboard/pricing" className="cta-button has-icon small mt-2">
               <FaBolt /> Melhorar plano!

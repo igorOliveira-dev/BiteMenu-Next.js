@@ -23,7 +23,7 @@ export default function DownloadLayout({ children }: { children: React.ReactNode
 
     const role = profile.role?.trim().toLowerCase();
 
-    const allowed = role === "pro" || role === "admin";
+    const allowed = ["pro", "business", "admin"].includes(role);
 
     if (!allowed) {
       if (!alertTriggered) {
@@ -43,7 +43,7 @@ export default function DownloadLayout({ children }: { children: React.ReactNode
     );
   }
 
-  const allowed = profile.role === "pro" || profile.role === "admin";
+  const allowed = ["pro", "business", "admin"].includes(profile.role);
 
   if (!allowed) {
     return null;

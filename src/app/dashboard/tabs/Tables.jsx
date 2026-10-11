@@ -10,6 +10,7 @@ import GenericModal from "@/components/GenericModal";
 import Loading from "@/components/Loading";
 import QrCodeModal from "./components/menu/QrCodeModal";
 import UpdatePlanModal from "./components/UpdatePlanModal";
+import { goToPlan, nextPlan, BUSINESS_LIMIT_TEXT } from "@/app/dashboard/components/PlanLockNotice";
 import { FaPlus, FaQrcode, FaTrash, FaChair, FaPen } from "react-icons/fa";
 
 const Tables = () => {
@@ -64,6 +65,7 @@ const Tables = () => {
     if (role === "free") return 5;
     if (role === "plus") return 15;
     if (role === "pro") return 100;
+    if (role === "business") return 1000;
     if (role === "admin") return Infinity;
     return 5;
   };
@@ -378,10 +380,15 @@ const Tables = () => {
               ? "Seu plano gratuito permite até 5 mesas. Faça upgrade para o Plus (15 mesas) ou Pro (100 mesas) para criar mais."
               : ownerRole === "plus"
                 ? "Seu plano Plus permite até 15 mesas. Faça upgrade para o Pro (100 mesas) para criar mais."
-                : "Seu plano atual atingiu o limite de mesas."
+                : ownerRole === "business"
+                  ? BUSINESS_LIMIT_TEXT
+                  : "Seu plano atual atingiu o limite de mesas."
           }
+          ctaText={ownerRole === "business" ? "Falar com o suporte" : undefined}
           onCta={() => {
-            window.location.href = `/dashboard/pricing?plan=${ownerRole === "free" ? "plus" : "pro"}`;
+            const next = nextPlan(ownerRole);
+            if (next) goToPlan(next);
+            else window.location.href = "/support";
           }}
         />
       )}

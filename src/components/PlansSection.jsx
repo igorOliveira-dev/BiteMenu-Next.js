@@ -299,14 +299,20 @@ const PlansSection = () => {
       </p>
 
       <div className="w-full max-w-[1248px] flex justify-around flex-wrap gap-6 lg:gap-12">
-        {plans.map((plan) => (
+        {/* Free continua existindo, só não aparece aqui */}
+        {plans.filter((plan) => plan.id !== "free").map((plan) => (
           <div
             key={plan.name}
             className={`relative p-4 px-6 bg-degraded-t-speckled border-2 rounded-xl w-64 flex flex-col gap-6 justify-between transition ${
               highlight === plan.id ? "border-[var(--red)]" : "border-[var(--translucid)]"
             }`}
           >
-            {highlight === plan.id && (
+            {plan.comingSoon && (
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-0.5 rounded-full bg-[var(--red)] text-white text-xs font-semibold">
+                Em breve
+              </span>
+            )}
+            {highlight === plan.id && !plan.comingSoon && (
               <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-0.5 rounded-full bg-[var(--red)] text-white text-xs font-semibold">
                 Recomendado pra você
               </span>
@@ -350,10 +356,12 @@ const PlansSection = () => {
               <div className="w-full flex flex-col gap-2">
                 <button
                   className="cta-button glow-red disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={maintenance || !!loadingPlan || isCurrent(plan)}
+                  disabled={plan.comingSoon || maintenance || !!loadingPlan || isCurrent(plan)}
                   onClick={() => handleSelect(plan)}
                 >
-                  {maintenance
+                  {plan.comingSoon
+                    ? "Em breve"
+                    : maintenance
                     ? "Indisponível"
                     : isCurrent(plan)
                     ? "Plano atual"

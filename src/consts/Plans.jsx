@@ -38,6 +38,15 @@ export const plans = [
     yearlyAnchor: "598,80",
     id: "pro",
   },
+  {
+    name: "Business",
+    features: ["Inclui tudo do Pro", "Sem limites", "Controle de estoque", "Em breve mais..."],
+    price: "69,90",
+    yearlyPrice: "699,00",
+    yearlyAnchor: "838,80",
+    id: "business",
+    comingSoon: true, // ainda não dá pra assinar: card aparece com "Em breve"
+  },
 ];
 
 // Contratação em manutenção para todos, exceto estes e-mails (teste da assinatura real em produção).

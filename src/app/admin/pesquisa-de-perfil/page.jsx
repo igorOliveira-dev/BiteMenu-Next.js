@@ -99,7 +99,7 @@ export default function AdminPesquisaPage() {
       });
   }, []);
 
-  const filtered = onlyPaid ? rows.filter((r) => r.role === "plus" || r.role === "pro") : rows;
+  const filtered = onlyPaid ? rows.filter((r) => ["plus", "pro", "business"].includes(r.role)) : rows;
 
   if (loading) return <Loading />;
 
@@ -118,7 +118,7 @@ export default function AdminPesquisaPage() {
       <div className="flex gap-2">
         {[
           { label: `Todos (${rows.length})`, value: false },
-          { label: `Pagantes (${rows.filter((r) => r.role === "plus" || r.role === "pro").length})`, value: true },
+          { label: `Pagantes (${rows.filter((r) => ["plus", "pro", "business"].includes(r.role)).length})`, value: true },
         ].map((opt) => (
           <button
             key={String(opt.value)}
