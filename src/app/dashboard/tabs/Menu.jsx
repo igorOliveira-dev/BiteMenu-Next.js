@@ -565,7 +565,7 @@ const Menu = (props) => {
                 <FaShareAlt className="text-lg" />
               </button>
 
-              <div ref={colorListRef} className="flex flex-col items-center gap-2 pt-1">
+              <div ref={colorListRef} className="flex flex-col items-center gap-2 pt-4">
                 {colorFields.map((item, idx) => (
                   <div key={idx} className="relative">
                     <button
