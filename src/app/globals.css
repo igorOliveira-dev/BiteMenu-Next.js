@@ -564,27 +564,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   filter: grayscale(1) contrast(2);
 }
 
-/* logo da marca no topo da via completa */
-.print-brand {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4em;
-  padding-bottom: 6px;
-  margin-bottom: 6px;
-  border-bottom: 0.5mm solid black;
-  font-size: 18px;
-  line-height: 1.2;
-}
-
-/* em: a logo acompanha o tamanho do nome */
-.print-brand img {
-  width: 1.5em;
-  height: 1.5em;
-  flex-shrink: 0;
-  filter: grayscale(1) contrast(2);
-}
-
 .print-header-info {
   min-width: 0;
   font-size: 11px;
