@@ -122,6 +122,24 @@ const Menu = (props) => {
     { label: "Cor dos detalhes:", value: detailsColor, setter: setDetailsColor },
   ];
 
+  // barra direita recolhida (desktop): lido após o mount pra não dar erro de hidratação
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    try {
+      setCollapsed(localStorage.getItem("dashboard-rightbar-collapsed") === "1");
+    } catch {}
+  }, []);
+
+  const toggleCollapsed = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    setOpenColorIdx(null);
+    try {
+      localStorage.setItem("dashboard-rightbar-collapsed", next ? "1" : "0");
+    } catch {}
+  };
+
   const [slug, setSlug] = useState("");
 
   useEffect(() => {
@@ -391,7 +409,9 @@ const Menu = (props) => {
           <FiSettings className="text-xl mr-2" />
           Configurar cardápio
         </button>
-        <div className="md:m-auto lg:m-2 lg:w-[calc(100%-30dvw+16px)] min-h-[calc(100dvh-110px)]">
+        <div
+          className={`md:m-auto lg:m-2 ${collapsed ? "lg:w-[calc(100%-84px)]" : "lg:w-[calc(100%-30dvw+16px)]"} lg:transition-[width] lg:duration-200 min-h-[calc(100dvh-110px)]`}
+        >
           {/* ESPAÇO PARA BANNER!!! */}
           <BillingAlert setSelectedTab={setSelectedTab} className="my-2" />
           <LegacyPlanEndingBanner />
@@ -508,81 +528,97 @@ const Menu = (props) => {
         </div>
 
         {/* Sidebar */}
-        <aside className="hidden p-4 m-2 fixed right-0 rounded-2xl bg-translucid border border-translucid w-[calc(30dvw-36px)] shadow-[0_0_10px_var(--shadow)] lg:flex flex-col gap-3 overflow-y-auto h-[calc(100dvh-110px)]">
-          {/* Compartilhar */}
-          <section className="rounded-xl border border-translucid bg-translucid p-3">
-            <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide color-gray">
-              <FaShareAlt /> Compartilhe seu cardápio
-            </h3>
-            <p className="mt-1 text-xs color-gray">Gere o QR Code ou copie o link para enviar aos seus clientes.</p>
-            <button
-              onClick={() => shareUrl && setShowQrCode(true)}
-              className="cursor-pointer w-full mt-3 p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border border-translucid transition flex items-center justify-center gap-2"
-            >
-              <FaQrcode /> Opções de compartilhamento
-            </button>
-          </section>
-
-          {/* Cores */}
-          <section className="rounded-xl border border-translucid bg-translucid p-3">
-            <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide color-gray">
-              <FaPalette /> Cores do cardápio
-            </h3>
-
-            <div ref={colorListRef} className="mt-3 flex flex-col gap-1">
-              {colorFields.map((item, idx) => (
-                <div key={idx}>
-                  <button
-                    type="button"
-                    onClick={() => setOpenColorIdx(openColorIdx === idx ? null : idx)}
-                    className="flex w-full items-center gap-3 rounded-lg p-2 cursor-pointer hover-bg-translucid transition text-left"
-                    aria-label={item.label}
-                    aria-expanded={openColorIdx === idx}
-                  >
-                    <span
-                      className="h-8 w-8 shrink-0 rounded-lg border border-translucid"
-                      style={{ backgroundColor: item.value }}
-                    />
-                    <span className="text-sm flex-1">{item.label.replace(":", "")}</span>
-                    <span className="text-xs color-gray uppercase">{item.value}</span>
-                  </button>
-                  {openColorIdx === idx && (
-                    <div className="p-2 flex flex-col gap-2">
-                      <HexColorPicker
-                        color={item.value}
-                        onChange={item.setter}
-                        style={{ width: "100%", height: 140 }}
-                      />
-                      <HexColorInput
-                        prefixed
-                        color={item.value}
-                        onChange={item.setter}
-                        aria-label={`Hexadecimal: ${item.label}`}
-                        className="w-full p-2 rounded-lg border border-translucid bg-translucid text-sm uppercase"
-                      />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <button
-              type="button"
-              onClick={suggestRandomPalette}
-              className="custom-gray-button has-icon w-full justify-center mt-3"
-            >
-              <FaLightbulb /> Sugerir cores
-            </button>
-          </section>
-
-          {/* Configurações */}
+        <aside
+          className={`hidden m-2 fixed right-0 rounded-2xl bg-translucid border border-translucid ${collapsed ? "w-16 p-2" : "w-[calc(30dvw-36px)] p-4"} transition-[width] duration-200 shadow-[0_0_10px_var(--shadow)] lg:flex flex-col gap-3 overflow-y-auto h-[calc(100dvh-110px)]`}
+        >
           <button
-            onClick={() => setSelectedTab("configMenu")}
-            className="cursor-pointer w-full mt-auto p-3 bg-low-gray border border-translucid font-semibold rounded-xl hover:opacity-80 transition flex items-center justify-center gap-2"
+            onClick={toggleCollapsed}
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? "Expandir painel" : "Recolher painel"}
+            title={collapsed ? "Expandir painel" : "Recolher painel"}
+            className={`flex shrink-0 cursor-pointer items-center h-10 rounded-lg hover-bg-translucid transition-colors color-gray ${collapsed ? "justify-center" : "justify-start px-3"}`}
           >
-            <FiSettings className="text-xl" />
-            Configurar cardápio
+            <FaChevronLeft className={`text-sm transition-transform duration-200 ${collapsed ? "" : "rotate-180"}`} />
           </button>
+
+          {!collapsed && (
+            <>
+              {/* Compartilhar */}
+              <section className="rounded-xl border border-translucid bg-translucid p-3">
+                <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide color-gray">
+                  <FaShareAlt /> Compartilhe seu cardápio
+                </h3>
+                <p className="mt-1 text-xs color-gray">Gere o QR Code ou copie o link para enviar aos seus clientes.</p>
+                <button
+                  onClick={() => shareUrl && setShowQrCode(true)}
+                  className="cursor-pointer w-full mt-3 p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border border-translucid transition flex items-center justify-center gap-2"
+                >
+                  <FaQrcode /> Opções de compartilhamento
+                </button>
+              </section>
+    
+              {/* Cores */}
+              <section className="rounded-xl border border-translucid bg-translucid p-3">
+                <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide color-gray">
+                  <FaPalette /> Cores do cardápio
+                </h3>
+    
+                <div ref={colorListRef} className="mt-3 flex flex-col gap-1">
+                  {colorFields.map((item, idx) => (
+                    <div key={idx}>
+                      <button
+                        type="button"
+                        onClick={() => setOpenColorIdx(openColorIdx === idx ? null : idx)}
+                        className="flex w-full items-center gap-3 rounded-lg p-2 cursor-pointer hover-bg-translucid transition text-left"
+                        aria-label={item.label}
+                        aria-expanded={openColorIdx === idx}
+                      >
+                        <span
+                          className="h-8 w-8 shrink-0 rounded-lg border border-translucid"
+                          style={{ backgroundColor: item.value }}
+                        />
+                        <span className="text-sm flex-1">{item.label.replace(":", "")}</span>
+                        <span className="text-xs color-gray uppercase">{item.value}</span>
+                      </button>
+                      {openColorIdx === idx && (
+                        <div className="p-2 flex flex-col gap-2">
+                          <HexColorPicker
+                            color={item.value}
+                            onChange={item.setter}
+                            style={{ width: "100%", height: 140 }}
+                          />
+                          <HexColorInput
+                            prefixed
+                            color={item.value}
+                            onChange={item.setter}
+                            aria-label={`Hexadecimal: ${item.label}`}
+                            className="w-full p-2 rounded-lg border border-translucid bg-translucid text-sm uppercase"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+    
+                <button
+                  type="button"
+                  onClick={suggestRandomPalette}
+                  className="custom-gray-button has-icon w-full justify-center mt-3"
+                >
+                  <FaLightbulb /> Sugerir cores
+                </button>
+              </section>
+    
+              {/* Configurações */}
+              <button
+                onClick={() => setSelectedTab("configMenu")}
+                className="cursor-pointer w-full mt-auto p-3 bg-low-gray border border-translucid font-semibold rounded-xl hover:opacity-80 transition flex items-center justify-center gap-2"
+              >
+                <FiSettings className="text-xl" />
+                Configurar cardápio
+              </button>
+            </>
+          )}
         </aside>
       </div>
 
