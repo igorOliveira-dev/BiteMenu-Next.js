@@ -121,6 +121,19 @@ const Menu = (props) => {
     { label: "Cor do título:", value: titleColor, setter: setTitleColor },
     { label: "Cor dos detalhes:", value: detailsColor, setter: setDetailsColor },
   ];
+  // seletor usado inline (barra expandida) e no popover (barra recolhida)
+  const colorPicker = (item) => (
+    <>
+      <HexColorPicker color={item.value} onChange={item.setter} style={{ width: "100%", height: 140 }} />
+      <HexColorInput
+        prefixed
+        color={item.value}
+        onChange={item.setter}
+        aria-label={`Hexadecimal: ${item.label}`}
+        className="w-full p-2 rounded-lg border border-translucid bg-translucid text-sm uppercase"
+      />
+    </>
+  );
 
   // barra direita recolhida (desktop): lido após o mount pra não dar erro de hidratação
   const [collapsed, setCollapsed] = useState(false);
@@ -529,7 +542,7 @@ const Menu = (props) => {
 
         {/* Sidebar */}
         <aside
-          className={`hidden m-2 fixed right-0 rounded-2xl bg-translucid border border-translucid ${collapsed ? "w-16 p-2" : "w-[calc(30dvw-36px)] p-4"} transition-[width] duration-200 shadow-[0_0_10px_var(--shadow)] lg:flex flex-col gap-3 overflow-y-auto h-[calc(100dvh-110px)]`}
+          className={`hidden m-2 fixed right-0 rounded-2xl bg-translucid border border-translucid ${collapsed ? "w-16 p-2" : "w-[calc(30dvw-36px)] p-4"} transition-[width] duration-200 shadow-[0_0_10px_var(--shadow)] lg:flex flex-col gap-3 ${collapsed ? "overflow-visible" : "overflow-y-auto"} h-[calc(100dvh-110px)]`}
         >
           <button
             onClick={toggleCollapsed}
@@ -551,6 +564,28 @@ const Menu = (props) => {
               >
                 <FaQrcode className="text-lg" />
               </button>
+
+              <div ref={colorListRef} className="flex flex-col items-center gap-2 pt-1">
+                {colorFields.map((item, idx) => (
+                  <div key={idx} className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setOpenColorIdx(openColorIdx === idx ? null : idx)}
+                      title={item.label.replace(":", "")}
+                      aria-label={item.label.replace(":", "")}
+                      aria-expanded={openColorIdx === idx}
+                      className="block h-8 w-8 rounded-lg border border-translucid cursor-pointer hover:opacity-80 transition"
+                      style={{ backgroundColor: item.value }}
+                    />
+                    {openColorIdx === idx && (
+                      <div className="absolute right-full top-0 mr-4 w-56 p-3 flex flex-col gap-2 rounded-xl bg-[var(--background)] border border-translucid shadow-[0_0_10px_var(--shadow)]">
+                        <span className="text-sm font-semibold">{item.label.replace(":", "")}</span>
+                        {colorPicker(item)}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
 
               <button
                 onClick={() => setSelectedTab("configMenu")}
@@ -600,22 +635,7 @@ const Menu = (props) => {
                         <span className="text-sm flex-1">{item.label.replace(":", "")}</span>
                         <span className="text-xs color-gray uppercase">{item.value}</span>
                       </button>
-                      {openColorIdx === idx && (
-                        <div className="p-2 flex flex-col gap-2">
-                          <HexColorPicker
-                            color={item.value}
-                            onChange={item.setter}
-                            style={{ width: "100%", height: 140 }}
-                          />
-                          <HexColorInput
-                            prefixed
-                            color={item.value}
-                            onChange={item.setter}
-                            aria-label={`Hexadecimal: ${item.label}`}
-                            className="w-full p-2 rounded-lg border border-translucid bg-translucid text-sm uppercase"
-                          />
-                        </div>
-                      )}
+                      {openColorIdx === idx && <div className="p-2 flex flex-col gap-2">{colorPicker(item)}</div>}
                     </div>
                   ))}
                 </div>

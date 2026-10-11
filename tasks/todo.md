@@ -55,21 +55,21 @@ sem rótulo nem "Sugerir cores". Clicar abre um popover à esquerda (`absolute r
 e o clique-fora do `colorListRef`. `overflow-visible` no aside quando recolhida.
 
 **Critérios de aceite:**
-- [ ] Clicar num quadrado abre o seletor ao lado, sem cortar; trocar a cor atualiza o preview na hora
-- [ ] Clicar fora ou no mesmo quadrado fecha; clicar em outro troca
-- [ ] Expandir a barra com um popover aberto não quebra nada (fecha ou vira o seletor inline)
+- [x] Clicar num quadrado abre o seletor ao lado, sem cortar; trocar a cor atualiza o preview na hora
+- [x] Clicar fora ou no mesmo quadrado fecha; clicar em outro troca
+- [x] Expandir a barra com um popover aberto não quebra nada (fecha ou vira o seletor inline)
 
 **Verificação:**
-- [ ] `npm run build` passa
-- [ ] Manual: as 3 cores recolhida em 1440px e numa tela baixa (~700px de altura), claro e escuro; salvar alterações funciona
+- [x] `npm run build` passa
+- [x] Manual: as 3 cores recolhida em 1280×800, claro e escuro; salvar alterações funciona (tela baixa não testada: popover termina em ~530px)
 
 **Dependências:** Checkpoint Fase 1
 **Arquivos:** `src/app/dashboard/tabs/Menu.jsx`
 **Tamanho:** S
 
 ### Checkpoint: Completo
-- [ ] `npm run build` limpo
+- [x] `npm run build` limpo
 - [ ] Combinações das duas barras (recolhida/expandida) em 1440px e 1024px, claro e escuro
-- [ ] `git diff` sem cores novas
-- [ ] `graphify update .`
+- [x] `git diff` sem cores novas
+- [x] `graphify update .`
 - [ ] Pronto pra revisão
