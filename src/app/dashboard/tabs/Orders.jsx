@@ -879,17 +879,9 @@ const Orders = ({
                               currency={menu?.currency}
                               menuName={menu?.title}
                               canPrint={
-                                profile?.role === "pro" ||
-                                profile?.role === "admin"
+                                ["pro", "business", "admin"].includes(profile?.role)
                               }
-                              onDenied={() =>
-                                profile?.role === "free"
-                                  ? setPrintUpsell(true)
-                                  : customAlert(
-                                      "Recurso disponível apenas para o plano Pro",
-                                      "error",
-                                    )
-                              }
+                              onDenied={() => setPrintUpsell(true)}
                               fileNamePrefix="pedido"
                               receiptTitle="PEDIDO"
                               triggerClassName="flex cursor-pointer items-center justify-center gap-2 rounded-xl border bg-[var(--translucid)] border-translucid px-3 py-2 text-sm font-medium transition hover:opacity-80"
@@ -1663,12 +1655,9 @@ const Orders = ({
       {printUpsell && (
         <UpdatePlanModal
           onClose={() => setPrintUpsell(false)}
-          title="Impressão de pedidos é do plano Pro"
+          title="Impressão de pedidos"
+          plan="pro"
           text="Imprima cada pedido com um clique e mande direto pra cozinha. Também libera o dashboard e o relatório de vendas."
-          ctaText="Conhecer o Pro"
-          onCta={() => {
-            window.location.href = "/dashboard/pricing?plan=pro";
-          }}
         />
       )}
     </div>

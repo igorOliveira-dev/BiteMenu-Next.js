@@ -28,6 +28,8 @@ import useUser from "@/hooks/useUser";
 import { supabase } from "@/lib/supabaseClient";
 import { updateMenuById } from "@/lib/queries/menus";
 import AddressFields, { formatAddress, mapsUrl } from "@/components/AddressFields";
+import PlanLockNotice from "@/app/dashboard/components/PlanLockNotice";
+import UpdatePlanModal from "./components/UpdatePlanModal";
 
 const DEFAULT_HOURS = {
   mon: "09:00-18:00",
@@ -793,7 +795,8 @@ const ConfigMenu = (props) => {
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, [openColorIdx]);
 
-  const hasPlusPermissions = userRole === "admin" || userRole === "plus" || userRole === "pro";
+  const hasPlusPermissions = ["plus", "pro", "business", "admin"].includes(userRole);
+  const [zonesUpsell, setZonesUpsell] = useState(false);
 
   const suggestRandomPalette = () => {
     let next = Math.floor(Math.random() * COLOR_PALETTES.length);
@@ -870,7 +873,7 @@ const ConfigMenu = (props) => {
 
   const toggleDeliveryMode = (mode) => {
     if (mode === "zones" && !hasPlusPermissions) {
-      customAlert?.("Taxa por bairro está disponível apenas no Plus ou Pro.", "error");
+      setZonesUpsell(true);
       setDeliveryFeeMode("fixed");
       return;
     }
@@ -1129,7 +1132,7 @@ const ConfigMenu = (props) => {
 
                 {deliveryFeeMode === "zones" &&
                   (!hasPlusPermissions ? (
-                    <Notice>Taxa por bairro é exclusiva do Plus ou Pro. Seu cardápio continua com taxa fixa.</Notice>
+                    <PlanLockNotice plan="plus" text="Por enquanto seu cardápio continua com taxa fixa." />
                   ) : (
                     <div className="space-y-2 pt-1">
                       {deliveryZones.length === 0 ? (
@@ -1183,7 +1186,7 @@ const ConfigMenu = (props) => {
                   className="max-w-xs"
                 />
               ) : (
-                <Notice>Valor mínimo de pedido é exclusivo do Plus ou Pro.</Notice>
+                <PlanLockNotice plan="plus" text="Defina um valor mínimo para aceitar pedidos." />
               )}
             </Field>
           </div>
@@ -1440,6 +1443,15 @@ const ConfigMenu = (props) => {
             )}
           </div>
         </div>
+      )}
+
+      {zonesUpsell && (
+        <UpdatePlanModal
+          title="Taxa por bairro"
+          plan="plus"
+          text="Cobre uma taxa de entrega diferente para cada bairro."
+          onClose={() => setZonesUpsell(false)}
+        />
       )}
     </div>
   );

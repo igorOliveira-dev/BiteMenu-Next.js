@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { formatCurrency, getCurrencySymbol } from "@/lib/formatCurrency";
 import { useAlert } from "@/providers/AlertProvider";
 import { useConfirm } from "@/providers/ConfirmProvider";
+import PlanLockNotice from "@/app/dashboard/components/PlanLockNotice";
 
 const num = (v) => parseFloat(String(v ?? "").replace(",", "."));
 
@@ -232,9 +233,7 @@ export default function CouponsModal({ menuId, currency, canCreate, showUpgrade,
       onClose={draft ? () => setDraft(null) : onClose}
     >
       {!canCreate ? (
-        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/20 p-4 text-sm">
-          Criar cupons é uma função exclusiva do Bite Menu Pro. Faça upgrade para criar os seus!
-        </div>
+        <PlanLockNotice plan="pro" text="Crie cupons de desconto, frete grátis e valor fixo para atrair e trazer clientes de volta." />
       ) : draft ? (
         <div className="space-y-3">
           <div className="grid grid-cols-3 gap-2">

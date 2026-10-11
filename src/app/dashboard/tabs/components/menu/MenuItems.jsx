@@ -50,6 +50,7 @@ import { useAlert } from "@/providers/AlertProvider";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import { uploadItemImage, removeUnusedImages } from "@/lib/uploadImage";
 import UpdatePlanModal from "../UpdatePlanModal";
+import PlanLockNotice, { goToPlan, nextPlan, BUSINESS_LIMIT_TEXT } from "@/app/dashboard/components/PlanLockNotice";
 import { fileToThumbnailWebp, fileToWebp } from "@/app/utils/imageToWebp";
 import { FaEllipsisVertical } from "react-icons/fa6";
 import { createPortal } from "react-dom";
@@ -57,6 +58,8 @@ import { useLayoutEffect } from "react";
 import { supabaseImg } from "@/lib/imageUtils";
 import ActionsMenu from "@/components/ActionMenu";
 import CouponsModal from "./CouponsModal";
+import { STOCK_ROLES } from "@/lib/stock";
+import { FaBoxes, FaLayerGroup, FaLock, FaSort, FaTicketAlt, FaTools } from "react-icons/fa";
 import { getContrastTextColor as contrastText } from "@/utils/color";
 
 const getContrastTextColor = (hex) => contrastText(hex, "#000000");
@@ -441,6 +444,7 @@ function SortableMenuItem({
   foregroundToUse,
   grayToUse,
   canShowPromoPrice,
+  showStock,
   getContrastTextColor,
   currency,
   overlay = false,
@@ -639,6 +643,11 @@ function SortableMenuItem({
                 style={{ color: foregroundToUse }}
               >
                 {item.name}
+                {showStock && item.stock === 0 && (
+                  <span className="ml-2 align-middle text-xs font-semibold text-red-500">
+                    Esgotado
+                  </span>
+                )}
               </div>
               <div
                 className="text-sm line-clamp-1"
@@ -689,6 +698,7 @@ export default function MenuItems({
   backgroundColor,
   detailsColor,
   changedFields,
+  onOpenStock,
 }) {
   const { menu, loading: menuLoading } = useMenu();
   const ownerRole = useOwnerRole(menu?.owner_id);
@@ -748,7 +758,7 @@ export default function MenuItems({
   const [categories, setCategories] = useState(null);
 
   const hasPlusPermissions =
-    ownerRole === "admin" || ownerRole === "plus" || ownerRole === "pro";
+    ["plus", "pro", "business", "admin"].includes(ownerRole);
 
   const [showCatIndicator, setShowCatIndicator] = useState(false);
 
@@ -802,6 +812,21 @@ export default function MenuItems({
 
   const [combos, setCombos] = useState(null);
   const [combosModalOpen, setCombosModalOpen] = useState(false);
+
+  // barra "Ferramentas" (ordenar, combos, cupons, estoque) recolhível; lido após o mount (hidratação)
+  const [toolsOpen, setToolsOpen] = useState(true);
+  useEffect(() => {
+    try {
+      setToolsOpen(localStorage.getItem("menu-tools-open") !== "0");
+    } catch {}
+  }, []);
+  const toggleTools = () => {
+    const next = !toolsOpen;
+    setToolsOpen(next);
+    try {
+      localStorage.setItem("menu-tools-open", next ? "1" : "0");
+    } catch {}
+  };
   const [couponsModalOpen, setCouponsModalOpen] = useState(false);
   const [comboFormOpen, setComboFormOpen] = useState(false);
   const [comboDraft, setComboDraft] = useState(null);
@@ -872,6 +897,7 @@ export default function MenuItems({
             position,
             visible,
             starred,
+            stock,
             mandatory_additional,
             additionals_limit
           )
@@ -2398,7 +2424,6 @@ export default function MenuItems({
 
       toggleItemStarred(item.id, item.starred);
     } else {
-      alert?.("Assine o plano Plus ou Pro para destacar itens!");
       if (!planModalOpen) {
         setPlanModalFeature("highlight_items");
         setPlanModalOpen(true);
@@ -2785,6 +2810,7 @@ export default function MenuItems({
     if (role === "free") return 20;
     if (role === "plus") return 50;
     if (role === "pro") return 200;
+    if (role === "business") return 500;
     if (role === "admin") return Infinity;
     return 20;
   };
@@ -2798,6 +2824,7 @@ export default function MenuItems({
     if (role === "free") return 4;
     if (role === "plus") return 10;
     if (role === "pro") return 20;
+    if (role === "business") return 100;
     if (role === "admin") return Infinity;
     return 4;
   };
@@ -2853,6 +2880,13 @@ export default function MenuItems({
     }));
   };
 
+  const toolButtonStyle = {
+    backgroundColor: translucidToUse,
+    color: foregroundToUse,
+    border: "2px solid",
+    borderColor: translucidToUse,
+  };
+
   if (menuLoading || loading || categories === null || ownerRole === null)
     return <div className="p-4">Carregando categorias...</div>;
   if (!menu) return <div className="p-4">Você ainda não criou um menu.</div>;
@@ -2861,50 +2895,47 @@ export default function MenuItems({
     <div
       className={`p-4 ${changedFields.length > 0 ? "pb-48 lg:pb-34" : "pb-12 lg:pb-0"}`}
     >
-      <div className="mb-4">
-        <div className="flex gap-2">
-          {categories.length > 0 && (
-            <>
-              <button
-                onClick={openSortModal}
-                className="cursor-pointer px-3 py-1 hover:opacity-75 rounded-lg"
-                style={{
-                  backgroundColor: translucidToUse,
-                  color: foregroundToUse,
-                  border: "2px solid",
-                  borderColor: translucidToUse,
-                }}
-              >
-                Ordenar itens
-              </button>
-              <button
-                onClick={() => setCombosModalOpen(true)}
-                className="cursor-pointer px-3 py-1 hover:opacity-75 rounded-lg font-bold"
-                style={{
-                  backgroundColor: translucidToUse,
-                  color: foregroundToUse,
-                  border: "2px solid",
-                  borderColor: translucidToUse,
-                }}
-              >
-                + Criar combo
-              </button>
-              <button
-                onClick={() => setCouponsModalOpen(true)}
-                className="cursor-pointer px-3 py-1 hover:opacity-75 rounded-lg font-bold"
-                style={{
-                  backgroundColor: translucidToUse,
-                  color: foregroundToUse,
-                  border: "2px solid",
-                  borderColor: translucidToUse,
-                }}
-              >
-                + Cupons
-              </button>
-            </>
+      {categories.length > 0 && (
+        <div className="mb-4">
+          <button
+            type="button"
+            onClick={toggleTools}
+            aria-expanded={toolsOpen}
+            className="cursor-pointer flex items-center gap-2 px-3 py-1 hover:opacity-75 rounded-lg font-semibold"
+            style={{ ...toolButtonStyle, borderColor: "transparent", backgroundColor: "transparent" }}
+          >
+            <FaTools /> Ferramentas
+            <FaChevronDown className={`text-xs transition-transform ${toolsOpen ? "rotate-180" : ""}`} />
+          </button>
+
+          {toolsOpen && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {[
+                { label: "Ordenar itens", Icon: FaSort, onClick: openSortModal },
+                { label: "Combos", Icon: FaLayerGroup, onClick: () => setCombosModalOpen(true), locked: !hasPlusPermissions },
+                {
+                  label: "Cupons",
+                  Icon: FaTicketAlt,
+                  onClick: () => setCouponsModalOpen(true),
+                  locked: !["pro", "business", "admin"].includes(ownerRole),
+                },
+                { label: "Estoque", Icon: FaBoxes, onClick: onOpenStock, locked: !STOCK_ROLES.includes(ownerRole) },
+              ].map(({ label, Icon, onClick, locked }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={onClick}
+                  className="cursor-pointer flex items-center gap-2 px-3 py-1 hover:opacity-75 rounded-lg"
+                  style={toolButtonStyle}
+                >
+                  <Icon className="text-sm opacity-80" /> {label}
+                  {locked && <FaLock className="text-xs opacity-60" />}
+                </button>
+              ))}
+            </div>
           )}
         </div>
-      </div>
+      )}
 
       {categories.length === 0 && (
         <div
@@ -3361,6 +3392,7 @@ export default function MenuItems({
                             foregroundToUse={foregroundToUse}
                             grayToUse={grayToUse}
                             canShowPromoPrice={canShowPromoPrice}
+                            showStock={STOCK_ROLES.includes(ownerRole)}
                             getContrastTextColor={getContrastTextColor}
                             currency={menu?.currency}
                           />
@@ -3395,6 +3427,7 @@ export default function MenuItems({
               foregroundToUse={foregroundToUse}
               grayToUse={grayToUse}
               canShowPromoPrice={canShowPromoPrice}
+              showStock={STOCK_ROLES.includes(ownerRole)}
               getContrastTextColor={getContrastTextColor}
               currency={menu?.currency}
             />
@@ -3624,9 +3657,6 @@ export default function MenuItems({
                             onChange={(e) => {
                               if (!canShowPromoPrice) {
                                 if (!planModalOpen) {
-                                  alert(
-                                    "Assine o plano Plus ou Pro para criar promoções!",
-                                  );
                                   setPlanModalFeature("promo_price");
                                   setPlanModalOpen(true);
                                 }
@@ -4759,10 +4789,10 @@ export default function MenuItems({
               </button>
             </>
           ) : (
-            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/20 p-4 text-sm">
-              Criar combos é uma função exclusiva do Bite Menu Plus ou Pro. Faça
-              upgrade para criar os seus!
-            </div>
+            <PlanLockNotice
+              plan="plus"
+              text="Monte combos de itens com preço especial e aumente o ticket médio."
+            />
           )}
         </GenericModal>
       )}
@@ -4771,7 +4801,7 @@ export default function MenuItems({
         <CouponsModal
           menuId={menu?.id}
           currency={menu?.currency}
-          canCreate={ownerRole === "admin" || ownerRole === "pro"}
+          canCreate={["pro", "business", "admin"].includes(ownerRole)}
           showUpgrade={ownerRole === "free"}
           onClose={() => setCouponsModalOpen(false)}
         />
@@ -4987,9 +5017,9 @@ export default function MenuItems({
           onClose={closePlanModal}
           title={
             planModalFeature === "promo_price"
-              ? "Preços promocionais são vantagens exclusivas do Plus"
+              ? "Preços promocionais"
               : planModalFeature === "highlight_items"
-                ? "Itens em destaque são vantagens exclusivas do Plus"
+                ? "Itens em destaque"
                 : planModalFeature === "items_limit"
                   ? "Você atingiu o limite de itens do seu plano"
                   : planModalFeature === "categories_limit"
@@ -4997,7 +5027,9 @@ export default function MenuItems({
                     : ""
           }
           text={
-            planModalFeature === "promo_price"
+            planModalFeature.endsWith("_limit") && ownerRole === "business"
+              ? BUSINESS_LIMIT_TEXT
+              : planModalFeature === "promo_price"
               ? "Crie preços promocionais que chamam atenção e incentivam a decisão de compra no seu menu."
               : planModalFeature === "highlight_items"
                 ? "Destaque os itens mais estratégicos do seu menu e guie o olhar dos clientes para o que mais vende."
@@ -5018,13 +5050,14 @@ export default function MenuItems({
                 ? "https://rfgkalwtrxbiqrqwxmxf.supabase.co/storage/v1/object/sign/utilImages/starred_items.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xOTdiYmQzMC01Njg2LTQzNTQtOWE2ZS1iOTA4YjlmNGRhYjIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ1dGlsSW1hZ2VzL3N0YXJyZWRfaXRlbXMucG5nIiwiaWF0IjoxNzY4NTcxMTY5LCJleHAiOjgwNzU3NzExNjl9.v7wkyYJZ8fMn1b34AdPUEzBvz1_AtBtHQeI_tq5s1n8"
                 : null
           }
+          plan={planModalFeature.endsWith("_limit") ? undefined : "plus"}
+          ctaText={planModalFeature.endsWith("_limit") && ownerRole === "business" ? "Falar com o suporte" : undefined}
           onCta={() => {
-            // promo/destaque e limites do free resolvem no Plus; limites do Plus, no Pro
-            const target =
-              planModalFeature.endsWith("_limit") && ownerRole !== "free"
-                ? "pro"
-                : "plus";
-            window.location.href = `/dashboard/pricing?plan=${target}`;
+            // promo/destaque resolvem no Plus; limite leva pro plano seguinte (Business: suporte)
+            if (!planModalFeature.endsWith("_limit")) return goToPlan("plus");
+            const next = nextPlan(ownerRole);
+            if (next) goToPlan(next);
+            else window.location.href = "/support";
           }}
         />
       )}

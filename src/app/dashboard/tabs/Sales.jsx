@@ -774,17 +774,9 @@ const Sales = ({ setSelectedTab }) => {
                               currency={menu?.currency}
                               menuName={menu?.title}
                               canPrint={
-                                profile?.role === "pro" ||
-                                profile?.role === "admin"
+                                ["pro", "business", "admin"].includes(profile?.role)
                               }
-                              onDenied={() =>
-                                profile?.role === "free"
-                                  ? setPrintUpsell(true)
-                                  : customAlert(
-                                      "Recurso disponível apenas para o plano Pro",
-                                      "error",
-                                    )
-                              }
+                              onDenied={() => setPrintUpsell(true)}
                               fileNamePrefix="venda"
                               receiptTitle="VENDA"
                               triggerClassName="xs:flex-1 cursor-pointer px-4 py-2.5 rounded-xl border border-translucid bg-[var(--translucid)] text-sm font-medium hover:opacity-80 transition text-center flex items-center justify-center gap-2"
@@ -1408,12 +1400,9 @@ const Sales = ({ setSelectedTab }) => {
       {printUpsell && (
         <UpdatePlanModal
           onClose={() => setPrintUpsell(false)}
-          title="Impressão de pedidos é do plano Pro"
+          title="Impressão de pedidos"
+          plan="pro"
           text="Imprima cada pedido com um clique e mande direto pra cozinha. Também libera o dashboard e o relatório de vendas."
-          ctaText="Conhecer o Pro"
-          onCta={() => {
-            window.location.href = "/dashboard/pricing?plan=pro";
-          }}
         />
       )}
     </div>
