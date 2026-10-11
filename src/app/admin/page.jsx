@@ -32,6 +32,21 @@ const Admin = () => {
   const [showOnlyPlusPro, setShowOnlyPlusPro] = useState(false);
   const [utmSource, setUtmSource] = useState("");
 
+  const [subStatuses, setSubStatuses] = useState({});
+
+  useEffect(() => {
+    supabase.auth
+      .getSession()
+      .then(({ data }) =>
+        fetch("/api/validapay/admin-statuses", {
+          headers: { Authorization: `Bearer ${data.session?.access_token}` },
+        }),
+      )
+      .then((res) => (res.ok ? res.json() : {}))
+      .then(setSubStatuses)
+      .catch(() => {});
+  }, []);
+
   const PAGE_SIZE = 15;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
@@ -340,6 +355,12 @@ const Admin = () => {
                   </span>
                 )}
               </p>
+
+              {subStatuses[menu.owner_id] && (
+                <p className="text-xs text-gray-400">
+                  ValidaPay: <span className="font-mono text-white">{subStatuses[menu.owner_id]}</span>
+                </p>
+              )}
 
               <p className="text-xs text-gray-400">
                 email: <span className="font-semibold text-white">{menu.owner_email}</span>
