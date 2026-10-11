@@ -31,6 +31,7 @@ export const plans = [
       "Impressão de pedidos",
       "Dashboard de vendas",
       "Relatório de vendas",
+      "Cupons de desconto",
     ],
     price: "49,90",
     yearlyPrice: "499,00",

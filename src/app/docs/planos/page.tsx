@@ -104,6 +104,7 @@ const page = () => {
           <li>Impressão de pedidos</li>
           <li>Dashboard de vendas para análise de desempenho</li>
           <li>Download de relatório de vendas em CSV</li>
+          <li>Criação de cupons de desconto para o cardápio</li>
           <li>Acesso ao aplicativo Bite Menu para não precisar acessar o site</li>
           <li>Prioridade no suporte</li>
         </ul>
