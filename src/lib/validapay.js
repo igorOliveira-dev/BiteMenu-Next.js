@@ -94,7 +94,8 @@ export async function findLiveSubscription(email) {
   for (const customer of customers) {
     const detail = await validapay(`/v1/customers/${customer.customerId}`);
     const live = detail.subscriptions?.find(
-      (s) => ["ACTIVE", "TRIALING", "PAST_DUE", "DEFAULT"].includes(s.status) && !s.cancelAtPeriodEnd,
+      // PAST_DUE/DEFAULT fora do profile = assinatura nunca paga (ex.: boleto cancelado); não bloqueia
+      (s) => ["ACTIVE", "TRIALING"].includes(s.status) && !s.cancelAtPeriodEnd,
     );
     if (live) return live.subscriptionId;
   }
