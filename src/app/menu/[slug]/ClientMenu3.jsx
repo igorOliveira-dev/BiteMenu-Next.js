@@ -683,7 +683,7 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole }) {
                 {starredItems.map((it) => (
                   <div
                     key={it.id}
-                    className="min-w-[220px] max-w-[220px] snap-start cursor-pointer rounded-xl overflow-hidden relative"
+                    className="shrink-0 basis-[65%] xs:basis-[45%] sm:basis-[34%] md:basis-[27%] xl:basis-[22.5%] snap-start cursor-pointer rounded-xl overflow-hidden relative"
                     style={{ backgroundColor: translucidToUse }}
                     onClick={() => handleItemClick(it)}
                   >
@@ -692,8 +692,8 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole }) {
                         <Image
                           src={supabaseImg(it.image_url, { width: 400, height: 400, quality: 75 })}
                           alt={it.name}
-                          width={220}
-                          height={220}
+                          width={400}
+                          height={400}
                           className="w-full h-full object-cover"
                           loading="lazy"
                         />
