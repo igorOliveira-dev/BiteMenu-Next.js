@@ -94,7 +94,7 @@ const page = () => {
       <section className="mt-4 scroll-mt-[90px]" id="pro">
         <h2 className="docs-title">Plano Pro</h2>
         <p className="docs-paragraph">
-          O <strong>Plano Pro</strong> é o plano mais completo, destinado a estabelecimentos que buscam maximizar sua
+          O <strong>Plano Pro</strong> é destinado a estabelecimentos que buscam maximizar sua
           presença digital e otimizar suas operações. Ele inclui todos os recursos dos planos anteriores, além de:
         </p>
         <ul className="docs-paragraph list-disc pl-6">
@@ -105,16 +105,15 @@ const page = () => {
           <li>Dashboard de vendas para análise de desempenho</li>
           <li>Download de relatório de vendas em CSV</li>
           <li>Criação de cupons de desconto para o cardápio</li>
-          <li>Acesso ao aplicativo Bite Menu para não precisar acessar o site</li>
           <li>Prioridade no suporte</li>
         </ul>
       </section>
 
       <section className="mt-4 scroll-mt-[90px]" id="business">
-        <h2 className="docs-title">Plano Business (em breve)</h2>
+        <h2 className="docs-title">Plano Business</h2>
         <p className="docs-paragraph">
-          O <strong>Plano Business</strong> ainda não está disponível para assinatura. Ele será voltado para
-          estabelecimentos com operação maior e inclui todos os recursos do Pro, além de:
+          O <strong>Plano Business</strong> é o plano mais completo, voltado para estabelecimentos com operação maior.
+          Ele inclui todos os recursos do Pro, além de:
         </p>
         <ul className="docs-paragraph list-disc pl-6">
           <li>Sem limites de itens, categorias e mesas</li>

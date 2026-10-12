@@ -54,7 +54,6 @@ export const plans = [
     yearlyPrice: "699,00",
     yearlyAnchor: "838,80",
     id: "business",
-    comingSoon: true, // ainda não dá pra assinar: card aparece com "Em breve"
   },
 ];
 

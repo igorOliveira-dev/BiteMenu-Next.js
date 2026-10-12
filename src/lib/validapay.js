@@ -57,11 +57,15 @@ export const DAYS_TO_PAY_AFTER_DUE = 7;
 export const PRICE_IDS = {
   plus: { monthly: process.env.VALIDAPAY_PRICE_PLUS_MONTHLY, yearly: process.env.VALIDAPAY_PRICE_PLUS_YEARLY },
   pro: { monthly: process.env.VALIDAPAY_PRICE_PRO_MONTHLY, yearly: process.env.VALIDAPAY_PRICE_PRO_YEARLY },
+  business: {
+    monthly: process.env.VALIDAPAY_PRICE_BUSINESS_MONTHLY,
+    yearly: process.env.VALIDAPAY_PRICE_BUSINESS_YEARLY,
+  },
 };
 
-export const TIER = { plus: 1, pro: 2 };
+export const TIER = { plus: 1, pro: 2, business: 3 };
 
-// { plan: "plus" | "pro", cycle: "monthly" | "yearly" } de um priceId nosso
+// { plan: "plus" | "pro" | "business", cycle: "monthly" | "yearly" } de um priceId nosso
 export function priceInfo(priceId) {
   for (const plan of Object.keys(PRICE_IDS)) {
     for (const cycle of Object.keys(PRICE_IDS[plan])) {
