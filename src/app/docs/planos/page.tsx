@@ -110,6 +110,23 @@ const page = () => {
         </ul>
       </section>
 
+      <section className="mt-4 scroll-mt-[90px]" id="business">
+        <h2 className="docs-title">Plano Business (em breve)</h2>
+        <p className="docs-paragraph">
+          O <strong>Plano Business</strong> ainda não está disponível para assinatura. Ele será voltado para
+          estabelecimentos com operação maior e inclui todos os recursos do Pro, além de:
+        </p>
+        <ul className="docs-paragraph list-disc pl-6">
+          <li>Sem limites de itens, categorias e mesas</li>
+          <li>Controle de estoque</li>
+          <li>
+            Mensagem do WhatsApp personalizada: edite a mensagem de confirmação do pedido que o cliente envia, usando
+            tags para inserir os dados do pedido onde quiser
+          </li>
+          <li>Ordem da impressão personalizada: escolha a ordem das informações que aparecem na impressão do pedido</li>
+        </ul>
+      </section>
+
       <section className="mt-4 scroll-mt-[90px]" id="troca-de-plano">
         <h2 className="docs-title">Troca de Plano</h2>
         <p className="docs-paragraph">

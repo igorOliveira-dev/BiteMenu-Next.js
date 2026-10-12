@@ -40,7 +40,14 @@ export const plans = [
   },
   {
     name: "Business",
-    features: ["Inclui tudo do Pro", "Sem limites", "Controle de estoque", "Em breve mais..."],
+    features: [
+      "Inclui tudo do Pro",
+      "Sem limites",
+      "Controle de estoque",
+      "Mensagem do WhatsApp personalizada",
+      "Ordem da impressão personalizada",
+      "Em breve mais...",
+    ],
     price: "69,90",
     yearlyPrice: "699,00",
     yearlyAnchor: "838,80",
