@@ -71,6 +71,39 @@ export default function CartDrawer({
   }, [tableId, menu?.id]);
   // ────────────────────────────────────────────────────────────────────────
 
+  // ── Pedido de balcão (botão "Novo pedido" do painel) ─────────────────────
+  // ?balcao=1 só vale se a conta logada é a do dono ou de alguém da equipe deste cardápio:
+  // nome/telefone opcionais e o pedido é gravado direto, sem WhatsApp
+  const counterRequested = searchParams.get("balcao") === "1";
+  const [counterMode, setCounterMode] = useState(false);
+
+  useEffect(() => {
+    if (!counterRequested || !menu?.id) {
+      setCounterMode(false);
+      return;
+    }
+
+    let active = true;
+    (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      let linked = user.id === menu.owner_id;
+      if (!linked) {
+        const { data: staffMenuId } = await supabase.rpc("staff_menu_id");
+        linked = staffMenuId === menu.id;
+      }
+      if (active) setCounterMode(linked);
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [counterRequested, menu?.id, menu?.owner_id]);
+  // ────────────────────────────────────────────────────────────────────────
+
   // pega apenas os items do menu atual
   const currentItems = cart.getItems(menu?.id);
   const currentTotalItems = cart.totalItems(menu?.id);
@@ -392,10 +425,11 @@ export default function CartDrawer({
     }
   }, [open]);
 
-  // Ler dados no local storage
+  // Ler dados no local storage (no balcão não: os dados são de cada cliente atendido)
   useEffect(() => {
     if (!open) return;
     if (typeof window === "undefined") return;
+    if (counterRequested) return;
 
     try {
       const stored = localStorage.getItem("customerInfo");
@@ -410,7 +444,7 @@ export default function CartDrawer({
     } catch (error) {
       console.warn("⚠ Erro ao ler customerInfo do localStorage", error);
     }
-  }, [open]);
+  }, [open, counterRequested]);
 
   // calcular taxa de entrega
   useEffect(() => {
@@ -430,6 +464,7 @@ export default function CartDrawer({
   // guardar no local storage
   const saveCustomerInfo = () => {
     if (typeof window === "undefined") return;
+    if (counterRequested) return;
     const customerInfo = {
       name: costumerName,
       phone: costumerPhone,
@@ -578,12 +613,12 @@ export default function CartDrawer({
 
   // ── Validação comum ──────────────────────────────────────────────────────
   function validateCustomerFields() {
-    if (costumerName.trim().length < 3) {
+    if (!counterMode && costumerName.trim().length < 3) {
       customAlert("O nome deve ter pelo menos 3 letras.", "error");
       return false;
     }
 
-    if (!tableInfo && costumerPhone.length < 5) {
+    if (!tableInfo && !counterMode && costumerPhone.length < 5) {
       customAlert("Número de telefone inválido.", "error");
       return false;
     }
@@ -635,7 +670,7 @@ export default function CartDrawer({
 
     if (!(await consumeCoupon()) || !(await consumeStock())) return;
 
-    if (tableInfo) {
+    if (tableInfo || counterMode) {
       finalizeTableOrder();
       return;
     }
@@ -660,8 +695,9 @@ export default function CartDrawer({
 
     if (!(await consumeCoupon()) || !(await consumeStock())) return;
 
-    if (tableInfo) {
-      if (selectedPayment === "pix" && menu.pix_key !== null) {
+    if (tableInfo || counterMode) {
+      // no balcão o caixa recebe o PIX na hora: sem a etapa de envio do comprovante
+      if (tableInfo && selectedPayment === "pix" && menu.pix_key !== null) {
         finalizeTableOrder({ goToStage: "sendPix" });
       } else {
         finalizeTableOrder();
@@ -678,8 +714,9 @@ export default function CartDrawer({
     }
   };
 
-  // ── Pedido de mesa: sem WhatsApp, cai direto na aba Pedidos ──────────────
+  // ── Pedido de mesa ou de balcão: sem WhatsApp, cai direto na aba Pedidos ─
   const finalizeTableOrder = async ({ goToStage = "tableSuccess" } = {}) => {
+    const deliveryFee = !tableInfo && selectedService === "delivery" ? deliveryFeeValue : 0;
     const subtotal = (currentItems || []).reduce((acc, item) => {
       const base = (Number(item.price) || 0) * (Number(item.qty) || 0);
       const extrasPerItem = (item.additionals || []).reduce((s, a) => s + (Number(a.price) || 0), 0);
@@ -687,7 +724,7 @@ export default function CartDrawer({
       return acc + base + extras;
     }, 0);
 
-    const total = Math.max(0, subtotal - discountAmount);
+    const total = Math.max(0, subtotal - discountAmount) + deliveryFee;
     setFinalValue(total);
     setPurchaseStage("confirmingTable");
 
@@ -698,9 +735,9 @@ export default function CartDrawer({
       payment_method: selectedPayment || null,
       change_requested: selectedPayment === "cash" ? needsChange : null,
       change_for_amount: selectedPayment === "cash" && needsChange ? normalizeMoney(changeForAmount) : null,
-      service: "dinein",
-      table_id: tableInfo.id,
-      table_label: tableInfo.label,
+      service: tableInfo ? "dinein" : selectedService,
+      table_id: tableInfo?.id ?? null,
+      table_label: tableInfo?.label ?? null,
       items_list: (currentItems || []).map((it) => ({
         name: it.name,
         qty: it.qty,
@@ -709,9 +746,9 @@ export default function CartDrawer({
         additionals: it.additionals || [],
         note: it.note || "",
       })),
-      neighborhood: null,
-      address: null,
-      delivery_fee: 0,
+      neighborhood: !tableInfo && selectedService === "delivery" && canUseZones ? costumerNeighborhood : null,
+      address: !tableInfo && selectedService === "delivery" ? costumerAddress : null,
+      delivery_fee: deliveryFee,
       discount: discountAmount,
       is_paid: false,
       total,
@@ -733,23 +770,34 @@ export default function CartDrawer({
       return;
     }
 
-    saveReceipt(menu?.id, {
-      id: `local-${Date.now()}`,
-      menuTitle: menu?.title,
-      createdAt: payload.created_at,
-      costumerName: payload.costumer_name,
-      paymentMethod: payload.payment_method,
-      service: payload.service,
-      tableLabel: payload.table_label,
-      itemsList: payload.items_list,
-      subtotal,
-      deliveryFee: 0,
-      discount: discountAmount,
-      total,
-      isPaid: false,
-    });
+    // no balcão o pedido é do cliente, não de quem registrou: fica fora de "Meus pedidos" deste aparelho
+    if (!counterMode) {
+      saveReceipt(menu?.id, {
+        id: `local-${Date.now()}`,
+        menuTitle: menu?.title,
+        createdAt: payload.created_at,
+        costumerName: payload.costumer_name,
+        paymentMethod: payload.payment_method,
+        service: payload.service,
+        tableLabel: payload.table_label,
+        itemsList: payload.items_list,
+        subtotal,
+        deliveryFee: 0,
+        discount: discountAmount,
+        total,
+        isPaid: false,
+      });
+    }
 
     cart.clear(menu?.id);
+    if (counterMode) {
+      // próximo cliente do balcão começa em branco
+      setCostumerName("");
+      setCostumerPhone("");
+      setCostumerAddressParts(EMPTY_ADDRESS);
+      setCostumerNeighborhood("");
+      setSearch("");
+    }
     setPurchaseStage(goToStage);
   };
   // ────────────────────────────────────────────────────────────────────────
@@ -1142,7 +1190,14 @@ export default function CartDrawer({
             ) : purchaseStage === "costumerInfos" ? (
               <div className="flex flex-col gap-2">
                 <div>
-                  <label className="block text-sm font-medium">Digite seu nome:</label>
+                  {counterMode && (
+                    <p className="mb-2 rounded p-2 text-sm" style={{ backgroundColor: translucidToUse }}>
+                      Pedido de balcão: nome e telefone são opcionais e o pedido vai direto para Pedidos recebidos.
+                    </p>
+                  )}
+                  <label className="block text-sm font-medium">
+                    {counterMode ? "Nome do cliente (opcional):" : "Digite seu nome:"}
+                  </label>
                   <input
                     type="text"
                     placeholder="Nome"
@@ -1157,12 +1212,14 @@ export default function CartDrawer({
                 </div>
                 {!tableInfo && (
                   <div>
-                    <label className="block text-sm font-medium">Digite seu número para contato:</label>
+                    <label className="block text-sm font-medium">
+                      {counterMode ? "Telefone do cliente (opcional):" : "Digite seu número para contato:"}
+                    </label>
                     <PhoneInput
                       country="br"
                       value={costumerPhone}
                       onChange={(value) => setCostumerPhone(value)}
-                      inputProps={{ required: true }}
+                      inputProps={{ required: !counterMode }}
                       inputClass="!w-full !px-3 !py-2 !border !rounded !focus:outline-none !focus:ring-2 !focus:ring-blue-400 !pl-14"
                       buttonClass="!border-r !bg-transparent !rounded-l"
                       containerClass="!flex !items-center !mb-2"
@@ -1426,7 +1483,9 @@ export default function CartDrawer({
                 style={{ animation: "popInAnim 0.35s ease-out" }}
               >
                 <p className="text-sm" style={{ color: grayToUse }}>
-                  Seu pedido foi enviado para a {tableInfo?.label || "mesa"} e já está na cozinha!
+                  {counterMode
+                    ? "Pedido registrado! Ele já aparece em Pedidos recebidos."
+                    : `Seu pedido foi enviado para a ${tableInfo?.label || "mesa"} e já está na cozinha!`}
                 </p>
                 {finalValue > 0 && (
                   <p className="mt-2 font-semibold">

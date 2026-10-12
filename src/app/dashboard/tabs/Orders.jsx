@@ -14,6 +14,7 @@ import {
   FaChevronDown,
   FaChevronLeft,
   FaChevronRight,
+  FaPlus,
   FaSyncAlt,
   FaPhoneAlt,
   FaClipboardList,
@@ -152,7 +153,7 @@ const Orders = ({
   const teamPlan = STAFF_PLAN_ROLES.includes(planRole);
   const kitchenOn = teamPlan && menu?.kitchen_enabled === true;
   const deliveryOn = teamPlan && menu?.delivery_enabled === true;
-  const canAssign = deliveryOn && !staff; // só o dono atribui entregas
+  const canAssign = deliveryOn; // dono e caixa atribuem entregas
   const [couriers, setCouriers] = useState([]);
   const confirm = useConfirm();
 
@@ -484,10 +485,20 @@ const Orders = ({
 
   useEffect(() => {
     if (!canAssign) return;
-    staffApi("GET")
+    // o caixa lê os colegas direto (RLS: mesma equipe); o dono pela API da aba Equipe
+    const fetchCouriers = staff
+      ? supabase
+          .from("menu_staff")
+          .select("user_id, name, role")
+          .then(({ data, error }) => {
+            if (error) throw error;
+            return data;
+          })
+      : staffApi("GET");
+    fetchCouriers
       .then((list) => setCouriers(list.filter((m) => m.role === "entregador")))
       .catch((err) => console.error("Erro ao buscar entregadores:", err));
-  }, [canAssign]);
+  }, [canAssign, staff]);
 
   // null = sem entregador (não aparece pra nenhum; com um único entregador o banco atribui a ele)
   const assignCourier = async (id, userId) => {
@@ -706,6 +717,17 @@ const Orders = ({
           >
             <FaSyncAlt />
           </button>
+          {/* pedido de balcão/telefone: usa o próprio cardápio (itens, combos, cupons e estoque já tratados lá) no modo balcão */}
+          {enabledOrders && menu?.slug && (
+            <a
+              href={`/menu/${menu.slug}?balcao=1`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-auto flex items-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+            >
+              <FaPlus /> Novo pedido
+            </a>
+          )}
         </div>
 
         {/* só o dono: atalhos da equipe e configurações do cardápio */}
