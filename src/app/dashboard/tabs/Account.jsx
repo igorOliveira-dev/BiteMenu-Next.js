@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import useUser from "@/hooks/useUser";
-import { FaChevronLeft, FaPen, FaChevronRight } from "react-icons/fa";
+import { STAFF_PLAN_ROLES } from "@/lib/staff";
+import { FaChevronLeft, FaPen, FaChevronRight, FaLock } from "react-icons/fa";
 import Loading from "@/components/Loading";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
@@ -205,6 +206,30 @@ const Account = ({ setSelectedTab }) => {
             </div>
             <span className="flex items-center gap-2 text-sm color-gray">
               Detalhes do plano <FaChevronRight />
+            </span>
+          </button>
+
+          {/* Equipe (logins de caixa/cozinha/entregador): aparece em qualquer plano, só cria no Business */}
+          <button
+            type="button"
+            onClick={() => setSelectedTab("team")}
+            className="flex w-full items-center justify-between gap-3 p-4 text-left cursor-pointer transition hover:bg-[var(--translucid)]"
+          >
+            <div>
+              <p className="text-sm color-gray">Equipe</p>
+              <p className="text-lg font-semibold">Logins de caixa, cozinha e entregador</p>
+            </div>
+            <span className="flex items-center gap-2 text-sm color-gray">
+              {!STAFF_PLAN_ROLES.includes(profile?.role) && (
+                <span
+                  title="Plano Business"
+                  className="flex shrink-0 items-center gap-1 rounded-full bg-[var(--translucid)] px-2 py-1 text-xs"
+                >
+                  <FaLock className="text-[10px]" />
+                  <span className="hidden xs:inline">Business</span>
+                </span>
+              )}
+              Gerenciar <FaChevronRight />
             </span>
           </button>
 

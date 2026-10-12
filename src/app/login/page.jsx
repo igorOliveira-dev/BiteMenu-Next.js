@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 import Image from "next/image";
 import Link from "next/link";
 import { useAlert } from "@/providers/AlertProvider";
+import { staffEmail } from "@/lib/staff";
 
 export default function SignIn() {
   const router = useRouter();
@@ -29,14 +30,16 @@ export default function SignIn() {
     setLoading(true);
 
     try {
+      // sem "@" = usuário da equipe (caixa/cozinha), que por baixo tem um e-mail interno
+      const login = email.trim().toLowerCase();
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: login.includes("@") ? login : staffEmail(login),
         password,
       });
 
       if (error) {
         if (error.message === "Invalid login credentials") {
-          setError("Email ou senha inválidos. Verifique suas credenciais.");
+          setError("Email/usuário ou senha inválidos. Verifique suas credenciais.");
         } else {
           setError("Ocorreu um erro ao fazer login. Tente novamente.");
         }
@@ -67,12 +70,14 @@ export default function SignIn() {
         <h1 className="text-2xl font-semibold text-center mb-6">Login</h1>
         <form onSubmit={handleSignIn} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
+            <label className="block text-sm font-medium mb-1">Email ou usuário</label>
             <input
               name="email"
               className="w-[300px] px-3 py-2 bg-translucid border border-[var(--low-gray)] rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-              type="email"
-              placeholder="Seu email"
+              type="text"
+              autoCapitalize="none"
+              autoComplete="username"
+              placeholder="Seu email (equipe: seu usuário)"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { hasMenu } from "@/lib/queries/menus";
+import { getStaff } from "@/lib/staff";
 import Loading from "@/components/Loading";
 import useUser from "@/hooks/useUser";
 import Image from "next/image";
@@ -38,7 +39,8 @@ export default function DashboardLayoutClient({ children }) {
         const { data: menus } = await hasMenu(supabase, user.id);
 
         if (!menus || menus.length === 0) {
-          router.replace("/getstart");
+          const { data: staff } = await getStaff(supabase, user.id);
+          router.replace(staff ? "/equipe" : "/getstart");
           return;
         }
 

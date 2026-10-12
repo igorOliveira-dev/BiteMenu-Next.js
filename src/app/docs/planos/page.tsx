@@ -124,7 +124,32 @@ const page = () => {
             tags para inserir os dados do pedido onde quiser
           </li>
           <li>Ordem da impressão personalizada: escolha a ordem das informações que aparecem na impressão do pedido</li>
+          <li>
+            Logins para a equipe: crie acessos de caixa, cozinha e entregador, cada um com usuário e senha próprios e
+            sem acesso ao cardápio, às vendas ou ao plano
+          </li>
+          <li>
+            Tela da cozinha: fila de preparo com os itens, adicionais e observações de cada pedido, onde a cozinha marca
+            o início do preparo e quando o pedido fica pronto
+          </li>
+          <li>
+            Tela de entregas: pedidos de entrega com endereço, link para o mapa, telefone, valor a cobrar e troco, onde o
+            entregador marca a saída e a entrega
+          </li>
+          <li>
+            Atribuição de entregas: escolha qual entregador leva cada pedido (com um único entregador, todas as entregas
+            vão para ele automaticamente)
+          </li>
+          <li>Status do pedido nos Pedidos (recebido, preparando, pronto, saiu para entrega, entregue), com filtro por status</li>
         </ul>
+        <p className="docs-paragraph">
+          As telas de caixa, cozinha e entregas começam desativadas: ative cada uma em Conta → Equipe conforme a
+          necessidade. Ao desativar uma tela, os logins daquela função perdem o acesso na hora. O funcionário entra em{" "}
+          <a href="https://www.bitemenu.com.br/login" className="underline text-blue-500 hover:text-blue-700">
+            bitemenu.com.br/login
+          </a>{" "}
+          com o usuário e a senha definidos pelo dono; para trocar a senha, o dono gera uma nova na aba Equipe.
+        </p>
       </section>
 
       <section className="mt-4 scroll-mt-[90px]" id="troca-de-plano">

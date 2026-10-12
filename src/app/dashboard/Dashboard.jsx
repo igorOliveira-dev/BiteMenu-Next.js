@@ -16,6 +16,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SalesDashboard from "./tabs/SalesDashboard";
 import PlanDetails from "./tabs/PlanDetails";
+import Team from "./tabs/Team";
+import Kitchen from "@/app/equipe/Kitchen";
+import Delivery from "@/app/equipe/Delivery";
 import UpsellBanner from "./components/UpsellBanner";
 import GenericModal from "@/components/GenericModal";
 import QrCodeModal from "./tabs/components/menu/QrCodeModal";
@@ -387,6 +390,21 @@ const Dashboard = ({
         {selectedTab === "account" && (
           <div className="block">
             <Account setSelectedTab={setSelectedTab} />
+          </div>
+        )}
+        {selectedTab === "kitchen" && menu && (
+          <div className="block pt-2">
+            <Kitchen menu={menu} reloadTrigger={reloadOrderTrigger} onBack={() => setSelectedTab("orders")} />
+          </div>
+        )}
+        {selectedTab === "delivery" && menu && (
+          <div className="block pt-2">
+            <Delivery menu={menu} reloadTrigger={reloadOrderTrigger} onBack={() => setSelectedTab("orders")} />
+          </div>
+        )}
+        {selectedTab === "team" && (
+          <div className="block">
+            <Team setSelectedTab={setSelectedTab} />
           </div>
         )}
         {selectedTab === "planDetails" && (
