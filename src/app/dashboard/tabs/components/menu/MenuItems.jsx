@@ -50,7 +50,7 @@ import { useAlert } from "@/providers/AlertProvider";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import { uploadItemImage, removeUnusedImages } from "@/lib/uploadImage";
 import UpdatePlanModal from "../UpdatePlanModal";
-import PlanLockNotice, { goToPlan, nextPlan, BUSINESS_LIMIT_TEXT } from "@/app/dashboard/components/PlanLockNotice";
+import { goToPlan, nextPlan, BUSINESS_LIMIT_TEXT } from "@/app/dashboard/components/PlanLockNotice";
 import { fileToThumbnailWebp, fileToWebp } from "@/app/utils/imageToWebp";
 import { FaEllipsisVertical } from "react-icons/fa6";
 import { createPortal } from "react-dom";
@@ -1810,6 +1810,13 @@ export default function MenuItems({
       return alert?.("Desconto percentual não pode passar de 100%.", "error");
     }
 
+    // fora do Plus dá pra montar o combo, mas só salva assinando
+    if (!hasPlusPermissions) {
+      setPlanModalFeature("combos");
+      setPlanModalOpen(true);
+      return;
+    }
+
     const payload = {
       menu_id: menu.id,
       scope,
@@ -2324,6 +2331,20 @@ export default function MenuItems({
           );
           return;
         }
+      }
+      // fora do Plus dá pra preencher a promoção, mas só salva assinando (limpar ou manter a antiga pode)
+      const savedPromo = categories
+        ?.flatMap((c) => c.menu_items || [])
+        .find((it) => it.id === itemId)?.promo_price;
+      if (
+        !canShowPromoPrice &&
+        promoNum !== null &&
+        promoNum !== (savedPromo != null ? Number(savedPromo) : null)
+      ) {
+        setPlanModalFeature("promo_price");
+        setPlanModalOpen(true);
+        setSaving(false);
+        return;
       }
       data.promo_price = promoNum;
 
@@ -3649,20 +3670,8 @@ export default function MenuItems({
                           </span>
                           <input
                             type="text"
-                            value={
-                              canShowPromoPrice
-                                ? (modalPayload.data.promo_price ?? "")
-                                : ""
-                            }
+                            value={modalPayload.data.promo_price ?? ""}
                             onChange={(e) => {
-                              if (!canShowPromoPrice) {
-                                if (!planModalOpen) {
-                                  setPlanModalFeature("promo_price");
-                                  setPlanModalOpen(true);
-                                }
-                                return;
-                              }
-
                               let value = e.target.value;
                               value = value.replace(/[^0-9.,]/g, "");
                               value = value.replace(",", ".");
@@ -4738,62 +4747,55 @@ export default function MenuItems({
             aplicados a um item, categoria ou ao carrinho todo.
           </p>
 
-          {hasPlusPermissions ? (
-            <>
-              <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
-                {(combos || []).length === 0 && (
-                  <p className="text-sm color-gray text-center py-4">
-                    Nenhum combo criado ainda.
-                  </p>
-                )}
-                {(combos || []).map((combo) => {
-                  const { target, trigger, discount } = describeCombo(combo);
-                  return (
-                    <div
-                      key={combo.id}
-                      className="flex items-center justify-between p-2 rounded-lg border border-translucid bg-translucid"
-                    >
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold line-clamp-1">
-                          {target}
-                        </div>
-                        <div className="text-xs color-gray">
-                          {trigger} → {discount}
-                        </div>
+          <>
+            <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+              {(combos || []).length === 0 && (
+                <p className="text-sm color-gray text-center py-4">
+                  Nenhum combo criado ainda.
+                </p>
+              )}
+              {(combos || []).map((combo) => {
+                const { target, trigger, discount } = describeCombo(combo);
+                return (
+                  <div
+                    key={combo.id}
+                    className="flex items-center justify-between p-2 rounded-lg border border-translucid bg-translucid"
+                  >
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold line-clamp-1">
+                        {target}
                       </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <button
-                          onClick={() => openComboForm(combo)}
-                          className="p-2 cursor-pointer"
-                        >
-                          <FaPen size={13} />
-                        </button>
-                        <button
-                          onClick={() => deleteCombo(combo.id)}
-                          className="p-2 cursor-pointer text-red-500"
-                        >
-                          <FaTrash size={13} />
-                        </button>
+                      <div className="text-xs color-gray">
+                        {trigger} → {discount}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button
+                        onClick={() => openComboForm(combo)}
+                        className="p-2 cursor-pointer"
+                      >
+                        <FaPen size={13} />
+                      </button>
+                      <button
+                        onClick={() => deleteCombo(combo.id)}
+                        className="p-2 cursor-pointer text-red-500"
+                      >
+                        <FaTrash size={13} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
 
-              <button
-                type="button"
-                onClick={() => openComboForm(null)}
-                className="w-full mt-4 cursor-pointer p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border-2 border-[var(--translucid)] transition"
-              >
-                + Novo combo
-              </button>
-            </>
-          ) : (
-            <PlanLockNotice
-              plan="plus"
-              text="Monte combos de itens com preço especial e aumente o ticket médio."
-            />
-          )}
+            <button
+              type="button"
+              onClick={() => openComboForm(null)}
+              className="w-full mt-4 cursor-pointer p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border-2 border-[var(--translucid)] transition"
+            >
+              + Novo combo
+            </button>
+          </>
         </GenericModal>
       )}
 
@@ -5016,7 +5018,9 @@ export default function MenuItems({
         <UpdatePlanModal
           onClose={closePlanModal}
           title={
-            planModalFeature === "promo_price"
+            planModalFeature === "combos"
+              ? "Combos"
+              : planModalFeature === "promo_price"
               ? "Preços promocionais"
               : planModalFeature === "highlight_items"
                 ? "Itens em destaque"
@@ -5029,8 +5033,10 @@ export default function MenuItems({
           text={
             planModalFeature.endsWith("_limit") && ownerRole === "business"
               ? BUSINESS_LIMIT_TEXT
+              : planModalFeature === "combos"
+              ? "Assine o plano Plus para salvar seus combos. Monte combos com desconto automático e aumente o ticket médio."
               : planModalFeature === "promo_price"
-              ? "Crie preços promocionais que chamam atenção e incentivam a decisão de compra no seu menu."
+              ? "Assine o plano Plus para salvar o preço promocional. Crie preços promocionais que chamam atenção e incentivam a decisão de compra no seu menu."
               : planModalFeature === "highlight_items"
                 ? "Destaque os itens mais estratégicos do seu menu e guie o olhar dos clientes para o que mais vende."
                 : planModalFeature === "items_limit"

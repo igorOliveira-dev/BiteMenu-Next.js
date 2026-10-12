@@ -28,8 +28,6 @@ import useUser from "@/hooks/useUser";
 import { supabase } from "@/lib/supabaseClient";
 import { updateMenuById } from "@/lib/queries/menus";
 import AddressFields, { formatAddress, mapsUrl } from "@/components/AddressFields";
-import PlanLockNotice from "@/app/dashboard/components/PlanLockNotice";
-import UpdatePlanModal from "./components/UpdatePlanModal";
 
 const DEFAULT_HOURS = {
   mon: "09:00-18:00",
@@ -795,8 +793,6 @@ const ConfigMenu = (props) => {
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, [openColorIdx]);
 
-  const hasPlusPermissions = ["plus", "pro", "business", "admin"].includes(userRole);
-  const [zonesUpsell, setZonesUpsell] = useState(false);
 
   const suggestRandomPalette = () => {
     let next = Math.floor(Math.random() * COLOR_PALETTES.length);
@@ -872,12 +868,6 @@ const ConfigMenu = (props) => {
   };
 
   const toggleDeliveryMode = (mode) => {
-    if (mode === "zones" && !hasPlusPermissions) {
-      setZonesUpsell(true);
-      setDeliveryFeeMode("fixed");
-      return;
-    }
-
     if (deliveryFeeMode === mode) {
       setDeliveryFeeMode("fixed");
       return;
@@ -1130,64 +1120,57 @@ const ConfigMenu = (props) => {
                   </div>
                 )}
 
-                {deliveryFeeMode === "zones" &&
-                  (!hasPlusPermissions ? (
-                    <PlanLockNotice plan="plus" text="Por enquanto seu cardápio continua com taxa fixa." />
-                  ) : (
-                    <div className="space-y-2 pt-1">
-                      {deliveryZones.length === 0 ? (
-                        <p className="text-xs opacity-60">Nenhum bairro cadastrado ainda.</p>
-                      ) : (
-                        deliveryZones.map((zone) => (
-                          <div key={zone.id} className="grid grid-cols-[1fr_110px_44px] gap-2">
-                            <TextInput
-                              value={zone.name}
-                              onChange={(e) => updateDeliveryZone(zone.id, "name", e.target.value)}
-                              placeholder="Bairro"
-                            />
-                            <TextInput
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={zone.shipping_fee}
-                              onChange={(e) => updateDeliveryZone(zone.id, "shipping_fee", e.target.value)}
-                              placeholder={getCurrencySymbol(currency)}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeDeliveryZone(zone.id)}
-                              aria-label={`Remover ${zone.name || "bairro"}`}
-                              className="flex h-11 cursor-pointer items-center justify-center rounded-xl border border-red-500/30 text-red-400 transition hover:bg-red-500/15"
-                            >
-                              <FaTrash className="text-xs" />
-                            </button>
-                          </div>
-                        ))
-                      )}
+                {deliveryFeeMode === "zones" && (
+                  <div className="space-y-2 pt-1">
+                    {deliveryZones.length === 0 ? (
+                      <p className="text-xs opacity-60">Nenhum bairro cadastrado ainda.</p>
+                    ) : (
+                      deliveryZones.map((zone) => (
+                        <div key={zone.id} className="grid grid-cols-[1fr_110px_44px] gap-2">
+                          <TextInput
+                            value={zone.name}
+                            onChange={(e) => updateDeliveryZone(zone.id, "name", e.target.value)}
+                            placeholder="Bairro"
+                          />
+                          <TextInput
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={zone.shipping_fee}
+                            onChange={(e) => updateDeliveryZone(zone.id, "shipping_fee", e.target.value)}
+                            placeholder={getCurrencySymbol(currency)}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeDeliveryZone(zone.id)}
+                            aria-label={`Remover ${zone.name || "bairro"}`}
+                            className="flex h-11 cursor-pointer items-center justify-center rounded-xl border border-red-500/30 text-red-400 transition hover:bg-red-500/15"
+                          >
+                            <FaTrash className="text-xs" />
+                          </button>
+                        </div>
+                      ))
+                    )}
 
-                      <GhostButton onClick={addDeliveryZone}>
-                        <FaPlus className="text-xs" />
-                        Adicionar bairro
-                      </GhostButton>
-                    </div>
-                  ))}
+                    <GhostButton onClick={addDeliveryZone}>
+                      <FaPlus className="text-xs" />
+                      Adicionar bairro
+                    </GhostButton>
+                  </div>
+                )}
               </Field>
             )}
 
             <Field label={`Valor mínimo de pedido (${getCurrencySymbol(currency)})`}>
-              {hasPlusPermissions ? (
-                <TextInput
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={minimumOrderValue || ""}
-                  onChange={(e) => setMinimumOrderValue(String(e.target.value).replace(",", "."))}
-                  placeholder="Ex.: 15.00"
-                  className="max-w-xs"
-                />
-              ) : (
-                <PlanLockNotice plan="plus" text="Defina um valor mínimo para aceitar pedidos." />
-              )}
+              <TextInput
+                type="number"
+                min="0"
+                step="0.01"
+                value={minimumOrderValue || ""}
+                onChange={(e) => setMinimumOrderValue(String(e.target.value).replace(",", "."))}
+                placeholder="Ex.: 15.00"
+                className="max-w-xs"
+              />
             </Field>
           </div>
         </SectionCard>
@@ -1445,14 +1428,6 @@ const ConfigMenu = (props) => {
         </div>
       )}
 
-      {zonesUpsell && (
-        <UpdatePlanModal
-          title="Taxa por bairro"
-          plan="plus"
-          text="Cobre uma taxa de entrega diferente para cada bairro."
-          onClose={() => setZonesUpsell(false)}
-        />
-      )}
     </div>
   );
 };

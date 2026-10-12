@@ -110,7 +110,6 @@ const Orders = ({
 
   const [showConfig, setShowConfig] = useState(false);
   const [printOrderModalOpen, setPrintOrderModalOpen] = useState(false);
-  const [customizeUpsell, setCustomizeUpsell] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
@@ -644,7 +643,7 @@ const Orders = ({
             <button
               key={title}
               type="button"
-              onClick={canCustomize ? onClick : () => setCustomizeUpsell(true)}
+              onClick={onClick}
               className="flex min-w-0 cursor-pointer items-center gap-2 rounded-2xl border border-translucid bg-[var(--low-translucid)] p-2.5 text-left transition hover:bg-[var(--translucid)] xs:gap-3 xs:p-3"
             >
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--translucid)] xs:h-10 xs:w-10 xs:text-lg">
@@ -1701,16 +1700,7 @@ const Orders = ({
         </GenericModal>
       ) : null}
       {printOrderModalOpen && (
-        <PrintOrderModal onClose={() => setPrintOrderModalOpen(false)} />
-      )}
-
-      {customizeUpsell && (
-        <UpdatePlanModal
-          onClose={() => setCustomizeUpsell(false)}
-          title="Personalização de pedidos"
-          plan="business"
-          text="Deixe a mensagem do WhatsApp com a cara do seu negócio e escolha a ordem das informações na impressão dos pedidos."
-        />
+        <PrintOrderModal canSave={canCustomize} onClose={() => setPrintOrderModalOpen(false)} />
       )}
 
       {printUpsell && (

@@ -1,24 +1,47 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { FaArrowDown, FaArrowUp } from "react-icons/fa";
 import GenericModal from "@/components/GenericModal";
 import { useAlert } from "@/providers/AlertProvider";
+import UpdatePlanModal from "../UpdatePlanModal";
 import { PRINT_SECTIONS, loadPrintOrder, savePrintOrder } from "./PrintDocumentButton";
 
 const labelOf = (id) => PRINT_SECTIONS.find((s) => s.id === id)?.label;
 
-export default function PrintOrderModal({ onClose }) {
+export default function PrintOrderModal({ canSave, onClose }) {
   const customAlert = useAlert();
   const [order, setOrder] = useState(loadPrintOrder);
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const itemRefs = useRef({});
+  const lastTops = useRef(null);
+
+  // animação ao trocar de posição: cada bloco desliza da posição antiga pra nova
+  useLayoutEffect(() => {
+    if (!lastTops.current) return;
+    Object.entries(itemRefs.current).forEach(([id, el]) => {
+      const dy = lastTops.current[id] - el?.getBoundingClientRect().top;
+      if (dy) el.animate([{ transform: `translateY(${dy}px)` }, { transform: "none" }], { duration: 200, easing: "ease-out" });
+    });
+    lastTops.current = null;
+  }, [order]);
+
+  const captureTops = () => {
+    lastTops.current = Object.fromEntries(
+      Object.entries(itemRefs.current).map(([id, el]) => [id, el?.getBoundingClientRect().top]),
+    );
+  };
 
   const move = (index, delta) => {
+    captureTops();
     const next = [...order];
     [next[index], next[index + delta]] = [next[index + delta], next[index]];
     setOrder(next);
   };
 
   const handleSave = () => {
+    // fora do Business dá pra montar a ordem, mas só salva assinando
+    if (!canSave) return setShowPlanModal(true);
     savePrintOrder(order);
     customAlert("Ordem da impressão atualizada!", "success");
     onClose();
@@ -36,6 +59,7 @@ export default function PrintOrderModal({ onClose }) {
           {order.map((id, index) => (
             <li
               key={id}
+              ref={(el) => (itemRefs.current[id] = el)}
               className="flex items-center justify-between gap-2 rounded-xl border border-translucid bg-translucid px-3 py-2 text-sm"
             >
               <span>
@@ -75,13 +99,25 @@ export default function PrintOrderModal({ onClose }) {
           </button>
           <button
             type="button"
-            onClick={() => setOrder(PRINT_SECTIONS.map((s) => s.id))}
+            onClick={() => {
+              captureTops();
+              setOrder(PRINT_SECTIONS.map((s) => s.id));
+            }}
             className="w-full cursor-pointer rounded-xl border border-translucid bg-[var(--translucid)] py-2 transition hover:opacity-80"
           >
             Restaurar padrão
           </button>
         </div>
       </div>
+
+      {showPlanModal && (
+        <UpdatePlanModal
+          plan="business"
+          title="Ordem da impressão"
+          text="Assine o plano Business para salvar a ordem da impressão. Até lá, seus pedidos são impressos na ordem padrão."
+          onClose={() => setShowPlanModal(false)}
+        />
+      )}
     </GenericModal>
   );
 }

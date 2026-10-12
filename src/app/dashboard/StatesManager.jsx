@@ -14,6 +14,8 @@ import useModalBackHandler from "@/hooks/useModalBackHandler";
 import { getContrastTextColor } from "@/utils/color";
 import { removeUnusedImages } from "@/lib/uploadImage";
 import { formatAddress } from "@/components/AddressFields";
+import useUser from "@/hooks/useUser";
+import UpdatePlanModal from "./tabs/components/UpdatePlanModal";
 
 /**
  * StatesManager (versão com checagem de auth e tratamento RLS/storage)
@@ -210,6 +212,7 @@ export default function StatesManager({
   defaultFolderPrefix,
 }) {
   const { menu: menuFromServer, loading } = useMenu();
+  const { profile } = useUser();
   const customAlert = useAlert();
   const confirm = useConfirm();
 
@@ -222,6 +225,7 @@ export default function StatesManager({
   const [localState, setLocalState] = useState(0);
   const [changedFields, setChangedFields] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [plusUpsell, setPlusUpsell] = useState(null);
 
   useEffect(() => {
     if (changedFields.length === 0) return;
@@ -350,6 +354,28 @@ export default function StatesManager({
     if (localState.title === "") {
       customAlert?.("O título não pode ficar vazio.", "error");
       return;
+    }
+
+    // taxa por bairro e pedido mínimo: dá pra preencher em qualquer plano, mas só salva com Plus
+    if (!["plus", "pro", "business", "admin"].includes(profile?.role)) {
+      const zones =
+        localState.deliveryFeeMode === "zones" &&
+        (changedFields.includes("deliveryFeeMode") || changedFields.includes("deliveryZones"));
+      const minimum = changedFields.includes("minimumOrderValue") && localState.minimumOrderValue !== "";
+      if (zones || minimum) {
+        setPlusUpsell(
+          zones
+            ? {
+                title: "Taxa por bairro",
+                text: "Assine o plano Plus para salvar a taxa por bairro. Cobre uma taxa de entrega diferente para cada bairro.",
+              }
+            : {
+                title: "Valor mínimo de pedido",
+                text: "Assine o plano Plus para salvar o valor mínimo. Defina um valor mínimo para aceitar pedidos.",
+              },
+        );
+        return;
+      }
     }
 
     const ok = await confirm("Quer mesmo salvar todas as alterações?");
@@ -621,6 +647,9 @@ export default function StatesManager({
         setSelectedTab={setSelectedTab}
       />
       {ChangesPopup()}
+      {plusUpsell && (
+        <UpdatePlanModal plan="plus" title={plusUpsell.title} text={plusUpsell.text} onClose={() => setPlusUpsell(null)} />
+      )}
       {showChanges && (
         <GenericModal title="Alterações não salvas" onClose={() => setShowChanges(false)}>
           <div className="flex flex-col max-h-80 w-full">

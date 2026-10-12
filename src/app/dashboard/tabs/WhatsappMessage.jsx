@@ -5,7 +5,7 @@ import { FaChevronLeft } from "react-icons/fa";
 import useMenu from "@/hooks/useMenu";
 import Loading from "@/components/Loading";
 import useUser from "@/hooks/useUser";
-import PlanLockNotice from "@/app/dashboard/components/PlanLockNotice";
+import UpdatePlanModal from "./components/UpdatePlanModal";
 import { supabase } from "@/lib/supabaseClient";
 import { updateMenuById } from "@/lib/queries/menus";
 import { useAlert } from "@/providers/AlertProvider";
@@ -60,6 +60,7 @@ export default function WhatsappMessage({ setSelectedTab }) {
   const [template, setTemplate] = useState(null);
   const [saving, setSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showPlanModal, setShowPlanModal] = useState(false);
   const textareaRef = useRef(null);
 
   // useMenu pode chegar depois do primeiro render
@@ -79,6 +80,9 @@ export default function WhatsappMessage({ setSelectedTab }) {
   };
 
   const handleSave = async () => {
+    // fora do Business dá pra montar a mensagem, mas só salva assinando
+    if (!["business", "admin"].includes(profile?.role))
+      return setShowPlanModal(true);
     setSaving(true);
     // padrão salvo como null: continua acompanhando o texto padrão do sistema
     const value =
@@ -137,121 +141,123 @@ export default function WhatsappMessage({ setSelectedTab }) {
         </div>
       </div>
 
-      {!["business", "admin"].includes(profile?.role) ? (
-        <PlanLockNotice
+      {showPlanModal && (
+        <UpdatePlanModal
           plan="business"
-          text="Personalize a mensagem de confirmação do WhatsApp com os rótulos, emojis e a ordem que quiser."
+          title="Mensagem do WhatsApp personalizada"
+          text="Assine o plano Business para salvar sua mensagem personalizada. Até lá, seus pedidos usam a mensagem padrão."
+          onClose={() => setShowPlanModal(false)}
         />
-      ) : (
-        <>
-          {/* celular: alterna entre editar e prévia; computador: lado a lado */}
-          <div className="mb-3 flex gap-1 rounded-xl border border-translucid p-1 lg:hidden">
-            <button
-              type="button"
-              onClick={() => setShowPreview(false)}
-              className={tabClass(!showPreview)}
-            >
-              Editar
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowPreview(true)}
-              className={tabClass(showPreview)}
-            >
-              Prévia
-            </button>
-          </div>
-
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-0">
-            <div
-              className={`space-y-4 lg:pr-10 ${showPreview ? "hidden lg:block" : ""}`}
-            >
-              {TAG_GROUPS.map((group) => (
-                <div key={group.title}>
-                  <p className="mb-1.5 text-xs font-medium color-gray">
-                    {group.title}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {WHATSAPP_TAGS.filter((t) =>
-                      group.tags.includes(t.tag),
-                    ).map(tagButton)}
-                  </div>
-                </div>
-              ))}
-
-              <textarea
-                ref={textareaRef}
-                value={text}
-                onChange={(e) => setTemplate(e.target.value)}
-                rows={18}
-                className="input w-full resize-y rounded-xl bg-translucid p-3 font-mono text-sm"
-              />
-
-              <p className="text-xs color-gray">
-                <span className="text-red-500">*</span> Obrigatória: se ficar
-                fora do texto, entra no final da mensagem.
-              </p>
-
-              {missing.length > 0 && (
-                <div className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-3 text-xs">
-                  <p className="mb-2 text-yellow-500">
-                    Faltando no texto (serão adicionadas ao final). Toque para
-                    inserir:
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {missing.map(tagButton)}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div
-              className={`lg:border-l lg:border-[var(--translucid)] lg:pl-10 ${showPreview ? "" : "hidden lg:block"}`}
-            >
-              <div className="lg:sticky lg:top-4">
-                <p className="mb-3 hidden text-sm font-medium lg:block">
-                  Prévia
-                </p>
-                <div className="rounded-xl bg-[#0b141a] p-3">
-                  <pre className="ml-auto w-fit max-w-[95%] whitespace-pre-wrap break-words rounded-lg rounded-tr-none bg-[#005c4b] px-3 py-2 font-sans text-sm text-[#e9edef] shadow">
-                    {renderWhatsappMessage(text, sampleValues(menu?.title))}
-                  </pre>
-                </div>
-                <p className="mt-2 text-xs color-gray">
-                  Exemplo de um pedido para entrega pago no Pix.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-8 flex flex-col-reverse gap-2 border-t border-translucid pt-4 sm:flex-row sm:justify-between">
-            <button
-              type="button"
-              onClick={() => setTemplate(DEFAULT_WHATSAPP_TEMPLATE)}
-              className="cursor-pointer rounded-xl px-4 py-2 text-sm color-gray transition hover:opacity-80"
-            >
-              Restaurar padrão
-            </button>
-            <div className="flex flex-col-reverse gap-2 sm:flex-row">
-              <button
-                type="button"
-                onClick={goBack}
-                className="cursor-pointer rounded-xl border border-translucid bg-[var(--translucid)] px-6 py-2 transition hover:opacity-80"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={saving}
-                className="cursor-pointer rounded-xl bg-green-600 px-6 py-2 text-white transition hover:bg-green-700 disabled:opacity-60"
-              >
-                {saving ? "Salvando..." : "Salvar"}
-              </button>
-            </div>
-          </div>
-        </>
       )}
+
+      <>
+        {/* celular: alterna entre editar e prévia; computador: lado a lado */}
+        <div className="mb-3 flex gap-1 rounded-xl border border-translucid p-1 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setShowPreview(false)}
+            className={tabClass(!showPreview)}
+          >
+            Editar
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowPreview(true)}
+            className={tabClass(showPreview)}
+          >
+            Prévia
+          </button>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-0">
+          <div
+            className={`space-y-4 lg:pr-10 ${showPreview ? "hidden lg:block" : ""}`}
+          >
+            {TAG_GROUPS.map((group) => (
+              <div key={group.title}>
+                <p className="mb-1.5 text-xs font-medium color-gray">
+                  {group.title}
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {WHATSAPP_TAGS.filter((t) =>
+                    group.tags.includes(t.tag),
+                  ).map(tagButton)}
+                </div>
+              </div>
+            ))}
+
+            <textarea
+              ref={textareaRef}
+              value={text}
+              onChange={(e) => setTemplate(e.target.value)}
+              rows={18}
+              className="input w-full resize-y rounded-xl bg-translucid p-3 font-mono text-sm"
+            />
+
+            <p className="text-xs color-gray">
+              <span className="text-red-500">*</span> Obrigatória: se ficar
+              fora do texto, entra no final da mensagem.
+            </p>
+
+            {missing.length > 0 && (
+              <div className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-3 text-xs">
+                <p className="mb-2 text-yellow-500">
+                  Faltando no texto (serão adicionadas ao final). Toque para
+                  inserir:
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {missing.map(tagButton)}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div
+            className={`lg:border-l lg:border-[var(--translucid)] lg:pl-10 ${showPreview ? "" : "hidden lg:block"}`}
+          >
+            <div className="lg:sticky lg:top-4">
+              <p className="mb-3 hidden text-sm font-medium lg:block">
+                Prévia
+              </p>
+              <div className="rounded-xl bg-[#0b141a] p-3">
+                <pre className="ml-auto w-fit max-w-[95%] whitespace-pre-wrap break-words rounded-lg rounded-tr-none bg-[#005c4b] px-3 py-2 font-sans text-sm text-[#e9edef] shadow">
+                  {renderWhatsappMessage(text, sampleValues(menu?.title))}
+                </pre>
+              </div>
+              <p className="mt-2 text-xs color-gray">
+                Exemplo de um pedido para entrega pago no Pix.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 flex flex-col-reverse gap-2 border-t border-translucid pt-4 sm:flex-row sm:justify-between">
+          <button
+            type="button"
+            onClick={() => setTemplate(DEFAULT_WHATSAPP_TEMPLATE)}
+            className="cursor-pointer rounded-xl px-4 py-2 text-sm color-gray transition hover:opacity-80"
+          >
+            Restaurar padrão
+          </button>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row">
+            <button
+              type="button"
+              onClick={goBack}
+              className="cursor-pointer rounded-xl border border-translucid bg-[var(--translucid)] px-6 py-2 transition hover:opacity-80"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="cursor-pointer rounded-xl bg-green-600 px-6 py-2 text-white transition hover:bg-green-700 disabled:opacity-60"
+            >
+              {saving ? "Salvando..." : "Salvar"}
+            </button>
+          </div>
+        </div>
+      </>
     </div>
   );
 }

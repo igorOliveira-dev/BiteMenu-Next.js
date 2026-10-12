@@ -6,7 +6,7 @@ import useOwnerRole from "@/hooks/useOwnerRole";
 import { supabase } from "@/lib/supabaseClient";
 import { useAlert } from "@/providers/AlertProvider";
 import { useConfirm } from "@/providers/ConfirmProvider";
-import PlanLockNotice from "@/app/dashboard/components/PlanLockNotice";
+import UpdatePlanModal from "./components/UpdatePlanModal";
 import Loading from "@/components/Loading";
 import { STOCK_ROLES, optionKey } from "@/lib/stock";
 import { FaBoxes, FaChevronLeft, FaSearch, FaSyncAlt } from "react-icons/fa";
@@ -58,6 +58,7 @@ const Stock = ({ setSelectedTab }) => {
   const [drafts, setDrafts] = useState({});
   const [saving, setSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [showPlanModal, setShowPlanModal] = useState(false);
 
   const [view, setView] = useState("items");
   const [search, setSearch] = useState("");
@@ -89,7 +90,8 @@ const Stock = ({ setSelectedTab }) => {
     setCategories(cats.filter((c) => (c.menu_items || []).length > 0).map((c) => ({ id: c.id, name: c.name })));
     setItems(
       cats.flatMap((c) =>
-        (c.menu_items || []).map((it) => ({ id: it.id, name: it.name, stock: it.stock, categoryId: c.id })),
+        // fora do Business a tela não reflete o banco: tudo aparece "sem controle"
+        (c.menu_items || []).map((it) => ({ id: it.id, name: it.name, stock: allowed ? it.stock : null, categoryId: c.id })),
       ),
     );
 
@@ -106,14 +108,14 @@ const Stock = ({ setSelectedTab }) => {
       }),
     );
     setOptions(Object.values(byKey).sort((a, b) => a.name.localeCompare(b.name, "pt-BR")));
-    setOptionStock(Object.fromEntries((stockRows || []).map((r) => [r.name_key, r.stock])));
+    setOptionStock(allowed ? Object.fromEntries((stockRows || []).map((r) => [r.name_key, r.stock])) : {});
     setLoading(false);
     setRefreshing(false);
   };
 
   useEffect(() => {
-    if (menu?.id && allowed) load();
-  }, [menu?.id, allowed]);
+    if (menu?.id && ownerRole) load();
+  }, [menu?.id, ownerRole]);
 
   const refresh = async () => {
     if (changes.length && !(await confirm("Descartar as alterações não salvas e atualizar o estoque?"))) return;
@@ -159,6 +161,8 @@ const Stock = ({ setSelectedTab }) => {
     .filter(({ draftKey, stock }) => !Number.isNaN(stock) && stock !== savedStock(draftKey));
 
   const confirmStock = async () => {
+    // fora do Business dá pra preencher o estoque, mas só salva assinando
+    if (!allowed) return setShowPlanModal(true);
     setSaving(true);
     const results = await Promise.all(
       changes.map(async ({ draftKey, stock }) => {
@@ -204,7 +208,7 @@ const Stock = ({ setSelectedTab }) => {
         <h2 className="text-lg font-semibold leading-tight">Estoque</h2>
         <p className="text-xs color-gray">Deixe vazio para não controlar. O que esgotar some do cardápio.</p>
       </div>
-      {allowed && !loading && (
+      {!loading && (
         <button
           type="button"
           disabled={refreshing || saving}
@@ -219,18 +223,6 @@ const Stock = ({ setSelectedTab }) => {
   );
 
   if (menuLoading || !ownerRole) return <Loading />;
-
-  if (!allowed) {
-    return (
-      <div className="p-4 sm:p-6 flex flex-col gap-4 max-w-[1024px]">
-        {header}
-        <PlanLockNotice
-          plan="business"
-          text="Controle a quantidade disponível de cada item e opção. Quando acabar, o cliente não consegue pedir mais do que há."
-        />
-      </div>
-    );
-  }
 
   if (loading) return <Loading />;
 
@@ -251,6 +243,15 @@ const Stock = ({ setSelectedTab }) => {
   return (
     <div className="p-4 sm:p-6 flex flex-col gap-4 max-w-[1024px]">
       {header}
+
+      {showPlanModal && (
+        <UpdatePlanModal
+          plan="business"
+          title="Controle de estoque"
+          text="Assine o plano Business para salvar o estoque. Controle a quantidade disponível de cada item e opção: quando acabar, o cliente não consegue pedir mais do que há."
+          onClose={() => setShowPlanModal(false)}
+        />
+      )}
 
       {/* filtros fixos no topo enquanto rola a lista */}
       <div className="sticky top-0 z-[1] -mx-1 px-1 py-2 backdrop-blur-2xl flex flex-col gap-2">
@@ -343,26 +344,25 @@ const Stock = ({ setSelectedTab }) => {
         </div>
       )}
 
-      {changes.length > 0 && (
-        <div className="sticky bottom-0 z-[1] -mx-1 px-1 py-3 backdrop-blur-2xl flex items-center justify-end gap-2">
-          <button
-            type="button"
-            disabled={saving}
-            onClick={() => setDrafts({})}
-            className="cursor-pointer px-4 py-2 rounded-lg text-sm hover:bg-[var(--translucid)] transition disabled:opacity-50"
-          >
-            Descartar
-          </button>
-          <button
-            type="button"
-            disabled={saving}
-            onClick={confirmStock}
-            className="cursor-pointer px-4 py-2 rounded-lg text-sm font-semibold bg-[var(--foreground)] text-[var(--background)] transition disabled:opacity-50"
-          >
-            {saving ? "Salvando..." : `Confirmar estoque (${changes.length})`}
-          </button>
-        </div>
-      )}
+      {/* sempre visível no rodapé, mesmo rolando listas grandes */}
+      <div className="sticky bottom-0 z-[1] -mx-1 px-1 py-3 bg-[var(--background)] flex items-center justify-end gap-2">
+        <button
+          type="button"
+          disabled={saving || changes.length === 0}
+          onClick={() => setDrafts({})}
+          className="cursor-pointer px-4 py-2 rounded-lg text-sm hover:bg-[var(--translucid)] transition disabled:opacity-50"
+        >
+          Descartar
+        </button>
+        <button
+          type="button"
+          disabled={saving || changes.length === 0}
+          onClick={confirmStock}
+          className="cursor-pointer px-4 py-2 rounded-lg text-sm font-semibold bg-[var(--foreground)] text-[var(--background)] transition disabled:opacity-50"
+        >
+          {saving ? "Salvando..." : changes.length ? `Confirmar estoque (${changes.length})` : "Confirmar estoque"}
+        </button>
+      </div>
     </div>
   );
 };

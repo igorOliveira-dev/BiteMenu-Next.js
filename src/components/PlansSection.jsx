@@ -343,7 +343,7 @@ const PlansSection = () => {
                 {plan.features.map((feature, index) => (
                   <div key={index}>
                     <li className="flex items-center gap-2 mt-1">
-                      <FaCheck className="text-[var(--red)]" />
+                      <FaCheck className="shrink-0 text-[var(--red)]" />
                       {feature}
                     </li>
                     <hr className="border border-translucid" />
