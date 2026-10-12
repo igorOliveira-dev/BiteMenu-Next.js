@@ -15,6 +15,9 @@ import {
   FaSyncAlt,
   FaPhoneAlt,
   FaClipboardList,
+  FaWhatsapp,
+  FaPrint,
+  FaLock,
 } from "react-icons/fa";
 import GenericModal from "@/components/GenericModal";
 import { useConfirm } from "@/providers/ConfirmProvider";
@@ -26,6 +29,7 @@ import { mapsUrl } from "@/components/AddressFields";
 import PrintDocumentButton, {
   normalizeOrderForPrint,
 } from "./components/print/PrintDocumentButton";
+import PrintOrderModal from "./components/print/PrintOrderModal";
 
 const PAGE_SIZE = 10;
 
@@ -101,9 +105,12 @@ const Orders = ({
   const { profile, loadingProfile } = useUser();
   const customAlert = useAlert();
   const [printUpsell, setPrintUpsell] = useState(false);
+  const canCustomize = ["business", "admin"].includes(profile?.role);
   const confirm = useConfirm();
 
   const [showConfig, setShowConfig] = useState(false);
+  const [printOrderModalOpen, setPrintOrderModalOpen] = useState(false);
+  const [customizeUpsell, setCustomizeUpsell] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
@@ -619,6 +626,47 @@ const Orders = ({
           </button>
         </div>
 
+        <div className="mb-4 grid gap-2 sm:grid-cols-2">
+          {[
+            {
+              Icon: FaWhatsapp,
+              title: "Mensagem do WhatsApp",
+              desc: "Personalize o texto que o cliente envia",
+              onClick: () => setSelectedTab("whatsappMessage"),
+            },
+            {
+              Icon: FaPrint,
+              title: "Ordem da impressão",
+              desc: "Escolha a ordem das informações impressas",
+              onClick: () => setPrintOrderModalOpen(true),
+            },
+          ].map(({ Icon, title, desc, onClick }) => (
+            <button
+              key={title}
+              type="button"
+              onClick={canCustomize ? onClick : () => setCustomizeUpsell(true)}
+              className="flex min-w-0 cursor-pointer items-center gap-2 rounded-2xl border border-translucid bg-[var(--low-translucid)] p-2.5 text-left transition hover:bg-[var(--translucid)] xs:gap-3 xs:p-3"
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--translucid)] xs:h-10 xs:w-10 xs:text-lg">
+                <Icon />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold leading-tight">{title}</span>
+                <span className="mt-0.5 block text-xs leading-snug color-gray">{desc}</span>
+              </span>
+              {!canCustomize && (
+                <span
+                  title="Plano Business"
+                  className="flex shrink-0 items-center gap-1 rounded-full bg-[var(--translucid)] px-2 py-1 text-xs color-gray"
+                >
+                  <FaLock className="text-[10px]" />
+                  <span className="hidden xs:inline">Business</span>
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
         <button
           onClick={() => setShowConfig(!showConfig)}
           className="mb-2 flex cursor-pointer items-center gap-2 color-gray"
@@ -721,7 +769,6 @@ const Orders = ({
           <p className="mt-2 text-xs color-gray">
             Quando ativado, o sistema tocará um som ao chegar um novo pedido.
           </p>
-
         </div>
 
         {!enabledOrders ? (
@@ -881,6 +928,7 @@ const Orders = ({
                               canPrint={
                                 ["pro", "business", "admin"].includes(profile?.role)
                               }
+                              canCustomizeOrder={["business", "admin"].includes(profile?.role)}
                               onDenied={() => setPrintUpsell(true)}
                               fileNamePrefix="pedido"
                               receiptTitle="PEDIDO"
@@ -1652,6 +1700,19 @@ const Orders = ({
           </div>
         </GenericModal>
       ) : null}
+      {printOrderModalOpen && (
+        <PrintOrderModal onClose={() => setPrintOrderModalOpen(false)} />
+      )}
+
+      {customizeUpsell && (
+        <UpdatePlanModal
+          onClose={() => setCustomizeUpsell(false)}
+          title="Personalização de pedidos"
+          plan="business"
+          text="Deixe a mensagem do WhatsApp com a cara do seu negócio e escolha a ordem das informações na impressão dos pedidos."
+        />
+      )}
+
       {printUpsell && (
         <UpdatePlanModal
           onClose={() => setPrintUpsell(false)}

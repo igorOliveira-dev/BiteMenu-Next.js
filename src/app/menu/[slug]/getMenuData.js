@@ -28,6 +28,7 @@ export const getMenuBySlug = cache(async (slug) => {
       minimum_order_value,
       pix_key,
       orders,
+      whatsapp_template,
       layout,
       currency,
       timezone,

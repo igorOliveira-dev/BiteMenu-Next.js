@@ -7,6 +7,7 @@ import Orders from "./tabs/Orders";
 import Sales from "./tabs/Sales";
 import Tables from "./tabs/Tables";
 import Stock from "./tabs/Stock";
+import WhatsappMessage from "./tabs/WhatsappMessage";
 import { useAlert } from "@/providers/AlertProvider";
 import ConfigMenu from "./tabs/ConfigMenu";
 import { FaBars, FaChevronLeft, FaHeadset, FaQrcode } from "react-icons/fa";
@@ -332,7 +333,7 @@ const Dashboard = ({
         </div>
         {selectedTab === "orders" && (
           <div className="block">
-            <Orders reloadTrigger={reloadOrderTrigger} setOrderQuantityChangeTrigger={setOrderQuantityChangeTrigger} />
+            <Orders setSelectedTab={setSelectedTab} reloadTrigger={reloadOrderTrigger} setOrderQuantityChangeTrigger={setOrderQuantityChangeTrigger} />
           </div>
         )}
         {selectedTab === "sales" && (
@@ -348,6 +349,11 @@ const Dashboard = ({
         {selectedTab === "stock" && (
           <div className="block">
             <Stock setSelectedTab={setSelectedTab} />
+          </div>
+        )}
+        {selectedTab === "whatsappMessage" && (
+          <div className="block">
+            <WhatsappMessage setSelectedTab={setSelectedTab} />
           </div>
         )}
         {selectedTab === "salesDashboard" && (

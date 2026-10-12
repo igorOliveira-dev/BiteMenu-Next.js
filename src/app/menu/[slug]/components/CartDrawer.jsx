@@ -17,6 +17,7 @@ import { calculateComboDiscount } from "@/lib/comboDiscount";
 import { applyCoupon } from "@/lib/couponDiscount";
 import { STOCK_ROLES, stockPayload } from "@/lib/stock";
 import { saveReceipt } from "@/lib/orderReceipts";
+import { renderWhatsappMessage } from "@/lib/whatsappMessage";
 import { getContrastTextColor } from "@/utils/color";
 import AddressFields, { EMPTY_ADDRESS, formatAddress } from "@/components/AddressFields";
 
@@ -543,29 +544,29 @@ export default function CartDrawer({
       })
       .join("\n\n");
 
-    const trocoInfo =
-      selectedPayment === "cash" && needsChange
-        ? `\n💵 Troco para: ${formatCurrency(normalizeMoney(changeForAmount), menu?.currency)}`
-        : "";
+    const isDelivery = selectedService === "delivery";
 
-    const customerInfo = `
-👤 Nome: ${costumerName}
-📞 Telefone: ${costumerPhone}
-${selectedService === "delivery" && canUseZones && costumerNeighborhood ? `🏘 Bairro: ${costumerNeighborhood}\n` : ""}
-${selectedService === "delivery" && costumerAddress ? `📍 Endereço: ${costumerAddress}\n` : ""}
-💳 Pagamento: ${paymentLabel || paymentOptions.find((p) => p.id === selectedPayment)?.label || "-"}${trocoInfo}
-🚚 Serviço: ${serviceOptions.find((s) => s.id === selectedService)?.label || "-"}`;
-
-    const message = `‼️ Pedido de ${menu.title}
-
-${itemsList}
-
-————————————
-Subtotal: ${formatCurrency(subtotal, menu?.currency)}
-${discount > 0 ? `Desconto: -${formatCurrency(discount, menu?.currency)}\n` : ""}${appliedCouponCode ? `Cupom: ${appliedCouponCode}\n` : ""}${selectedService === "delivery" ? `Frete: ${formatCurrency(deliveryFee, menu?.currency)}` : ""}
-💰 Total: ${formatCurrency(total, menu?.currency)}
-
-${customerInfo}`;
+    // valor vazio = a linha da tag some da mensagem
+    const customTemplate = ["business", "admin"].includes(ownerRole) ? menu?.whatsapp_template : null;
+    const message = renderWhatsappMessage(customTemplate, {
+      estabelecimento: menu.title,
+      itens: itemsList,
+      subtotal: formatCurrency(subtotal, menu?.currency),
+      desconto: discount > 0 ? formatCurrency(discount, menu?.currency) : "",
+      cupom: appliedCouponCode || "",
+      frete: isDelivery ? formatCurrency(deliveryFee, menu?.currency) : "",
+      total: formatCurrency(total, menu?.currency),
+      nome: costumerName,
+      telefone: costumerPhone,
+      bairro: isDelivery && canUseZones ? costumerNeighborhood : "",
+      endereco: isDelivery ? costumerAddress : "",
+      pagamento: paymentLabel || paymentOptions.find((p) => p.id === selectedPayment)?.label || "-",
+      troco:
+        selectedPayment === "cash" && needsChange
+          ? formatCurrency(normalizeMoney(changeForAmount), menu?.currency)
+          : "",
+      servico: serviceOptions.find((s) => s.id === selectedService)?.label || "-",
+    });
 
     const rawPhone = establishmentPhone || menu?.owner_phone || menu?.phone || null;
     if (!rawPhone) return null;
