@@ -16,6 +16,7 @@ import PrivacyAcceptModal from "@/components/PrivacyAcceptModal";
 import { CURRENT_PRIVACY_VERSION } from "@/lib/privacy";
 import useAcquisitionSourceModal from "@/hooks/useAcquisitionSourceModal";
 import AcquisitionSourceModal from "@/app/dashboard/components/AcquisitionSourceModal";
+import LegacyPlanModal from "@/app/dashboard/components/LegacyPlanModal";
 
 export default function DashboardLayoutClient({ children }) {
   const router = useRouter();
@@ -157,6 +158,7 @@ export default function DashboardLayoutClient({ children }) {
           onClose={() => setShowPrivacyModal(false)}
         />
       )}
+      {!showPrivacyModal && <LegacyPlanModal profile={profile} />}
       {acquisitionModal.show && !showPrivacyModal && (
         <AcquisitionSourceModal onClose={acquisitionModal.onClose} onSubmit={acquisitionModal.onSubmit} />
       )}
