@@ -270,7 +270,7 @@ const Admin = () => {
 
         <div className="flex gap-4 flex-wrap justify-center">
           <label className="flex items-center gap-2 text-sm text-gray-300">
-            Apenas Plus/Pro
+            Apenas Plus/Pro/Business
             <input
               type="checkbox"
               checked={showOnlyPlusPro}
@@ -321,9 +321,11 @@ const Admin = () => {
                   ? "border-red-500"
                   : menu.owner_role === "plus"
                     ? "border-blue-500"
-                    : menu.owner_role === "pro" || menu.owner_role === "business"
+                    : menu.owner_role === "pro"
                       ? "border-4 border-blue-900"
-                      : "border-translucid"
+                      : menu.owner_role === "business"
+                        ? "border-4 border-amber-500"
+                        : "border-translucid"
               } rounded-lg flex flex-col gap-2`}
             >
               <div className="flex items-center gap-2">
