@@ -29,6 +29,8 @@ const needsPreview = (m) =>
   m.newItems?.length > 0 ||
   // ocultar/exibir categoria ou produto aparece na lista; grupo de opções só dentro do produto (preview não abre)
   m.visibility?.some((v) => v.kind !== "group") ||
+  // nome, preço e promoção aparecem na lista de produtos
+  m.itemEdits?.some((e) => e.fields?.name || e.fields?.price || e.fields?.promoPrice) ||
   Object.keys(m.changes || {}).some((k) => VISIBLE_FIELDS.includes(k));
 
 const VISIBILITY_KIND = { category: "Categoria", item: "Produto", group: "Grupo de opções" };
@@ -45,6 +47,15 @@ function toHistory(messages) {
       return { role: m.role, content };
     });
 }
+
+const FIELD_LABELS = { name: "Nome", description: "Descrição", price: "Preço", promoPrice: "Preço promocional" };
+const formatField = (key, value, currency) => {
+  if (value === null || value === "") return "—";
+  return key === "price" || key === "promoPrice" ? formatCurrency(value, currency) : value;
+};
+
+const formatVariations = (v, currency) =>
+  v.options.map((o) => `${o.name} ${formatCurrency(o.price, currency)}`).join(" / ");
 
 const itemPrice = (it, currency) =>
   it.variations
@@ -76,6 +87,48 @@ function ProposalDetails({ m, currency }) {
             {VISIBILITY_KIND[v.kind]} {v.label}:
           </span>{" "}
           {v.visible ? "exibir no cardápio" : "ocultar do cardápio"}
+        </li>
+      ))}
+      {m.itemEdits?.map((e) => (
+        <li key={e.itemId} className="pt-1">
+          <span className="font-semibold">{e.itemName}</span>
+          <ul className="ml-3 opacity-80">
+            {Object.entries(e.fields || {}).map(([key, f]) => (
+              <li key={key}>
+                • {FIELD_LABELS[key]}:{" "}
+                <span className="line-through opacity-50">{formatField(key, f.before, currency)}</span> →{" "}
+                {formatField(key, f.after, currency)}
+              </li>
+            ))}
+            {e.variations && (
+              <li>
+                • Variação {e.variations.after.name}:{" "}
+                {e.variations.before && (
+                  <span className="line-through opacity-50">{formatVariations(e.variations.before, currency)}</span>
+                )}
+                {e.variations.before && " → "}
+                {formatVariations(e.variations.after, currency)}
+              </li>
+            )}
+            {e.groups.map((g) => (
+              <li key={g.groupId ?? g.name}>
+                • {g.groupId ? "Grupo" : "Novo grupo"} {g.name}
+                {g.rename && ` → ${g.rename}`}
+                {(!g.groupId || g.limitsChanged) && ` (mín ${g.min}, máx ${g.max || "sem limite"})`}
+                {g.updates.map((c) => (
+                  <div key={c.id} className="ml-3">
+                    {c.name}: <span className="line-through opacity-50">{formatCurrency(c.before, currency)}</span> →{" "}
+                    {formatCurrency(c.price, currency)}
+                  </div>
+                ))}
+                {g.inserts.map((c) => (
+                  <div key={c.name} className="ml-3">
+                    + {c.name} {formatCurrency(c.price, currency)}
+                  </div>
+                ))}
+              </li>
+            ))}
+          </ul>
         </li>
       ))}
       {m.newItems?.map((g) => (
@@ -228,6 +281,7 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
               stock: data.stock ?? [],
               newItems: data.newItems ?? [],
               visibility: data.visibility ?? [],
+              itemEdits: data.itemEdits ?? [],
               before: config,
               status: "pending",
             }
@@ -247,7 +301,7 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
   const openPreview = (index) => {
     const m = messages[index];
     try {
-      sessionStorage.setItem(AI_PREVIEW_KEY, JSON.stringify({ changes: m.changes, stock: m.stock, newItems: m.newItems, visibility: m.visibility }));
+      sessionStorage.setItem(AI_PREVIEW_KEY, JSON.stringify({ changes: m.changes, stock: m.stock, newItems: m.newItems, visibility: m.visibility, itemEdits: m.itemEdits }));
     } catch {}
     setPreviewIndex(index);
   };
@@ -264,7 +318,61 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
   };
 
   // estoque e produtos novos: mesmos inserts/updates das telas de Estoque e Cardápio (client do usuário + RLS)
-  const saveCatalog = async ({ stock = [], newItems = [], visibility = [] }) => {
+  const saveCatalog = async ({ stock = [], newItems = [], visibility = [], itemEdits = [] }) => {
+    // variações e grupos de opções de produtos existentes: mesmos campos que o modal do produto grava
+    for (const e of itemEdits) {
+      const f = e.fields || {};
+      const patch = {
+        ...(f.name && { name: f.name.after }),
+        ...(f.description && { description: f.description.after }),
+        ...(f.price && { price: f.price.after }),
+        ...(f.promoPrice && { promo_price: f.promoPrice.after }),
+      };
+      if (Object.keys(patch).length) {
+        const { error } = await supabase.from("menu_items").update(patch).eq("id", e.itemId);
+        if (error) throw error;
+      }
+
+      if (e.variations) {
+        const { after } = e.variations;
+        const { error } = await supabase
+          .from("menu_items")
+          .update({ variations: after, price: Math.min(...after.options.map((o) => o.price)), promo_price: null })
+          .eq("id", e.itemId);
+        if (error) throw error;
+      }
+
+      for (const g of e.groups) {
+        let groupId = g.groupId;
+        if (!groupId) {
+          const { data, error } = await supabase
+            .from("option_groups")
+            .insert({ item_id: e.itemId, name: g.name, min_choices: g.min, max_choices: g.max, position: g.position })
+            .select("id")
+            .single();
+          if (error) throw error;
+          groupId = data.id;
+        } else if (g.rename || g.limitsChanged) {
+          const { error } = await supabase
+            .from("option_groups")
+            .update({ name: g.rename ?? g.name, min_choices: g.min, max_choices: g.max })
+            .eq("id", groupId);
+          if (error) throw error;
+        }
+
+        for (const c of g.updates) {
+          const { error } = await supabase.from("option_choices").update({ price: c.price }).eq("id", c.id);
+          if (error) throw error;
+        }
+        if (g.inserts.length) {
+          const { error } = await supabase.from("option_choices").insert(
+            g.inserts.map((c) => ({ group_id: groupId, name: c.name, price: c.price, hidden: false, position: c.position })),
+          );
+          if (error) throw error;
+        }
+      }
+    }
+
     // ocultar/exibir: mesmos campos dos botões do dashboard (menu_items.visible / option_choices.hidden)
     for (const v of visibility) {
       const { error } =
@@ -318,7 +426,7 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
     let saved = true;
     if (Object.keys(m.changes || {}).length) saved = await onApply(m.changes);
 
-    if (saved && (m.stock?.length || m.newItems?.length || m.visibility?.length)) {
+    if (saved && (m.stock?.length || m.newItems?.length || m.visibility?.length || m.itemEdits?.length)) {
       try {
         await saveCatalog(m);
       } catch (err) {

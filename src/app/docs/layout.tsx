@@ -32,10 +32,22 @@ const docsNavigation = [
       { label: "Plano Plus", href: "/docs/planos#plus" },
       { label: "Plano Pro", href: "/docs/planos#pro" },
       { label: "Plano Business", href: "/docs/planos#business" },
-      { label: "Bite Menu IA", href: "/docs/planos#bite-menu-ia" },
       { label: "Troca de plano", href: "/docs/planos#troca-de-plano" },
       { label: "Cancelamento", href: "/docs/planos#cancelamento" },
       { label: "Segurança", href: "/docs/planos#seguranca" },
+    ],
+  },
+  {
+    key: "bite-menu-ia",
+    label: "Bite Menu IA",
+    href: "/docs/bite-menu-ia",
+    sections: [
+      { label: "O que é o Bite Menu IA?", href: "/docs/bite-menu-ia#o-que-e" },
+      { label: "Onde fica?", href: "/docs/bite-menu-ia#onde-fica" },
+      { label: "O que ele consegue fazer", href: "/docs/bite-menu-ia#o-que-ele-faz" },
+      { label: "Confirmação e preview", href: "/docs/bite-menu-ia#confirmacao-e-preview" },
+      { label: "Segurança", href: "/docs/bite-menu-ia#seguranca" },
+      { label: "Limite de uso", href: "/docs/bite-menu-ia#limite-de-uso" },
     ],
   },
   {

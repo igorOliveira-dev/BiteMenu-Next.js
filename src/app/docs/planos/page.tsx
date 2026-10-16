@@ -118,9 +118,9 @@ const page = () => {
         <ul className="docs-paragraph list-disc pl-6">
           <li>Sem limites de itens, categorias e mesas</li>
           <li>
-            <a href="#bite-menu-ia" className="underline text-blue-500 hover:text-blue-700">
+            <Link href="/docs/bite-menu-ia" className="underline text-blue-500 hover:text-blue-700">
               Bite Menu IA
-            </a>
+            </Link>
             : assistente que altera o cardápio por você a partir de um pedido em texto
           </li>
           <li>Controle de estoque</li>
@@ -157,31 +157,6 @@ const page = () => {
         </p>
       </section>
 
-      <section className="mt-4 scroll-mt-[90px]" id="bite-menu-ia">
-        <h2 className="docs-title">Bite Menu IA</h2>
-        <p className="docs-paragraph">
-          O <strong>Bite Menu IA</strong> é o assistente de inteligência artificial do Bite Menu, incluso no{" "}
-          <strong>Plano Business</strong>. Você escreve o que quer mudar e ele prepara a alteração para você. Ele fica na
-          aba "Cardápio", logo acima do botão "Configurar cardápio".
-        </p>
-        <p className="docs-paragraph">O que ele consegue fazer:</p>
-        <ul className="docs-paragraph list-disc pl-6">
-          <li>Cadastrar produtos e categorias, inclusive colando o seu cardápio inteiro em texto</li>
-          <li>Ocultar ou exibir categorias, produtos e grupos de opções</li>
-          <li>Alterar o estoque dos produtos</li>
-          <li>Alterar horários, taxa de entrega, bairros, pedido mínimo, formas de pagamento, serviços e chave PIX</li>
-          <li>Alterar título, descrição e cores do cardápio</li>
-        </ul>
-        <p className="docs-paragraph">
-          Nada é salvo sem a sua confirmação: o assistente mostra o que vai mudar e, quando a alteração aparece no cardápio
-          do cliente (como produtos novos ou cores), mostra também um preview de como vai ficar. Por segurança, ele não
-          exclui nada do seu cardápio.
-        </p>
-        <p className="docs-paragraph">
-          O uso tem um limite por sessão de 5 horas. A porcentagem usada e o horário em que o limite renova aparecem no
-          topo da janela do assistente.
-        </p>
-      </section>
 
       <section className="mt-4 scroll-mt-[90px]" id="troca-de-plano">
         <h2 className="docs-title">Troca de Plano</h2>

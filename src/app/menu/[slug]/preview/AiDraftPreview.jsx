@@ -59,6 +59,19 @@ function applyDraft(menu, draft) {
   const catVisible = Object.fromEntries(vis.filter((v) => v.kind === "category").map((v) => [v.id, v.visible]));
   const itemVisible = Object.fromEntries(vis.filter((v) => v.kind === "item").map((v) => [v.id, v.visible]));
   const hiddenGroups = new Set(vis.filter((v) => v.kind === "group" && !v.visible).flatMap((v) => v.groupIds));
+  // nome/descrição/preço/promoção editados
+  const edits = Object.fromEntries((draft.itemEdits || []).map((e) => [e.itemId, e.fields || {}]));
+  const applyFields = (it) => {
+    const f = edits[it.id];
+    if (!f) return it;
+    return {
+      ...it,
+      ...(f.name && { name: f.name.after }),
+      ...(f.description && { description: f.description.after }),
+      ...(f.price && { price: f.price.after }),
+      ...(f.promoPrice && { promo_price: f.promoPrice.after }),
+    };
+  };
 
   const categories = (menu.categories || []).map((c) => {
     const added = (draft.newItems || []).find((g) => g.id === c.id)?.items || [];
@@ -69,6 +82,7 @@ function applyDraft(menu, draft) {
           let next = it.id in stockById ? { ...it, stock: stockById[it.id], visible: it.visible && stockById[it.id] !== 0 } : it;
           if (c.id in catVisible) next = { ...next, visible: catVisible[c.id] };
           if (it.id in itemVisible) next = { ...next, visible: itemVisible[it.id] };
+          next = applyFields(next);
           if (hiddenGroups.size) {
             next = { ...next, option_groups: (next.option_groups || []).filter((g) => !hiddenGroups.has(g.id)) };
           }

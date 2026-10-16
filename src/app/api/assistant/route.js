@@ -39,7 +39,8 @@ Como agir:
 - Você também pode alterar o estoque dos produtos (campo stock), quando a mensagem informar que o estoque está disponível.
 - Você pode CRIAR produtos novos (campo newItems), inclusive a partir de um cardápio colado em texto. Categorias que ainda não existem são criadas junto.
 - Você pode OCULTAR ou EXIBIR categorias, produtos e grupos de opções (campo visibility). Ocultar não apaga nada: o item só some do cardápio do cliente.
-- Se pedirem algo que você não consegue fazer (excluir qualquer coisa, editar nome/preço/descrição de produtos que já existem, renomear categorias, fotos, criar ou editar adicionais/complementos, logo, banner, endereço, link/slug, layout, estoque de adicionais, plano, equipe, pedidos, mesas), diga isso de forma breve e indique onde fazer, usando o mapa abaixo.
+- Você pode EDITAR nome, descrição, preço e preço promocional de produtos que já existem, e CRIAR e EDITAR variações (ex.: tamanhos com preços) e grupos de opções (ex.: adicionais, molhos) de produtos que já existem (campo itemEdits). Você nunca remove opções, variações ou grupos: o que você não mencionar continua igual. Se pedirem para tirar uma opção, ofereça ocultar o grupo.
+- Se pedirem algo que você não consegue fazer (excluir qualquer coisa, renomear categorias, renomear ou ocultar uma opção individual, fotos, logo, banner, endereço, link/slug, layout, estoque de adicionais, plano, equipe, pedidos, mesas), diga isso de forma breve e indique onde fazer, usando o mapa abaixo.
 - Respostas curtas e diretas. Valores em reais usam ponto decimal (ex.: 7.5).
 
 Mapa do dashboard (use exatamente estes nomes; nunca invente abas ou caminhos):
@@ -69,7 +70,16 @@ Formato dos campos:
   - categories: nome exato da categoria; oculta/exibe todos os produtos dela.
   - items: id do produto da lista.
   - optionGroups: nome do grupo (veja "groups" nos produtos). Com itemId, só naquele produto; sem itemId, em todos os produtos que têm o grupo.
-  - visible: false para ocultar, true para exibir.`;
+  - visible: false para ocultar, true para exibir.
+- itemEdits: lista de { itemId, name?, description?, price?, promoPrice?, variations?, optionGroups? } para produtos existentes (itemId da lista). Um item por produto; para vários produtos (ex.: "todos os itens"), repita para cada um.
+  - name, description, price: novos valores. Produto com variações não tem price próprio (o preço vem da menor variação).
+  - promoPrice: preço promocional, menor que o preço normal (ex.: 20% de desconto em 30 = 24). null remove a promoção. Produto com variações não aceita promoção: avise o dono.
+  - variations: { name, options: [{ name, price }] }. Envie só as opções novas ou com preço novo; as existentes não mencionadas são mantidas. O preço do produto vira o da menor opção.
+  - optionGroups: [{ group, rename?, min?, max?, choices: [{ name, price }] }].
+    - group: nome do grupo. Se o produto já tem um grupo com esse nome, ele é editado; senão, um grupo novo é criado (precisa de pelo menos 1 opção).
+    - choices: opções novas ou com preço novo (price 0 = grátis). Opções existentes não mencionadas são mantidas.
+    - min/max: quantas opções o cliente escolhe (max 0 = sem limite; min 1 = obrigatório).
+  - Os grupos de cada produto aparecem em "groups" (códigos g1, g2...) e estão detalhados em "Grupos de opções".`;
 
 const TOOLS = [
   {
@@ -116,6 +126,56 @@ const TOOLS = [
                 type: "object",
                 properties: { id: { type: "string" }, stock: { type: ["integer", "null"] } },
                 required: ["id", "stock"],
+              },
+            },
+            itemEdits: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  itemId: { type: "string" },
+                  name: { type: "string" },
+                  description: { type: "string" },
+                  price: { type: "number" },
+                  promoPrice: { type: ["number", "null"] },
+                  variations: {
+                    type: "object",
+                    properties: {
+                      name: { type: "string" },
+                      options: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: { name: { type: "string" }, price: { type: "number" } },
+                          required: ["name", "price"],
+                        },
+                      },
+                    },
+                    required: ["options"],
+                  },
+                  optionGroups: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        group: { type: "string" },
+                        rename: { type: "string" },
+                        min: { type: "integer" },
+                        max: { type: "integer" },
+                        choices: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: { name: { type: "string" }, price: { type: "number" } },
+                            required: ["name", "price"],
+                          },
+                        },
+                      },
+                      required: ["group"],
+                    },
+                  },
+                },
+                required: ["itemId"],
               },
             },
             visibility: {
@@ -343,7 +403,7 @@ async function getCatalog(ownerId) {
   const { data } = await supabaseAdmin
     .from("categories")
     .select(
-      "id, name, position, menu_items ( id, name, position, stock, visible, option_groups ( id, name, option_choices ( hidden ) ) )",
+      "id, name, position, menu_items ( id, name, position, stock, visible, price, promo_price, variations, option_groups ( id, name, min_choices, max_choices, position, option_choices ( id, name, price, hidden, position ) ) )",
     )
     .eq("menu_id", menu.id);
   return (data || []).map((c) => ({ ...c, menu_items: c.menu_items || [] }));
@@ -402,6 +462,113 @@ function sanitizeVariations(v) {
 
 // Produtos novos agrupados por categoria (existente: id; nova: id null), já com posições.
 // Respeita os limites do plano e pula duplicados/incompletos.
+// Variações e grupos de opções de produtos existentes. Mescla por nome e NUNCA remove nada:
+// opção/grupo que a IA não citou continua igual. Devolve só o que muda, pronto pra gravar.
+function sanitizeItemEdits(list, catalog) {
+  if (!Array.isArray(list)) return [];
+  const items = catalog.flatMap((c) => c.menu_items);
+  const out = [];
+  const seen = new Set();
+
+  for (const raw of list.slice(0, 500)) {
+    const item = items.find((it) => it.id === raw?.itemId);
+    if (!item || seen.has(item.id)) continue;
+    seen.add(item.id);
+    const edit = { itemId: item.id, itemName: item.name, groups: [], fields: {} };
+
+    // nome, descrição, preço e promoção (regras do modal do produto: promoção < preço; com variações não tem)
+    const cents = (n) => Math.round(n * 100) / 100;
+    const hasVariations = !!(item.variations?.options?.length || raw.variations);
+    const name = cleanText(raw.name, 80);
+    if (name && name !== item.name) edit.fields.name = { before: item.name, after: name };
+    if (typeof raw.description === "string") {
+      const description = cleanText(raw.description, 500);
+      if (description !== (item.description ?? "")) edit.fields.description = { before: item.description ?? "", after: description };
+    }
+    const currentPrice = Number(item.price ?? 0);
+    const price = !hasVariations && isMoney(raw.price) ? cents(raw.price) : currentPrice;
+    if (price !== currentPrice) edit.fields.price = { before: currentPrice, after: price };
+    const currentPromo = item.promo_price != null && item.promo_price !== "" ? Number(item.promo_price) : null;
+    if (raw.promoPrice === null && currentPromo !== null) {
+      edit.fields.promoPrice = { before: currentPromo, after: null };
+    } else if (!hasVariations && isMoney(raw.promoPrice) && cents(raw.promoPrice) < price) {
+      const promo = cents(raw.promoPrice);
+      if (promo !== currentPromo) edit.fields.promoPrice = { before: currentPromo, after: promo };
+    } else if (currentPromo !== null && currentPromo >= price) {
+      // preço novo ficou abaixo da promoção antiga: a promoção deixa de fazer sentido
+      edit.fields.promoPrice = { before: currentPromo, after: null };
+    }
+
+    if (raw.variations && typeof raw.variations === "object") {
+      const current = item.variations?.options?.length ? item.variations : null;
+      const options = (current?.options || []).map((o) => ({ name: o.name, price: Number(o.price) }));
+      let changed = false;
+      for (const o of (Array.isArray(raw.variations.options) ? raw.variations.options : []).slice(0, 20)) {
+        const name = cleanText(o?.name, 40);
+        if (!name || !isMoney(o?.price)) continue;
+        const existing = options.find((x) => norm(x.name) === norm(name));
+        if (existing) {
+          if (existing.price !== o.price) {
+            existing.price = o.price;
+            changed = true;
+          }
+        } else if (options.length < 20) {
+          options.push({ name, price: o.price });
+          changed = true;
+        }
+      }
+      const name = cleanText(raw.variations.name, 40) || current?.name || "";
+      if (name && options.length && (changed || name !== current?.name)) {
+        edit.variations = { before: current, after: { name, options } };
+      }
+    }
+
+    const groups = item.option_groups || [];
+    let nextGroupPos = nextPosition(groups);
+    for (const rg of (Array.isArray(raw.optionGroups) ? raw.optionGroups : []).slice(0, 10)) {
+      const name = cleanText(rg?.group, 80);
+      if (!name) continue;
+      const existing = groups.find((g) => norm(g.name) === norm(name));
+      const isCount = (n) => Number.isInteger(n) && n >= 0 && n <= 50;
+      const min = isCount(rg.min) ? rg.min : (existing?.min_choices ?? 0);
+      const max = isCount(rg.max) ? rg.max : (existing?.max_choices ?? 0);
+      if (max > 0 && min > max) continue;
+
+      const choices = existing?.option_choices || [];
+      let nextChoicePos = nextPosition(choices);
+      const updates = [];
+      const inserts = [];
+      for (const rc of (Array.isArray(rg.choices) ? rg.choices : []).slice(0, 30)) {
+        const cname = cleanText(rc?.name, 60);
+        if (!cname || !isMoney(rc?.price)) continue;
+        const ec = choices.find((c) => norm(c.name) === norm(cname));
+        if (ec) {
+          if (Number(ec.price) !== rc.price) updates.push({ id: ec.id, name: ec.name, before: Number(ec.price), price: rc.price });
+        } else if (!inserts.some((c) => norm(c.name) === norm(cname))) {
+          inserts.push({ name: cname, price: rc.price, position: nextChoicePos++ });
+        }
+      }
+
+      const newName = cleanText(rg.rename, 80);
+      if (!existing) {
+        if (inserts.length) {
+          edit.groups.push({ groupId: null, name: newName || name, min, max, position: nextGroupPos++, updates: [], inserts });
+        }
+        continue;
+      }
+      const rename = newName && newName !== existing.name ? newName : null;
+      const before = { min: existing.min_choices ?? 0, max: existing.max_choices ?? 0 };
+      const limitsChanged = min !== before.min || max !== before.max;
+      if (rename || limitsChanged || updates.length || inserts.length) {
+        edit.groups.push({ groupId: existing.id, name: existing.name, rename, min, max, before, limitsChanged, updates, inserts });
+      }
+    }
+
+    if (edit.variations || edit.groups.length || Object.keys(edit.fields).length) out.push(edit);
+  }
+  return out;
+}
+
 function sanitizeNewItems(list, catalog, role) {
   const result = { categories: [], skipped: 0 };
   if (!Array.isArray(list) || !list.length) return result;
@@ -490,20 +657,37 @@ export async function POST(req) {
   const current = Object.fromEntries(AI_FIELDS.map((k) => [k, config[k] ?? null]));
   const catalog = await getCatalog(user.id);
   const canStock = STOCK_ROLES.includes(profile.role);
+  // grupos iguais em vários produtos vão uma vez só (g1, g2...), pra economizar tokens
+  const byPosition = (a, b) => (a.position ?? 0) - (b.position ?? 0);
+  const groupDefs = new Map();
+  const groupKey = (g) => {
+    const choices = [...(g.option_choices || [])]
+      .sort(byPosition)
+      .map((c) => `${c.name} ${Number(c.price)}${c.hidden ? " (oculta)" : ""}`)
+      .join(", ");
+    const desc = `${g.name} (mín ${g.min_choices ?? 0}, máx ${g.max_choices ?? 0}${groupHidden(g) ? ", grupo oculto" : ""}): ${choices}`;
+    if (!groupDefs.has(desc)) groupDefs.set(desc, `g${groupDefs.size + 1}`);
+    return groupDefs.get(desc);
+  };
   const products = catalog.flatMap((c) =>
     c.menu_items.map((it) => ({
       id: it.id,
       name: it.name,
       category: c.name,
+      price: Number(it.price ?? 0),
+      ...(it.promo_price != null && it.promo_price !== "" && { promoPrice: Number(it.promo_price) }),
+      ...(it.variations?.options?.length && {
+        variations: `${it.variations.name}: ${it.variations.options.map((o) => `${o.name} ${o.price}`).join(", ")}`,
+      }),
       ...(canStock && { stock: it.stock ?? null }),
       ...(it.visible === false && { hidden: true }),
-      ...((it.option_groups || []).length && {
-        groups: it.option_groups.map((g) => (groupHidden(g) ? `${g.name} (oculto)` : g.name)),
-      }),
+      ...((it.option_groups || []).length && { groups: [...it.option_groups].sort(byPosition).map(groupKey) }),
     })),
   );
+  const groupsInfo = Object.fromEntries([...groupDefs].map(([desc, key]) => [key, desc]));
   const catalogInfo = `Categorias existentes: ${JSON.stringify(catalog.map((c) => c.name))}
-Produtos existentes (hidden = oculto no cardápio; groups = grupos de opções)${canStock ? " (stock null = sem controle)" : ""}: ${JSON.stringify(products)}
+Produtos existentes (hidden = oculto no cardápio; groups = códigos dos grupos de opções)${canStock ? " (stock null = sem controle)" : ""}: ${JSON.stringify(products)}
+Grupos de opções (nome (mín, máx): opção preço, ...): ${JSON.stringify(groupsInfo)}
 ${canStock ? "Estoque disponível." : 'Estoque indisponível: exige o plano Business. Se pedirem, explique e indique "Conta" > plano.'}`;
 
   const last = history.at(-1);
@@ -551,7 +735,8 @@ ${canStock ? "Estoque disponível." : 'Estoque indisponível: exige o plano Busi
   const stock = canStock ? sanitizeStock(call.input?.changes?.stock, products) : [];
   const { categories: newItems, skipped } = sanitizeNewItems(call.input?.changes?.newItems, catalog, profile.role);
   const visibility = sanitizeVisibility(call.input?.changes?.visibility, catalog);
-  if (!Object.keys(changes).length && !stock.length && !newItems.length && !visibility.length) {
+  const itemEdits = sanitizeItemEdits(call.input?.changes?.itemEdits, catalog);
+  if (!Object.keys(changes).length && !stock.length && !newItems.length && !visibility.length && !itemEdits.length) {
     return respond({
       reply: skipped
         ? "Não consegui criar esses produtos: ou já existem, ou faltam preços, ou o limite do seu plano foi atingido."
@@ -563,5 +748,5 @@ ${canStock ? "Estoque disponível." : 'Estoque indisponível: exige o plano Busi
   if (skipped) {
     reply += `\n\n⚠ ${skipped} produto(s) ficaram de fora: já existiam, estavam sem preço ou passaram do limite do seu plano.`;
   }
-  return respond({ reply, changes, stock, newItems, visibility });
+  return respond({ reply, changes, stock, newItems, visibility, itemEdits });
 }
