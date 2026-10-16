@@ -49,10 +49,14 @@ const page = () => {
           <li>Cadastrar produtos e categorias, inclusive colando o seu cardápio inteiro em texto</li>
           <li>Editar nome, descrição, preço e preço promocional dos produtos</li>
           <li>Criar e editar variações (como tamanhos) e grupos de opções (como adicionais) dos produtos</li>
-          <li>Ocultar ou exibir categorias, produtos e grupos de opções</li>
-          <li>Alterar o estoque dos produtos</li>
+          <li>Ocultar ou exibir categorias, produtos, grupos de opções e opções individuais</li>
+          <li>Renomear categorias e opções, mover produtos de categoria e destacar produtos</li>
+          <li>Reordenar categorias e produtos</li>
+          <li>Abrir ou fechar a loja manualmente, ou voltar a seguir o horário de funcionamento</li>
+          <li>Alterar o estoque dos produtos e dos adicionais</li>
+          <li>Criar e editar cupons de desconto</li>
           <li>Alterar horários, taxa de entrega, bairros, pedido mínimo, formas de pagamento, serviços e chave PIX</li>
-          <li>Alterar título, descrição e cores do cardápio</li>
+          <li>Alterar título, descrição, cores e estilo (padrão, lista ou grade) do cardápio</li>
         </ul>
         <p className="docs-paragraph">Alguns exemplos de pedidos:</p>
         <ul className="docs-paragraph list-disc pl-6">
@@ -61,6 +65,9 @@ const page = () => {
           <li>"Coloca o grupo Molhos, com barbecue e maionese grátis, em todos os lanches"</li>
           <li>"Oculta a categoria Bebidas"</li>
           <li>"Coloca um preço promocional de 20% em todos os itens"</li>
+          <li>"Fecha a loja agora"</li>
+          <li>"Cria um cupom PROMO10 de 10% válido até domingo"</li>
+          <li>"O bacon acabou, zera o estoque dele"</li>
           <li>Colar o seu cardápio em texto e pedir para cadastrar tudo</li>
         </ul>
       </section>

@@ -37,10 +37,17 @@ Como agir:
 - Quando o pedido for claro, chame a ferramenta propose_changes com SOMENTE os campos que mudam. Nada é salvo até o dono confirmar.
 - Se faltar informação ou o pedido for ambíguo, faça uma pergunta curta em vez de chutar.
 - Você também pode alterar o estoque dos produtos (campo stock), quando a mensagem informar que o estoque está disponível.
+- Você pode mudar o estilo (layout) do cardápio: "default" (padrão), "list" (lista) ou "grid" (grade), no campo layout.
+- Você pode abrir ou fechar a loja manualmente, ou voltar a seguir o horário de funcionamento (campo storeStatus).
+- Você pode renomear categorias (categoryEdits), mover produtos de categoria e destacar produtos (itemEdits.category / itemEdits.starred).
+- Você pode reordenar categorias e produtos (campo order).
+- Você pode ocultar/exibir e renomear opções individuais dos grupos (visibility.options / optionGroups.renameChoices).
+- Você pode alterar o estoque dos adicionais/opções (campo optionStock), quando o estoque estiver disponível.
+- Você pode criar e editar cupons de desconto (campo coupons), quando os cupons estiverem disponíveis.
 - Você pode CRIAR produtos novos (campo newItems), inclusive a partir de um cardápio colado em texto. Categorias que ainda não existem são criadas junto.
 - Você pode OCULTAR ou EXIBIR categorias, produtos e grupos de opções (campo visibility). Ocultar não apaga nada: o item só some do cardápio do cliente.
 - Você pode EDITAR nome, descrição, preço e preço promocional de produtos que já existem, e CRIAR e EDITAR variações (ex.: tamanhos com preços) e grupos de opções (ex.: adicionais, molhos) de produtos que já existem (campo itemEdits). Você nunca remove opções, variações ou grupos: o que você não mencionar continua igual. Se pedirem para tirar uma opção, ofereça ocultar o grupo.
-- Se pedirem algo que você não consegue fazer (excluir qualquer coisa, renomear categorias, renomear ou ocultar uma opção individual, fotos, logo, banner, endereço, link/slug, layout, estoque de adicionais, plano, equipe, pedidos, mesas), diga isso de forma breve e indique onde fazer, usando o mapa abaixo.
+- Se pedirem algo que você não consegue fazer (excluir qualquer coisa (produtos, categorias, opções, cupons), fotos, combos, logo, banner, endereço, link/slug, plano, equipe, pedidos, mesas), diga isso de forma breve e indique onde fazer, usando o mapa abaixo.
 - Respostas curtas e diretas. Valores em reais usam ponto decimal (ex.: 7.5).
 
 Mapa do dashboard (use exatamente estes nomes; nunca invente abas ou caminhos):
@@ -79,7 +86,19 @@ Formato dos campos:
     - group: nome do grupo. Se o produto já tem um grupo com esse nome, ele é editado; senão, um grupo novo é criado (precisa de pelo menos 1 opção).
     - choices: opções novas ou com preço novo (price 0 = grátis). Opções existentes não mencionadas são mantidas.
     - min/max: quantas opções o cliente escolhe (max 0 = sem limite; min 1 = obrigatório).
-  - Os grupos de cada produto aparecem em "groups" (códigos g1, g2...) e estão detalhados em "Grupos de opções".`;
+  - Os grupos de cada produto aparecem em "groups" (códigos g1, g2...) e estão detalhados em "Grupos de opções".
+  - starred: true destaca o produto (só produtos com foto; os sem foto vêm com noPhoto). false tira o destaque.
+  - category: nome de uma categoria existente para mover o produto.
+  - optionGroups[].renameChoices: [{ from, to }] renomeia opções do grupo nesse produto.
+- storeStatus: "open" (aberta, controle manual), "closed" (fechada, controle manual) ou "schedule" (segue o horário de funcionamento). Com "closed", resetOrderCounter: true só se o dono pedir para reiniciar a numeração dos pedidos.
+- categoryEdits: [{ name, rename }] renomeia categorias existentes.
+- order: { categories?: [nomes na nova ordem], items?: [{ category, itemIds: [ids na nova ordem] }] }. Os produtos já vêm na ordem atual. O que você não listar fica depois, na ordem atual.
+- visibility.options: [{ option, group?, itemId?, visible }] oculta/exibe uma opção pelo nome. Sem group, vale em qualquer grupo; sem itemId, em todos os produtos.
+- optionStock: [{ option, stock }] estoque de um adicional pelo nome (vale para todos os produtos que têm essa opção). stock inteiro >= 0, ou null para sem controle.
+- coupons: [{ code, type?, percent?, amount?, maxDiscount?, minOrder?, startsAt?, endsAt?, maxUses? }]. Se o código já existe, ele é editado (só os campos enviados mudam); senão, um cupom novo é criado.
+  - code: 3 a 20 letras/números, sem espaços (fica em maiúsculas). type: "percentage", "fixed" ou "free_shipping".
+  - percent: 1 a 100 (percentage). amount: valor do desconto (fixed). maxDiscount: teto do desconto em percentage (opcional). minOrder: pedido mínimo (opcional).
+  - startsAt/endsAt: datas "AAAA-MM-DD" (início padrão = hoje; endsAt null = sem fim). maxUses: inteiro > 0, ou null para ilimitado.`;
 
 const TOOLS = [
   {
@@ -120,6 +139,57 @@ const TOOLS = [
             backgroundColor: { type: "string" },
             titleColor: { type: "string" },
             detailsColor: { type: "string" },
+            layout: { type: "string", enum: ["default", "list", "grid"] },
+            storeStatus: { type: "string", enum: ["open", "closed", "schedule"] },
+            resetOrderCounter: { type: "boolean" },
+            categoryEdits: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: { name: { type: "string" }, rename: { type: "string" } },
+                required: ["name", "rename"],
+              },
+            },
+            order: {
+              type: "object",
+              properties: {
+                categories: { type: "array", items: { type: "string" } },
+                items: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: { category: { type: "string" }, itemIds: { type: "array", items: { type: "string" } } },
+                    required: ["category", "itemIds"],
+                  },
+                },
+              },
+            },
+            optionStock: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: { option: { type: "string" }, stock: { type: ["integer", "null"] } },
+                required: ["option", "stock"],
+              },
+            },
+            coupons: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  code: { type: "string" },
+                  type: { type: "string", enum: ["percentage", "fixed", "free_shipping"] },
+                  percent: { type: "number" },
+                  amount: { type: "number" },
+                  maxDiscount: { type: ["number", "null"] },
+                  minOrder: { type: ["number", "null"] },
+                  startsAt: { type: "string" },
+                  endsAt: { type: ["string", "null"] },
+                  maxUses: { type: ["integer", "null"] },
+                },
+                required: ["code"],
+              },
+            },
             stock: {
               type: "array",
               items: {
@@ -138,6 +208,8 @@ const TOOLS = [
                   description: { type: "string" },
                   price: { type: "number" },
                   promoPrice: { type: ["number", "null"] },
+                  starred: { type: "boolean" },
+                  category: { type: "string" },
                   variations: {
                     type: "object",
                     properties: {
@@ -160,6 +232,14 @@ const TOOLS = [
                       properties: {
                         group: { type: "string" },
                         rename: { type: "string" },
+                        renameChoices: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: { from: { type: "string" }, to: { type: "string" } },
+                            required: ["from", "to"],
+                          },
+                        },
                         min: { type: "integer" },
                         max: { type: "integer" },
                         choices: {
@@ -207,6 +287,19 @@ const TOOLS = [
                       visible: { type: "boolean" },
                     },
                     required: ["group", "visible"],
+                  },
+                },
+                options: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      option: { type: "string" },
+                      group: { type: "string" },
+                      itemId: { type: "string" },
+                      visible: { type: "boolean" },
+                    },
+                    required: ["option", "visible"],
                   },
                 },
               },
@@ -399,14 +492,28 @@ function sanitizeStock(stock, products) {
 // Categorias e produtos do cardápio do dono (leitura)
 async function getCatalog(ownerId) {
   const { data: menu } = await supabaseAdmin.from("menus").select("id").eq("owner_id", ownerId).maybeSingle();
-  if (!menu) return [];
+  if (!menu) return { menuId: null, categories: [] };
   const { data } = await supabaseAdmin
     .from("categories")
     .select(
-      "id, name, position, menu_items ( id, name, position, stock, visible, price, promo_price, variations, option_groups ( id, name, min_choices, max_choices, position, option_choices ( id, name, price, hidden, position ) ) )",
+      "id, name, position, menu_items ( id, name, description, position, stock, visible, starred, image_url, price, promo_price, variations, option_groups ( id, name, min_choices, max_choices, position, option_choices ( id, name, price, hidden, position ) ) )",
     )
     .eq("menu_id", menu.id);
-  return (data || []).map((c) => ({ ...c, menu_items: c.menu_items || [] }));
+  // na ordem do cardápio (a IA usa isso pra reordenar)
+  const byPos = (a, b) => (a.position ?? 0) - (b.position ?? 0);
+  const categories = (data || [])
+    .map((c) => ({ ...c, menu_items: [...(c.menu_items || [])].sort(byPos) }))
+    .sort(byPos);
+  return { menuId: menu.id, categories };
+}
+
+// Cupons e estoque de adicionais do cardápio (leitura)
+async function getExtras(menuId, { coupons, optionStock }) {
+  const [c, o] = await Promise.all([
+    coupons ? supabaseAdmin.from("coupons").select("*").eq("menu_id", menuId) : { data: [] },
+    optionStock ? supabaseAdmin.from("option_stock").select("name_key, stock").eq("menu_id", menuId) : { data: [] },
+  ]);
+  return { coupons: c.data || [], optionStock: o.data || [] };
 }
 
 // grupo oculto = todas as opções ocultas (é assim que o dashboard e o cardápio público entendem)
@@ -443,7 +550,147 @@ function sanitizeVisibility(v, catalog) {
     const where = g.itemId ? targets[0]?.name : "todos os produtos";
     ops.push({ kind: "group", groupIds: groups.map((og) => og.id), label: `${groups[0].name} (${where})`, visible: g.visible });
   }
+
+  // opção individual (como o "Ocultar opção neste item / em todos os itens" do modal do produto)
+  for (const o of Array.isArray(v.options) ? v.options : []) {
+    if (typeof o?.visible !== "boolean" || !cleanText(o.option, 60)) continue;
+    const targets = o.itemId ? items.filter((it) => it.id === o.itemId) : items;
+    const choices = targets.flatMap((it) =>
+      (it.option_groups || [])
+        .filter((og) => !o.group || norm(og.name) === norm(o.group))
+        .flatMap((og) => og.option_choices || [])
+        .filter((c) => norm(c.name) === norm(o.option) && !c.hidden === !o.visible),
+    );
+    if (!choices.length) continue;
+    const where = o.itemId ? targets[0]?.name : "todos os produtos";
+    ops.push({
+      kind: "option",
+      choiceIds: choices.map((c) => c.id),
+      label: `${choices[0].name}${o.group ? ` em ${o.group}` : ""} (${where})`,
+      visible: o.visible,
+    });
+  }
   return ops;
+}
+
+// Renomear categorias (sem repetir nome de outra)
+function sanitizeCategoryEdits(list, catalog) {
+  if (!Array.isArray(list)) return [];
+  const out = [];
+  for (const e of list.slice(0, 50)) {
+    const cat = catalog.find((c) => norm(c.name) === norm(e?.name));
+    const rename = cleanText(e?.rename, 60);
+    if (!cat || !rename || rename === cat.name) continue;
+    if (catalog.some((c) => c.id !== cat.id && norm(c.name) === norm(rename))) continue;
+    out.push({ id: cat.id, before: cat.name, after: rename });
+  }
+  return out;
+}
+
+// Nova ordem: o que a IA listou vem primeiro, o resto depois na ordem atual. Só devolve o que muda.
+function sanitizeOrder(order, catalog) {
+  if (!order || typeof order !== "object") return null;
+  const reorder = (current, wanted) => {
+    const picked = [];
+    for (const x of wanted) if (x && !picked.includes(x)) picked.push(x);
+    return [...picked, ...current.filter((x) => !picked.includes(x))];
+  };
+  const result = { categories: [], items: [], labels: [] };
+
+  if (Array.isArray(order.categories) && order.categories.length) {
+    const wanted = order.categories.map((n) => catalog.find((c) => norm(c.name) === norm(n)));
+    const next = reorder(catalog, wanted);
+    if (next.some((c, i) => c !== catalog[i])) {
+      result.categories = next.map((c, i) => ({ id: c.id, position: i }));
+      result.labels.push({ title: "Ordem das categorias", names: next.map((c) => c.name) });
+    }
+  }
+
+  for (const o of Array.isArray(order.items) ? order.items.slice(0, 100) : []) {
+    const cat = catalog.find((c) => norm(c.name) === norm(o?.category));
+    if (!cat || !Array.isArray(o.itemIds)) continue;
+    const wanted = o.itemIds.map((id) => cat.menu_items.find((it) => it.id === id));
+    const next = reorder(cat.menu_items, wanted);
+    if (next.some((it, i) => it !== cat.menu_items[i])) {
+      result.items.push(...next.map((it, i) => ({ id: it.id, position: i })));
+      result.labels.push({ title: `Ordem em ${cat.name}`, names: next.map((it) => it.name) });
+    }
+  }
+  return result.labels.length ? result : null;
+}
+
+// Estoque de adicionais (option_stock, por nome): só opções que existem no cardápio
+function sanitizeOptionStock(list, catalog, rows) {
+  if (!Array.isArray(list)) return [];
+  const names = new Map();
+  catalog.forEach((c) =>
+    c.menu_items.forEach((it) =>
+      (it.option_groups || []).forEach((g) => (g.option_choices || []).forEach((ch) => names.set(norm(ch.name), ch.name))),
+    ),
+  );
+  const current = Object.fromEntries(rows.map((r) => [r.name_key, r.stock]));
+  const out = [];
+  for (const o of list.slice(0, 100)) {
+    const key = norm(o?.option);
+    if (!names.has(key) || out.some((x) => x.key === key)) continue;
+    if (!(o.stock === null || (Number.isInteger(o.stock) && o.stock >= 0))) continue;
+    const before = current[key] ?? null;
+    if (before === o.stock) continue;
+    out.push({ key, name: names.get(key), before, after: o.stock });
+  }
+  return out;
+}
+
+// Cupons: mesmas regras do CouponsModal. Datas ficam "AAAA-MM-DD" (o navegador converte ao salvar, como o modal).
+function sanitizeCoupons(list, existing, timezone) {
+  if (!Array.isArray(list)) return [];
+  const dayInTz = (d) => {
+    try {
+      return new Intl.DateTimeFormat("en-CA", { timeZone: timezone || "America/Sao_Paulo" }).format(new Date(d));
+    } catch {
+      return new Date(d).toISOString().slice(0, 10);
+    }
+  };
+  const isDay = (s) => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(new Date(`${s}T00:00:00`));
+  const today = dayInTz(Date.now());
+  const out = [];
+
+  for (const raw of list.slice(0, 20)) {
+    const code = cleanText(raw?.code, 20).toUpperCase();
+    if (!/^[A-Z0-9_-]{3,20}$/.test(code) || out.some((c) => c.code === code)) continue;
+    const row = existing.find((c) => c.code === code);
+    const base = row
+      ? {
+          type: row.type,
+          percent: row.discount_percent != null ? Number(row.discount_percent) : null,
+          amount: row.discount_amount != null ? Number(row.discount_amount) : null,
+          maxDiscount: row.max_discount != null ? Number(row.max_discount) : null,
+          minOrder: Number(row.min_order) > 0 ? Number(row.min_order) : null,
+          startsAt: dayInTz(row.starts_at),
+          endsAt: row.ends_at ? dayInTz(row.ends_at) : null,
+          maxUses: row.max_uses ?? null,
+        }
+      : { type: "percentage", percent: null, amount: null, maxDiscount: null, minOrder: null, startsAt: today, endsAt: null, maxUses: null };
+
+    const next = { ...base };
+    if (["percentage", "fixed", "free_shipping"].includes(raw.type)) next.type = raw.type;
+    if (isMoney(raw.percent)) next.percent = raw.percent;
+    if (isMoney(raw.amount)) next.amount = raw.amount;
+    if (raw.maxDiscount === null || isMoney(raw.maxDiscount)) next.maxDiscount = raw.maxDiscount || null;
+    if (raw.minOrder === null || isMoney(raw.minOrder)) next.minOrder = raw.minOrder || null;
+    if (isDay(raw.startsAt)) next.startsAt = raw.startsAt;
+    if (raw.endsAt === null || isDay(raw.endsAt)) next.endsAt = raw.endsAt;
+    if (raw.maxUses === null || (Number.isInteger(raw.maxUses) && raw.maxUses > 0)) next.maxUses = raw.maxUses;
+
+    if (next.type === "percentage" && !(next.percent > 0 && next.percent <= 100)) continue;
+    if (next.type === "fixed" && !(next.amount > 0)) continue;
+    if (next.endsAt && next.endsAt < next.startsAt) continue;
+    if (next.type !== "percentage") next.maxDiscount = null;
+
+    if (row && JSON.stringify(next) === JSON.stringify(base)) continue;
+    out.push({ id: row?.id ?? null, code, before: row ? base : null, after: next });
+  }
+  return out;
 }
 
 const norm = (s) => String(s ?? "").trim().toLowerCase();
@@ -464,11 +711,12 @@ function sanitizeVariations(v) {
 // Respeita os limites do plano e pula duplicados/incompletos.
 // Variações e grupos de opções de produtos existentes. Mescla por nome e NUNCA remove nada:
 // opção/grupo que a IA não citou continua igual. Devolve só o que muda, pronto pra gravar.
-function sanitizeItemEdits(list, catalog) {
+function sanitizeItemEdits(list, catalog, role) {
   if (!Array.isArray(list)) return [];
-  const items = catalog.flatMap((c) => c.menu_items);
+  const items = catalog.flatMap((c) => c.menu_items.map((it) => ({ ...it, categoryId: c.id, categoryName: c.name })));
   const out = [];
   const seen = new Set();
+  const nextPosByCat = {};
 
   for (const raw of list.slice(0, 500)) {
     const item = items.find((it) => it.id === raw?.itemId);
@@ -485,6 +733,23 @@ function sanitizeItemEdits(list, catalog) {
       const description = cleanText(raw.description, 500);
       if (description !== (item.description ?? "")) edit.fields.description = { before: item.description ?? "", after: description };
     }
+    // destaque: como no dashboard, só com foto e a partir do Plus
+    if (typeof raw.starred === "boolean" && raw.starred !== !!item.starred) {
+      const canStar = ["plus", "pro", "business", "admin"].includes(role);
+      if (!raw.starred || (canStar && item.image_url)) edit.fields.starred = { before: !!item.starred, after: raw.starred };
+    }
+    // mover de categoria: entra no fim da categoria nova
+    const target = catalog.find((c) => norm(c.name) === norm(raw.category));
+    if (target && target.id !== item.categoryId) {
+      nextPosByCat[target.id] ??= nextPosition(target.menu_items);
+      edit.fields.category = {
+        before: item.categoryName,
+        after: target.name,
+        categoryId: target.id,
+        position: nextPosByCat[target.id]++,
+      };
+    }
+
     const currentPrice = Number(item.price ?? 0);
     const price = !hasVariations && isMoney(raw.price) ? cents(raw.price) : currentPrice;
     if (price !== currentPrice) edit.fields.price = { before: currentPrice, after: price };
@@ -549,18 +814,30 @@ function sanitizeItemEdits(list, catalog) {
         }
       }
 
+      // renomear opções existentes do grupo (sem repetir nome)
+      const renames = [];
+      for (const r of (Array.isArray(rg.renameChoices) ? rg.renameChoices : []).slice(0, 30)) {
+        const ec = choices.find((c) => norm(c.name) === norm(r?.from));
+        const to = cleanText(r?.to, 60);
+        if (!ec || !to || to === ec.name) continue;
+        // compara com os nomes já renomeados nesta proposta também
+        const nameOf = (c) => renames.find((r) => r.id === c.id)?.after ?? c.name;
+        if (choices.some((c) => c.id !== ec.id && norm(nameOf(c)) === norm(to))) continue;
+        renames.push({ id: ec.id, before: ec.name, after: to });
+      }
+
       const newName = cleanText(rg.rename, 80);
       if (!existing) {
         if (inserts.length) {
-          edit.groups.push({ groupId: null, name: newName || name, min, max, position: nextGroupPos++, updates: [], inserts });
+          edit.groups.push({ groupId: null, name: newName || name, min, max, position: nextGroupPos++, updates: [], inserts, renames: [] });
         }
         continue;
       }
       const rename = newName && newName !== existing.name ? newName : null;
       const before = { min: existing.min_choices ?? 0, max: existing.max_choices ?? 0 };
       const limitsChanged = min !== before.min || max !== before.max;
-      if (rename || limitsChanged || updates.length || inserts.length) {
-        edit.groups.push({ groupId: existing.id, name: existing.name, rename, min, max, before, limitsChanged, updates, inserts });
+      if (rename || limitsChanged || updates.length || inserts.length || renames.length) {
+        edit.groups.push({ groupId: existing.id, name: existing.name, rename, min, max, before, limitsChanged, updates, inserts, renames });
       }
     }
 
@@ -655,8 +932,14 @@ export async function POST(req) {
   }
 
   const current = Object.fromEntries(AI_FIELDS.map((k) => [k, config[k] ?? null]));
-  const catalog = await getCatalog(user.id);
+  const LAYOUTS = ["default", "list", "grid"];
+  const currentLayout = LAYOUTS.includes(config.layout) ? config.layout : "default";
+  const { menuId, categories: catalog } = await getCatalog(user.id);
   const canStock = STOCK_ROLES.includes(profile.role);
+  const canCoupons = ["pro", "business", "admin"].includes(profile.role);
+  const extras = menuId ? await getExtras(menuId, { coupons: canCoupons, optionStock: canStock }) : { coupons: [], optionStock: [] };
+  const STORE = ["open", "closed", "schedule"];
+  const currentStore = STORE.includes(config.storeStatus) ? config.storeStatus : "schedule";
   // grupos iguais em vários produtos vão uma vez só (g1, g2...), pra economizar tokens
   const byPosition = (a, b) => (a.position ?? 0) - (b.position ?? 0);
   const groupDefs = new Map();
@@ -681,6 +964,8 @@ export async function POST(req) {
       }),
       ...(canStock && { stock: it.stock ?? null }),
       ...(it.visible === false && { hidden: true }),
+      ...(it.starred && { starred: true }),
+      ...(!it.image_url && { noPhoto: true }),
       ...((it.option_groups || []).length && { groups: [...it.option_groups].sort(byPosition).map(groupKey) }),
     })),
   );
@@ -688,10 +973,12 @@ export async function POST(req) {
   const catalogInfo = `Categorias existentes: ${JSON.stringify(catalog.map((c) => c.name))}
 Produtos existentes (hidden = oculto no cardápio; groups = códigos dos grupos de opções)${canStock ? " (stock null = sem controle)" : ""}: ${JSON.stringify(products)}
 Grupos de opções (nome (mín, máx): opção preço, ...): ${JSON.stringify(groupsInfo)}
-${canStock ? "Estoque disponível." : 'Estoque indisponível: exige o plano Business. Se pedirem, explique e indique "Conta" > plano.'}`;
+${canStock ? `Estoque disponível. Estoque dos adicionais (por nome; ausente = sem controle): ${JSON.stringify(Object.fromEntries(extras.optionStock.map((r) => [r.name_key, r.stock])))}` : 'Estoque indisponível: exige o plano Business. Se pedirem, explique e indique "Conta" > plano.'}
+${canCoupons ? `Cupons disponíveis. Cupons existentes: ${JSON.stringify(extras.coupons.map((c) => ({ code: c.code, type: c.type, percent: c.discount_percent, amount: c.discount_amount, maxDiscount: c.max_discount, minOrder: c.min_order, startsAt: c.starts_at, endsAt: c.ends_at, maxUses: c.max_uses, uses: c.uses })))}` : "Cupons indisponíveis: exigem o plano Pro ou superior."}
+Hoje: ${new Intl.DateTimeFormat("pt-BR", { timeZone: current.timezone || "America/Sao_Paulo", dateStyle: "full" }).format(new Date())}.`;
 
   const last = history.at(-1);
-  last.content = `Configuração atual do cardápio:\n${JSON.stringify(current)}\n\n${catalogInfo}\n\nMensagem do dono:\n${last.content}`;
+  last.content = `Configuração atual do cardápio:\n${JSON.stringify({ ...current, layout: currentLayout, storeStatus: currentStore })}\n\n${catalogInfo}\n\nMensagem do dono:\n${last.content}`;
 
   let response;
   try {
@@ -735,8 +1022,35 @@ ${canStock ? "Estoque disponível." : 'Estoque indisponível: exige o plano Busi
   const stock = canStock ? sanitizeStock(call.input?.changes?.stock, products) : [];
   const { categories: newItems, skipped } = sanitizeNewItems(call.input?.changes?.newItems, catalog, profile.role);
   const visibility = sanitizeVisibility(call.input?.changes?.visibility, catalog);
-  const itemEdits = sanitizeItemEdits(call.input?.changes?.itemEdits, catalog);
-  if (!Object.keys(changes).length && !stock.length && !newItems.length && !visibility.length && !itemEdits.length) {
+  const itemEdits = sanitizeItemEdits(call.input?.changes?.itemEdits, catalog, profile.role);
+  const ch = call.input?.changes ?? {};
+  const storeStatus =
+    STORE.includes(ch.storeStatus) && ch.storeStatus !== currentStore
+      ? { before: currentStore, after: ch.storeStatus, resetCounter: ch.storeStatus === "closed" && ch.resetOrderCounter === true }
+      : null;
+  const categoryEdits = sanitizeCategoryEdits(ch.categoryEdits, catalog);
+  const order = sanitizeOrder(ch.order, catalog);
+  const optionStock = canStock ? sanitizeOptionStock(ch.optionStock, catalog, extras.optionStock) : [];
+  const coupons = canCoupons ? sanitizeCoupons(ch.coupons, extras.coupons, current.timezone) : [];
+  // layout fora do padrão não vale no Free (igual ao ConfigMenu)
+  const newLayout = call.input?.changes?.layout;
+  const layout =
+    LAYOUTS.includes(newLayout) && newLayout !== currentLayout && profile.role !== "free"
+      ? { before: currentLayout, after: newLayout }
+      : null;
+  if (
+    !Object.keys(changes).length &&
+    !stock.length &&
+    !newItems.length &&
+    !visibility.length &&
+    !itemEdits.length &&
+    !layout &&
+    !storeStatus &&
+    !categoryEdits.length &&
+    !order &&
+    !optionStock.length &&
+    !coupons.length
+  ) {
     return respond({
       reply: skipped
         ? "Não consegui criar esses produtos: ou já existem, ou faltam preços, ou o limite do seu plano foi atingido."
@@ -748,5 +1062,18 @@ ${canStock ? "Estoque disponível." : 'Estoque indisponível: exige o plano Busi
   if (skipped) {
     reply += `\n\n⚠ ${skipped} produto(s) ficaram de fora: já existiam, estavam sem preço ou passaram do limite do seu plano.`;
   }
-  return respond({ reply, changes, stock, newItems, visibility, itemEdits });
+  return respond({
+    reply,
+    changes,
+    stock,
+    newItems,
+    visibility,
+    itemEdits,
+    layout,
+    storeStatus,
+    categoryEdits,
+    order,
+    optionStock,
+    coupons,
+  });
 }

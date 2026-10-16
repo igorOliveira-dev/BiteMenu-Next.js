@@ -35,6 +35,8 @@ function applyDraft(menu, draft) {
     next.minimum_order_value = toNumberOrNull(draft.changes.minimumOrderValue);
   }
 
+  if (draft.layout?.after) next.layout = draft.layout.after;
+
   const stockById = Object.fromEntries((draft.stock || []).map((s) => [s.id, s.after]));
   const toItem = (it, i) => ({
     id: `ai-${Date.now()}-${i}-${it.name}`,
@@ -70,6 +72,7 @@ function applyDraft(menu, draft) {
       ...(f.description && { description: f.description.after }),
       ...(f.price && { price: f.price.after }),
       ...(f.promoPrice && { promo_price: f.promoPrice.after }),
+      ...(f.starred && { starred: f.starred.after }),
     };
   };
 
@@ -100,7 +103,34 @@ function applyDraft(menu, draft) {
       categories.push({ id: `ai-cat-${i}`, name: g.name, position: g.position ?? maxPos + 1 + i, menu_items: g.items.map(toItem) });
     });
 
-  next.categories = categories;
+  // renomear categorias, mover produtos e nova ordem
+  const renames = Object.fromEntries((draft.categoryEdits || []).map((c) => [c.id, c.after]));
+  const moves = Object.fromEntries(
+    (draft.itemEdits || []).filter((e) => e.fields?.category).map((e) => [e.itemId, e.fields.category]),
+  );
+  const catPos = Object.fromEntries((draft.order?.categories || []).map((c) => [c.id, c.position]));
+  const itemPos = Object.fromEntries((draft.order?.items || []).map((it) => [it.id, it.position]));
+  const moved = [];
+  let result = categories.map((c) => ({
+    ...c,
+    name: renames[c.id] ?? c.name,
+    position: catPos[c.id] ?? c.position,
+    menu_items: c.menu_items.filter((it) => {
+      if (moves[it.id] && moves[it.id].categoryId !== c.id) {
+        moved.push({ ...it, position: moves[it.id].position, _to: moves[it.id].categoryId });
+        return false;
+      }
+      return true;
+    }),
+  }));
+  result = result.map((c) => {
+    const items = [...c.menu_items, ...moved.filter((it) => it._to === c.id)].map((it) =>
+      it.id in itemPos ? { ...it, position: itemPos[it.id] } : it,
+    );
+    return { ...c, menu_items: items.sort((a, b) => (a.position ?? 0) - (b.position ?? 0)) };
+  });
+
+  next.categories = result;
   return next;
 }
 

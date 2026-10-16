@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { FaEye, FaMagic, FaPaperPlane, FaTimes } from "react-icons/fa";
 import { supabase } from "@/lib/supabaseClient";
-import useMenu from "@/hooks/useMenu";
+import useMenu, { updateCachedMenu } from "@/hooks/useMenu";
+import { updateMenuById } from "@/lib/queries/menus";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { AI_FIELDS, AI_FIELD_LABELS, AI_PREVIEW_KEY, formatAiValue } from "@/lib/assistant";
@@ -26,14 +27,41 @@ const ITEMS_SHOWN = 6;
 // produtos novos, título/descrição e cores. Estoque, entrega, horários, pagamentos etc. confirmam direto.
 const VISIBLE_FIELDS = ["title", "description", "backgroundColor", "titleColor", "detailsColor"];
 const needsPreview = (m) =>
+  !!m.layout ||
   m.newItems?.length > 0 ||
   // ocultar/exibir categoria ou produto aparece na lista; grupo de opções só dentro do produto (preview não abre)
-  m.visibility?.some((v) => v.kind !== "group") ||
-  // nome, preço e promoção aparecem na lista de produtos
-  m.itemEdits?.some((e) => e.fields?.name || e.fields?.price || e.fields?.promoPrice) ||
+  m.visibility?.some((v) => v.kind === "category" || v.kind === "item") ||
+  // nome, preço, promoção, destaque e categoria aparecem na lista de produtos
+  m.itemEdits?.some((e) => ["name", "price", "promoPrice", "starred", "category"].some((k) => e.fields?.[k])) ||
+  m.categoryEdits?.length > 0 ||
+  !!m.order ||
   Object.keys(m.changes || {}).some((k) => VISIBLE_FIELDS.includes(k));
 
-const VISIBILITY_KIND = { category: "Categoria", item: "Produto", group: "Grupo de opções" };
+const VISIBILITY_KIND = { category: "Categoria", item: "Produto", group: "Grupo de opções", option: "Opção" };
+
+const STORE_LABELS = { open: "Aberta (controle manual)", closed: "Fechada (controle manual)", schedule: "Segue o horário" };
+
+// lista longa (ordem) fica resumida no chat; o preview mostra tudo
+const shortList = (names, max = 8) =>
+  names.length > max ? `${names.slice(0, max).join(", ")} e mais ${names.length - max}` : names.join(", ");
+
+const brDate = (day) => day.split("-").reverse().join("/");
+const describeCoupon = (c, currency) => {
+  const main =
+    c.type === "free_shipping"
+      ? "Frete grátis"
+      : c.type === "fixed"
+        ? `${formatCurrency(c.amount, currency)} de desconto`
+        : `${c.percent}% de desconto${c.maxDiscount ? ` (até ${formatCurrency(c.maxDiscount, currency)})` : ""}`;
+  return [
+    main,
+    c.minOrder ? `mín. ${formatCurrency(c.minOrder, currency)}` : null,
+    `de ${brDate(c.startsAt)}${c.endsAt ? ` até ${brDate(c.endsAt)}` : ", sem data de fim"}`,
+    c.maxUses ? `${c.maxUses} usos` : "usos ilimitados",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+};
 
 // Vira texto pro histórico enviado à IA: ela fica sabendo o que o dono fez com cada proposta
 function toHistory(messages) {
@@ -48,9 +76,19 @@ function toHistory(messages) {
     });
 }
 
-const FIELD_LABELS = { name: "Nome", description: "Descrição", price: "Preço", promoPrice: "Preço promocional" };
+const LAYOUT_LABELS = { default: "Padrão", list: "Lista", grid: "Grade" };
+
+const FIELD_LABELS = {
+  name: "Nome",
+  description: "Descrição",
+  price: "Preço",
+  promoPrice: "Preço promocional",
+  starred: "Destaque",
+  category: "Categoria",
+};
 const formatField = (key, value, currency) => {
   if (value === null || value === "") return "—";
+  if (key === "starred") return value ? "sim" : "não";
   return key === "price" || key === "promoPrice" ? formatCurrency(value, currency) : value;
 };
 
@@ -71,6 +109,58 @@ function ProposalDetails({ m, currency }) {
           <span className="line-through opacity-50">{formatAiValue(key, m.before?.[key])}</span>
           {" → "}
           <span>{formatAiValue(key, value)}</span>
+        </li>
+      ))}
+      {m.layout && (
+        <li>
+          <span className="font-semibold">Estilo do cardápio:</span>{" "}
+          <span className="line-through opacity-50">{LAYOUT_LABELS[m.layout.before]}</span>
+          {" → "}
+          <span>{LAYOUT_LABELS[m.layout.after]}</span>
+        </li>
+      )}
+      {m.storeStatus && (
+        <li>
+          <span className="font-semibold">Loja:</span>{" "}
+          <span className="line-through opacity-50">{STORE_LABELS[m.storeStatus.before]}</span>
+          {" → "}
+          <span>{STORE_LABELS[m.storeStatus.after]}</span>
+          {m.storeStatus.resetCounter && " · reinicia a numeração dos pedidos"}
+        </li>
+      )}
+      {m.categoryEdits?.map((c) => (
+        <li key={c.id}>
+          <span className="font-semibold">Categoria:</span> <span className="line-through opacity-50">{c.before}</span>
+          {" → "}
+          {c.after}
+        </li>
+      ))}
+      {m.order?.labels.map((l) => (
+        <li key={l.title}>
+          <span className="font-semibold">{l.title}:</span> {shortList(l.names)}
+        </li>
+      ))}
+      {m.optionStock?.map((o) => (
+        <li key={o.key}>
+          <span className="font-semibold">Estoque do adicional {o.name}:</span>{" "}
+          <span className="line-through opacity-50">{o.before ?? "sem controle"}</span>
+          {" → "}
+          {o.after ?? "sem controle"}
+        </li>
+      ))}
+      {m.coupons?.map((c) => (
+        <li key={c.code}>
+          <span className="font-semibold">
+            Cupom {c.code}
+            {c.id ? "" : " (novo)"}:
+          </span>{" "}
+          {c.before && (
+            <>
+              <span className="line-through opacity-50">{describeCoupon(c.before, currency)}</span>
+              {" → "}
+            </>
+          )}
+          {describeCoupon(c.after, currency)}
         </li>
       ))}
       {m.stock?.map((s) => (
@@ -119,6 +209,11 @@ function ProposalDetails({ m, currency }) {
                   <div key={c.id} className="ml-3">
                     {c.name}: <span className="line-through opacity-50">{formatCurrency(c.before, currency)}</span> →{" "}
                     {formatCurrency(c.price, currency)}
+                  </div>
+                ))}
+                {g.renames?.map((c) => (
+                  <div key={c.id} className="ml-3">
+                    <span className="line-through opacity-50">{c.before}</span> → {c.after}
                   </div>
                 ))}
                 {g.inserts.map((c) => (
@@ -188,6 +283,8 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
   const [applying, setApplying] = useState(false);
   const [previewIndex, setPreviewIndex] = useState(null);
   const [previewScale, setPreviewScale] = useState(1);
+  const [savedLayout, setSavedLayout] = useState(null); // estilo salvo pela IA (o menu em memória fica desatualizado)
+  const [savedStore, setSavedStore] = useState(null); // idem para loja aberta/fechada
   const [usage, setUsage] = useState(null); // { percent, resetsAt } da sessão de uso
   const listRef = useRef(null);
   const iframeRef = useRef(null);
@@ -257,6 +354,8 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
 
     try {
       const config = Object.fromEntries(AI_FIELDS.map((k) => [k, localState?.[k] ?? null]));
+      config.layout = savedLayout ?? menu?.layout ?? "default";
+      config.storeStatus = savedStore ?? (menu?.manual_control ? (menu?.is_open ? "open" : "closed") : "schedule");
 
       const res = await fetch("/api/assistant", {
         method: "POST",
@@ -282,6 +381,12 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
               newItems: data.newItems ?? [],
               visibility: data.visibility ?? [],
               itemEdits: data.itemEdits ?? [],
+              layout: data.layout ?? null,
+              storeStatus: data.storeStatus ?? null,
+              categoryEdits: data.categoryEdits ?? [],
+              order: data.order ?? null,
+              optionStock: data.optionStock ?? [],
+              coupons: data.coupons ?? [],
               before: config,
               status: "pending",
             }
@@ -301,7 +406,7 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
   const openPreview = (index) => {
     const m = messages[index];
     try {
-      sessionStorage.setItem(AI_PREVIEW_KEY, JSON.stringify({ changes: m.changes, stock: m.stock, newItems: m.newItems, visibility: m.visibility, itemEdits: m.itemEdits }));
+      sessionStorage.setItem(AI_PREVIEW_KEY, JSON.stringify({ changes: m.changes, stock: m.stock, newItems: m.newItems, visibility: m.visibility, itemEdits: m.itemEdits, layout: m.layout, categoryEdits: m.categoryEdits, order: m.order }));
     } catch {}
     setPreviewIndex(index);
   };
@@ -318,7 +423,100 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
   };
 
   // estoque e produtos novos: mesmos inserts/updates das telas de Estoque e Cardápio (client do usuário + RLS)
-  const saveCatalog = async ({ stock = [], newItems = [], visibility = [], itemEdits = [] }) => {
+  const saveCatalog = async ({
+    stock = [],
+    newItems = [],
+    visibility = [],
+    itemEdits = [],
+    layout = null,
+    storeStatus = null,
+    categoryEdits = [],
+    order = null,
+    optionStock = [],
+    coupons = [],
+  }) => {
+    // loja aberta/fechada: mesmos campos do botão de status (StoreStatus)
+    if (storeStatus) {
+      const a = storeStatus.after;
+      const patch =
+        a === "schedule"
+          ? { manual_control: false }
+          : { manual_control: true, is_open: a === "open", ...(storeStatus.resetCounter && { order_counter: 0 }) };
+      const { error } = await updateMenuById(supabase, menu.id, patch);
+      if (error) throw error;
+      Object.assign(menu, patch);
+      updateCachedMenu(patch);
+      setSavedStore(a);
+      window.dispatchEvent(new CustomEvent("store-status-changed", { detail: patch }));
+    }
+
+    for (const c of categoryEdits) {
+      const { error } = await supabase.from("categories").update({ name: c.after }).eq("id", c.id);
+      if (error) throw error;
+    }
+
+    // ordem: mesmo campo position que o "Ordenar itens" grava
+    for (const c of order?.categories ?? []) {
+      const { error } = await supabase.from("categories").update({ position: c.position }).eq("id", c.id);
+      if (error) throw error;
+    }
+    for (const it of order?.items ?? []) {
+      const { error } = await supabase.from("menu_items").update({ position: it.position }).eq("id", it.id);
+      if (error) throw error;
+    }
+
+    // estoque de adicionais: igual à aba Estoque (sem controle = sem linha)
+    for (const o of optionStock) {
+      let res;
+      if (o.after === null) {
+        res = await supabase.from("option_stock").delete().eq("menu_id", menu.id).eq("name_key", o.key);
+      } else {
+        res = await supabase
+          .from("option_stock")
+          .update({ stock: o.after })
+          .eq("menu_id", menu.id)
+          .eq("name_key", o.key)
+          .select("name_key");
+        if (!res.error && res.data.length === 0) {
+          res = await supabase.from("option_stock").insert({ menu_id: menu.id, name_key: o.key, stock: o.after });
+        }
+      }
+      if (res.error) throw res.error;
+    }
+
+    // cupons: mesmo payload do CouponsModal (datas no fuso do navegador, fim às 23:59:59)
+    for (const c of coupons) {
+      const v = c.after;
+      const day = (s, end) => {
+        const [y, mo, d] = s.split("-").map(Number);
+        return end ? new Date(y, mo - 1, d, 23, 59, 59) : new Date(y, mo - 1, d);
+      };
+      const payload = {
+        menu_id: menu.id,
+        code: c.code,
+        type: v.type,
+        discount_percent: v.type === "percentage" ? v.percent : null,
+        discount_amount: v.type === "fixed" ? v.amount : null,
+        max_discount: v.type === "percentage" && v.maxDiscount > 0 ? v.maxDiscount : null,
+        min_order: v.minOrder > 0 ? v.minOrder : 0,
+        starts_at: day(v.startsAt).toISOString(),
+        ends_at: v.endsAt ? day(v.endsAt, true).toISOString() : null,
+        max_uses: v.maxUses,
+      };
+      const { error } = c.id
+        ? await supabase.from("coupons").update(payload).eq("id", c.id)
+        : await supabase.from("coupons").insert(payload);
+      if (error) throw error;
+    }
+
+    // estilo do cardápio: mesmo update do ConfigMenu
+    if (layout) {
+      const { error } = await updateMenuById(supabase, menu.id, { layout: layout.after });
+      if (error) throw error;
+      updateCachedMenu({ layout: layout.after });
+      setSavedLayout(layout.after);
+    }
+
     // variações e grupos de opções de produtos existentes: mesmos campos que o modal do produto grava
     for (const e of itemEdits) {
       const f = e.fields || {};
@@ -327,6 +525,8 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
         ...(f.description && { description: f.description.after }),
         ...(f.price && { price: f.price.after }),
         ...(f.promoPrice && { promo_price: f.promoPrice.after }),
+        ...(f.starred && { starred: f.starred.after }),
+        ...(f.category && { category_id: f.category.categoryId, position: f.category.position }),
       };
       if (Object.keys(patch).length) {
         const { error } = await supabase.from("menu_items").update(patch).eq("id", e.itemId);
@@ -360,6 +560,10 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
           if (error) throw error;
         }
 
+        for (const c of g.renames ?? []) {
+          const { error } = await supabase.from("option_choices").update({ name: c.after }).eq("id", c.id);
+          if (error) throw error;
+        }
         for (const c of g.updates) {
           const { error } = await supabase.from("option_choices").update({ price: c.price }).eq("id", c.id);
           if (error) throw error;
@@ -380,7 +584,9 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
           ? await supabase.from("menu_items").update({ visible: v.visible }).eq("category_id", v.id)
           : v.kind === "item"
             ? await supabase.from("menu_items").update({ visible: v.visible }).eq("id", v.id)
-            : await supabase.from("option_choices").update({ hidden: !v.visible }).in("group_id", v.groupIds);
+            : v.kind === "option"
+              ? await supabase.from("option_choices").update({ hidden: !v.visible }).in("id", v.choiceIds)
+              : await supabase.from("option_choices").update({ hidden: !v.visible }).in("group_id", v.groupIds);
       if (error) throw error;
     }
 
@@ -426,7 +632,7 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
     let saved = true;
     if (Object.keys(m.changes || {}).length) saved = await onApply(m.changes);
 
-    if (saved && (m.stock?.length || m.newItems?.length || m.visibility?.length || m.itemEdits?.length)) {
+    if (saved && (m.stock?.length || m.newItems?.length || m.visibility?.length || m.itemEdits?.length || m.layout || m.storeStatus || m.categoryEdits?.length || m.order || m.optionStock?.length || m.coupons?.length)) {
       try {
         await saveCatalog(m);
       } catch (err) {

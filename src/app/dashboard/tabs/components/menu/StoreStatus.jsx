@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaClock } from "react-icons/fa";
 import useMenu from "@/hooks/useMenu";
 import { useAlert } from "@/providers/AlertProvider";
@@ -21,6 +21,16 @@ export default function StoreStatus({ setSelectedTab, hours, timezone }) {
   // só lido ao montar: os handlers mutam `menu` (cache do useMenu) após salvar
   const [manualControl, setManualControl] = useState(!!menu?.manual_control);
   const [storeOpen, setStoreOpen] = useState(!!menu?.is_open);
+
+  // o Bite Menu IA também abre/fecha a loja: acompanha sem precisar recarregar
+  useEffect(() => {
+    const onChange = (e) => {
+      if ("manual_control" in e.detail) setManualControl(!!e.detail.manual_control);
+      if ("is_open" in e.detail) setStoreOpen(!!e.detail.is_open);
+    };
+    window.addEventListener("store-status-changed", onChange);
+    return () => window.removeEventListener("store-status-changed", onChange);
+  }, []);
 
   const closeModal = () => {
     setModalOpen(false);
