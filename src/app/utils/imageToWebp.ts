@@ -12,13 +12,20 @@ async function canvasToWebpBlob(
   canvas: HTMLCanvasElement,
   quality: number,
 ): Promise<Blob> {
-  return await new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (b) => (b ? resolve(b) : reject(new Error("Falha ao gerar WebP"))),
-      "image/webp",
-      quality,
-    );
-  });
+  const toBlob = (type: string) =>
+    new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (b) => (b ? resolve(b) : reject(new Error("Falha ao gerar WebP"))),
+        type,
+        quality,
+      );
+    });
+
+  const blob = await toBlob("image/webp");
+  // Safari (iOS/macOS) não codifica WebP no canvas e devolve PNG gigante, que nunca bate o limite.
+  // Nesse caso usa JPEG (o <img> renderiza pelo conteúdo, mesmo salvo como .webp).
+  if (blob.type === "image/webp") return blob;
+  return await toBlob("image/jpeg");
 }
 
 export async function fileToThumbnailWebp(
