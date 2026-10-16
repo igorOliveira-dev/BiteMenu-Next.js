@@ -756,6 +756,7 @@ export default function MenuItems({
 
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const hasPlusPermissions =
     ["plus", "pro", "business", "admin"].includes(ownerRole);
@@ -935,7 +936,14 @@ export default function MenuItems({
     return () => {
       mounted = false;
     };
-  }, [menuLoading, menu?.id]);
+  }, [menuLoading, menu?.id, reloadKey]);
+
+  // o assistente de IA criou produtos / mudou estoque: recarrega a lista
+  useEffect(() => {
+    const reload = () => setReloadKey((k) => k + 1);
+    window.addEventListener("menu-items-changed", reload);
+    return () => window.removeEventListener("menu-items-changed", reload);
+  }, []);
 
   useEffect(() => {
     console.log("Owner role atualizado:", ownerRole);

@@ -16,6 +16,8 @@ import { removeUnusedImages } from "@/lib/uploadImage";
 import { formatAddress } from "@/components/AddressFields";
 import useUser from "@/hooks/useUser";
 import UpdatePlanModal from "./tabs/components/UpdatePlanModal";
+import AiAssistant from "./components/AiAssistant";
+import { AI_PLAN_ROLES } from "@/lib/assistant";
 
 /**
  * StatesManager (versão com checagem de auth e tratamento RLS/storage)
@@ -340,18 +342,23 @@ export default function StatesManager({
     return !menuFromServer?.id || data[0].id !== menuFromServer.id;
   }
 
-  const saveAll = async () => {
-    if (!localState) return;
+  // aiState: estado já com as alterações do assistente (o setLocalState ainda não refletiu).
+  // Nos botões, o argumento é o evento de clique e vale o localState.
+  const saveAll = async (aiState) => {
+    const fromAi = !!aiState?.selectedServices;
+    const state = fromAi ? aiState : localState;
+    if (!state) return false;
+    const changed = detectChanges(state, serverState, keys);
 
     // slug pode terminar em "-" se salvou sem tirar o foco do campo
-    const slug = (localState.slug || "").replace(/-+$/, "");
+    const slug = (state.slug || "").replace(/-+$/, "");
 
     if (await isSlugDuplicated(slug)) {
       customAlert?.("O slug selecionado já foi usado. Escolha outro.", "error");
       return;
     }
 
-    if (localState.title === "") {
+    if (state.title === "") {
       customAlert?.("O título não pode ficar vazio.", "error");
       return;
     }
@@ -359,9 +366,9 @@ export default function StatesManager({
     // taxa por bairro e pedido mínimo: dá pra preencher em qualquer plano, mas só salva com Plus
     if (!["plus", "pro", "business", "admin"].includes(profile?.role)) {
       const zones =
-        localState.deliveryFeeMode === "zones" &&
-        (changedFields.includes("deliveryFeeMode") || changedFields.includes("deliveryZones"));
-      const minimum = changedFields.includes("minimumOrderValue") && localState.minimumOrderValue !== "";
+        state.deliveryFeeMode === "zones" &&
+        (changed.includes("deliveryFeeMode") || changed.includes("deliveryZones"));
+      const minimum = changed.includes("minimumOrderValue") && state.minimumOrderValue !== "";
       if (zones || minimum) {
         setPlusUpsell(
           zones
@@ -378,10 +385,13 @@ export default function StatesManager({
       }
     }
 
-    const ok = await confirm("Quer mesmo salvar todas as alterações?");
-    if (!ok) {
-      console.log("[submit] usuário cancelou");
-      return;
+    // pelo assistente o dono já confirmou no chat
+    if (!fromAi) {
+      const ok = await confirm("Quer mesmo salvar todas as alterações?");
+      if (!ok) {
+        console.log("[submit] usuário cancelou");
+        return false;
+      }
     }
 
     try {
@@ -397,7 +407,7 @@ export default function StatesManager({
       }
 
       // payload
-      const cleanedZones = (localState.deliveryZones || [])
+      const cleanedZones = (state.deliveryZones || [])
         .map((z) => ({
           id: z.id,
           name: z.name?.trim(),
@@ -406,35 +416,35 @@ export default function StatesManager({
         .filter((z) => z.name);
 
       const payload = {
-        title: localState.title,
-        description: localState.description,
+        title: state.title,
+        description: state.description,
         // formato estruturado substitui o texto livre antigo; sem ele, o texto antigo é mantido
-        address: localState.addressDetails ? formatAddress(localState.addressDetails) : localState.address,
+        address: state.addressDetails ? formatAddress(state.addressDetails) : state.address,
         // só envia quando preenchido: não quebra o salvamento se a coluna ainda não existir
-        ...(localState.addressDetails && { address_details: localState.addressDetails }),
-        background_color: localState.backgroundColor,
-        title_color: localState.titleColor,
-        details_color: localState.detailsColor,
+        ...(state.addressDetails && { address_details: state.addressDetails }),
+        background_color: state.backgroundColor,
+        title_color: state.titleColor,
+        details_color: state.detailsColor,
         slug,
-        services: localState.selectedServices,
-        payments: localState.selectedPayments,
+        services: state.selectedServices,
+        payments: state.selectedPayments,
 
         delivery_fee:
-          localState.deliveryFee !== "" && localState.deliveryFee !== null ? Number(localState.deliveryFee) : null,
+          state.deliveryFee !== "" && state.deliveryFee !== null ? Number(state.deliveryFee) : null,
 
         delivery_zones: cleanedZones,
 
-        delivery_fee_mode: localState.deliveryFeeMode,
+        delivery_fee_mode: state.deliveryFeeMode,
 
         minimum_order_value:
-          localState.minimumOrderValue !== "" && localState.minimumOrderValue !== null
-            ? Number(localState.minimumOrderValue)
+          state.minimumOrderValue !== "" && state.minimumOrderValue !== null
+            ? Number(state.minimumOrderValue)
             : null,
 
-        pix_key: localState.pixKey || null,
-        hours: localState.hours,
-        currency: localState.currency || "BRL",
-        timezone: localState.timezone || "America/Sao_Paulo",
+        pix_key: state.pixKey || null,
+        hours: state.hours,
+        currency: state.currency || "BRL",
+        timezone: state.timezone || "America/Sao_Paulo",
       };
 
       // folderPrefix: use prop defaultFolderPrefix se fornecida, senão userId/menuId
@@ -445,25 +455,25 @@ export default function StatesManager({
       let bannerUrl = null;
       let logoUrl = null;
 
-      if (localState.bannerFile instanceof File) {
-        bannerUrl = await uploadAndReplace(localState.bannerFile, folderPrefix, serverState?.bannerFile || null);
-      } else if (typeof localState.bannerFile === "string") {
-        bannerUrl = localState.bannerFile;
+      if (state.bannerFile instanceof File) {
+        bannerUrl = await uploadAndReplace(state.bannerFile, folderPrefix, serverState?.bannerFile || null);
+      } else if (typeof state.bannerFile === "string") {
+        bannerUrl = state.bannerFile;
       } else {
         bannerUrl = null;
       }
 
-      if (localState.logoFile instanceof File) {
-        logoUrl = await uploadAndReplace(localState.logoFile, folderPrefix, serverState?.logoFile || null);
-      } else if (typeof localState.logoFile === "string") {
-        logoUrl = localState.logoFile;
+      if (state.logoFile instanceof File) {
+        logoUrl = await uploadAndReplace(state.logoFile, folderPrefix, serverState?.logoFile || null);
+      } else if (typeof state.logoFile === "string") {
+        logoUrl = state.logoFile;
       } else {
         logoUrl = null;
       }
 
       payload.banner_url = bannerUrl;
       // recorte do celular é enviado já pronto pelo modal do banner (Menu.jsx); sem banner, sem recorte
-      payload.banner_mobile_url = bannerUrl && typeof localState.bannerMobileFile === "string" ? localState.bannerMobileFile : null;
+      payload.banner_mobile_url = bannerUrl && typeof state.bannerMobileFile === "string" ? state.bannerMobileFile : null;
       payload.logo_url = logoUrl;
 
       // Atualizar DB — RLS pode bloquear se 'user' não for owner ou se token ausente
@@ -537,6 +547,7 @@ export default function StatesManager({
         setChangedFields([]);
         customAlert?.("Alterações salvas com sucesso.", "success");
         if (typeof onSave === "function") onSave(normalized);
+        return true;
       } else {
         // insert (caso sem menuFromServer.id)
         const { data, error } = await supabase.from(TABLE_NAME).insert(payload).select().single();
@@ -577,6 +588,7 @@ export default function StatesManager({
         setChangedFields([]);
         customAlert?.("Cardápio criado e salvo com sucesso.", "success");
         if (typeof onSave === "function") onSave(normalized);
+        return true;
       }
     } catch (err) {
       console.error("[StatesManager] saveAll error (detailed):", err);
@@ -634,6 +646,14 @@ export default function StatesManager({
     );
   };
 
+  // assistente: aplica no painel e já salva (se o save barrar, fica pendente no "Alterações não salvas")
+  // estoque e produtos novos o AiAssistant grava direto
+  const applyAiChanges = async (changes) => {
+    const next = { ...localState, ...changes };
+    setLocalState(next);
+    return saveAll(next);
+  };
+
   if (loading || !localState) return <Loading />;
 
   return (
@@ -647,6 +667,14 @@ export default function StatesManager({
         setSelectedTab={setSelectedTab}
       />
       {ChangesPopup()}
+      {AI_PLAN_ROLES.includes(profile?.role) && (selectedTab === "menu" || selectedTab === "configMenu") && (
+        <AiAssistant
+          localState={localState}
+          onApply={applyAiChanges}
+          raised={changedFields.length > 0}
+          showButton={selectedTab !== "menu"}
+        />
+      )}
       {plusUpsell && (
         <UpdatePlanModal plan="plus" title={plusUpsell.title} text={plusUpsell.text} onClose={() => setPlusUpsell(null)} />
       )}
