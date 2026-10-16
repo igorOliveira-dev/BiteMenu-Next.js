@@ -8,6 +8,7 @@ import useMenu from "@/hooks/useMenu";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { AI_FIELDS, AI_FIELD_LABELS, AI_PREVIEW_KEY, formatAiValue } from "@/lib/assistant";
+import { plans } from "@/consts/Plans";
 
 const WELCOME = {
   role: "assistant",
@@ -35,7 +36,7 @@ const VISIBILITY_KIND = { category: "Categoria", item: "Produto", group: "Grupo 
 // Vira texto pro histórico enviado à IA: ela fica sabendo o que o dono fez com cada proposta
 function toHistory(messages) {
   return messages
-    .filter((m) => m !== WELCOME)
+    .filter((m) => m !== WELCOME && !m.upsell)
     .map((m) => {
       let content = m.content;
       if (m.status === "applied") content += "\n[O dono confirmou e as alterações foram salvas.]";
@@ -97,7 +98,34 @@ function ProposalDetails({ m, currency }) {
 }
 
 // canto direito (o esquerdo cobre "Conta" na barra lateral); sobe quando o aviso "Alterações não salvas" aparece
-export default function AiAssistant({ localState, onApply, raised = false, showButton = true }) {
+// allowed: plano com acesso (Business/admin). Sem acesso o chat abre normal, mas enviar mostra o convite pro Business.
+const BUSINESS_PRICE = plans.find((p) => p.id === "business")?.price;
+
+// Convite pro Business quando quem não tem o plano tenta usar a IA
+function UpsellMessage() {
+  return (
+    <div className="space-y-2">
+      <p className="font-semibold">Eu faria isso pra você agora mesmo... mas o Bite Menu IA é exclusivo do plano Business.</p>
+      <p>
+        Imagine colar o seu cardápio e ver tudo cadastrado em segundos. Mudar horários, taxas, estoque e cores só pedindo,
+        sem procurar em nenhuma tela, e ainda ver um preview antes de salvar.
+      </p>
+      <p>
+        E isso vem junto com tudo do Business: cardápio sem limites, controle de estoque, logins para a equipe, tela da
+        cozinha e tela de entregas.
+      </p>
+      <a
+        href="/dashboard/pricing"
+        className="mt-1 flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 font-semibold text-white no-underline transition hover:bg-red-700"
+      >
+        <FaMagic /> Quero o plano Business
+      </a>
+      {BUSINESS_PRICE && <p className="text-center text-xs opacity-60">A partir de R$ {BUSINESS_PRICE}/mês. Cancele quando quiser.</p>}
+    </div>
+  );
+}
+
+export default function AiAssistant({ localState, onApply, raised = false, showButton = true, allowed = false }) {
   const position = raised ? "bottom-52 lg:bottom-44" : "bottom-16 lg:bottom-6";
   const { menu } = useMenu();
   const [open, setOpen] = useState(false);
@@ -150,7 +178,7 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
 
   // uso da sessão ao abrir o chat (a sessão pode ter renovado desde a última vez)
   useEffect(() => {
-    if (!open) return;
+    if (!open || !allowed) return;
     (async () => {
       const res = await fetch("/api/assistant", { headers: await authHeaders() }).catch(() => null);
       const data = await res?.json().catch(() => null);
@@ -166,6 +194,12 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
     const next = [...messages, { role: "user", content: text }];
     setMessages(next);
     setInput("");
+
+    // sem o plano: nem chama a API, responde com o convite pro Business
+    if (!allowed) {
+      setMessages((prev) => [...prev, { role: "assistant", upsell: true }]);
+      return;
+    }
     setSending(true);
 
     try {
@@ -381,7 +415,7 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
                       : "rounded-tl-md bg-translucid"
                   }`}
                 >
-                  {m.content}
+                  {m.upsell ? <UpsellMessage /> : m.content}
 
                   {m.changes && <ProposalDetails m={m} currency={menu?.currency} />}
 

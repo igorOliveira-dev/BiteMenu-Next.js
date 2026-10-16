@@ -43,6 +43,7 @@ export const plans = [
     features: [
       "Inclui tudo do Pro",
       "Sem limites",
+      "Bite Menu IA",
       "Controle de estoque",
       "WhatsApp personalizado",
       "Impressão personalizada",

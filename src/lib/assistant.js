@@ -1,10 +1,10 @@
 // Assistente de IA do dashboard: planos liberados e campos que ele pode alterar.
 // As chaves são as mesmas do estado local do StatesManager.
-export const AI_PLAN_ROLES = ["admin"];
+export const AI_PLAN_ROLES = ["business", "admin"];
 
 // Limite de uso por sessão: tokens (entrada + saída) numa janela que começa na 1ª mensagem.
-// ~200 mil tokens ≈ 20–40 mensagens; custo máximo por sessão com o Haiku ≈ US$ 0,03.
-export const AI_SESSION_TOKEN_LIMIT = 200_000;
+// ~120 mil tokens ≈ 12–25 mensagens; pior caso no mês (todas as sessões no limite) ≈ US$ 2,80 por usuário.
+export const AI_SESSION_TOKEN_LIMIT = 120_000;
 export const AI_SESSION_HOURS = 5;
 
 // mesmos limites de MenuItems.jsx (getItemLimitByRole / getCategoryLimitByRole)

@@ -14,7 +14,6 @@ import {
   FaMagic,
 } from "react-icons/fa";
 import { FiSettings } from "react-icons/fi";
-import { AI_PLAN_ROLES } from "@/lib/assistant";
 import { HexColorPicker, HexColorInput } from "react-colorful";
 import GenericModal from "@/components/GenericModal";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -56,8 +55,7 @@ const Menu = (props) => {
   } = props;
 
   const { profile } = useUser();
-  const canUseAi = AI_PLAN_ROLES.includes(profile?.role);
-  // painel do chat fica no AiAssistant (StatesManager)
+  // botão aparece pra todos; o AiAssistant avisa quem não é Business
   const openAiAssistant = () => window.dispatchEvent(new Event("open-ai-assistant"));
 
   const usingExternal = Array.isArray(menuState) && menuState.length === 2;
@@ -448,18 +446,16 @@ const Menu = (props) => {
             changedFields.length > 0 ? "bottom-50" : "bottom-16"
           } right-4 fixed z-90`}
         >
-          {canUseAi && (
-            <button
-              onClick={openAiAssistant}
-              className="flex cursor-pointer p-2 bg-low-gray font-semibold rounded-lg hover:opacity-80 transition items-center justify-center"
-              style={{
-                border: `2px solid ${getContrastTextColor(backgroundColor) === "white" ? "#ffffff50" : "#00000050"}`,
-              }}
-            >
-              <FaMagic className="text-lg mr-2 text-red-500" />
-              Bite Menu IA
-            </button>
-          )}
+          <button
+            onClick={openAiAssistant}
+            className="flex cursor-pointer p-2 bg-low-gray font-semibold rounded-lg hover:opacity-80 transition items-center justify-center"
+            style={{
+              border: `2px solid ${getContrastTextColor(backgroundColor) === "white" ? "#ffffff50" : "#00000050"}`,
+            }}
+          >
+            <FaMagic className="text-lg mr-2 text-red-500" />
+            Bite Menu IA
+          </button>
           <button
             onClick={() => setSelectedTab("configMenu")}
             className="flex cursor-pointer p-2 bg-low-gray font-semibold rounded-lg hover:opacity-80 transition items-center justify-center"
@@ -645,16 +641,14 @@ const Menu = (props) => {
               </div>
 
               <div className="mt-auto flex flex-col gap-2">
-                {canUseAi && (
-                  <button
-                    onClick={openAiAssistant}
-                    title="Bite Menu IA"
-                    aria-label="Bite Menu IA"
-                    className="cursor-pointer flex shrink-0 items-center justify-center h-10 bg-low-gray border border-translucid rounded-lg hover:opacity-80 transition"
-                  >
-                    <FaMagic className="text-lg text-red-500" />
-                  </button>
-                )}
+                <button
+                  onClick={openAiAssistant}
+                  title="Bite Menu IA"
+                  aria-label="Bite Menu IA"
+                  className="cursor-pointer flex shrink-0 items-center justify-center h-10 bg-low-gray border border-translucid rounded-lg hover:opacity-80 transition"
+                >
+                  <FaMagic className="text-lg text-red-500" />
+                </button>
                 <button
                   onClick={() => setSelectedTab("configMenu")}
                   title="Configurar cardápio"
@@ -720,15 +714,13 @@ const Menu = (props) => {
     
               {/* Bite Menu IA + Configurações */}
               <div className="mt-auto flex flex-col gap-2">
-                {canUseAi && (
-                  <button
-                    onClick={openAiAssistant}
-                    className="cursor-pointer w-full p-3 bg-low-gray border border-translucid font-semibold rounded-xl hover:opacity-80 transition flex items-center justify-center gap-2"
-                  >
-                    <FaMagic className="text-lg text-red-500" />
-                    Bite Menu IA
-                  </button>
-                )}
+                <button
+                  onClick={openAiAssistant}
+                  className="cursor-pointer w-full p-3 bg-low-gray border border-translucid font-semibold rounded-xl hover:opacity-80 transition flex items-center justify-center gap-2"
+                >
+                  <FaMagic className="text-lg text-red-500" />
+                  Bite Menu IA
+                </button>
                 <button
                   onClick={() => setSelectedTab("configMenu")}
                   className="cursor-pointer w-full p-3 bg-low-gray border border-translucid font-semibold rounded-xl hover:opacity-80 transition flex items-center justify-center gap-2"

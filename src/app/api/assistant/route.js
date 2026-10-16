@@ -229,7 +229,7 @@ async function authorize(req) {
 
   const { data: profile } = await supabaseAdmin.from("profiles").select("role").eq("id", user.id).maybeSingle();
   if (!AI_PLAN_ROLES.includes(profile?.role)) {
-    return { error: Response.json({ error: "O Bite Menu IA ainda não está disponível no seu plano." }, { status: 403 }) };
+    return { error: Response.json({ error: "O Bite Menu IA está disponível no plano Business." }, { status: 403 }) };
   }
   return { user, profile };
 }

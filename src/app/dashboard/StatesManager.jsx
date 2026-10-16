@@ -667,12 +667,13 @@ export default function StatesManager({
         setSelectedTab={setSelectedTab}
       />
       {ChangesPopup()}
-      {AI_PLAN_ROLES.includes(profile?.role) && (selectedTab === "menu" || selectedTab === "configMenu") && (
+      {(selectedTab === "menu" || selectedTab === "configMenu") && (
         <AiAssistant
           localState={localState}
           onApply={applyAiChanges}
           raised={changedFields.length > 0}
           showButton={selectedTab !== "menu"}
+          allowed={AI_PLAN_ROLES.includes(profile?.role)}
         />
       )}
       {plusUpsell && (
