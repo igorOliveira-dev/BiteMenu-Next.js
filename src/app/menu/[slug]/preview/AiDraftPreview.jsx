@@ -54,12 +54,26 @@ function applyDraft(menu, draft) {
     option_groups: [],
   });
 
+  // ocultar/exibir: categoria vale pra todos os produtos dela; grupo some do produto
+  const vis = draft.visibility || [];
+  const catVisible = Object.fromEntries(vis.filter((v) => v.kind === "category").map((v) => [v.id, v.visible]));
+  const itemVisible = Object.fromEntries(vis.filter((v) => v.kind === "item").map((v) => [v.id, v.visible]));
+  const hiddenGroups = new Set(vis.filter((v) => v.kind === "group" && !v.visible).flatMap((v) => v.groupIds));
+
   const categories = (menu.categories || []).map((c) => {
     const added = (draft.newItems || []).find((g) => g.id === c.id)?.items || [];
     return {
       ...c,
       menu_items: [
-        ...(c.menu_items || []).map((it) => (it.id in stockById ? { ...it, stock: stockById[it.id] } : it)),
+        ...(c.menu_items || []).map((it) => {
+          let next = it.id in stockById ? { ...it, stock: stockById[it.id], visible: it.visible && stockById[it.id] !== 0 } : it;
+          if (c.id in catVisible) next = { ...next, visible: catVisible[c.id] };
+          if (it.id in itemVisible) next = { ...next, visible: itemVisible[it.id] };
+          if (hiddenGroups.size) {
+            next = { ...next, option_groups: (next.option_groups || []).filter((g) => !hiddenGroups.has(g.id)) };
+          }
+          return next;
+        }),
         ...added.map(toItem),
       ],
     };

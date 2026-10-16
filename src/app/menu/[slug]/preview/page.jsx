@@ -4,7 +4,7 @@ import ClientMenu2 from "../ClientMenu2";
 import ClientMenu3 from "../ClientMenu3";
 import { CartProvider } from "@/contexts/CartContext";
 import { getMenuBySlug, getOwnerInfo, getOptionStock } from "../getMenuData";
-import { applyStock, STOCK_ROLES } from "@/lib/stock";
+import { applyStock, hideHiddenGroups, STOCK_ROLES } from "@/lib/stock";
 import AiDraftPreview from "./AiDraftPreview";
 
 // Uso interno: pré-visualização de layout a partir do dashboard (ConfigMenu.jsx).
@@ -21,7 +21,7 @@ export default async function MenuPreviewPage({ params, searchParams }) {
 
   const { ownerPhone, ownerRole } = await getOwnerInfo(rawMenu);
   const optionStock = STOCK_ROLES.includes(ownerRole) ? await getOptionStock(rawMenu.id) : [];
-  const menu = applyStock(rawMenu, ownerRole, optionStock);
+  const menu = applyStock(hideHiddenGroups(rawMenu), ownerRole, optionStock);
 
   const effectiveLayout = preview_layout || menu.layout;
 

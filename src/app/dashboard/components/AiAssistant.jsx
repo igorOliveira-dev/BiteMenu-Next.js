@@ -21,6 +21,17 @@ const PREVIEW_W = 375;
 const PREVIEW_H = 620;
 const ITEMS_SHOWN = 6;
 
+// Só vale abrir o preview do cardápio público quando a mudança aparece nele de cara:
+// produtos novos, título/descrição e cores. Estoque, entrega, horários, pagamentos etc. confirmam direto.
+const VISIBLE_FIELDS = ["title", "description", "backgroundColor", "titleColor", "detailsColor"];
+const needsPreview = (m) =>
+  m.newItems?.length > 0 ||
+  // ocultar/exibir categoria ou produto aparece na lista; grupo de opções só dentro do produto (preview não abre)
+  m.visibility?.some((v) => v.kind !== "group") ||
+  Object.keys(m.changes || {}).some((k) => VISIBLE_FIELDS.includes(k));
+
+const VISIBILITY_KIND = { category: "Categoria", item: "Produto", group: "Grupo de opções" };
+
 // Vira texto pro histórico enviado à IA: ela fica sabendo o que o dono fez com cada proposta
 function toHistory(messages) {
   return messages
@@ -58,6 +69,14 @@ function ProposalDetails({ m, currency }) {
           <span>{s.after ?? "sem controle"}</span>
         </li>
       ))}
+      {m.visibility?.map((v) => (
+        <li key={`${v.kind}-${v.id ?? v.label}`}>
+          <span className="font-semibold">
+            {VISIBILITY_KIND[v.kind]} {v.label}:
+          </span>{" "}
+          {v.visible ? "exibir no cardápio" : "ocultar do cardápio"}
+        </li>
+      ))}
       {m.newItems?.map((g) => (
         <li key={g.name} className="pt-1">
           <span className="font-semibold">
@@ -88,6 +107,7 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
   const [applying, setApplying] = useState(false);
   const [previewIndex, setPreviewIndex] = useState(null);
   const [previewScale, setPreviewScale] = useState(1);
+  const [usage, setUsage] = useState(null); // { percent, resetsAt } da sessão de uso
   const listRef = useRef(null);
   const iframeRef = useRef(null);
   // Esc / botão voltar do celular fecham o chat (com o preview aberto, quem fecha é o preview)
@@ -115,11 +135,33 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
   }, [previewIndex]);
 
   const hasPending = messages.some((m) => m.status === "pending");
+  // passou do horário de renovar: libera sem precisar reabrir o chat (o servidor confere de novo)
+  const limitReached = usage?.percent >= 100 && !(usage.resetsAt && new Date(usage.resetsAt) <= new Date());
+  const resetTime = usage?.resetsAt
+    ? new Date(usage.resetsAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+    : null;
+
+  const authHeaders = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    return { Authorization: `Bearer ${session?.access_token}`, "Content-Type": "application/json" };
+  };
+
+  // uso da sessão ao abrir o chat (a sessão pode ter renovado desde a última vez)
+  useEffect(() => {
+    if (!open) return;
+    (async () => {
+      const res = await fetch("/api/assistant", { headers: await authHeaders() }).catch(() => null);
+      const data = await res?.json().catch(() => null);
+      if (data?.usage) setUsage(data.usage);
+    })();
+  }, [open]);
 
   const send = async (e) => {
     e?.preventDefault();
     const text = input.trim();
-    if (!text || sending || hasPending) return;
+    if (!text || sending || hasPending || limitReached) return;
 
     const next = [...messages, { role: "user", content: text }];
     setMessages(next);
@@ -127,17 +169,15 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
     setSending(true);
 
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
       const config = Object.fromEntries(AI_FIELDS.map((k) => [k, localState?.[k] ?? null]));
 
       const res = await fetch("/api/assistant", {
         method: "POST",
-        headers: { Authorization: `Bearer ${session?.access_token}`, "Content-Type": "application/json" },
+        headers: await authHeaders(),
         body: JSON.stringify({ messages: toHistory(next), config }),
       });
       const data = await res.json().catch(() => ({}));
+      if (data.usage) setUsage(data.usage);
 
       if (!res.ok) {
         setMessages((prev) => [...prev, { role: "assistant", content: data.error || "Algo deu errado. Tente de novo." }]);
@@ -153,6 +193,7 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
               changes: data.changes,
               stock: data.stock ?? [],
               newItems: data.newItems ?? [],
+              visibility: data.visibility ?? [],
               before: config,
               status: "pending",
             }
@@ -172,7 +213,7 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
   const openPreview = (index) => {
     const m = messages[index];
     try {
-      sessionStorage.setItem(AI_PREVIEW_KEY, JSON.stringify({ changes: m.changes, stock: m.stock, newItems: m.newItems }));
+      sessionStorage.setItem(AI_PREVIEW_KEY, JSON.stringify({ changes: m.changes, stock: m.stock, newItems: m.newItems, visibility: m.visibility }));
     } catch {}
     setPreviewIndex(index);
   };
@@ -189,7 +230,18 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
   };
 
   // estoque e produtos novos: mesmos inserts/updates das telas de Estoque e Cardápio (client do usuário + RLS)
-  const saveCatalog = async ({ stock = [], newItems = [] }) => {
+  const saveCatalog = async ({ stock = [], newItems = [], visibility = [] }) => {
+    // ocultar/exibir: mesmos campos dos botões do dashboard (menu_items.visible / option_choices.hidden)
+    for (const v of visibility) {
+      const { error } =
+        v.kind === "category"
+          ? await supabase.from("menu_items").update({ visible: v.visible }).eq("category_id", v.id)
+          : v.kind === "item"
+            ? await supabase.from("menu_items").update({ visible: v.visible }).eq("id", v.id)
+            : await supabase.from("option_choices").update({ hidden: !v.visible }).in("group_id", v.groupIds);
+      if (error) throw error;
+    }
+
     for (const s of stock) {
       const { error } = await supabase.from("menu_items").update({ stock: s.after }).eq("id", s.id);
       if (error) throw error;
@@ -224,15 +276,15 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
     }
   };
 
-  const confirm = async () => {
-    const index = previewIndex;
+  // vem do preview (aparência/produtos novos) ou direto do chat (o resto)
+  const confirm = async (index) => {
     const m = messages[index];
     setApplying(true);
 
     let saved = true;
     if (Object.keys(m.changes || {}).length) saved = await onApply(m.changes);
 
-    if (saved && (m.stock?.length || m.newItems?.length)) {
+    if (saved && (m.stock?.length || m.newItems?.length || m.visibility?.length)) {
       try {
         await saveCatalog(m);
       } catch (err) {
@@ -294,6 +346,20 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
                   <FaTimes />
                 </button>
               </div>
+              {usage && (
+                <div className="px-5 pb-3">
+                  <div className="mb-1 flex justify-between text-[11px] opacity-60">
+                    <span>Uso da sessão: {usage.percent}%</span>
+                    {resetTime && <span>Renova às {resetTime}</span>}
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-translucid">
+                    <div
+                      className={`h-full rounded-full transition-[width] duration-500 ${limitReached ? "bg-red-700" : "bg-red-500"}`}
+                      style={{ width: `${usage.percent}%` }}
+                    />
+                  </div>
+                </div>
+              )}
               <div className="h-px bg-[var(--translucid)]" />
 
           <div ref={listRef} className="relative flex-1 space-y-3 overflow-y-auto px-5 py-4">
@@ -324,17 +390,29 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
                       <button
                         type="button"
                         onClick={() => setStatus(i, "canceled")}
+                        disabled={applying}
                         className="cursor-pointer rounded bg-[var(--translucid)] px-3 py-1.5 text-xs hover:opacity-80"
                       >
                         Cancelar
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => openPreview(i)}
-                        className="cursor-pointer flex items-center gap-1.5 rounded bg-green-600 px-3 py-1.5 text-xs text-white hover:opacity-80"
-                      >
-                        <FaEye /> Ver preview
-                      </button>
+                      {needsPreview(m) ? (
+                        <button
+                          type="button"
+                          onClick={() => openPreview(i)}
+                          className="cursor-pointer flex items-center gap-1.5 rounded bg-green-600 px-3 py-1.5 text-xs text-white hover:opacity-80"
+                        >
+                          <FaEye /> Ver preview
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => confirm(i)}
+                          disabled={applying}
+                          className="cursor-pointer rounded bg-green-600 px-3 py-1.5 text-xs text-white hover:opacity-80"
+                        >
+                          {applying ? "Salvando..." : "Confirmar"}
+                        </button>
+                      )}
                     </div>
                   )}
                   {m.status === "applied" && <p className="mt-2 text-xs text-green-500">✓ Alterações salvas</p>}
@@ -387,13 +465,19 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
               }}
               rows={input.includes("\n") ? 4 : 1}
               maxLength={8000}
-              placeholder={hasPending ? "Confirme ou cancele a proposta acima" : "Peça uma alteração ou cole seu cardápio..."}
-              disabled={sending || hasPending}
+              placeholder={
+                limitReached
+                  ? `Limite da sessão atingido${resetTime ? `. Renova às ${resetTime}` : ""}`
+                  : hasPending
+                    ? "Confirme ou cancele a proposta acima"
+                    : "Peça uma alteração ou cole seu cardápio..."
+              }
+              disabled={sending || hasPending || limitReached}
               className="max-h-36 min-h-11 flex-1 resize-none rounded-2xl border border-[var(--translucid)] bg-translucid px-4 py-2.5 text-sm outline-none transition focus:border-red-500/60"
             />
             <button
               type="submit"
-              disabled={sending || hasPending || !input.trim()}
+              disabled={sending || hasPending || limitReached || !input.trim()}
               aria-label="Enviar"
               className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl bg-red-600 text-white transition hover:bg-red-700 disabled:opacity-40"
             >
@@ -440,7 +524,7 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
             </button>
             <button
               type="button"
-              onClick={confirm}
+              onClick={() => confirm(previewIndex)}
               disabled={applying}
               className="cursor-pointer rounded-lg bg-green-600 px-5 py-2 font-semibold text-white hover:opacity-80"
             >

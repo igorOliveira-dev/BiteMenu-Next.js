@@ -1,7 +1,14 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getUserFromRequest } from "@/lib/validapay";
-import { AI_DAILY_LIMIT, AI_FIELDS, AI_PLAN_ROLES, CATEGORY_LIMITS, ITEM_LIMITS } from "@/lib/assistant";
+import {
+  AI_FIELDS,
+  AI_PLAN_ROLES,
+  AI_SESSION_HOURS,
+  AI_SESSION_TOKEN_LIMIT,
+  CATEGORY_LIMITS,
+  ITEM_LIMITS,
+} from "@/lib/assistant";
 import { STOCK_ROLES } from "@/lib/stock";
 
 // Assistente do dashboard: só PROPÕE alterações. Quem grava é o dashboard (StatesManager),
@@ -31,7 +38,8 @@ Como agir:
 - Se faltar informação ou o pedido for ambíguo, faça uma pergunta curta em vez de chutar.
 - Você também pode alterar o estoque dos produtos (campo stock), quando a mensagem informar que o estoque está disponível.
 - Você pode CRIAR produtos novos (campo newItems), inclusive a partir de um cardápio colado em texto. Categorias que ainda não existem são criadas junto.
-- Se pedirem algo que você não consegue fazer (editar ou excluir produtos que já existem, renomear/excluir categorias, fotos, adicionais/complementos, logo, banner, endereço, link/slug, layout, estoque de adicionais, plano, equipe, pedidos, mesas), diga isso de forma breve e indique onde fazer, usando o mapa abaixo.
+- Você pode OCULTAR ou EXIBIR categorias, produtos e grupos de opções (campo visibility). Ocultar não apaga nada: o item só some do cardápio do cliente.
+- Se pedirem algo que você não consegue fazer (excluir qualquer coisa, editar nome/preço/descrição de produtos que já existem, renomear categorias, fotos, criar ou editar adicionais/complementos, logo, banner, endereço, link/slug, layout, estoque de adicionais, plano, equipe, pedidos, mesas), diga isso de forma breve e indique onde fazer, usando o mapa abaixo.
 - Respostas curtas e diretas. Valores em reais usam ponto decimal (ex.: 7.5).
 
 Mapa do dashboard (use exatamente estes nomes; nunca invente abas ou caminhos):
@@ -56,7 +64,12 @@ Formato dos campos:
   - category: nome de uma categoria existente (use o nome exato) ou de uma nova.
   - price: preço em número. Se o produto tiver tamanhos/sabores com preços diferentes, use variations = { name: "Tamanho", options: [{ name: "P", price: 30 }, ...] } e omita price.
   - description: opcional, curta. Copie do texto do dono quando houver; não invente ingredientes.
-  - Não crie produtos que já existem na mesma categoria. Se um produto vier sem preço, pergunte antes de propor.`;
+  - Não crie produtos que já existem na mesma categoria. Se um produto vier sem preço, pergunte antes de propor.
+- visibility: { categories: [{ name, visible }], items: [{ id, visible }], optionGroups: [{ group, itemId?, visible }] }.
+  - categories: nome exato da categoria; oculta/exibe todos os produtos dela.
+  - items: id do produto da lista.
+  - optionGroups: nome do grupo (veja "groups" nos produtos). Com itemId, só naquele produto; sem itemId, em todos os produtos que têm o grupo.
+  - visible: false para ocultar, true para exibir.`;
 
 const TOOLS = [
   {
@@ -105,6 +118,39 @@ const TOOLS = [
                 required: ["id", "stock"],
               },
             },
+            visibility: {
+              type: "object",
+              properties: {
+                categories: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: { name: { type: "string" }, visible: { type: "boolean" } },
+                    required: ["name", "visible"],
+                  },
+                },
+                items: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: { id: { type: "string" }, visible: { type: "boolean" } },
+                    required: ["id", "visible"],
+                  },
+                },
+                optionGroups: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      group: { type: "string" },
+                      itemId: { type: "string", description: "Omita para aplicar em todos os produtos que têm esse grupo." },
+                      visible: { type: "boolean" },
+                    },
+                    required: ["group", "visible"],
+                  },
+                },
+              },
+            },
             newItems: {
               type: "array",
               items: {
@@ -141,15 +187,66 @@ const TOOLS = [
   },
 ];
 
-// Limite diário simples em memória (por instância do servidor)
-const usage = new Map();
-function overLimit(userId) {
-  const today = new Date().toISOString().slice(0, 10);
-  const entry = usage.get(userId);
-  const count = entry?.day === today ? entry.count : 0;
-  if (count >= AI_DAILY_LIMIT) return true;
-  usage.set(userId, { day: today, count: count + 1 });
-  return false;
+// ---- Limite de tokens por sessão (tabela ai_usage, só o servidor acessa) ----
+const SESSION_MS = AI_SESSION_HOURS * 60 * 60 * 1000;
+
+// Sem linha ou janela vencida = sessão zerada (a nova começa na próxima mensagem)
+async function getUsage(userId) {
+  const { data, error } = await supabaseAdmin
+    .from("ai_usage")
+    .select("window_start, tokens")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data || Date.now() - new Date(data.window_start).getTime() >= SESSION_MS) return { windowStart: null, tokens: 0 };
+  return { windowStart: data.window_start, tokens: data.tokens };
+}
+
+async function addUsage(userId, current, used) {
+  const row = {
+    user_id: userId,
+    window_start: current.windowStart ?? new Date().toISOString(),
+    tokens: current.tokens + used,
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = await supabaseAdmin.from("ai_usage").upsert(row);
+  if (error) console.error("[assistant] erro ao registrar uso:", error);
+  return { windowStart: row.window_start, tokens: row.tokens };
+}
+
+// O que o painel mostra: % usado e quando a sessão zera
+function usageInfo({ windowStart, tokens }) {
+  return {
+    percent: Math.min(100, Math.round((tokens / AI_SESSION_TOKEN_LIMIT) * 100)),
+    resetsAt: windowStart ? new Date(new Date(windowStart).getTime() + SESSION_MS).toISOString() : null,
+  };
+}
+
+// Usuário logado e com plano liberado; senão devolve a resposta de erro
+async function authorize(req) {
+  const user = await getUserFromRequest(req);
+  if (!user) return { error: Response.json({ error: "Não autenticado" }, { status: 401 }) };
+
+  const { data: profile } = await supabaseAdmin.from("profiles").select("role").eq("id", user.id).maybeSingle();
+  if (!AI_PLAN_ROLES.includes(profile?.role)) {
+    return { error: Response.json({ error: "O Bite Menu IA ainda não está disponível no seu plano." }, { status: 403 }) };
+  }
+  return { user, profile };
+}
+
+const usageUnavailable = (err) => {
+  console.error("[assistant] erro ao ler ai_usage (a tabela existe?):", err);
+  return Response.json({ error: "O assistente está indisponível agora. Tente novamente." }, { status: 503 });
+};
+
+export async function GET(req) {
+  const { user, error } = await authorize(req);
+  if (error) return error;
+  try {
+    return Response.json({ usage: usageInfo(await getUsage(user.id)) });
+  } catch (err) {
+    return usageUnavailable(err);
+  }
 }
 
 const isMoney = (v) => typeof v === "number" && Number.isFinite(v) && v >= 0;
@@ -245,9 +342,48 @@ async function getCatalog(ownerId) {
   if (!menu) return [];
   const { data } = await supabaseAdmin
     .from("categories")
-    .select("id, name, position, menu_items ( id, name, position, stock )")
+    .select(
+      "id, name, position, menu_items ( id, name, position, stock, visible, option_groups ( id, name, option_choices ( hidden ) ) )",
+    )
     .eq("menu_id", menu.id);
   return (data || []).map((c) => ({ ...c, menu_items: c.menu_items || [] }));
+}
+
+// grupo oculto = todas as opções ocultas (é assim que o dashboard e o cardápio público entendem)
+const groupHidden = (g) => (g.option_choices || []).length > 0 && g.option_choices.every((c) => c.hidden);
+
+// Visibilidade proposta -> operações concretas, só do que muda:
+// { kind: "category" | "item" | "group", label, visible, id? (categoria/item), groupIds? (grupos) }
+function sanitizeVisibility(v, catalog) {
+  if (!v || typeof v !== "object") return [];
+  const ops = [];
+  const items = catalog.flatMap((c) => c.menu_items.map((it) => ({ ...it, category: c.name })));
+
+  for (const c of Array.isArray(v.categories) ? v.categories : []) {
+    const cat = catalog.find((x) => norm(x.name) === norm(c?.name));
+    if (!cat || typeof c.visible !== "boolean" || !cat.menu_items.length) continue;
+    // como o botão do dashboard: aplica em todos os produtos da categoria
+    if (cat.menu_items.every((it) => (it.visible !== false) === c.visible)) continue;
+    ops.push({ kind: "category", id: cat.id, label: cat.name, visible: c.visible });
+  }
+
+  for (const i of Array.isArray(v.items) ? v.items : []) {
+    const item = items.find((x) => x.id === i?.id);
+    if (!item || typeof i.visible !== "boolean" || (item.visible !== false) === i.visible) continue;
+    ops.push({ kind: "item", id: item.id, label: item.name, visible: i.visible });
+  }
+
+  for (const g of Array.isArray(v.optionGroups) ? v.optionGroups : []) {
+    if (typeof g?.visible !== "boolean" || !cleanText(g.group, 80)) continue;
+    const targets = g.itemId ? items.filter((it) => it.id === g.itemId) : items;
+    const groups = targets.flatMap((it) =>
+      (it.option_groups || []).filter((og) => norm(og.name) === norm(g.group) && groupHidden(og) === g.visible),
+    );
+    if (!groups.length) continue;
+    const where = g.itemId ? targets[0]?.name : "todos os produtos";
+    ops.push({ kind: "group", groupIds: groups.map((og) => og.id), label: `${groups[0].name} (${where})`, visible: g.visible });
+  }
+  return ops;
 }
 
 const norm = (s) => String(s ?? "").trim().toLowerCase();
@@ -320,21 +456,25 @@ function sanitizeNewItems(list, catalog, role) {
 }
 
 export async function POST(req) {
-  const user = await getUserFromRequest(req);
-  if (!user) return Response.json({ error: "Não autenticado" }, { status: 401 });
-
-  const { data: profile } = await supabaseAdmin.from("profiles").select("role").eq("id", user.id).maybeSingle();
-  if (!AI_PLAN_ROLES.includes(profile?.role)) {
-    return Response.json({ error: "O assistente está disponível a partir do plano Plus." }, { status: 403 });
-  }
+  const { user, profile, error: authError } = await authorize(req);
+  if (authError) return authError;
 
   const { messages, config } = await req.json().catch(() => ({}));
   if (!Array.isArray(messages) || !messages.length || !config || typeof config !== "object") {
     return Response.json({ error: "Requisição inválida" }, { status: 400 });
   }
 
-  if (overLimit(user.id)) {
-    return Response.json({ error: "Você atingiu o limite de mensagens de hoje. Tente amanhã." }, { status: 429 });
+  let usage;
+  try {
+    usage = await getUsage(user.id);
+  } catch (err) {
+    return usageUnavailable(err);
+  }
+  if (usage.tokens >= AI_SESSION_TOKEN_LIMIT) {
+    return Response.json(
+      { error: "Você usou 100% do limite desta sessão.", usage: usageInfo(usage) },
+      { status: 429 },
+    );
   }
 
   // só texto, últimas mensagens, e só os campos que a IA pode ver
@@ -351,10 +491,19 @@ export async function POST(req) {
   const catalog = await getCatalog(user.id);
   const canStock = STOCK_ROLES.includes(profile.role);
   const products = catalog.flatMap((c) =>
-    c.menu_items.map((it) => ({ id: it.id, name: it.name, category: c.name, ...(canStock && { stock: it.stock ?? null }) })),
+    c.menu_items.map((it) => ({
+      id: it.id,
+      name: it.name,
+      category: c.name,
+      ...(canStock && { stock: it.stock ?? null }),
+      ...(it.visible === false && { hidden: true }),
+      ...((it.option_groups || []).length && {
+        groups: it.option_groups.map((g) => (groupHidden(g) ? `${g.name} (oculto)` : g.name)),
+      }),
+    })),
   );
   const catalogInfo = `Categorias existentes: ${JSON.stringify(catalog.map((c) => c.name))}
-Produtos existentes${canStock ? " (stock null = sem controle)" : ""}: ${JSON.stringify(products)}
+Produtos existentes (hidden = oculto no cardápio; groups = grupos de opções)${canStock ? " (stock null = sem controle)" : ""}: ${JSON.stringify(products)}
 ${canStock ? "Estoque disponível." : 'Estoque indisponível: exige o plano Business. Se pedirem, explique e indique "Conta" > plano.'}`;
 
   const last = history.at(-1);
@@ -376,8 +525,15 @@ ${canStock ? "Estoque disponível." : 'Estoque indisponível: exige o plano Busi
     return Response.json({ error: "O assistente está indisponível agora. Tente novamente." }, { status: 503 });
   }
 
+  // toda resposta daqui pra frente já descontou os tokens desta mensagem
+  const u = response.usage ?? {};
+  const used =
+    (u.input_tokens ?? 0) + (u.output_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0);
+  const usageNow = usageInfo(await addUsage(user.id, usage, used));
+  const respond = (body) => Response.json({ ...body, usage: usageNow });
+
   if (response.stop_reason === "refusal") {
-    return Response.json({ reply: "Não consigo ajudar com esse pedido. Posso alterar as configurações do seu cardápio." });
+    return respond({ reply: "Não consigo ajudar com esse pedido. Posso alterar as configurações do seu cardápio." });
   }
 
   const text = response.content
@@ -388,14 +544,15 @@ ${canStock ? "Estoque disponível." : 'Estoque indisponível: exige o plano Busi
   const call = response.content.find((b) => b.type === "tool_use" && b.name === "propose_changes");
 
   if (!call) {
-    return Response.json({ reply: text || "Não entendi. Pode explicar de outro jeito?" });
+    return respond({ reply: text || "Não entendi. Pode explicar de outro jeito?" });
   }
 
   const changes = sanitizeChanges(call.input?.changes, current);
   const stock = canStock ? sanitizeStock(call.input?.changes?.stock, products) : [];
   const { categories: newItems, skipped } = sanitizeNewItems(call.input?.changes?.newItems, catalog, profile.role);
-  if (!Object.keys(changes).length && !stock.length && !newItems.length) {
-    return Response.json({
+  const visibility = sanitizeVisibility(call.input?.changes?.visibility, catalog);
+  if (!Object.keys(changes).length && !stock.length && !newItems.length && !visibility.length) {
+    return respond({
       reply: skipped
         ? "Não consegui criar esses produtos: ou já existem, ou faltam preços, ou o limite do seu plano foi atingido."
         : "Pelo que entendi, isso já está configurado assim. Quer mudar outra coisa?",
@@ -406,5 +563,5 @@ ${canStock ? "Estoque disponível." : 'Estoque indisponível: exige o plano Busi
   if (skipped) {
     reply += `\n\n⚠ ${skipped} produto(s) ficaram de fora: já existiam, estavam sem preço ou passaram do limite do seu plano.`;
   }
-  return Response.json({ reply, changes, stock, newItems });
+  return respond({ reply, changes, stock, newItems, visibility });
 }

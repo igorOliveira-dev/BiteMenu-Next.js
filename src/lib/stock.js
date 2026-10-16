@@ -32,6 +32,25 @@ export function applyStock(menu, ownerRole, optionStock) {
   };
 }
 
+// Grupo de opções com todas as opções ocultadas pelo dono = grupo oculto: sai do cardápio público
+// (senão aparece vazio e, se for obrigatório, trava o pedido). Rodar ANTES do applyStock:
+// grupo vazio só por estoque esgotado continua, pra não liberar o item sem a escolha obrigatória.
+export function hideHiddenGroups(menu) {
+  if (!menu) return menu;
+  return {
+    ...menu,
+    categories: (menu.categories || []).map((cat) => ({
+      ...cat,
+      menu_items: (cat.menu_items || []).map((it) => ({
+        ...it,
+        option_groups: (it.option_groups || []).filter(
+          (g) => !((g.option_choices || []).length > 0 && g.option_choices.every((c) => c.hidden)),
+        ),
+      })),
+    })),
+  };
+}
+
 // Carrinho + o que vai entrar passa do estoque? Retorna a mensagem de erro ou null.
 // choiceIds: ids das opções escolhidas no item.
 export function stockError(ownerRole, cartItems, item, qty, choiceIds) {

@@ -4,7 +4,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import ClientMenu2 from "./ClientMenu2";
 import ClientMenu3 from "./ClientMenu3";
 import { getMenuBySlug, getOwnerInfo, getOptionStock } from "./getMenuData";
-import { applyStock, STOCK_ROLES } from "@/lib/stock";
+import { applyStock, hideHiddenGroups, STOCK_ROLES } from "@/lib/stock";
 
 export const revalidate = 300; // 5 minutos — cardápios raramente mudam em alta frequência
 
@@ -74,7 +74,7 @@ export default async function MenuPage({ params }) {
 
   const { ownerPhone, ownerRole } = await getOwnerInfo(rawMenu);
   const optionStock = STOCK_ROLES.includes(ownerRole) ? await getOptionStock(rawMenu.id) : [];
-  const menu = applyStock(rawMenu, ownerRole, optionStock);
+  const menu = applyStock(hideHiddenGroups(rawMenu), ownerRole, optionStock);
 
   const effectiveLayout = menu.layout;
 

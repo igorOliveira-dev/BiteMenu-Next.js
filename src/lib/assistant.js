@@ -2,7 +2,10 @@
 // As chaves são as mesmas do estado local do StatesManager.
 export const AI_PLAN_ROLES = ["admin"];
 
-export const AI_DAILY_LIMIT = 40;
+// Limite de uso por sessão: tokens (entrada + saída) numa janela que começa na 1ª mensagem.
+// ~200 mil tokens ≈ 20–40 mensagens; custo máximo por sessão com o Haiku ≈ US$ 0,03.
+export const AI_SESSION_TOKEN_LIMIT = 200_000;
+export const AI_SESSION_HOURS = 5;
 
 // mesmos limites de MenuItems.jsx (getItemLimitByRole / getCategoryLimitByRole)
 export const ITEM_LIMITS = { free: 20, plus: 50, pro: 200, business: 500, admin: Infinity };
