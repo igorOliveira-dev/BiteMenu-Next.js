@@ -4,7 +4,7 @@ export const AI_PLAN_ROLES = ["business", "admin"];
 
 // Limite de uso por sessão: tokens (entrada + saída) numa janela que começa na 1ª mensagem.
 // ~120 mil tokens ≈ 12–25 mensagens; pior caso no mês (todas as sessões no limite) ≈ US$ 2,80 por usuário.
-export const AI_SESSION_TOKEN_LIMIT = 120_000;
+export const AI_SESSION_TOKEN_LIMIT = 180_000;
 export const AI_SESSION_HOURS = 5;
 
 // mesmos limites de MenuItems.jsx (getItemLimitByRole / getCategoryLimitByRole)
