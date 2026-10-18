@@ -42,7 +42,7 @@ export function formatAiValue(key, value) {
   if (value === null || value === undefined || value === "") return "—";
   if (key === "selectedServices") return value.map((s) => SERVICE_LABELS[s] ?? s).join(", ");
   if (key === "selectedPayments") return value.map((p) => PAYMENT_LABELS[p] ?? p).join(", ");
-  if (key === "deliveryFeeMode") return value === "zones" ? "Por bairro" : "Fixo";
+  if (key === "deliveryFeeMode") return value === "zones" ? "Por bairro" : value === "radius" ? "Por raio" : "Fixo";
   if (key === "deliveryZones") return value.map((z) => `${z.name} (${z.shipping_fee || 0})`).join(", ") || "—";
   if (key === "hours") {
     return Object.keys(DAY_LABELS)

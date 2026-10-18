@@ -20,6 +20,7 @@ import { saveReceipt } from "@/lib/orderReceipts";
 import { renderWhatsappMessage } from "@/lib/whatsappMessage";
 import { getContrastTextColor } from "@/utils/color";
 import AddressFields, { EMPTY_ADDRESS, formatAddress } from "@/components/AddressFields";
+import { currentPosition, distanceKm, feeForDistance, geocodeAddress } from "@/lib/deliveryRadius";
 
 export default function CartDrawer({
   menu,
@@ -243,6 +244,28 @@ export default function CartDrawer({
   const filteredZones = deliveryZones.filter((zone) => zone.name.toLowerCase().includes(search.toLowerCase()));
 
   const canUseZones = menu?.delivery_fee_mode === "zones" && hasPlusPermissions && deliveryZones.length > 0;
+
+  // taxa por raio: delivery_radius também é lazy-loaded; coordenadas do cliente vêm do endereço ou do GPS
+  const [deliveryRadius, setDeliveryRadius] = useState(null);
+  const [customerCoords, setCustomerCoords] = useState(null);
+  const [radiusStatus, setRadiusStatus] = useState("");
+  const canUseRadius =
+    menu?.delivery_fee_mode === "radius" &&
+    hasPlusPermissions &&
+    deliveryRadius?.lat != null &&
+    deliveryRadius?.tiers?.length > 0;
+  const customerDistance =
+    canUseRadius && customerCoords
+      ? distanceKm({ lat: deliveryRadius.lat, lng: deliveryRadius.lng }, customerCoords)
+      : null;
+  const radiusFee = customerDistance != null ? feeForDistance(deliveryRadius.tiers, customerDistance) : null;
+
+  const locateCustomer = async (fromAddress) => {
+    setRadiusStatus("loading");
+    const pos = fromAddress ? await geocodeAddress(costumerAddressParts) : await currentPosition();
+    setRadiusStatus(pos ? "" : fromAddress ? "notFound" : "denied");
+    setCustomerCoords(pos);
+  };
   // com bairros de entrega, o bairro vem da zona escolhida
   const costumerAddress = formatAddress(
     canUseZones ? { ...costumerAddressParts, neighborhood: costumerNeighborhood } : costumerAddressParts,
@@ -251,7 +274,7 @@ export default function CartDrawer({
   const serviceOptions = [
     {
       id: "delivery",
-      label: !canUseZones
+      label: !canUseZones && !canUseRadius
         ? `Entrega ${normalizeMoney(menu.delivery_fee) > 0 ? `(${formatCurrency(normalizeMoney(menu.delivery_fee), menu?.currency)})` : ""}`
         : "Entrega",
     },
@@ -328,6 +351,25 @@ export default function CartDrawer({
         }
       });
   }, [open, menu?.id, menu?.delivery_fee_mode, hasPlusPermissions, deliveryZones.length]);
+
+  useEffect(() => {
+    if (!open || menu?.delivery_fee_mode !== "radius" || !hasPlusPermissions || deliveryRadius) return;
+
+    supabase
+      .from("menus")
+      .select("delivery_radius")
+      .eq("id", menu.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.delivery_radius) setDeliveryRadius(data.delivery_radius);
+      });
+  }, [open, menu?.id, menu?.delivery_fee_mode, hasPlusPermissions, deliveryRadius]);
+
+  // endereço mudou: a distância calculada não vale mais
+  useEffect(() => {
+    setCustomerCoords(null);
+    setRadiusStatus("");
+  }, [costumerAddressParts]);
 
   useEffect(() => {
     if (tableInfo) {
@@ -453,9 +495,11 @@ export default function CartDrawer({
       return;
     }
 
-    const fee = getSelectedDeliveryFee(menu, costumerNeighborhood, hasPlusPermissions, deliveryZones);
+    const fee = canUseRadius
+      ? (radiusFee ?? 0)
+      : getSelectedDeliveryFee(menu, costumerNeighborhood, hasPlusPermissions, deliveryZones);
     setDeliveryFeeValue(fee);
-  }, [menu, selectedService, costumerNeighborhood, hasPlusPermissions, deliveryZones]);
+  }, [menu, selectedService, costumerNeighborhood, hasPlusPermissions, deliveryZones, canUseRadius, radiusFee]);
 
   const drawerSubtotal = cart.totalPrice(menu?.id) || 0;
   const drawerSubtotalAfterDiscount = Math.max(0, drawerSubtotal - discountAmount);
@@ -642,6 +686,17 @@ export default function CartDrawer({
     if (selectedService === "delivery" && costumerAddressParts.street.trim().length < 3) {
       customAlert("Informe a rua do endereço.", "error");
       return false;
+    }
+
+    if (selectedService === "delivery" && canUseRadius) {
+      if (!customerCoords) {
+        customAlert("Calcule a taxa de entrega antes de continuar.", "error");
+        return false;
+      }
+      if (radiusFee === null) {
+        customAlert("No momento, seu endereço está fora da área de entrega.", "error");
+        return false;
+      }
     }
 
     if (!selectedService) {
@@ -1307,6 +1362,52 @@ export default function CartDrawer({
                         />
                       </div>
                     </div>
+
+                    {canUseRadius && (
+                      <div className="mb-2 text-sm">
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => locateCustomer(true)}
+                            disabled={radiusStatus === "loading"}
+                            className="cursor-pointer rounded p-2 font-semibold disabled:opacity-50"
+                            style={{ backgroundColor: translucidToUse }}
+                          >
+                            Calcular taxa de entrega
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => locateCustomer(false)}
+                            disabled={radiusStatus === "loading"}
+                            className="cursor-pointer rounded p-2 disabled:opacity-50"
+                            style={{ backgroundColor: translucidToUse }}
+                          >
+                            Usar minha localização
+                          </button>
+                        </div>
+                        <p className="mt-1" style={{ color: grayToUse }}>
+                          {radiusStatus === "loading"
+                            ? "Calculando..."
+                            : radiusStatus === "notFound"
+                              ? "Não achamos seu endereço no mapa. Confira os dados ou use sua localização."
+                              : radiusStatus === "denied"
+                                ? "Não foi possível obter sua localização."
+                                : customerDistance == null
+                                  ? "Preencha o endereço e calcule a taxa."
+                                  : radiusFee === null
+                                    ? `Fora da área de entrega (${customerDistance.toFixed(1)} km).`
+                                    : null}
+                        </p>
+                        {customerDistance != null && radiusFee !== null && (
+                          <p style={{ color: grayToUse }}>
+                            Distância: {customerDistance.toFixed(1)} km · Taxa de entrega:{" "}
+                            <strong style={{ color: foregroundToUse }}>
+                              {formatCurrency(deliveryFeeValue, menu?.currency)}
+                            </strong>
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </>
                 )}
                 <>

@@ -185,6 +185,15 @@ async function uploadAndReplace(file, folderPrefix = "", oldPublicUrl = null) {
   return newPublicUrl;
 }
 
+// delivery_radius do banco -> estado do formulário (km/fee como string, igual aos bairros)
+const normalizeRadius = (r) => ({
+  lat: r?.lat ?? null,
+  lng: r?.lng ?? null,
+  tiers: Array.isArray(r?.tiers)
+    ? r.tiers.map((t, index) => ({ id: t?.id || `tier-${index}`, km: String(t?.km ?? ""), fee: String(t?.fee ?? "") }))
+    : [],
+});
+
 /* ---------------- componente principal ---------------- */
 export default function StatesManager({
   keys = [
@@ -204,6 +213,7 @@ export default function StatesManager({
     "deliveryFee",
     "deliveryZones",
     "deliveryFeeMode",
+    "deliveryRadius",
     "minimumOrderValue",
     "pixKey",
     "hours",
@@ -272,6 +282,7 @@ export default function StatesManager({
           }))
         : [],
       deliveryFeeMode: menuFromServer.delivery_fee_mode ?? "fixed",
+      deliveryRadius: normalizeRadius(menuFromServer.delivery_radius),
       minimumOrderValue:
         menuFromServer.minimum_order_value !== undefined && menuFromServer.minimum_order_value !== null
           ? String(menuFromServer.minimum_order_value)
@@ -363,24 +374,44 @@ export default function StatesManager({
       return;
     }
 
-    // taxa por bairro e pedido mínimo: dá pra preencher em qualquer plano, mas só salva com Plus
+    // taxa por bairro/raio e pedido mínimo: dá pra preencher em qualquer plano, mas só salva com Plus
     if (!["plus", "pro", "business", "admin"].includes(profile?.role)) {
       const zones =
         state.deliveryFeeMode === "zones" &&
         (changed.includes("deliveryFeeMode") || changed.includes("deliveryZones"));
+      const radius =
+        state.deliveryFeeMode === "radius" &&
+        (changed.includes("deliveryFeeMode") || changed.includes("deliveryRadius"));
       const minimum = changed.includes("minimumOrderValue") && state.minimumOrderValue !== "";
-      if (zones || minimum) {
+      if (zones || radius || minimum) {
         setPlusUpsell(
           zones
             ? {
                 title: "Taxa por bairro",
                 text: "Assine o plano Plus para salvar a taxa por bairro. Cobre uma taxa de entrega diferente para cada bairro.",
               }
+            : radius
+            ? {
+                title: "Taxa por raio",
+                text: "Assine o plano Plus para salvar a taxa por raio. Cobre a entrega pela distância até o cliente.",
+              }
             : {
                 title: "Valor mínimo de pedido",
                 text: "Assine o plano Plus para salvar o valor mínimo. Defina um valor mínimo para aceitar pedidos.",
               },
         );
+        return;
+      }
+    }
+
+    if (state.deliveryFeeMode === "radius") {
+      const r = state.deliveryRadius;
+      if (r?.lat == null || r?.lng == null) {
+        customAlert?.("Defina a localização da loja para a taxa por raio.", "error");
+        return;
+      }
+      if (!r.tiers.some((t) => Number(t.km) > 0)) {
+        customAlert?.("Adicione ao menos uma faixa de distância para a taxa por raio.", "error");
         return;
       }
     }
@@ -436,6 +467,17 @@ export default function StatesManager({
 
         delivery_fee_mode: state.deliveryFeeMode,
 
+        // só envia quando mexido: não quebra o salvamento se a coluna ainda não existir
+        ...(changed.includes("deliveryRadius") && {
+          delivery_radius: {
+            lat: state.deliveryRadius.lat,
+            lng: state.deliveryRadius.lng,
+            tiers: state.deliveryRadius.tiers
+              .filter((t) => Number(t.km) > 0)
+              .map((t) => ({ id: t.id, km: Number(t.km), fee: Number(t.fee || 0) })),
+          },
+        }),
+
         minimum_order_value:
           state.minimumOrderValue !== "" && state.minimumOrderValue !== null
             ? Number(state.minimumOrderValue)
@@ -486,7 +528,7 @@ export default function StatesManager({
           .single();
 
         if (error) {
-          console.error("[StatesManager] supabase update error:", error);
+          console.error("[StatesManager] supabase update error:", error?.code, error?.message, error?.details);
           if (error?.message?.toLowerCase()?.includes("row-level")) {
             customAlert?.(
               "Atualização bloqueada por políticas de segurança do banco (RLS). Verifique se o usuário é o owner do menu.",
@@ -532,6 +574,7 @@ export default function StatesManager({
               }))
             : [],
           deliveryFeeMode: data.delivery_fee_mode ?? null,
+          deliveryRadius: normalizeRadius(data.delivery_radius),
           minimumOrderValue:
             data.minimum_order_value !== undefined && data.minimum_order_value !== null
               ? String(data.minimum_order_value)
@@ -709,6 +752,7 @@ export default function StatesManager({
                     deliveryFee: "Taxa de entrega",
                     deliveryZones: "Bairros de entrega",
                     deliveryFeeMode: "Modo do frete",
+                    deliveryRadius: "Taxa por raio",
                     pixKey: "Chave PIX",
                     hours: "Horário",
                     currency: "Moeda",

@@ -13,7 +13,7 @@ export const plans = [
       "10 Categorias",
       "15 Mesas",
       "Maior personalização",
-      "Taxa por bairro",
+      "Taxa por bairro e por raio",
       "Criação de combos",
     ],
     price: "29,90",

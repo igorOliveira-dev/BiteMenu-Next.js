@@ -28,6 +28,7 @@ import useUser from "@/hooks/useUser";
 import { supabase } from "@/lib/supabaseClient";
 import { updateMenuById } from "@/lib/queries/menus";
 import AddressFields, { formatAddress, mapsUrl } from "@/components/AddressFields";
+import { currentPosition, geocodeAddress } from "@/lib/deliveryRadius";
 
 const DEFAULT_HOURS = {
   mon: "09:00-18:00",
@@ -276,6 +277,98 @@ function AddressEditor({ legacyAddress, details, onChange }) {
       ) : details ? (
         <p className="text-xs opacity-60">Preencha ao menos a rua para o endereço aparecer no cardápio.</p>
       ) : null}
+    </div>
+  );
+}
+
+// taxa por raio: localização da loja + faixas "até X km → valor"
+function RadiusEditor({ value, onChange, addressDetails, currency }) {
+  const r = value ?? { lat: null, lng: null, tiers: [] };
+  const [status, setStatus] = useState("");
+  const hasLocation = r.lat != null && r.lng != null;
+
+  const locate = async (fromAddress) => {
+    setStatus("loading");
+    const pos = fromAddress ? await geocodeAddress(addressDetails) : await currentPosition();
+    if (!pos) return setStatus(fromAddress ? "notFound" : "denied");
+    setStatus("");
+    onChange({ ...r, ...pos });
+  };
+
+  const setTier = (id, field, v) =>
+    onChange({
+      ...r,
+      tiers: r.tiers.map((t) => (t.id === id ? { ...t, [field]: String(v).replace(",", ".").replace("-", "") } : t)),
+    });
+
+  return (
+    <div className="space-y-3 pt-1">
+      <div className="space-y-2">
+        <p className="text-xs opacity-70">Localização da loja (ponto de partida das entregas)</p>
+        <div className="flex flex-wrap gap-2">
+          <GhostButton onClick={() => locate(true)} disabled={!formatAddress(addressDetails)}>
+            <FaMapMarkerAlt className="text-xs" /> Usar o endereço da loja
+          </GhostButton>
+          <GhostButton onClick={() => locate(false)}>Usar minha localização atual</GhostButton>
+        </div>
+        {status === "loading" && <p className="text-xs opacity-60">Localizando...</p>}
+        {status === "notFound" && (
+          <p className="text-xs text-red-400">
+            Não achamos o endereço no mapa. Confira o endereço ou use sua localização atual (estando na loja).
+          </p>
+        )}
+        {status === "denied" && <p className="text-xs text-red-400">Não foi possível obter sua localização.</p>}
+        {hasLocation ? (
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs underline opacity-70"
+          >
+            <FaMapMarkerAlt /> Conferir localização no mapa
+          </a>
+        ) : (
+          <p className="text-xs opacity-60">Localização ainda não definida.</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-xs opacity-70">
+          Faixas de distância (em linha reta). Vale a menor faixa que cobre o cliente; acima da maior, não entrega.
+        </p>
+        {r.tiers.map((t) => (
+          <div key={t.id} className="grid grid-cols-[1fr_1fr_44px] gap-2">
+            <TextInput
+              type="number"
+              min="0"
+              step="0.1"
+              value={t.km}
+              onChange={(e) => setTier(t.id, "km", e.target.value)}
+              placeholder="Até (km)"
+            />
+            <TextInput
+              type="number"
+              min="0"
+              step="0.01"
+              value={t.fee}
+              onChange={(e) => setTier(t.id, "fee", e.target.value)}
+              placeholder={getCurrencySymbol(currency)}
+            />
+            <button
+              type="button"
+              onClick={() => onChange({ ...r, tiers: r.tiers.filter((x) => x.id !== t.id) })}
+              aria-label="Remover faixa"
+              className="flex h-11 cursor-pointer items-center justify-center rounded-xl border border-red-500/30 text-red-400 transition hover:bg-red-500/15"
+            >
+              <FaTrash className="text-xs" />
+            </button>
+          </div>
+        ))}
+        <GhostButton onClick={() => onChange({ ...r, tiers: [...r.tiers, { id: createZoneId(), km: "", fee: "" }] })}>
+          <FaPlus className="text-xs" />
+          Adicionar faixa
+        </GhostButton>
+      </div>
     </div>
   );
 }
@@ -938,7 +1031,9 @@ const ConfigMenu = (props) => {
     const count = selectedServices?.length || 0;
     const parts = [`${count} serviço${count === 1 ? "" : "s"}`];
     if (selectedServices?.includes("delivery")) {
-      parts.push(deliveryFeeMode === "zones" ? "frete por bairro" : "frete fixo");
+      parts.push(
+        deliveryFeeMode === "zones" ? "frete por bairro" : deliveryFeeMode === "radius" ? "frete por raio" : "frete fixo",
+      );
     }
     return parts.join(" · ");
   })();
@@ -1092,7 +1187,7 @@ const ConfigMenu = (props) => {
 
             {selectedServices?.includes("delivery") && (
               <Field label="Cobrança do frete">
-                <div className="grid gap-2 sm:grid-cols-2">
+                <div className="grid gap-2 sm:grid-cols-3">
                   <OptionCard
                     selected={deliveryFeeMode === "fixed"}
                     title="Taxa fixa"
@@ -1105,6 +1200,14 @@ const ConfigMenu = (props) => {
                     description="Um valor para cada bairro."
                     onClick={() => toggleDeliveryMode("zones")}
                   />
+                  {usingExternal && (
+                    <OptionCard
+                      selected={deliveryFeeMode === "radius"}
+                      title="Taxa por raio"
+                      description="Valor pela distância até o cliente."
+                      onClick={() => toggleDeliveryMode("radius")}
+                    />
+                  )}
                 </div>
 
                 {deliveryFeeMode === "fixed" && (
@@ -1118,6 +1221,15 @@ const ConfigMenu = (props) => {
                       placeholder={`Taxa em ${getCurrencySymbol(currency)}`}
                     />
                   </div>
+                )}
+
+                {deliveryFeeMode === "radius" && usingExternal && (
+                  <RadiusEditor
+                    value={externalState.deliveryRadius}
+                    onChange={(deliveryRadius) => externalSetState((p) => ({ ...p, deliveryRadius }))}
+                    addressDetails={externalState.addressDetails}
+                    currency={currency}
+                  />
                 )}
 
                 {deliveryFeeMode === "zones" && (
