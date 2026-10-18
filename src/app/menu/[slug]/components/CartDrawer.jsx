@@ -1456,8 +1456,8 @@ export default function CartDrawer({
                     ? "Após fazer o PIX, mostre o comprovante para o estabelecimento."
                     : "Após fazer o PIX, envie o comprovante pelo WhatsApp!"}
                 </p>
-                {showWhatsappButtonOnPixStage &&
-                  (tableInfo ? (
+                {tableInfo ? (
+                  showWhatsappButtonOnPixStage && (
                     <button
                       onClick={() => setPurchaseStage("tableSuccess")}
                       className="cursor-pointer w-full py-2 px-4 rounded font-bold text-white flex items-center justify-center gap-2 mt-2"
@@ -1465,7 +1465,8 @@ export default function CartDrawer({
                     >
                       Concluir pedido
                     </button>
-                  ) : (
+                  )
+                ) : (
                     <a href={whatsappURL || "#"} rel="noopener noreferrer">
                       <span
                         className="cursor-pointer py-2 px-4 rounded font-bold flex items-center justify-center gap-2 mt-2"
@@ -1475,7 +1476,7 @@ export default function CartDrawer({
                         Enviar confirmação
                       </span>
                     </a>
-                  ))}
+                )}
               </div>
             ) : purchaseStage === "tableSuccess" ? (
               <div
