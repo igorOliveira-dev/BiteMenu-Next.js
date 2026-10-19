@@ -1163,7 +1163,10 @@ export default function CartDrawer({
       {isPurchaseModalOpen && (
         <div className="fixed inset-0 z-65 flex items-center justify-center" style={{ color: foregroundToUse }}>
           <div className={backdropClasses} aria-hidden="true" />
-          <div className="relative rounded-lg p-6 w-[90%] max-w-md z-70" style={{ backgroundColor: bgColor }}>
+          <div
+            className="relative rounded-lg p-6 w-[90%] max-w-md z-70 max-h-[100dvh] overflow-y-auto overscroll-contain"
+            style={{ backgroundColor: bgColor }}
+          >
             {purchaseStage === "confirmingTable" && (
               <svg
                 className="absolute inset-0 w-full h-full pointer-events-none overflow-visible"

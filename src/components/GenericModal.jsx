@@ -38,7 +38,7 @@ const GenericModal = ({
       }}
     >
       <div
-        className={`rounded-xl shadow-xl p-3 sm:p-6 min-w-70 mx-2 sm:mx-4 ${wfull ? "w-full" : ""}`}
+        className={`rounded-xl shadow-xl p-3 sm:p-6 min-w-70 mx-2 sm:mx-4 max-h-[100dvh] overflow-y-auto overscroll-contain ${wfull ? "w-full" : ""}`}
         style={{
           backgroundColor: bgColor ? bgColor : "var(--low-gray)",
           maxWidth: resolvedMaxWidth || null,
