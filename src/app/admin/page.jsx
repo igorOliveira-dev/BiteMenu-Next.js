@@ -208,6 +208,12 @@ const Admin = () => {
         <h1 className="default-h1 text-center">Admin dashboard</h1>
       </div>
 
+      <p className="text-center mb-2 text-sm">
+        <a href="/admin/motivos-cancelamento" className="underline text-blue-500">
+          Motivos de cancelamento
+        </a>
+      </p>
+
       <p className="text-center mb-4 text-sm">
         <button onClick={() => setShowCharts(!showCharts)}>{showCharts ? "Ocultar gráficos" : "Mostrar gráficos"}</button>
       </p>

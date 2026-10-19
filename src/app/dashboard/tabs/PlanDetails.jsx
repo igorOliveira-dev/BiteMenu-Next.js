@@ -8,6 +8,7 @@ import {
   FaCcAmex,
   FaCcMastercard,
   FaCcVisa,
+  FaCheck,
   FaChevronLeft,
   FaCreditCard,
   FaSyncAlt,
@@ -21,7 +22,101 @@ import { supabase } from "@/lib/supabaseClient";
 import { brDate } from "@/lib/brDate";
 import { legacyPlanInfo } from "@/lib/legacyPlan";
 import LegacyPlanNotice from "@/components/LegacyPlanNotice";
+import GenericModal from "@/components/GenericModal";
 import BillingAlert from "../components/BillingAlert";
+
+const CANCEL_REASONS = [
+  "Está caro",
+  "Não estou usando o suficiente",
+  "Faltou alguma funcionalidade",
+  "Tive problemas técnicos",
+  "Vou usar outra ferramenta",
+  "Fechei / pausei o negócio",
+  "Outro",
+];
+
+const CancelModal = ({ canceling, onClose, onConfirm }) => {
+  const [reason, setReason] = useState("");
+  const [comment, setComment] = useState("");
+
+  return (
+    <GenericModal
+      wfull
+      maxWidth={"420px"}
+      py={"24px"}
+      title="Cancelar assinatura"
+      onClose={canceling ? undefined : onClose}
+    >
+      <div className="grid gap-5">
+        <p className="text-sm opacity-70">Você continua com o plano até o fim do período já pago.</p>
+
+        <div className="space-y-2">
+          <div>
+            <div className="text-sm font-semibold">Por que está cancelando?</div>
+            <p className="mt-0.5 text-xs opacity-60">Opcional, mas ajuda a gente a melhorar.</p>
+          </div>
+          <div className="grid gap-2">
+            {CANCEL_REASONS.map((r) => {
+              const selected = reason === r;
+              return (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setReason(selected ? "" : r)}
+                  className={`flex w-full cursor-pointer items-center gap-3 rounded-xl border p-3 text-left transition ${
+                    selected
+                      ? "border-red-500/60 bg-red-500/15"
+                      : "border-[var(--translucid)] bg-translucid hover:border-red-500/30"
+                  }`}
+                >
+                  <span
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition ${
+                      selected ? "border-red-500 bg-red-500 text-white" : "border-[var(--high-translucid)] text-transparent"
+                    }`}
+                  >
+                    <FaCheck className="text-[9px]" />
+                  </span>
+                  <span className="text-sm font-semibold">{r}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="text-sm font-semibold">Quer comentar algo mais?</div>
+          <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            maxLength={1000}
+            rows={3}
+            placeholder="Conte o que poderíamos melhorar (opcional)"
+            className="w-full resize-none rounded-xl border border-[var(--translucid)] bg-translucid px-3 py-3 text-[15px] outline-none transition focus:border-red-500/70"
+          />
+        </div>
+
+        <div className="grid gap-2 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={canceling}
+            className="h-11 cursor-pointer rounded-xl border border-[var(--translucid)] bg-translucid px-4 text-sm font-semibold transition hover:border-red-500/40 disabled:opacity-50"
+          >
+            Manter assinatura
+          </button>
+          <button
+            type="button"
+            onClick={() => onConfirm(reason, comment.trim())}
+            disabled={canceling}
+            className="h-11 cursor-pointer rounded-xl bg-[#d42020] px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+          >
+            {canceling ? "Cancelando..." : "Confirmar cancelamento"}
+          </button>
+        </div>
+      </div>
+    </GenericModal>
+  );
+};
 
 const PAYMENT_METHODS = {
   CREDIT_CARD: { label: "Cartão de crédito", Icon: FaCreditCard },
@@ -230,6 +325,7 @@ export default function PlanDetails({ setSelectedTab }) {
   const { profile, loading } = useUser();
   const [patch, setPatch] = useState({});
   const [canceling, setCanceling] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [changingMethod, setChangingMethod] = useState(false);
   const [billingVersion, setBillingVersion] = useState(0); // muda pra recarregar o faturamento
@@ -262,18 +358,24 @@ export default function PlanDetails({ setSelectedTab }) {
 
   const accessUntil = p.plan_until ? brDate(p.plan_until) : null;
 
-  const cancelSubscription = async () => {
-    const ok = await confirm("Cancelar a assinatura? Você continua com o plano até o fim do período já pago.");
-    if (!ok) return;
-
+  const cancelSubscription = async (reason, comment) => {
     setCanceling(true);
     try {
       const res = await fetch("/api/validapay/cancel", { method: "POST", headers: await authHeaders() });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
+      // Motivo é opcional e não pode atrapalhar o cancelamento: erro aqui é ignorado
+      if (reason || comment) {
+        supabase
+          .from("cancellation_reasons")
+          .insert({ user_id: profile.id, plan: p.role, reason: reason || null, comment: comment || null })
+          .then(() => {});
+      }
+
       updateCachedProfile(data);
       setPatch((prev) => ({ ...prev, ...data }));
+      setShowCancelModal(false);
       alert("Assinatura cancelada.");
     } catch (err) {
       alert(err.message || "Não foi possível cancelar. Tente novamente.");
@@ -387,9 +489,17 @@ export default function PlanDetails({ setSelectedTab }) {
           billing={billing}
           canCancel={!p.cancel_at_period_end}
           canceling={canceling}
-          onCancel={cancelSubscription}
+          onCancel={() => setShowCancelModal(true)}
           changingMethod={changingMethod}
           onChangeMethod={changePaymentMethod}
+        />
+      )}
+
+      {showCancelModal && (
+        <CancelModal
+          canceling={canceling}
+          onClose={() => setShowCancelModal(false)}
+          onConfirm={cancelSubscription}
         />
       )}
     </div>
