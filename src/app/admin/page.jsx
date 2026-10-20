@@ -9,6 +9,9 @@ import { ACQUISITION_SOURCE_LABELS } from "@/lib/acquisitionSourceOptions";
 import {
   AreaChart,
   Area,
+  ComposedChart,
+  Bar,
+  Legend,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -44,6 +47,23 @@ const Admin = () => {
       )
       .then((res) => (res.ok ? res.json() : {}))
       .then(setSubStatuses)
+      .catch(() => {});
+  }, []);
+
+  // 🔹 Novos clientes x novos pagantes por dia
+  const [daily, setDaily] = useState(null);
+  const [dailyRange, setDailyRange] = useState(30);
+
+  useEffect(() => {
+    supabase.auth
+      .getSession()
+      .then(({ data }) =>
+        fetch("/api/validapay/admin-daily", {
+          headers: { Authorization: `Bearer ${data.session?.access_token}` },
+        }),
+      )
+      .then((res) => (res.ok ? res.json() : null))
+      .then(setDaily)
       .catch(() => {});
   }, []);
 
@@ -198,6 +218,42 @@ const Admin = () => {
 
   const utmSources = [...new Set(fullMenus.map((m) => m.owner_acquisition_source).filter(Boolean))].sort();
 
+  // Dias no fuso do navegador, do mais antigo pro de hoje
+  const dayKey = (d) => new Date(d).toLocaleDateString("en-CA");
+  const dailyData = [];
+  if (daily) {
+    // Novos clientes = menus criados
+    const menuDates = fullMenus.map((m) => m.created_at).sort();
+    const menusPerDay = {};
+    const payingPerDay = {};
+    menuDates.forEach((d) => (menusPerDay[dayKey(d)] = (menusPerDay[dayKey(d)] || 0) + 1));
+    daily.paying.forEach((d) => (payingPerDay[dayKey(d)] = (payingPerDay[dayKey(d)] || 0) + 1));
+
+    // "all": do primeiro menu até hoje
+    const days =
+      dailyRange === "all" && menuDates.length
+        ? Math.ceil((new Date(dayKey(new Date())) - new Date(dayKey(menuDates[0]))) / 86400000) + 1
+        : dailyRange === "all"
+          ? 1
+          : dailyRange;
+
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const key = dayKey(date);
+      dailyData.push({
+        day: date.toLocaleDateString(
+          "pt-BR",
+          days > 90 ? { day: "2-digit", month: "2-digit", year: "2-digit" } : { day: "2-digit", month: "2-digit" },
+        ),
+        clientes: menusPerDay[key] || 0,
+        pagantes: payingPerDay[key] || 0,
+      });
+    }
+  }
+  const dailyMenus = dailyData.reduce((s, d) => s + d.clientes, 0);
+  const dailyPaying = dailyData.reduce((s, d) => s + d.pagantes, 0);
+
   const paginatedMenus = visibleMenus.slice(0, visibleCount);
   const hasMore = visibleCount < visibleMenus.length;
 
@@ -221,6 +277,70 @@ const Admin = () => {
       {showCharts && (
         <>
           {" "}
+          {/* 🔹 Novos clientes x novos pagantes por dia */}
+          <div className="w-full max-w-4xl mx-auto mb-10">
+            <h3 className="text-sm text-gray-400 mb-2 text-center">Novos clientes x novos pagantes por dia</h3>
+            <div className="flex flex-wrap justify-center gap-2 mb-2">
+              {[
+                [7, "7 dias"],
+                [30, "30 dias"],
+                [90, "90 dias"],
+                [180, "180 dias"],
+                [365, "1 ano"],
+                ["all", "Tudo"],
+              ].map(([n, label]) => (
+                <button
+                  key={n}
+                  onClick={() => setDailyRange(n)}
+                  className={`px-3 py-1 rounded text-xs border ${
+                    dailyRange === n ? "bg-blue-600 border-blue-600 text-white" : "bg-translucid border-translucid"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {!daily ? (
+              <p className="text-center text-xs text-gray-400 h-64 flex items-center justify-center">Carregando...</p>
+            ) : (
+              <>
+                <p className="text-center text-xs text-gray-400 mb-2">
+                  {dailyMenus} novos menus · {dailyPaying} pagantes
+                  <br />
+                  <span className="text-[11px]">pagantes = 1º pagamento de assinatura ValidaPay (Stripe antigo não entra)</span>
+                </p>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={dailyData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                      <XAxis dataKey="day" stroke="#999" fontSize={12} />
+                      <YAxis stroke="#999" fontSize={12} allowDecimals={false} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #333" }}
+                        labelStyle={{ color: "#fff" }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: 12 }} />
+                      <Area
+                        type="monotone"
+                        dataKey="clientes"
+                        name="Novos clientes (menus)"
+                        stroke="#3b82f6"
+                        fill="#3b82f6"
+                        fillOpacity={0.2}
+                        strokeWidth={2}
+                      />
+                      <Bar
+                        dataKey="pagantes"
+                        name="Novos pagantes"
+                        fill="#22c55e"
+                        barSize={dailyData.length > 30 ? undefined : 12}
+                      />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+              </>
+            )}
+          </div>
           {/* 🔹 Gráfico de crescimento acumulado de clientes (menus) */}
           {monthlyGrowth.length > 0 && (
             <div className="w-full max-w-4xl mx-auto h-64 mb-10">
