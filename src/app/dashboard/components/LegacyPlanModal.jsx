@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { FaBolt, FaCheck, FaCreditCard, FaBarcode, FaRegCopy, FaExchangeAlt, FaShieldAlt } from "react-icons/fa";
+import { FaBolt, FaCheck, FaCreditCard, FaBarcode, FaRegCopy, FaExchangeAlt, FaShieldAlt, FaTimes } from "react-icons/fa";
 import { MdPix } from "react-icons/md";
 import LogoTip from "../../../../public/LogoTipo-sem-fundo.png";
 import { legacyNotice, LEGACY_COUPONS } from "@/lib/legacyPlan";
@@ -59,7 +59,8 @@ function content(n) {
 }
 
 // Tela cheia de aviso pra quem tem plano com data de término (legacy_plan_until): aparece nos dias dos
-// e-mails (D-5, D-2, D-1 e D). "Não ver mais" esconde só o aviso daquele dia.
+// e-mails (D-5, D-2, D-1 e D). Fecha com X, "Fechar" ou voltar do navegador; marcando "Não ver mais",
+// esconde só o aviso daquele dia.
 export default function LegacyPlanModal({ profile }) {
   const pathname = usePathname();
   // na tela de planos (destino do CTA) não cobre a página
@@ -67,6 +68,8 @@ export default function LegacyPlanModal({ profile }) {
   const storageKey = notice ? `bite_menu_legacy_notice_${notice.stage}_${notice.end}` : null;
   const [show, setShow] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [dontShow, setDontShow] = useState(false);
+  const pushedRef = useRef(false);
 
   useEffect(() => {
     if (!storageKey) return;
@@ -88,17 +91,39 @@ export default function LegacyPlanModal({ profile }) {
     };
   }, [show]);
 
+  // voltar do navegador/celular fecha o aviso: empilha uma entrada no histórico enquanto ele está aberto
+  useEffect(() => {
+    if (!show) return;
+    if (!pushedRef.current) {
+      window.history.pushState(window.history.state, "");
+      pushedRef.current = true;
+    }
+    const onPop = () => {
+      pushedRef.current = false;
+      setShow(false);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [show]);
+
   if (!show || !notice) return null;
 
   const c = content(notice);
 
-  const stopNotices = () => {
+  // X e botão "Fechar": desfaz a entrada empilhada (o popstate fecha o aviso)
+  const close = () => {
+    if (pushedRef.current) window.history.back();
+    else setShow(false);
+  };
+
+  const toggleDontShow = (checked) => {
+    setDontShow(checked);
     try {
-      window.localStorage.setItem(storageKey, "off");
+      if (checked) window.localStorage.setItem(storageKey, "off");
+      else window.localStorage.removeItem(storageKey);
     } catch {
       // ignora quota / privacidade do browser
     }
-    setShow(false);
   };
 
   const copyCoupon = async () => {
@@ -113,6 +138,14 @@ export default function LegacyPlanModal({ profile }) {
 
   return (
     <div className="fixed inset-0 z-[160] bg-[var(--background)] overflow-y-auto" role="dialog" aria-modal="true">
+      <button
+        type="button"
+        onClick={close}
+        aria-label="Fechar"
+        className="cursor-pointer fixed top-4 right-4 z-10 p-2 rounded-full hover:opacity-80"
+      >
+        <FaTimes />
+      </button>
       <div className="min-h-full flex flex-col items-center justify-center px-4 py-10">
         <div className="w-full max-w-2xl space-y-6">
           <Image src={LogoTip} alt="Bite Menu" height={36} className="h-9 w-auto mx-auto" />
@@ -203,12 +236,21 @@ export default function LegacyPlanModal({ profile }) {
               <FaBolt /> {c.cta}
             </a>
             <button
-              onClick={stopNotices}
+              onClick={close}
               type="button"
-              className="cursor-pointer px-4 py-2 text-xs opacity-70 hover:opacity-100 underline"
+              className="cursor-pointer w-full xs:w-64 px-4 py-3 font-semibold bg-translucid border-2 border-[var(--translucid)] hover:opacity-80 rounded-lg"
             >
-              Não ver mais esse aviso
+              Fechar
             </button>
+            <label className="flex items-center gap-2 text-sm opacity-80 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={dontShow}
+                onChange={(e) => toggleDontShow(e.target.checked)}
+                className="w-4 h-4 cursor-pointer accent-[var(--red)]"
+              />
+              Não ver mais esse aviso
+            </label>
           </div>
         </div>
       </div>
