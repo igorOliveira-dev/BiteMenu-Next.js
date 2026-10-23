@@ -816,7 +816,6 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole }) {
                               onClick={() => handleItemClick(it)}
                             >
                               <Image
-                                unoptimized
                                 src={
                                   it.thumb_url || supabaseImg(it.image_url, { width: 120, height: 120, quality: 80 })
                                 }
@@ -979,7 +978,6 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole }) {
                     width={120}
                     height={120}
                     className="object-cover w-full h-full"
-                    unoptimized
                   />
                 </button>
               )}
@@ -1228,7 +1226,6 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole }) {
                 width={900}
                 height={900}
                 className="w-full h-full object-cover"
-                unoptimized
               />
             </button>
           </div>

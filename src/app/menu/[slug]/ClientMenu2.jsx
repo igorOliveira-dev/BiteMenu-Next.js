@@ -812,7 +812,6 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
                           {isSafeImageUrl(it.image_url) && (
                             <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden">
                               <Image
-                                unoptimized
                                 src={
                                   it.thumb_url || supabaseImg(it.image_url, { width: 120, height: 120, quality: 80 })
                                 }
@@ -935,7 +934,6 @@ export default function ClientMenu2({ menu, ownerPhone, ownerRole }) {
                     width={120}
                     height={120}
                     className="object-cover w-full h-full"
-                    unoptimized
                   />
                 </button>
               )}
