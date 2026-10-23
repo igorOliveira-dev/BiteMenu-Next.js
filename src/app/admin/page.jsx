@@ -5,6 +5,7 @@ import useAllMenus from "@/hooks/useAllMenus";
 import { supabase } from "@/lib/supabaseClient";
 import Loading from "@/components/Loading";
 import Return from "@/components/Return";
+import SearchSelect from "@/components/SearchSelect";
 import { ACQUISITION_SOURCE_LABELS } from "@/lib/acquisitionSourceOptions";
 import {
   AreaChart,
@@ -270,6 +271,12 @@ const Admin = () => {
         </a>
       </p>
 
+      <p className="text-center mb-2 text-sm">
+        <a href="/admin/pagamentos" className="underline text-blue-500">
+          Pagamentos ValidaPay
+        </a>
+      </p>
+
       <p className="text-center mb-4 text-sm">
         <button onClick={() => setShowCharts(!showCharts)}>{showCharts ? "Ocultar gráficos" : "Mostrar gráficos"}</button>
       </p>
@@ -380,19 +387,16 @@ const Admin = () => {
           className="px-3 py-1 w-full rounded bg-translucid border border-translucid text-sm max-w-lg"
         />
 
-        <select
+        <SearchSelect
           value={utmSource}
-          onChange={(e) => setUtmSource(e.target.value)}
-          className="px-3 py-1 w-full rounded bg-translucid border border-translucid text-sm max-w-lg"
-        >
-          <option value="">Todas as origens (utm_source)</option>
-          <option value="none">Sem origem</option>
-          {utmSources.map((src) => (
-            <option key={src} value={src}>
-              {ACQUISITION_SOURCE_LABELS[src] || src}
-            </option>
-          ))}
-        </select>
+          onChange={setUtmSource}
+          className="max-w-lg"
+          options={[
+            { value: "", label: "Todas as origens (utm_source)" },
+            { value: "none", label: "Sem origem" },
+            ...utmSources.map((src) => ({ value: src, label: ACQUISITION_SOURCE_LABELS[src] || src })),
+          ]}
+        />
 
         <div className="flex gap-4 flex-wrap justify-center">
           <label className="flex items-center gap-2 text-sm text-gray-300">
