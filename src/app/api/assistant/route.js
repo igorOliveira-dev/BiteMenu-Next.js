@@ -22,7 +22,9 @@ const MODEL = "claude-haiku-5-5";
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const SERVICES = ["delivery", "pickup", "dinein", "faceToFace"];
 const PAYMENTS = ["cash", "debit", "credit", "pix"];
-const HOURS_RE = /^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$/;
+const RANGE_RE = /([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d/.source;
+// um ou dois turnos: "18:00-23:00" ou "11:00-14:00,18:00-23:00"
+const HOURS_RE = new RegExp(`^${RANGE_RE}(,${RANGE_RE})?$`);
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 
 const SYSTEM = `Você é o assistente do Bite Menu, um sistema de cardápio digital para restaurantes.
@@ -62,7 +64,7 @@ Formato dos campos:
 - selectedServices: lista com "delivery" (entrega), "pickup" (retirada), "dinein" (comer no local), "faceToFace" (atendimento presencial). Pelo menos 1.
 - selectedPayments: lista com "cash" (dinheiro), "debit" (débito), "credit" (crédito), "pix". Pelo menos 1.
 - deliveryFeeMode: "fixed" (taxa única, usa deliveryFee) ou "zones" (taxa por bairro, usa deliveryZones).
-- hours: objeto com os dias mon..sun. Cada dia é "HH:MM-HH:MM" ou null para fechado. Envie só os dias que mudam.
+- hours: objeto com os dias mon..sun. Cada dia é "HH:MM-HH:MM", até 2 turnos separados por vírgula ("11:00-14:00,18:00-23:00") ou null para fechado. Se o fechamento for antes da abertura ("20:00-02:00"), o turno vai até a madrugada do dia seguinte: registre no dia em que abre. Envie só os dias que mudam.
 - deliveryZones: lista COMPLETA de bairros após a alteração (inclua os que já existiam e continuam).
 - minimumOrderValue: número, ou null para remover o mínimo.
 - Cores em hexadecimal "#RRGGBB". Escolha cores com bom contraste entre fundo, título e detalhes.

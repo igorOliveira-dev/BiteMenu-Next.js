@@ -29,6 +29,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { updateMenuById } from "@/lib/queries/menus";
 import AddressFields, { formatAddress, mapsUrl } from "@/components/AddressFields";
 import { currentPosition, geocodeAddress } from "@/lib/deliveryRadius";
+import { shiftTime, splitRanges } from "@/utils/storeHours";
 
 const DEFAULT_HOURS = {
   mon: "09:00-18:00",
@@ -542,11 +543,12 @@ function timeToMinutes(time) {
   return hours * 60 + minutes;
 }
 
-function isCloseBeforeOpen(openTime, closeTime) {
+// fechamento antes da abertura = turno vira a noite e fecha no dia seguinte
+function isOvernight(openTime, closeTime) {
   const open = timeToMinutes(openTime);
   const close = timeToMinutes(closeTime);
   if (open === null || close === null) return false;
-  return close < open;
+  return close > 0 && close < open;
 }
 
 const ConfigMenu = (props) => {
@@ -995,31 +997,47 @@ const ConfigMenu = (props) => {
     setDeliveryZones((prev) => prev.filter((zone) => zone.id !== id));
   };
 
-  const updateDayHour = (day, field, value) => {
-    const currentValue = hours?.[day];
+  // cada dia: "HH:MM-HH:MM" ou vários turnos "HH:MM-HH:MM,HH:MM-HH:MM"
+  const setDayRanges = (day, ranges) => {
+    safeSetHours((prev) => ({
+      ...prev,
+      [day]: ranges.map(([open, close]) => `${open}-${close}`).join(","),
+    }));
+  };
 
-    if (currentValue === null) return;
+  const updateDayHour = (day, index, field, value) => {
+    const ranges = splitRanges(hours?.[day]);
+    if (!ranges[index] || !value) return;
 
-    const [currentOpen = "09:00", currentClose = "18:00"] =
-      typeof currentValue === "string" ? currentValue.split("-") : ["09:00", "18:00"];
-
+    const [currentOpen, currentClose] = ranges[index];
     const openTime = field === "open" ? value : currentOpen;
-    let closeTime = field === "close" ? value : currentClose;
+    const closeTime = field === "close" ? value : currentClose;
+    if (openTime === currentOpen && closeTime === currentClose) return;
 
-    if (closeTime === "00:00") {
-      closeTime = "23:59";
-      customAlert("Meia-noite foi ajustada para 23:59.", "info");
-    }
-
-    if (isCloseBeforeOpen(openTime, closeTime)) {
-      customAlert("O horário de fechamento não pode ser antes do horário de abertura.", "error");
+    if (openTime === closeTime) {
+      customAlert("A abertura e o fechamento não podem ser no mesmo horário.", "error");
       return;
     }
 
-    safeSetHours((prev) => ({
-      ...prev,
-      [day]: `${openTime}-${closeTime}`,
-    }));
+    ranges[index] = [openTime, closeTime];
+    setDayRanges(day, ranges);
+  };
+
+  const addDayRange = (day) => {
+    const ranges = splitRanges(hours?.[day]);
+    if (ranges.length >= 2) return; // no máximo 2 horários por dia
+    const last = ranges[ranges.length - 1];
+    const open = last ? shiftTime(last[1], 60) : "18:00";
+    setDayRanges(day, [...ranges, [open, shiftTime(open, 240)]]);
+  };
+
+  const removeDayRange = (day, index) => {
+    const ranges = splitRanges(hours?.[day]);
+    if (ranges.length <= 1) return;
+    setDayRanges(
+      day,
+      ranges.filter((_, i) => i !== index),
+    );
   };
 
   if (loading) return <Loading />;
@@ -1412,33 +1430,63 @@ const ConfigMenu = (props) => {
             {dayOrder.map((day) => {
               const value = hours?.[day];
               const isClosed = value === null;
-              const [openTime, closeTime] = typeof value === "string" ? value.split("-") : ["", ""];
+              const ranges = isClosed ? [["", ""]] : splitRanges(value);
 
               return (
-                <div key={day} className="grid grid-cols-[44px_1fr] items-center gap-3 sm:grid-cols-[44px_1fr_auto]">
-                  <div className="text-sm font-semibold">{dayLabels[day]}</div>
+                <div key={day} className="mb-4 grid grid-cols-[44px_1fr] items-start gap-3 rounded-xl border-2 border-[var(--translucid)] border-l-[var(--foreground)]/50 p-3 sm:grid-cols-[44px_1fr_auto]">
+                  <div className="pt-3 text-sm font-semibold">{dayLabels[day]}</div>
 
-                  <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                    <input
-                      type="time"
-                      value={openTime || ""}
-                      disabled={isClosed}
-                      onChange={(e) => updateDayHour(day, "open", e.target.value)}
-                      onBlur={(e) => updateDayHour(day, "open", e.target.value)}
-                      className={cx(INPUT_CLASS, "disabled:cursor-not-allowed disabled:opacity-40")}
-                    />
-                    <span className="text-xs opacity-60">até</span>
-                    <input
-                      type="time"
-                      value={closeTime || ""}
-                      disabled={isClosed}
-                      onChange={(e) => updateDayHour(day, "close", e.target.value)}
-                      onBlur={(e) => updateDayHour(day, "close", e.target.value)}
-                      className={cx(INPUT_CLASS, "disabled:cursor-not-allowed disabled:opacity-40")}
-                    />
+                  <div className="space-y-2">
+                    {ranges.map(([openTime, closeTime], index) => (
+                      <div key={index}>
+                        <div className="grid grid-cols-[1fr_auto_1fr_44px] items-center gap-2">
+                          <input
+                            type="time"
+                            value={openTime || ""}
+                            disabled={isClosed}
+                            onChange={(e) => updateDayHour(day, index, "open", e.target.value)}
+                            onBlur={(e) => updateDayHour(day, index, "open", e.target.value)}
+                            className={cx(INPUT_CLASS, "disabled:cursor-not-allowed disabled:opacity-40")}
+                          />
+                          <span className="text-xs opacity-60">até</span>
+                          <input
+                            type="time"
+                            value={closeTime || ""}
+                            disabled={isClosed}
+                            onChange={(e) => updateDayHour(day, index, "close", e.target.value)}
+                            onBlur={(e) => updateDayHour(day, index, "close", e.target.value)}
+                            className={cx(INPUT_CLASS, "disabled:cursor-not-allowed disabled:opacity-40")}
+                          />
+                          {ranges.length > 1 ? (
+                            <button
+                              type="button"
+                              onClick={() => removeDayRange(day, index)}
+                              aria-label="Remover horário"
+                              className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-red-500/30 text-red-400 transition hover:bg-red-500/15"
+                            >
+                              <FaTrash className="text-xs" />
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => addDayRange(day)}
+                              disabled={isClosed}
+                              aria-label="Adicionar horário"
+                              className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-[var(--translucid)] transition hover:bg-[var(--translucid)] disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              <FaPlus className="text-xs" />
+                            </button>
+                          )}
+                        </div>
+                        {/* linha sempre reservada: os blocos não mudam de tamanho com ou sem o aviso */}
+                        <p className="mt-1 h-4 truncate text-xs leading-4 opacity-60">
+                          {!isClosed && isOvernight(openTime, closeTime) ? `Fecha às ${closeTime} do dia seguinte` : ""}
+                        </p>
+                      </div>
+                    ))}
                   </div>
 
-                  <label className="col-start-2 inline-flex cursor-pointer items-center gap-2 text-xs opacity-70 sm:col-start-3">
+                  <label className="col-start-2 inline-flex cursor-pointer items-center gap-2 text-xs opacity-70 sm:col-start-3 sm:pt-3">
                     <span className="switch">
                       <input
                         type="checkbox"
@@ -1461,6 +1509,11 @@ const ConfigMenu = (props) => {
               );
             })}
           </div>
+
+          <p className="mt-3 text-xs opacity-60">
+            Use o + para ter um segundo horário no dia (ex.: almoço e jantar). Para virar a
+            noite, coloque o fechamento antes da abertura (ex.: 20:00 até 02:00).
+          </p>
 
           <GhostButton
             className="mt-4"

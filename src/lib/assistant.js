@@ -46,7 +46,7 @@ export function formatAiValue(key, value) {
   if (key === "deliveryZones") return value.map((z) => `${z.name} (${z.shipping_fee || 0})`).join(", ") || "—";
   if (key === "hours") {
     return Object.keys(DAY_LABELS)
-      .map((d) => `${DAY_LABELS[d]} ${value?.[d] ?? "fechado"}`)
+      .map((d) => `${DAY_LABELS[d]} ${value?.[d]?.replaceAll(",", " e ") ?? "fechado"}`)
       .join(" · ");
   }
   return String(value);

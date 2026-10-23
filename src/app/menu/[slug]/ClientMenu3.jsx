@@ -28,6 +28,7 @@ import {
   isOpenNow,
   nowInZone,
   shiftTime,
+  splitRanges,
   zoneOffset,
 } from "@/utils/storeHours";
 import { getContrastTextColor } from "@/utils/color";
@@ -70,10 +71,9 @@ function scrollToCategoryId(id, offset = 15) {
 function formatHours(hours, toViewer) {
   if (!hours) return [];
   return Object.entries(dayNames).map(([key, label]) => {
-    const range = hours[key];
-    if (!range) return { day: label, hours: "Fechado" };
-    const [open, close] = range.split("-");
-    return { day: label, hours: `${toViewer(open)} às ${toViewer(close)}` };
+    const ranges = splitRanges(hours[key]);
+    if (!ranges.length) return { day: label, hours: "Fechado" };
+    return { day: label, hours: ranges.map(([open, close]) => `${toViewer(open)} às ${toViewer(close)}`).join(" · ") };
   });
 }
 
@@ -905,11 +905,11 @@ export default function ClientMenu3({ menu, ownerPhone, ownerRole }) {
               return (
                 <div
                   key={day}
-                  className="flex justify-between px-2 py-1 rounded"
+                  className="flex justify-between gap-3 px-2 py-1 rounded"
                   style={{ backgroundColor: isToday ? translucidToUse : "transparent" }}
                 >
                   <span>{day}:</span>
-                  <span>{hours}</span>
+                  <span className="text-right">{hours}</span>
                 </div>
               );
             })}
