@@ -737,7 +737,7 @@ function sanitizeItemEdits(list, catalog, role) {
     }
     // destaque: como no dashboard, só com foto e a partir do Plus
     if (typeof raw.starred === "boolean" && raw.starred !== !!item.starred) {
-      const canStar = ["plus", "pro", "business", "admin"].includes(role);
+      const canStar = ["plus", "pro", "business", "admin", "designer"].includes(role);
       if (!raw.starred || (canStar && item.image_url)) edit.fields.starred = { before: !!item.starred, after: raw.starred };
     }
     // mover de categoria: entra no fim da categoria nova
@@ -938,7 +938,7 @@ export async function POST(req) {
   const currentLayout = LAYOUTS.includes(config.layout) ? config.layout : "default";
   const { menuId, categories: catalog } = await getCatalog(user.id);
   const canStock = STOCK_ROLES.includes(profile.role);
-  const canCoupons = ["pro", "business", "admin"].includes(profile.role);
+  const canCoupons = ["pro", "business", "admin", "designer"].includes(profile.role);
   const extras = menuId ? await getExtras(menuId, { coupons: canCoupons, optionStock: canStock }) : { coupons: [], optionStock: [] };
   const STORE = ["open", "closed", "schedule"];
   const currentStore = STORE.includes(config.storeStatus) ? config.storeStatus : "schedule";

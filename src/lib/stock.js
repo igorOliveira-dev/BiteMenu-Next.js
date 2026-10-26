@@ -2,7 +2,7 @@
 // Itens: menu_items.stock. Opções: tabela option_stock (menu_id, name_key, stock), compartilhada
 // por nome — "Bacon" em qualquer item/grupo do cardápio usa o mesmo estoque.
 // A baixa de verdade (atômica) é a RPC consume_stock, ver supabase/estoque.sql.
-export const STOCK_ROLES = ["business", "admin"];
+export const STOCK_ROLES = ["business", "admin", "designer"];
 
 export const optionKey = (name) => (name || "").trim().toLowerCase();
 

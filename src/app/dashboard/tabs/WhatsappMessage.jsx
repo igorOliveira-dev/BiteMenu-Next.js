@@ -81,7 +81,7 @@ export default function WhatsappMessage({ setSelectedTab }) {
 
   const handleSave = async () => {
     // fora do Business dá pra montar a mensagem, mas só salva assinando
-    if (!["business", "admin"].includes(profile?.role))
+    if (!["business", "admin", "designer"].includes(profile?.role))
       return setShowPlanModal(true);
     setSaving(true);
     // padrão salvo como null: continua acompanhando o texto padrão do sistema

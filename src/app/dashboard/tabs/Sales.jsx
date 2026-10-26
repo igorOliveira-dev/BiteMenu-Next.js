@@ -774,9 +774,9 @@ const Sales = ({ setSelectedTab }) => {
                               currency={menu?.currency}
                               menuName={menu?.title}
                               canPrint={
-                                ["pro", "business", "admin"].includes(profile?.role)
+                                ["pro", "business", "admin", "designer"].includes(profile?.role)
                               }
-                              canCustomizeOrder={["business", "admin"].includes(profile?.role)}
+                              canCustomizeOrder={["business", "admin", "designer"].includes(profile?.role)}
                               onDenied={() => setPrintUpsell(true)}
                               fileNamePrefix="venda"
                               receiptTitle="VENDA"

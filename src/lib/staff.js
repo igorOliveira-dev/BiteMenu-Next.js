@@ -2,7 +2,7 @@
 // por baixo é um usuário do Supabase Auth com e-mail interno nesse domínio (nunca recebe e-mail).
 // O acesso aos pedidos é liberado pelo RLS via staff_menu_id(), que já exige o Business do dono.
 export const STAFF_EMAIL_DOMAIN = "equipe.bitemenu.com.br";
-export const STAFF_PLAN_ROLES = ["business", "admin"];
+export const STAFF_PLAN_ROLES = ["business", "admin", "designer"];
 export const STAFF_ROLES = { caixa: "Caixa", cozinha: "Cozinha", entregador: "Entregador" };
 
 export const staffEmail = (login) => `${login}@${STAFF_EMAIL_DOMAIN}`;

@@ -268,7 +268,7 @@ const Account = ({ setSelectedTab }) => {
             >
               Sair da conta
             </button>
-            {profile?.role === "admin" && (
+            {["admin", "designer"].includes(profile?.role) && (
               <a href="/admin" className="underline color-gray">
                 Admin page
               </a>

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import useAllMenus from "@/hooks/useAllMenus";
+import useUser from "@/hooks/useUser";
 import { supabase } from "@/lib/supabaseClient";
 import Loading from "@/components/Loading";
 import Return from "@/components/Return";
@@ -22,6 +23,9 @@ import {
 
 const Admin = () => {
   const { menus, loading: menusLoading } = useAllMenus();
+  // designer não vê nada de pagamento (ValidaPay)
+  const { profile } = useUser();
+  const isAdmin = profile?.role === "admin";
   const [fullMenus, setFullMenus] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -39,6 +43,7 @@ const Admin = () => {
   const [subStatuses, setSubStatuses] = useState({});
 
   useEffect(() => {
+    if (!isAdmin) return;
     supabase.auth
       .getSession()
       .then(({ data }) =>
@@ -49,13 +54,14 @@ const Admin = () => {
       .then((res) => (res.ok ? res.json() : {}))
       .then(setSubStatuses)
       .catch(() => {});
-  }, []);
+  }, [isAdmin]);
 
   // 🔹 Novos clientes x novos pagantes por dia
   const [daily, setDaily] = useState(null);
   const [dailyRange, setDailyRange] = useState(30);
 
   useEffect(() => {
+    if (!isAdmin) return;
     supabase.auth
       .getSession()
       .then(({ data }) =>
@@ -66,7 +72,7 @@ const Admin = () => {
       .then((res) => (res.ok ? res.json() : null))
       .then(setDaily)
       .catch(() => {});
-  }, []);
+  }, [isAdmin]);
 
   const PAGE_SIZE = 15;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -265,15 +271,25 @@ const Admin = () => {
         <h1 className="default-h1 text-center">Admin dashboard</h1>
       </div>
 
-      <p className="text-center mb-2 text-sm">
-        <a href="/admin/motivos-cancelamento" className="underline text-blue-500">
-          Motivos de cancelamento
-        </a>
-      </p>
+      {isAdmin && (
+        <>
+          <p className="text-center mb-2 text-sm">
+            <a href="/admin/motivos-cancelamento" className="underline text-blue-500">
+              Motivos de cancelamento
+            </a>
+          </p>
+
+          <p className="text-center mb-2 text-sm">
+            <a href="/admin/pagamentos" className="underline text-blue-500">
+              Pagamentos ValidaPay
+            </a>
+          </p>
+        </>
+      )}
 
       <p className="text-center mb-2 text-sm">
-        <a href="/admin/pagamentos" className="underline text-blue-500">
-          Pagamentos ValidaPay
+        <a href="/admin/pesquisa-de-perfil" className="underline text-blue-500">
+          Pesquisa de perfil
         </a>
       </p>
 
@@ -285,69 +301,71 @@ const Admin = () => {
         <>
           {" "}
           {/* 🔹 Novos clientes x novos pagantes por dia */}
-          <div className="w-full max-w-4xl mx-auto mb-10">
-            <h3 className="text-sm text-gray-400 mb-2 text-center">Novos clientes x novos pagantes por dia</h3>
-            <div className="flex flex-wrap justify-center gap-2 mb-2">
-              {[
-                [7, "7 dias"],
-                [30, "30 dias"],
-                [90, "90 dias"],
-                [180, "180 dias"],
-                [365, "1 ano"],
-                ["all", "Tudo"],
-              ].map(([n, label]) => (
-                <button
-                  key={n}
-                  onClick={() => setDailyRange(n)}
-                  className={`px-3 py-1 rounded text-xs border ${
-                    dailyRange === n ? "bg-blue-600 border-blue-600 text-white" : "bg-translucid border-translucid"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
+          {isAdmin && (
+            <div className="w-full max-w-4xl mx-auto mb-10">
+              <h3 className="text-sm text-gray-400 mb-2 text-center">Novos clientes x novos pagantes por dia</h3>
+              <div className="flex flex-wrap justify-center gap-2 mb-2">
+                {[
+                  [7, "7 dias"],
+                  [30, "30 dias"],
+                  [90, "90 dias"],
+                  [180, "180 dias"],
+                  [365, "1 ano"],
+                  ["all", "Tudo"],
+                ].map(([n, label]) => (
+                  <button
+                    key={n}
+                    onClick={() => setDailyRange(n)}
+                    className={`px-3 py-1 rounded text-xs border ${
+                      dailyRange === n ? "bg-blue-600 border-blue-600 text-white" : "bg-translucid border-translucid"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {!daily ? (
+                <p className="text-center text-xs text-gray-400 h-64 flex items-center justify-center">Carregando...</p>
+              ) : (
+                <>
+                  <p className="text-center text-xs text-gray-400 mb-2">
+                    {dailyMenus} novos menus · {dailyPaying} pagantes
+                    <br />
+                    <span className="text-[11px]">pagantes = 1º pagamento de assinatura ValidaPay (Stripe antigo não entra)</span>
+                  </p>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart data={dailyData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                        <XAxis dataKey="day" stroke="#999" fontSize={12} />
+                        <YAxis stroke="#999" fontSize={12} allowDecimals={false} />
+                        <Tooltip
+                          contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #333" }}
+                          labelStyle={{ color: "#fff" }}
+                        />
+                        <Legend wrapperStyle={{ fontSize: 12 }} />
+                        <Area
+                          type="monotone"
+                          dataKey="clientes"
+                          name="Novos clientes (menus)"
+                          stroke="#3b82f6"
+                          fill="#3b82f6"
+                          fillOpacity={0.2}
+                          strokeWidth={2}
+                        />
+                        <Bar
+                          dataKey="pagantes"
+                          name="Novos pagantes"
+                          fill="#22c55e"
+                          barSize={dailyData.length > 30 ? undefined : 12}
+                        />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                </>
+              )}
             </div>
-            {!daily ? (
-              <p className="text-center text-xs text-gray-400 h-64 flex items-center justify-center">Carregando...</p>
-            ) : (
-              <>
-                <p className="text-center text-xs text-gray-400 mb-2">
-                  {dailyMenus} novos menus · {dailyPaying} pagantes
-                  <br />
-                  <span className="text-[11px]">pagantes = 1º pagamento de assinatura ValidaPay (Stripe antigo não entra)</span>
-                </p>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={dailyData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                      <XAxis dataKey="day" stroke="#999" fontSize={12} />
-                      <YAxis stroke="#999" fontSize={12} allowDecimals={false} />
-                      <Tooltip
-                        contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #333" }}
-                        labelStyle={{ color: "#fff" }}
-                      />
-                      <Legend wrapperStyle={{ fontSize: 12 }} />
-                      <Area
-                        type="monotone"
-                        dataKey="clientes"
-                        name="Novos clientes (menus)"
-                        stroke="#3b82f6"
-                        fill="#3b82f6"
-                        fillOpacity={0.2}
-                        strokeWidth={2}
-                      />
-                      <Bar
-                        dataKey="pagantes"
-                        name="Novos pagantes"
-                        fill="#22c55e"
-                        barSize={dailyData.length > 30 ? undefined : 12}
-                      />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-              </>
-            )}
-          </div>
+          )}
           {/* 🔹 Gráfico de crescimento acumulado de clientes (menus) */}
           {monthlyGrowth.length > 0 && (
             <div className="w-full max-w-4xl mx-auto h-64 mb-10">

@@ -375,7 +375,7 @@ export default function StatesManager({
     }
 
     // taxa por bairro/raio e pedido mínimo: dá pra preencher em qualquer plano, mas só salva com Plus
-    if (!["plus", "pro", "business", "admin"].includes(profile?.role)) {
+    if (!["plus", "pro", "business", "admin", "designer"].includes(profile?.role)) {
       const zones =
         state.deliveryFeeMode === "zones" &&
         (changed.includes("deliveryFeeMode") || changed.includes("deliveryZones"));

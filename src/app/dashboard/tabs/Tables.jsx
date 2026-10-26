@@ -66,7 +66,7 @@ const Tables = () => {
     if (role === "plus") return 15;
     if (role === "pro") return 100;
     if (role === "business") return 1000;
-    if (role === "admin") return Infinity;
+    if (role === "admin" || role === "designer") return Infinity;
     return 5;
   };
 

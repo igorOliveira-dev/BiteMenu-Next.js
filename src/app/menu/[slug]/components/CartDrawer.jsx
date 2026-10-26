@@ -121,7 +121,7 @@ export default function CartDrawer({
   }, [menu?.categories]);
 
   // mova esta linha para ANTES do useMemo do discountAmount
-  const hasPlusPermissions = ["plus", "pro", "business", "admin"].includes(ownerRole ?? "free");
+  const hasPlusPermissions = ["plus", "pro", "business", "admin", "designer"].includes(ownerRole ?? "free");
 
   const { totalDiscount: comboDiscount } = useMemo(() => {
     if (!hasPlusPermissions) return { totalDiscount: 0 };
@@ -163,7 +163,7 @@ export default function CartDrawer({
   // do pedido usam os mesmos valores sem mudanças.
   // ponytail: valida só no navegador (o total do pedido já é calculado aqui);
   // se precisar de blindagem, recalcular o total no servidor.
-  const canUseCoupon = ["pro", "business", "admin"].includes(ownerRole ?? "free");
+  const canUseCoupon = ["pro", "business", "admin", "designer"].includes(ownerRole ?? "free");
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState(null);
 
@@ -626,7 +626,7 @@ export default function CartDrawer({
     const isDelivery = selectedService === "delivery";
 
     // valor vazio = a linha da tag some da mensagem
-    const customTemplate = ["business", "admin"].includes(ownerRole) ? menu?.whatsapp_template : null;
+    const customTemplate = ["business", "admin", "designer"].includes(ownerRole) ? menu?.whatsapp_template : null;
     const message = renderWhatsappMessage(customTemplate, {
       estabelecimento: menu.title,
       itens: itemsList,

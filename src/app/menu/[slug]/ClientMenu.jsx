@@ -298,7 +298,7 @@ export default function ClientMenu({ menu, ownerPhone, ownerRole }) {
     return () => el.removeEventListener("scroll", checkScroll);
   }, [selectedItem]);
 
-  const hasPlusPermissions = ["plus", "pro", "business", "admin"].includes(ownerRole);
+  const hasPlusPermissions = ["plus", "pro", "business", "admin", "designer"].includes(ownerRole);
   const canShowPromoPrice = hasPlusPermissions;
 
   const totalPrice = useMemo(() => {

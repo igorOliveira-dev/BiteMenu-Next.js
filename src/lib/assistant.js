@@ -1,6 +1,6 @@
 // Assistente de IA do dashboard: planos liberados e campos que ele pode alterar.
 // As chaves são as mesmas do estado local do StatesManager.
-export const AI_PLAN_ROLES = ["business", "admin"];
+export const AI_PLAN_ROLES = ["business", "admin", "designer"];
 
 // Limite de uso por sessão: tokens (entrada + saída) numa janela que começa na 1ª mensagem.
 // ~120 mil tokens ≈ 12–25 mensagens; pior caso no mês (todas as sessões no limite) ≈ US$ 2,80 por usuário.
@@ -8,8 +8,8 @@ export const AI_SESSION_TOKEN_LIMIT = 180_000;
 export const AI_SESSION_HOURS = 5;
 
 // mesmos limites de MenuItems.jsx (getItemLimitByRole / getCategoryLimitByRole)
-export const ITEM_LIMITS = { free: 20, plus: 50, pro: 200, business: 500, admin: Infinity };
-export const CATEGORY_LIMITS = { free: 4, plus: 10, pro: 20, business: 100, admin: Infinity };
+export const ITEM_LIMITS = { free: 20, plus: 50, pro: 200, business: 500, admin: Infinity, designer: Infinity };
+export const CATEGORY_LIMITS = { free: 4, plus: 10, pro: 20, business: 100, admin: Infinity, designer: Infinity };
 
 // rascunho que o preview (/menu/[slug]/preview?ai_draft=1) lê do sessionStorage
 export const AI_PREVIEW_KEY = "aiMenuPreview";
