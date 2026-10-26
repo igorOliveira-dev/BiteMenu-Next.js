@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabaseClient";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { cache } from "react";
 
 export const getMenuBySlug = cache(async (slug) => {
@@ -76,7 +77,9 @@ export const getMenuBySlug = cache(async (slug) => {
     .order("position", { foreignTable: "categories.menu_items.option_groups.option_choices", ascending: true })
     .maybeSingle();
 
-  if (error) return null;
+  // lança em vez de retornar null: com ISR, um erro momentâneo do banco ficaria
+  // cacheado como "menu não encontrado"; lançando, o Next mantém a versão anterior
+  if (error) throw error;
   return menu || null;
 });
 
@@ -87,11 +90,14 @@ export async function getOwnerInfo(menu) {
   let deletionRequested = false;
 
   if (menu?.owner_id) {
-    const { data: profile } = await supabase
+    // service role (só servidor): assim profiles não precisa ser legível pela chave anon
+    const { data: profile, error } = await supabaseAdmin
       .from("profiles")
       .select("phone, role, deletion_requested_at")
       .eq("id", menu.owner_id)
       .maybeSingle();
+    // mesmo motivo do getMenuBySlug: não cachear o cardápio como plano "free" por um erro
+    if (error) throw error;
 
     if (profile) {
       ownerPhone = profile.phone || null;

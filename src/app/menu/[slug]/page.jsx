@@ -8,6 +8,12 @@ import { applyStock, hideHiddenGroups, STOCK_ROLES } from "@/lib/stock";
 
 export const revalidate = 300; // 5 minutos — cardápios raramente mudam em alta frequência
 
+// Sem isto a rota é renderizada a cada visita e o revalidate acima não vale:
+// lista vazia = nada no build, cada slug é gerado na 1ª visita e fica em cache (ISR)
+export async function generateStaticParams() {
+  return [];
+}
+
 // SEO dinâmico (server only)
 export async function generateMetadata({ params }) {
   const { slug } = await params;

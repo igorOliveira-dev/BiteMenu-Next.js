@@ -7,6 +7,7 @@ import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { supabase } from "@/lib/supabaseClient";
+import { isPhoneInUse } from "@/lib/queries/profiles";
 import Image from "next/image";
 import Link from "next/link";
 import { useAlert } from "@/providers/AlertProvider";
@@ -58,9 +59,9 @@ export default function SignUp() {
       setLoading(true);
 
       // 1. Verifica duplicidade de telefone
-      const { data: existingPhone } = await supabase.from("profiles").select("id").eq("phone", fullPhone).single();
+      const { data: phoneInUse } = await isPhoneInUse(supabase, fullPhone);
 
-      if (existingPhone) {
+      if (phoneInUse) {
         setError("Email ou telefone já em uso.");
         setLoading(false);
         return;

@@ -1,6 +1,6 @@
 // src/components/components/CartDrawer.jsx
 "use client";
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import React, { Suspense, useEffect, useState, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { FaChevronLeft, FaCopy, FaTimes, FaWhatsapp, FaSpinner, FaReceipt } from "react-icons/fa";
 import MyOrdersModal from "./MyOrdersModal";
@@ -10,6 +10,7 @@ import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { supabase } from "@/lib/supabaseClient";
+import { getStoreState } from "@/lib/queries/menus";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { useAlert } from "@/providers/AlertProvider";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -22,7 +23,17 @@ import { getContrastTextColor } from "@/utils/color";
 import AddressFields, { EMPTY_ADDRESS, formatAddress } from "@/components/AddressFields";
 import { currentPosition, distanceKm, feeForDistance, geocodeAddress } from "@/lib/deliveryRadius";
 
-export default function CartDrawer({
+// useSearchParams (mesa/balcão) exige Suspense na página cacheada por ISR;
+// sem isso o /menu/[slug] estático quebra com erro 500
+export default function CartDrawer(props) {
+  return (
+    <Suspense fallback={null}>
+      <CartDrawerContent {...props} />
+    </Suspense>
+  );
+}
+
+function CartDrawerContent({
   menu,
   combos = [],
   open,
@@ -1107,11 +1118,7 @@ export default function CartDrawer({
               <button
                 onClick={async () => {
                   // controle manual vale mais que o horário: confere o estado atual no banco
-                  const { data: store } = await supabase
-                    .from("menus")
-                    .select("manual_control, is_open")
-                    .eq("id", menu.id)
-                    .maybeSingle();
+                  const { data: store } = await getStoreState(supabase, menu.id);
                   const openNow = store?.manual_control ? store.is_open : isOpen;
 
                   if (!openNow) {

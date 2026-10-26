@@ -229,10 +229,11 @@ const Sales = ({ setSelectedTab }) => {
   useEffect(() => {
     if (!menu?.id) return;
     const channel = supabase
-      .channel("sales-changes")
+      .channel(`sales-changes-${menu.id}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "sales" },
+        // filtro no servidor: sem ele o Realtime avalia toda venda de todos os cardápios
+        { event: "*", schema: "public", table: "sales", filter: `menu_id=eq.${menu.id}` },
         (payload) => {
           if (payload.new?.menu_id === menu.id) {
             // Atualiza apenas o mês da venda modificada

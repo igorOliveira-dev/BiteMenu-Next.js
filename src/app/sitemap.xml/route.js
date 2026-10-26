@@ -1,22 +1,27 @@
-import { supabaseServer } from "@/lib/supabaseServer";
+// chave anon (menus é de leitura pública): o sitemap roda no build, onde a service role pode não existir
+import { supabase } from "@/lib/supabaseClient";
+import { listMenuSlugs } from "@/lib/queries/menus";
+
+// Gerado no máximo 1x por dia: robôs acessam com frequência e a lista varre todos os menus
+export const revalidate = 86400;
+
+const BASE_URL = "https://www.bitemenu.com.br";
 
 export async function GET() {
   const staticPages = [
-    { url: "https://bitemenu.com.br/", lastmod: "2026-05-12" },
-    { url: "https://bitemenu.com.br/support", lastmod: "2026-05-12" },
-    { url: "https://bitemenu.com.br/register", lastmod: "2025-10-29" },
-    { url: "https://bitemenu.com.br/login", lastmod: "2025-10-29" },
-    { url: "https://bitemenu.com.br/politica-de-privacidade", lastmod: "2026-10-26" },
-    { url: "https://bitemenu.com.br/termos-de-uso", lastmod: "2026-06-28" },
-    { url: "https://bitemenu.com.br/pricing", lastmod: "2026-03-25" },
-    { url: "https://bitemenu.com.br/about", lastmod: "2025-10-29" },
-    { url: "https://bitemenu.com.br/faqs", lastmod: "2026-05-12" },
+    { url: `${BASE_URL}/`, lastmod: "2026-05-12" },
+    { url: `${BASE_URL}/support`, lastmod: "2026-05-12" },
+    { url: `${BASE_URL}/register`, lastmod: "2025-10-29" },
+    { url: `${BASE_URL}/login`, lastmod: "2025-10-29" },
+    { url: `${BASE_URL}/politica-de-privacidade`, lastmod: "2026-10-26" },
+    { url: `${BASE_URL}/termos-de-uso`, lastmod: "2026-06-28" },
+    { url: `${BASE_URL}/pricing`, lastmod: "2026-03-25" },
+    { url: `${BASE_URL}/about`, lastmod: "2025-10-29" },
+    { url: `${BASE_URL}/faqs`, lastmod: "2026-05-12" },
   ];
 
   // 🌐 Busca todos os menus registrados
-  const { data: menus, error } = await supabaseServer.from("menus").select("slug, updated_at");
-
-  console.log("Menus:", menus);
+  const { data: menus, error } = await listMenuSlugs(supabase);
 
   if (error) {
     console.error("Erro ao buscar menus:", error);
@@ -24,7 +29,7 @@ export async function GET() {
 
   const dynamicPages =
     menus?.map((menu) => ({
-      url: `https://bitemenu.com.br/menu/${menu.slug}`,
+      url: `${BASE_URL}/menu/${menu.slug}`,
       lastmod: new Date(menu.updated_at).toISOString(),
     })) || [];
 

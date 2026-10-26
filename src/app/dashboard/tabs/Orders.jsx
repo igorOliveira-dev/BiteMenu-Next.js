@@ -6,6 +6,7 @@ import { formatCurrency } from "@/lib/formatCurrency";
 import { useAlert } from "@/providers/AlertProvider";
 import { supabase } from "@/lib/supabaseClient";
 import { updateMenuById } from "@/lib/queries/menus";
+import { getOrdersSummary } from "@/lib/queries/orders";
 import Loading from "@/components/Loading";
 import {
   FaCheck,
@@ -289,59 +290,14 @@ const Orders = ({
       q = q.lte("created_at", new Date(filters.dateTo).toISOString());
 
     if (filters.search && filters.search.trim() !== "") {
-      const term = filters.search.trim();
+      // vírgula e parênteses quebram a sintaxe do .or() do PostgREST
+      const term = filters.search.trim().replace(/[,()]/g, "");
       q = q.or(
         `costumer_name.ilike.%${term}%,costumer_phone.ilike.%${term}%,id_text.ilike.${term}%`,
       );
     }
 
     return q.order("updated_at", { ascending: false });
-  };
-
-  const buildSummaryQuery = (filters) => {
-    let q = supabase
-      .from("orders")
-      .select("is_paid,service,items_list,updated_at,delivery_fee,discount", {
-        count: "exact",
-      })
-      .eq("menu_id", menu.id)
-      .order("updated_at", { ascending: false });
-
-    // oculta pedidos Stripe enquanto não pagos
-    q = q.or("payment_method.neq.stripe,is_paid.eq.true");
-
-    if (filters.isPaid === true) q = q.eq("is_paid", true);
-    if (filters.isPaid === false) q = q.eq("is_paid", false);
-
-    if (filters.deliveryType && filters.deliveryType !== "all") {
-      q = q.eq("service", filters.deliveryType);
-    }
-
-    if (filters.payment && filters.payment !== "all") {
-      q = q.eq("payment_method", filters.payment);
-    }
-
-    if (filters.tableOnly) {
-      q = q.not("table_id", "is", null);
-    }
-
-    if (filters.status && filters.status !== "all") {
-      q = q.eq("status", filters.status);
-    }
-
-    if (filters.dateFrom)
-      q = q.gte("created_at", new Date(filters.dateFrom).toISOString());
-    if (filters.dateTo)
-      q = q.lte("created_at", new Date(filters.dateTo).toISOString());
-
-    if (filters.search && filters.search.trim() !== "") {
-      const term = filters.search.trim();
-      q = q.or(
-        `costumer_name.ilike.%${term}%,costumer_phone.ilike.%${term}%,id_text.ilike.${term}%`,
-      );
-    }
-
-    return q;
   };
 
   const fetchMore = async (isReset = false, currentFilters = filters) => {
@@ -388,47 +344,20 @@ const Orders = ({
     if (!menu?.id) return;
     setSummaryLoading(true);
 
-    const PAGE = 1000;
-    let all = [];
-    let from = 0;
-
     try {
-      while (true) {
-        const to = from + PAGE - 1;
-        const { data, error, count } = await buildSummaryQuery(
-          currentFilters,
-        ).range(from, to);
+      // somado no banco: antes baixava todos os pedidos (com items_list) a cada atualização
+      const { data, error } = await getOrdersSummary(supabase, menu.id, currentFilters);
+      if (error) throw error;
 
-        if (error) throw error;
-        if (typeof count === "number") setTotalCount(count);
-
-        const chunk = data || [];
-        all = all.concat(chunk);
-
-        if (chunk.length < PAGE) break;
-        from += PAGE;
-      }
-
-      let paidTotal = 0;
-      let pendingTotal = 0;
-      let paidCount = 0;
-      let pendingCount = 0;
-
-      for (const o of all) {
-        const total = computeTotalWithDelivery(o);
-        if (o.is_paid) {
-          paidTotal += total;
-          paidCount += 1;
-        } else {
-          pendingTotal += total;
-          pendingCount += 1;
-        }
-      }
-
-      const count = all.length;
+      const count = Number(data?.count) || 0;
+      const paidCount = Number(data?.paid_count) || 0;
+      const pendingCount = Number(data?.pending_count) || 0;
+      const paidTotal = Number(data?.paid_total) || 0;
+      const pendingTotal = Number(data?.pending_total) || 0;
       const avgTicket = count > 0 ? (paidTotal + pendingTotal) / count : 0;
-      const lastUpdatedAt = all[0]?.updated_at || null;
+      const lastUpdatedAt = data?.last_updated_at || null;
 
+      setTotalCount(count);
       setSummary({
         count,
         paidCount,
