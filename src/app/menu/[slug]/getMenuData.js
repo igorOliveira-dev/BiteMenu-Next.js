@@ -84,21 +84,23 @@ export const getMenuBySlug = cache(async (slug) => {
 export async function getOwnerInfo(menu) {
   let ownerPhone = null;
   let ownerRole = "free";
+  let deletionRequested = false;
 
   if (menu?.owner_id) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("phone, role")
+      .select("phone, role, deletion_requested_at")
       .eq("id", menu.owner_id)
       .maybeSingle();
 
     if (profile) {
       ownerPhone = profile.phone || null;
       ownerRole = profile.role || "free";
+      deletionRequested = !!profile.deletion_requested_at;
     }
   }
 
-  return { ownerPhone, ownerRole };
+  return { ownerPhone, ownerRole, deletionRequested };
 }
 
 // Estoque das opções (plano Business), por nome: ver src/lib/stock.js

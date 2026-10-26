@@ -11,7 +11,7 @@ const page = () => {
       <div className="max-w-2xl flex flex-col gap-6 p-4 pt-12">
         <h1 className="default-h1">Política de Privacidade – Bite Menu</h1>
 
-        <p>Última atualização: 04/10/2026</p>
+        <p>Última atualização: 26/10/2026</p>
 
         <p>
           O <strong>Bite Menu</strong> valoriza sua privacidade e está comprometido com a proteção dos seus dados pessoais.
@@ -269,14 +269,47 @@ const page = () => {
           </p>
         </section>
 
-        {/* 9. Retenção e Segurança de Dados */}
+        {/* 9. Exclusão de Conta */}
+        <section id="exclusao-de-conta" className="flex flex-col gap-2 mb-4 scroll-mt-4">
+          <h2 className="default-h2">9. Exclusão de Conta</h2>
+          <p>O estabelecimento pode solicitar a exclusão da sua conta a qualquer momento, de duas formas:</p>
+          <ul className="list-disc ml-6">
+            <li>
+              Pela plataforma, em <strong>Painel &gt; Conta &gt; Excluir minha conta</strong>;
+            </li>
+            <li>
+              Pelo e-mail <strong>contato@bitemenu.com.br</strong>, a partir do e-mail cadastrado na conta.
+            </li>
+          </ul>
+          <p>Após a solicitação:</p>
+          <ul className="list-disc ml-6">
+            <li>O cardápio deixa de ficar acessível ao público imediatamente;</li>
+            <li>
+              Em até <strong>15 (quinze) dias</strong>, a conta e os dados associados são eliminados: dados de cadastro,
+              cardápios, produtos, imagens enviadas, pedidos recebidos e logins de equipe;
+            </li>
+            <li>Assinaturas ativas são canceladas, sem novas cobranças;</li>
+            <li>A conclusão da exclusão é confirmada por e-mail.</li>
+          </ul>
+          <p>
+            Enquanto a exclusão não for concluída, a solicitação pode ser cancelada pela própria plataforma, e o cardápio
+            volta a ficar no ar. Depois de concluída, a exclusão é definitiva e os dados não podem ser recuperados.
+          </p>
+          <p>
+            Ficam mantidos apenas os dados que a lei obriga a guardar, como registros fiscais e de pagamento das
+            assinaturas, pelos prazos indicados na seção 10, conforme o art. 16 da LGPD.
+          </p>
+        </section>
+
+        {/* 10. Retenção e Segurança de Dados */}
         <section className="flex flex-col gap-2 mb-4">
-          <h2 className="default-h2">9. Retenção e Segurança de Dados</h2>
+          <h2 className="default-h2">10. Retenção e Segurança de Dados</h2>
           <p>Os dados pessoais tratados pelo Bite Menu são retidos pelos seguintes prazos:</p>
           <ul className="list-disc ml-6">
             <li>
-              <strong>Dados de conta dos estabelecimentos:</strong> enquanto a conta estiver ativa e por até 12 (doze) meses
-              após o encerramento, salvo obrigação legal em contrário;
+              <strong>Dados de conta dos estabelecimentos:</strong> enquanto a conta estiver ativa. Quando a exclusão é
+              solicitada, são eliminados em até 15 (quinze) dias (seção 9); nos demais casos de encerramento, por até 12
+              (doze) meses, salvo obrigação legal em contrário;
             </li>
             <li>
               <strong>Dados de pedidos dos consumidores finais:</strong> pelo prazo necessário para atendimento do pedido e
@@ -293,9 +326,9 @@ const page = () => {
           </p>
         </section>
 
-        {/* 10. Pagamentos de Assinatura (Planos Bite Menu) */}
+        {/* 11. Pagamentos de Assinatura (Planos Bite Menu) */}
         <section className="flex flex-col gap-2 mb-4">
-          <h2 className="default-h2">10. Pagamentos de Assinatura (Planos Bite Menu)</h2>
+          <h2 className="default-h2">11. Pagamentos de Assinatura (Planos Bite Menu)</h2>
           <p>
             Para a contratação dos planos pagos <strong>Plus</strong> e <strong>Pro</strong>, o Bite Menu utiliza a{" "}
             <strong>ValidaPay</strong> como processadora de pagamentos. Nesse contexto, o Bite Menu é o{" "}
@@ -332,9 +365,9 @@ const page = () => {
         </section>
 
 
-        {/* 11. Responsabilidades dos Estabelecimentos */}
+        {/* 12. Responsabilidades dos Estabelecimentos */}
         <section className="flex flex-col gap-2 mb-4">
-          <h2 className="default-h2">11. Responsabilidades dos Estabelecimentos</h2>
+          <h2 className="default-h2">12. Responsabilidades dos Estabelecimentos</h2>
           <p>
             Os estabelecimentos que utilizam o Bite Menu para coletar dados dos seus consumidores finais atuam como{" "}
             <strong>controladores</strong> desses dados, sendo o Bite Menu o operador. Ao utilizar a plataforma, os
@@ -360,9 +393,9 @@ const page = () => {
           </p>
         </section>
 
-        {/* 12. Alterações nesta Política */}
+        {/* 13. Alterações nesta Política */}
         <section className="flex flex-col gap-2 mb-4">
-          <h2 className="default-h2">12. Alterações nesta Política</h2>
+          <h2 className="default-h2">13. Alterações nesta Política</h2>
           <p>
             Podemos atualizar esta política periodicamente. Os usuários sempre serão informados sobre alterações relevantes.
             A versão mais recente estará sempre disponível em{" "}
@@ -376,18 +409,18 @@ const page = () => {
           </p>
         </section>
 
-        {/* 13. Contato */}
+        {/* 14. Contato */}
         <section className="flex flex-col gap-2 mb-4">
-          <h2 className="default-h2">13. Contato</h2>
+          <h2 className="default-h2">14. Contato</h2>
           <p>
             Em caso de dúvidas, solicitações ou reclamações sobre esta Política de Privacidade ou sobre o tratamento de dados
             pelo Bite Menu, entre em contato pelo e-mail <strong>contato@bitemenu.com.br</strong>.
           </p>
         </section>
 
-        {/* 14. Aceite */}
+        {/* 15. Aceite */}
         <section className="flex flex-col gap-2 mb-4">
-          <h2 className="default-h2">14. Aceite</h2>
+          <h2 className="default-h2">15. Aceite</h2>
           <p>
             O aceite desta Política de Privacidade é registrado de forma <strong>explícita</strong> no momento do cadastro ou
             no primeiro acesso após uma atualização relevante desta política, com data, hora e identificação do usuário

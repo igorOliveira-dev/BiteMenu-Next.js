@@ -60,7 +60,7 @@ export function varsFor(profile, menu, items, now = Date.now()) {
 
 async function loadAudience() {
   const [profiles, menus, categories, items, orders, sales, history] = await Promise.all([
-    all("profiles", "id, email, display_name, role, created_at, marketing_opt_out_at"),
+    all("profiles", "id, email, display_name, role, created_at, marketing_opt_out_at, deletion_requested_at"),
     all("menus", "id, owner_id, slug, title, last_access_at"),
     all("categories", "id, menu_id"),
     all("menu_items", "id, category_id"),
@@ -132,7 +132,7 @@ function candidates({ settings, tracks, steps }, aud, now = Date.now()) {
 
   const out = [];
   for (const p of aud.profiles) {
-    if (!p.email || p.marketing_opt_out_at) continue;
+    if (!p.email || p.marketing_opt_out_at || p.deletion_requested_at) continue; // pediu exclusão: nunca recebe
     const hist = aud.historyOf.get(p.id) ?? [];
     const lastSent = Math.max(0, ...hist.map((h) => +new Date(h.sent_at)));
     if (lastSent && (now - lastSent) / DAY < settings.min_gap_days) continue;

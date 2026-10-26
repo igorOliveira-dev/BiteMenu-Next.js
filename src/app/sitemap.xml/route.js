@@ -6,7 +6,7 @@ export async function GET() {
     { url: "https://bitemenu.com.br/support", lastmod: "2026-05-12" },
     { url: "https://bitemenu.com.br/register", lastmod: "2025-10-29" },
     { url: "https://bitemenu.com.br/login", lastmod: "2025-10-29" },
-    { url: "https://bitemenu.com.br/politica-de-privacidade", lastmod: "2026-06-27" },
+    { url: "https://bitemenu.com.br/politica-de-privacidade", lastmod: "2026-10-26" },
     { url: "https://bitemenu.com.br/termos-de-uso", lastmod: "2026-06-28" },
     { url: "https://bitemenu.com.br/pricing", lastmod: "2026-03-25" },
     { url: "https://bitemenu.com.br/about", lastmod: "2025-10-29" },

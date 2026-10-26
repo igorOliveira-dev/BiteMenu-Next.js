@@ -72,7 +72,10 @@ export default async function MenuPage({ params }) {
 
   if (!rawMenu) return <NotFoundMenu />;
 
-  const { ownerPhone, ownerRole } = await getOwnerInfo(rawMenu);
+  const { ownerPhone, ownerRole, deletionRequested } = await getOwnerInfo(rawMenu);
+  // dono pediu exclusão da conta: cardápio sai do ar até a exclusão manual
+  if (deletionRequested) return <NotFoundMenu />;
+
   const optionStock = STOCK_ROLES.includes(ownerRole) ? await getOptionStock(rawMenu.id) : [];
   const menu = applyStock(hideHiddenGroups(rawMenu), ownerRole, optionStock);
 

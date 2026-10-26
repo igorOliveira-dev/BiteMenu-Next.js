@@ -1,0 +1,35 @@
+-- Exclusão de conta — rodar UMA vez no SQL Editor do Supabase ANTES do deploy
+-- (o cardápio público passa a ler essa coluna; sem ela, getOwnerInfo falha).
+alter table profiles add column if not exists deletion_requested_at timestamptz;
+
+
+-- ============================================================================
+-- Roteiro manual para executar uma exclusão solicitada (prazo: até 15 dias)
+-- ============================================================================
+--
+-- 1. Ver quem pediu:
+--      select id, email, display_name, role, deletion_requested_at
+--      from profiles where deletion_requested_at is not null order by deletion_requested_at;
+--
+-- 2. Se tiver assinatura ativa: cancelar no painel da ValidaPay (sem estorno automático;
+--    decidir caso a caso).
+--
+-- 3. Apagar as imagens do Storage (logo, banner, fotos dos produtos) do usuário no painel
+--    do Supabase > Storage — as pastas ficam sob o id do usuário/menu.
+--
+-- 4. Apagar os logins da equipe (se houver), que são usuários do Auth separados:
+--      select user_id from menu_staff where menu_id = (select id from menus where owner_id = '<USER_ID>');
+--    Excluir cada um em Authentication > Users.
+--
+-- 5. Apagar o cardápio e tudo ligado a ele (categorias, produtos, pedidos...).
+--    Conferir antes se as FKs têm "on delete cascade"; se não tiverem, apagar os filhos primeiro.
+--      delete from menus where owner_id = '<USER_ID>';
+--
+-- 6. Excluir o usuário em Authentication > Users (apaga o profile se a FK tiver cascade;
+--    se não, rodar: delete from profiles where id = '<USER_ID>';).
+--
+-- 7. Manter apenas o que a lei exige (dados fiscais de pagamentos: 5 anos — ficam na ValidaPay
+--    e nos registros de pagamento) e responder o e-mail confirmando a exclusão.
+--
+-- Para desfazer um pedido (cliente desistiu por e-mail):
+--      update profiles set deletion_requested_at = null where id = '<USER_ID>';

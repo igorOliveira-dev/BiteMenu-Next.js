@@ -31,6 +31,9 @@ const Account = ({ setSelectedTab }) => {
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [tempEmail, setTempEmail] = useState(profile?.email);
 
+  const [deletionRequestedAt, setDeletionRequestedAt] = useState(profile?.deletion_requested_at ?? null);
+  const [deletionSaving, setDeletionSaving] = useState(false);
+
   // quando o profile carregar, preenche o telefone
   useEffect(() => {
     if (profile?.phone) {
@@ -45,6 +48,7 @@ const Account = ({ setSelectedTab }) => {
     if (profile?.email) {
       setTempEmail(profile.email); // adicionado
     }
+    setDeletionRequestedAt(profile?.deletion_requested_at ?? null);
   }, [profile]);
 
   async function handleLogout() {
@@ -150,6 +154,42 @@ const Account = ({ setSelectedTab }) => {
     }
 
     setSaving(false);
+  };
+
+  // Pedido de exclusão (POST) ou desistência (DELETE); a exclusão em si é feita manualmente
+  const handleDeletionRequest = async (cancel = false) => {
+    const ok = await confirm(
+      cancel
+        ? "Cancelar o pedido de exclusão? Seu cardápio volta a ficar no ar."
+        : "Quer mesmo excluir sua conta? Seu cardápio sai do ar na hora e todos os seus dados (cardápio, produtos, pedidos e imagens) serão apagados em até 15 dias. Isso não pode ser desfeito depois da exclusão.",
+    );
+    if (!ok) return;
+
+    setDeletionSaving(true);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const res = await fetch("/api/account/deletion", {
+        method: cancel ? "DELETE" : "POST",
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Erro inesperado");
+
+      // mantém o profile em cache (useUser) coerente ao trocar de aba
+      profile.deletion_requested_at = data.deletion_requested_at;
+      setDeletionRequestedAt(data.deletion_requested_at);
+      customAlert(
+        cancel ? "Pedido de exclusão cancelado." : "Pedido de exclusão registrado. Avisaremos por e-mail quando for concluída.",
+        "success",
+      );
+    } catch (err) {
+      console.error(err);
+      customAlert("Não foi possível concluir. Tente novamente ou escreva para contato@bitemenu.com.br.", "error");
+    } finally {
+      setDeletionSaving(false);
+    }
   };
 
   if (loading) {
@@ -275,6 +315,32 @@ const Account = ({ setSelectedTab }) => {
             )}
           </div>
         </div>
+
+        {/* Exclusão de conta (LGPD): só registra o pedido; a exclusão é feita manualmente em até 15 dias */}
+        <div className="px-4 pt-3 pb-6 text-sm color-gray">
+          {deletionRequestedAt ? (
+            <p>
+              Exclusão de conta solicitada em {new Date(deletionRequestedAt).toLocaleDateString("pt-BR")}. Seu cardápio
+              está fora do ar e seus dados serão apagados em até 15 dias.{" "}
+              <button
+                onClick={() => handleDeletionRequest(true)}
+                disabled={deletionSaving}
+                className="cursor-pointer underline hover:opacity-80 disabled:opacity-50"
+              >
+                {deletionSaving ? "Cancelando..." : "Cancelar pedido"}
+              </button>
+            </p>
+          ) : (
+            <button
+              onClick={() => handleDeletionRequest()}
+              disabled={deletionSaving}
+              className="cursor-pointer underline hover:text-red-500 transition disabled:opacity-50"
+            >
+              {deletionSaving ? "Enviando..." : "Excluir minha conta"}
+            </button>
+          )}
+        </div>
+
       </div>
       {nameModalOpen && (
         <GenericModal title="Alterar nome" onClose={() => setNameModalOpen(false)} maxWidth={"420px"} wfull>
