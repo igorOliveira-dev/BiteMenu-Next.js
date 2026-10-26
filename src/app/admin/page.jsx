@@ -284,6 +284,12 @@ const Admin = () => {
               Pagamentos ValidaPay
             </a>
           </p>
+
+          <p className="text-center mb-2 text-sm">
+            <a href="/admin/remarketing" className="underline text-blue-500">
+              Remarketing por e-mail
+            </a>
+          </p>
         </>
       )}
 
