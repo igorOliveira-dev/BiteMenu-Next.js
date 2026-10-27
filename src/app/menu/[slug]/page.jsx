@@ -67,6 +67,42 @@ export async function generateMetadata({ params }) {
   };
 }
 
+// Restaurant + Menu (schema.org): deixa o cardápio legível por buscadores e IAs.
+// Só itens visíveis; "<" escapado porque os textos vêm do dono do cardápio.
+function buildMenuJsonLd(menu, slug) {
+  const currency = menu.currency || "BRL";
+  const sections = (menu.categories || [])
+    .map((cat) => ({
+      "@type": "MenuSection",
+      name: cat.name,
+      hasMenuItem: (cat.menu_items || [])
+        .filter((it) => it.visible)
+        .map((it) => ({
+          "@type": "MenuItem",
+          name: it.name,
+          ...(it.description && { description: it.description }),
+          ...(it.image_url && { image: it.image_url }),
+          ...(it.price != null && {
+            offers: { "@type": "Offer", price: it.price, priceCurrency: currency },
+          }),
+        })),
+    }))
+    .filter((section) => section.hasMenuItem.length > 0);
+
+  const data = {
+    "@context": "https://schema.org",
+    "@type": "Restaurant",
+    name: menu.title,
+    url: `https://www.bitemenu.com.br/menu/${slug}`,
+    ...(menu.description && { description: menu.description }),
+    ...(menu.address && { address: menu.address }),
+    ...((menu.logo_url || menu.banner_url) && { image: menu.logo_url || menu.banner_url }),
+    hasMenu: { "@type": "Menu", hasMenuSection: sections },
+  };
+
+  return JSON.stringify(data).replace(/</g, "\\u003c");
+}
+
 // Página principal (server component)
 // Não lê searchParams: manter isso fora daqui é o que permite o ISR (revalidate acima)
 // funcionar de fato — ler searchParams força a rota inteira a renderizar dinamicamente
@@ -89,6 +125,7 @@ export default async function MenuPage({ params }) {
 
   return (
     <CartProvider>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: buildMenuJsonLd(menu, slug) }} />
       {effectiveLayout === "default" ? (
         <ClientMenu
           menu={menu}

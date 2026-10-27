@@ -18,6 +18,13 @@ export async function GET() {
     { url: `${BASE_URL}/pricing`, lastmod: "2026-03-25" },
     { url: `${BASE_URL}/about`, lastmod: "2025-10-29" },
     { url: `${BASE_URL}/faqs`, lastmod: "2026-05-12" },
+    { url: `${BASE_URL}/docs`, lastmod: "2026-10-27" },
+    { url: `${BASE_URL}/docs/como-comecar`, lastmod: "2026-10-27" },
+    { url: `${BASE_URL}/docs/planos`, lastmod: "2026-10-27" },
+    { url: `${BASE_URL}/docs/bite-menu-ia`, lastmod: "2026-10-27" },
+    { url: `${BASE_URL}/docs/cardapio-digital`, lastmod: "2026-10-27" },
+    { url: `${BASE_URL}/docs/pedidos`, lastmod: "2026-10-27" },
+    { url: `${BASE_URL}/docs/vendas`, lastmod: "2026-10-27" },
   ];
 
   // 🌐 Busca todos os menus registrados

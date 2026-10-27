@@ -116,7 +116,7 @@ const SocialProofChip = ({ className = "" }) => (
   >
     <FaUtensils className="text-[var(--red)]" />
     <span>
-      <strong>+1600 estabelecimentos</strong> já usam o Bite Menu
+      <strong>+1900 estabelecimentos</strong> já usam o Bite Menu
     </span>
   </div>
 );
@@ -362,7 +362,7 @@ export default function LandingPageV1() {
             Pronto para parar de perder pedido?
           </h2>
           <p className="mt-4 text-lg sm:text-xl opacity-95">
-            <strong>+1600 estabelecimentos</strong> já estão recebendo pedidos pelo Bite Menu agora mesmo.
+            <strong>+1900 estabelecimentos</strong> já estão recebendo pedidos pelo Bite Menu agora mesmo.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
@@ -414,6 +414,12 @@ export default function LandingPageV1() {
               );
             })}
           </div>
+          <p className="mt-6 text-center text-sm sm:text-base text-[var(--gray)]">
+            Quer entender cada detalhe?{" "}
+            <Link href="/docs" className="underline hover:text-[var(--foreground)]">
+              Veja a documentação
+            </Link>
+          </p>
         </div>
       </section>
 
@@ -469,6 +475,9 @@ export default function LandingPageV1() {
               </Link>
               <Link href="/faqs" className="hover:underline">
                 Perguntas frequentes
+              </Link>
+              <Link href="/docs" className="hover:underline">
+                Documentação
               </Link>
             </div>
             <div className="flex flex-col md:flex-row justify-center items-center gap-2 gap-x-4 text-sm">

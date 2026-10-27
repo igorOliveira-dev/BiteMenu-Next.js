@@ -1,29 +1,41 @@
 # Bite Menu
 
-> Bite Menu é um SaaS de cardápio digital para restaurantes. Donos de estabelecimentos criam cardápios personalizados em minutos e recebem pedidos diretamente pelo WhatsApp e por um painel de pedidos. Clientes acessam o cardápio via link ou QR code em `/menu/[slug]` e fazem pedidos sem precisar instalar app. Mais de 300 estabelecimentos usam a plataforma.
+> Bite Menu é um SaaS brasileiro de cardápio digital para restaurantes, lanchonetes, pizzarias, hamburguerias, açaiterias, docerias, food trucks e marmitarias. O dono cria o cardápio em menos de 5 minutos e recebe os pedidos pelo WhatsApp e por um painel de pedidos. O cliente acessa por link ou QR Code, direto no navegador, sem instalar app. Tem plano grátis para sempre e não cobra taxa por pedido.
+
+## Fatos principais
+
+- Site: https://www.bitemenu.com.br
+- Público: estabelecimentos de comida e bebida no Brasil
+- Plano Free: grátis para sempre, sem cartão de crédito, com cardápio digital, pedidos e controle de vendas
+- Planos pagos (por mês, sem fidelidade): Plus R$29,90, Pro R$49,90 e Business R$69,90; no plano anual, 2 meses grátis
+- Pagamento da assinatura: PIX, boleto ou cartão
+- Sem taxa por venda e sem limite de pedidos em nenhum plano; os planos mudam a quantidade de itens/categorias e recursos extras
+- Pedidos: o cliente monta o carrinho e o pedido chega formatado no WhatsApp do estabelecimento; o pagamento do pedido é combinado direto com o estabelecimento (dinheiro, Pix, maquininha)
+- Recursos: categorias e produtos, personalização visual, itens em destaque e promoções, horários de funcionamento, aba de pedidos, análise de vendas, assistente Bite Menu IA (plano Business)
+- Mais de 1900 estabelecimentos usam a plataforma
 
 ## Produto
 
 - [Página inicial](https://www.bitemenu.com.br/): visão geral do produto e criação de cardápio grátis
-- [Planos e preços](https://www.bitemenu.com.br/pricing): planos Free, Plus (R$29,90) e Pro (R$49,90)
+- [Planos e preços](https://www.bitemenu.com.br/pricing): comparação dos planos Free, Plus, Pro e Business
 - [Sobre](https://www.bitemenu.com.br/about): sobre o Bite Menu
-- [Perguntas frequentes](https://www.bitemenu.com.br/faqs)
-- [Suporte](https://www.bitemenu.com.br/support)
+- [Perguntas frequentes](https://www.bitemenu.com.br/faqs): preço, pagamento, pedidos, tipos de negócio
+- [Suporte](https://www.bitemenu.com.br/support): atendimento via WhatsApp
 
 ## Documentação
 
 - [Central de ajuda](https://www.bitemenu.com.br/docs): índice de documentação
-- [Como começar](https://www.bitemenu.com.br/docs/como-comecar)
+- [Como começar](https://www.bitemenu.com.br/docs/como-comecar): criação de conta e primeiro cardápio
 - [Cardápio digital](https://www.bitemenu.com.br/docs/cardapio-digital): criação e personalização do cardápio
 - [Pedidos](https://www.bitemenu.com.br/docs/pedidos): recebimento de pedidos via WhatsApp e painel
 - [Vendas](https://www.bitemenu.com.br/docs/vendas): acompanhamento e análise de vendas
-- [Pagamentos](https://www.bitemenu.com.br/docs/pagamentos-bite-menu): cobrança e planos
-- [Planos](https://www.bitemenu.com.br/docs/planos)
+- [Planos](https://www.bitemenu.com.br/docs/planos): detalhes de cada plano, troca e cancelamento
+- [Bite Menu IA](https://www.bitemenu.com.br/docs/bite-menu-ia): assistente de IA que prepara alterações no cardápio a partir de pedidos em texto
 
 ## Acesso
 
+- [Criar conta grátis](https://www.bitemenu.com.br/register)
 - [Login](https://www.bitemenu.com.br/login)
-- [Criar conta](https://www.bitemenu.com.br/register)
 
 ## Legal
 

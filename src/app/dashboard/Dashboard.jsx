@@ -10,7 +10,7 @@ import Stock from "./tabs/Stock";
 import WhatsappMessage from "./tabs/WhatsappMessage";
 import { useAlert } from "@/providers/AlertProvider";
 import ConfigMenu from "./tabs/ConfigMenu";
-import { FaBars, FaChevronLeft, FaHeadset, FaQrcode } from "react-icons/fa";
+import { FaBars, FaBook, FaChevronLeft, FaHeadset, FaQrcode } from "react-icons/fa";
 import Account from "./tabs/Account";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -279,6 +279,11 @@ const Dashboard = ({
 
           {/* Bottom section */}
           <div className="w-full hidden lg:flex flex-col gap-1 p-2 border-t-2 border-[var(--translucid)]">
+            <Link href="/docs" title="Documentação" aria-label="Documentação" className={navClass(false)}>
+              <FaBook className="text-lg shrink-0" />
+              <span className={labelClass}>Documentação</span>
+            </Link>
+
             <Link href="/support" title="Suporte" aria-label="Suporte" className={navClass(false)}>
               <FaHeadset className="text-lg shrink-0" />
               <span className={labelClass}>Suporte</span>
@@ -442,6 +447,13 @@ const Dashboard = ({
                 }}
               >
                 Conta
+              </button>
+            </li>
+            <li>
+              <button className="w-full flex text-left px-2 py-2 hover:bg-[var(--translucid)] border-b-2 border-[var(--translucid)] rounded">
+                <Link href="/docs" className="flex-1">
+                  Documentação
+                </Link>
               </button>
             </li>
             <li>
