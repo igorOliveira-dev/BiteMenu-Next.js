@@ -22,4 +22,16 @@ Disallow: /admin
 Disallow: /api/
 Disallow: /menu/bite-menu
 
+# Robôs de SEO/backlinks: não trazem clientes e varrem todos os cardápios e imagens
+User-agent: AhrefsBot
+User-agent: SemrushBot
+User-agent: MJ12bot
+User-agent: DotBot
+User-agent: BLEXBot
+User-agent: DataForSeoBot
+User-agent: PetalBot
+User-agent: serpstatbot
+User-agent: Barkrowler
+Disallow: /
+
 Sitemap: https://www.bitemenu.com.br/sitemap.xml
