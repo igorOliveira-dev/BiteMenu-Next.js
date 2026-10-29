@@ -228,16 +228,20 @@ function buildQueue(cfg, aud, { ignorePause = false } = {}) {
     if (!track || (track.paused && !ignorePause)) return;
     let trackLeft = Math.max(0, track.daily_limit - sentToday.filter((h) => h.track === t).length);
     for (const c of list) {
+      // controle passa pelo mesmo corte dos envios reais (sem gastar cota), senão entra todo no 1º dia
+      if (remaining <= 0 || trackLeft <= 0) {
+        if (!c.isControl) {
+          s.eligible++;
+          s.deferred++;
+        }
+        continue;
+      }
       if (c.isControl) {
         s.control++;
         queue.push(c);
         continue;
       }
       s.eligible++;
-      if (remaining <= 0 || trackLeft <= 0) {
-        s.deferred++;
-        continue;
-      }
       s.queued++;
       remaining--;
       trackLeft--;
