@@ -492,6 +492,8 @@ export default function LandingPageV1() {
 
           <div className="text-xs text-center md:text-right color-gray">
             © {new Date().getFullYear()} Bite Menu. <br /> Todos os direitos reservados.
+            <br /> 67.096.848 IGOR VENTURA DE OLIVEIRA
+            <br /> CNPJ 67.096.848/0001-37
           </div>
         </div>
       </footer>

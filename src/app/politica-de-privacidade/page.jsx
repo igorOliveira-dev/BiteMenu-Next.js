@@ -11,10 +11,11 @@ const page = () => {
       <div className="max-w-2xl flex flex-col gap-6 p-4 pt-12">
         <h1 className="default-h1">Política de Privacidade – Bite Menu</h1>
 
-        <p>Última atualização: 26/10/2026</p>
+        <p>Última atualização: 30/10/2026</p>
 
         <p>
-          O <strong>Bite Menu</strong> valoriza sua privacidade e está comprometido com a proteção dos seus dados pessoais.
+          O <strong>Bite Menu</strong>, operado por <strong>67.096.848 IGOR VENTURA DE OLIVEIRA</strong>, inscrita no CNPJ
+          sob o nº 67.096.848/0001-37, valoriza sua privacidade e está comprometido com a proteção dos seus dados pessoais.
           Esta Política de Privacidade descreve como coletamos, utilizamos, armazenamos e protegemos suas informações ao
           utilizar nossos serviços, em conformidade com a{" "}
           <strong>Lei Geral de Proteção de Dados Pessoais (Lei nº 13.709/2018 – LGPD)</strong>.
