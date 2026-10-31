@@ -5,6 +5,25 @@
   --breakpoint-xxs: 360px;
 }
 
+/* Novo padrão visual (alinhamento visual, paleta "granada e brasa") */
+@theme inline {
+  --color-creme: #fbf5ef;
+  --color-grafite: #2a2220;
+  --color-bite: #d42020;
+  --color-granada: #7b1730;
+  --color-brasa: #e35f25;
+
+  --color-brand-bg: var(--brand-bg);
+  --color-brand-surface: var(--brand-surface);
+  --color-brand-fg: var(--brand-fg);
+  --color-brand-muted: var(--brand-muted);
+  --color-brand-line: var(--brand-line);
+  --color-brand-red: var(--brand-red);
+  --color-brand-eyebrow: var(--brand-eyebrow);
+
+  --radius-card: 1.75rem;
+}
+
 :root {
   --background: #f8ecec;
   --foreground: #171717;
@@ -20,6 +39,13 @@
   --theme-red: #ce0000;
   --theme-yellow: #ed8a00;
   --glow-bg: 0 0 8px rgba(255, 255, 255, 0.6), 0 0 16px rgba(255, 255, 255, 0.4), 0 0 32px rgba(255, 255, 255, 0.25);
+  --brand-bg: #fbf5ef;
+  --brand-surface: #ffffff;
+  --brand-fg: #2a2220;
+  --brand-muted: #5f524d;
+  --brand-line: #2a222026;
+  --brand-red: #d42020;
+  --brand-eyebrow: #7b1730;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -37,6 +63,13 @@
     --theme-red: #ff3535;
     --theme-yellow: #ffff30;
     --glow-bg: 0 0 8px rgba(0, 0, 0, 0.6), 0 0 16px rgba(0, 0, 0, 0.4), 0 0 32px rgba(0, 0, 0, 0.25);
+    --brand-bg: #1c1716;
+    --brand-surface: #2a2220;
+    --brand-fg: #fbf5ef;
+    --brand-muted: #c9bdb7;
+    --brand-line: #fbf5ef26;
+    --brand-red: #f0605a;
+    --brand-eyebrow: #f0605a;
   }
 }
 
@@ -55,6 +88,13 @@
   --theme-red: #ce0000;
   --theme-yellow: #ed8a00;
   --glow-bg: 0 0 8px rgba(255, 255, 255, 0.6), 0 0 16px rgba(255, 255, 255, 0.4), 0 0 32px rgba(255, 255, 255, 0.25);
+  --brand-bg: #fbf5ef;
+  --brand-surface: #ffffff;
+  --brand-fg: #2a2220;
+  --brand-muted: #5f524d;
+  --brand-line: #2a222026;
+  --brand-red: #d42020;
+  --brand-eyebrow: #7b1730;
 }
 
 [data-theme="dark"] {
@@ -71,6 +111,13 @@
   --theme-red: #ff3535;
   --theme-yellow: #ffff30;
   --glow-bg: 0 0 8px rgba(0, 0, 0, 0.6), 0 0 16px rgba(0, 0, 0, 0.4), 0 0 32px rgba(0, 0, 0, 0.25);
+  --brand-bg: #1c1716;
+  --brand-surface: #2a2220;
+  --brand-fg: #fbf5ef;
+  --brand-muted: #c9bdb7;
+  --brand-line: #fbf5ef26;
+  --brand-red: #f0605a;
+  --brand-eyebrow: #f0605a;
 }
 
 html {
@@ -714,3 +761,105 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 }
 
 /* fim do css para impressão */
+
+/* Novo padrão visual: envolver a tela em .brand-scope aplica fonte e cores novas,
+   inclusive nos componentes antigos que usam --background, --gray, .cta-button etc. */
+.brand-scope {
+  --background: var(--brand-bg);
+  --foreground: var(--brand-fg);
+  --gray: var(--brand-muted);
+  --translucid: var(--brand-line);
+  background: var(--brand-bg);
+  color: var(--brand-fg);
+  font-family: var(--font-jakarta), Arial, Helvetica, sans-serif;
+}
+
+body:has(.brand-scope) {
+  background: var(--brand-bg);
+}
+
+.brand-scope .cta-button {
+  border-radius: 999px;
+  border-color: transparent;
+  gap: 8px;
+  &.small {
+    scale: 1;
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+}
+
+.brand-scope .glow-red {
+  box-shadow: none;
+}
+
+.brand-scope .bg-degraded-t-speckled {
+  background: var(--brand-surface);
+  border-width: 1px;
+  border-radius: 1.75rem;
+}
+
+.brand-line-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 22px;
+  border: 1px solid var(--brand-fg);
+  border-radius: 999px;
+  font-weight: 700;
+  transition: 0.3s;
+  &:hover {
+    background-color: var(--brand-line);
+  }
+}
+
+.brand-card {
+  background: var(--brand-surface);
+  border: 1px solid var(--brand-line);
+  border-radius: 1.75rem;
+}
+
+/* degradê só em faixas e destaques grandes; texto pequeno em branco só sobre a parte granada/vermelha */
+.bg-brand-gradient {
+  background-image: linear-gradient(125deg, #7b1730, #d42020 55%, #e35f25);
+}
+
+.brand-highlight {
+  padding: 0 0.25em;
+  border-radius: 0.3em;
+  color: #fff;
+  background-image: linear-gradient(100deg, #7b1730, #d42020);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.brand-eyebrow {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brand-eyebrow);
+}
+
+/* em classe porque os h2/h3 globais não deixam os utilitários do Tailwind mudar o tamanho */
+.brand-display,
+.brand-title {
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.06;
+}
+
+.brand-display {
+  font-size: clamp(2.5rem, 1.9rem + 3vw, 4.25rem);
+}
+
+.brand-title {
+  font-size: clamp(1.875rem, 1.5rem + 1.8vw, 3rem);
+}
+
+.brand-card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}

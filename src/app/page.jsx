@@ -1,6 +1,7 @@
 import React from "react";
 import LandingPageV1 from "./landingPage/LandingPageV1";
 import { plans } from "@/consts/Plans";
+import LandingPageV2 from "./landingPage/LandingPageV2";
 
 const BASE_URL = "https://www.bitemenu.com.br";
 
