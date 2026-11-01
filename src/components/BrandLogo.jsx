@@ -3,11 +3,18 @@ import Link from "next/link";
 
 import logo from "../../public/brand/logo-sino.png";
 
-export default function BrandLogo({ as: Component = Link, href = "/", showName = true }) {
+export default function BrandLogo({ as: Component = Link, href = "/", showName = true, large = false, onClick = undefined }) {
   return (
-    <Component href={href} aria-label="Bite Menu" className="flex items-center gap-2 text-brand-red">
-      <Image src={logo} alt="" width={34} height={33} />
-      {showName && <span className="text-xl font-extrabold tracking-tight">Bite Menu</span>}
+    <Component
+      href={href}
+      onClick={onClick}
+      aria-label="Bite Menu"
+      className={`flex items-center text-brand-red ${large ? "gap-3" : "gap-2"}`}
+    >
+      <Image src={logo} alt="" width={large ? 68 : 34} height={large ? 66 : 33} />
+      {showName && (
+        <span className={`font-extrabold tracking-tight ${large ? "text-4xl sm:text-5xl" : "text-xl"}`}>Bite Menu</span>
+      )}
     </Component>
   );
 }

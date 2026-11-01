@@ -29,7 +29,7 @@ const page = () => {
             ter lido, compreendido e concordado integralmente com estes Termos de Uso, com a{" "}
             <Link
               href="https://www.bitemenu.com.br/politica-de-privacidade"
-              className="underline text-blue-500 hover:text-blue-700"
+              className="underline text-brand-red hover:opacity-80"
             >
               Política de Privacidade
             </Link>{" "}
@@ -57,7 +57,7 @@ const page = () => {
                 href="https://www.bitemenu.com.br"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="underline text-blue-500 hover:text-blue-700"
+                className="underline text-brand-red hover:opacity-80"
               >
                 www.bitemenu.com.br
               </a>
@@ -149,7 +149,7 @@ const page = () => {
           </p>
           <p>
             Você pode verificar os detalhes de cada plano a qualquer momento em{" "}
-            <a href="/docs/planos" className="underline text-blue-500 hover:text-blue-700">
+            <a href="/docs/planos" className="underline text-brand-red hover:opacity-80">
               nossa página de planos
             </a>
             .
@@ -173,7 +173,7 @@ const page = () => {
               href="https://validapay.com.br"
               target="_blank"
               rel="noopener noreferrer"
-              className="underline text-blue-500 hover:text-blue-700"
+              className="underline text-brand-red hover:opacity-80"
             >
               Política de Privacidade da ValidaPay
             </a>{" "}
@@ -472,7 +472,7 @@ const page = () => {
             O tratamento de dados pessoais no âmbito do Bite Menu é regido pela{" "}
             <Link
               href="https://www.bitemenu.com.br/politica-de-privacidade"
-              className="underline text-blue-500 hover:text-blue-700"
+              className="underline text-brand-red hover:opacity-80"
             >
               Política de Privacidade
             </Link>{" "}
@@ -515,7 +515,7 @@ const page = () => {
           </p>
           <p>
             A versão mais recente destes Termos estará sempre disponível em{" "}
-            <Link href="https://www.bitemenu.com.br/termos-de-uso" className="underline text-blue-500 hover:text-blue-700">
+            <Link href="https://www.bitemenu.com.br/termos-de-uso" className="underline text-brand-red hover:opacity-80">
               https://bitemenu.com.br/termos-de-uso
             </Link>
             .

@@ -1,10 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import bitemenu from "../../../public/LogoMarca-sem-fundo.png";
+import BrandLogo from "@/components/BrandLogo";
 
 // Descadastro dos e-mails de remarketing (link no rodapé dos e-mails). Pede confirmação com botão
 // porque alguns provedores abrem os links do e-mail sozinhos pra checar segurança.
@@ -20,8 +19,8 @@ function Unsubscribe() {
 
   return (
     <div className="w-[100dvw] h-[100dvh] flex flex-col items-center justify-center px-4 text-center">
-      <div className="w-60 h-16 relative mb-6">
-        <Image src={bitemenu} alt="Bite Menu" fill />
+      <div className="mb-4">
+        <BrandLogo large />
       </div>
 
       {status === "done" ? (
@@ -48,7 +47,7 @@ function Unsubscribe() {
         </>
       )}
 
-      <Link className="underline text-blue-500 hover:text-blue-700" href="/">
+      <Link className="underline text-brand-red hover:opacity-80" href="/">
         Voltar à página inicial
       </Link>
     </div>

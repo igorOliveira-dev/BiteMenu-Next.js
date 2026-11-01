@@ -27,7 +27,7 @@ const page = () => {
             <a
               href="https://www.bitemenu.com.br/register"
               target="_blank"
-              className="underline text-blue-500 hover:text-blue-700"
+              className="underline text-brand-red hover:opacity-80"
             >
               bitemenu.com.br/register
             </a>
@@ -39,7 +39,7 @@ const page = () => {
             <a
               href="https://www.bitemenu.com.br/dashboard"
               target="_blank"
-              className="underline text-blue-500 hover:text-blue-700"
+              className="underline text-brand-red hover:opacity-80"
             >
               dashboard do Bite Menu
             </a>
@@ -47,7 +47,7 @@ const page = () => {
             <a
               href="https://www.bitemenu.com.br/pricing"
               target="_blank"
-              className="underline text-blue-500 hover:text-blue-700"
+              className="underline text-brand-red hover:opacity-80"
             >
               plano da sua conta
             </a>
@@ -62,7 +62,7 @@ const page = () => {
             <a
               href="https://www.bitemenu.com.br/dashboard"
               target="_blank"
-              className="underline text-blue-500 hover:text-blue-700"
+              className="underline text-brand-red hover:opacity-80"
             >
               dashboard do Bite Menu
             </a>

@@ -23,9 +23,9 @@ async function api(method, body, query = "") {
 }
 
 const pct = (n, d) => (d ? `${Math.round((n / d) * 1000) / 10}%` : "—");
-const card = "rounded-3xl border-2 bg-translucid border-[var(--translucid)] p-5";
-const input = "w-full rounded-xl border-2 border-[var(--translucid)] bg-transparent px-3 py-2 text-sm outline-none focus:border-red-500/50";
-const btn = "inline-flex items-center gap-2 cursor-pointer rounded-xl px-3 py-2 text-sm border-2 border-[var(--translucid)] hover:bg-[var(--translucid)] transition disabled:opacity-50";
+const card = "rounded-3xl border bg-translucid border-[var(--translucid)] p-5";
+const input = "w-full rounded-xl border border-[var(--translucid)] bg-transparent px-3 py-2 text-sm outline-none focus:border-red-500/50";
+const btn = "inline-flex items-center gap-2 cursor-pointer rounded-xl px-3 py-2 text-sm border border-[var(--translucid)] hover:bg-[var(--translucid)] transition disabled:opacity-50";
 const btnRed = "inline-flex items-center gap-2 cursor-pointer rounded-xl px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition disabled:opacity-50";
 const gray = { color: "var(--gray)" };
 
@@ -165,7 +165,7 @@ function Conditions({ meta, track, onSaved, notify }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {meta.fields.map((f) =>
           f.type === "boolean" ? (
-            <label key={f.key} className="flex items-center justify-between gap-3 text-sm rounded-xl border-2 border-[var(--translucid)] px-3 py-2">
+            <label key={f.key} className="flex items-center justify-between gap-3 text-sm rounded-xl border border-[var(--translucid)] px-3 py-2">
               {f.label}
               <Switch on={!!cond[f.key]} onChange={(v) => setCond(f.key, v)} />
             </label>
@@ -637,7 +637,7 @@ export default function AdminRemarketingPage() {
 
       {showSettings && <Settings settings={settings} onSaved={load} notify={notify} />}
 
-      <div className="flex gap-1 p-1 rounded-2xl bg-translucid border-2 border-[var(--translucid)] overflow-x-auto">
+      <div className="flex gap-1 p-1 rounded-2xl bg-translucid border border-[var(--translucid)] overflow-x-auto">
         {[...TRACKS.map((t) => [t.id, `${t.id} · ${t.name}`, !data.tracks[t.id]?.paused]), ["queue", "Fila de hoje", null]].map(([id, label, active]) => (
           <button
             key={id}

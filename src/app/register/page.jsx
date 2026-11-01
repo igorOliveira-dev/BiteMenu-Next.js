@@ -1,6 +1,6 @@
 "use client";
 
-import LogoMark from "../../../public/LogoMarca-sem-fundo.png";
+import BrandLogo from "@/components/BrandLogo";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import PhoneInput from "react-phone-input-2";
@@ -8,7 +8,6 @@ import "react-phone-input-2/lib/style.css";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { supabase } from "@/lib/supabaseClient";
 import { isPhoneInUse } from "@/lib/queries/profiles";
-import Image from "next/image";
 import Link from "next/link";
 import { useAlert } from "@/providers/AlertProvider";
 import { CURRENT_PRIVACY_VERSION } from "@/lib/privacy";
@@ -129,14 +128,14 @@ export default function SignUp() {
 
   return (
     <div className="h-[100dvh] flex items-center justify-center">
-      <div className="max-w-[350px] w-full rounded-lg mt-6 p-6 space-y-6 bg-translucid shadow-[0_0_40px_var(--shadow)]">
+      <div className="max-w-[350px] w-full rounded-2xl mt-6 p-6 space-y-6 bg-translucid border border-brand-line">
         <h1 className="text-2xl font-semibold text-center mb-6">Cadastro</h1>
         <form onSubmit={handleSignUp} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Nome</label>
             <input
               name="name"
-              className="w-[300px] px-3 py-2 bg-translucid border border-low-gray rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-[300px] px-3 py-2 bg-translucid border border-low-gray rounded-xl focus:outline-none focus:ring-2 focus:ring-bite"
               type="text"
               placeholder="Seu nome completo"
               value={displayName}
@@ -153,7 +152,7 @@ export default function SignUp() {
                 value={phone}
                 onChange={(value) => setPhone(value)}
                 inputProps={{ required: true }}
-                inputClass="!w-[300px] !px-3 !py-2 !bg-[var(--translucid)] !border !border-[var(--low-gray)] !rounded !focus:outline-none !focus:ring-2 !focus:ring-blue-400 !pl-14"
+                inputClass="!w-[300px] !px-3 !py-2 !bg-[var(--translucid)] !border !border-[var(--low-gray)] !rounded-xl !focus:outline-none !focus:ring-2 !focus:ring-bite !pl-14"
                 buttonClass="!border-r !border-[var(--low-gray)] !bg-[transparent] !rounded-l !hover:bg-[var(--low-gray)]"
                 containerClass="!w-[300px] flex items-center"
               />
@@ -164,7 +163,7 @@ export default function SignUp() {
             <label className="block text-sm font-medium mb-1">Email</label>
             <input
               name="email"
-              className="w-[300px] px-3 py-2 bg-translucid border border-low-gray rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-[300px] px-3 py-2 bg-translucid border border-low-gray rounded-xl focus:outline-none focus:ring-2 focus:ring-bite"
               type="email"
               placeholder="Seu email"
               value={email}
@@ -176,7 +175,7 @@ export default function SignUp() {
           <div>
             <label className="block text-sm font-medium mb-1">Senha</label>
             <input
-              className="w-[300px] px-3 py-2 bg-translucid border border-low-gray rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-[300px] px-3 py-2 bg-translucid border border-low-gray rounded-xl focus:outline-none focus:ring-2 focus:ring-bite"
               type="password"
               placeholder="Sua senha"
               value={password}
@@ -187,7 +186,7 @@ export default function SignUp() {
           <div>
             <label className="block text-sm font-medium mb-1">Confirmar senha</label>
             <input
-              className="w-[300px] px-3 py-2 bg-translucid border border-low-gray rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-[300px] px-3 py-2 bg-translucid border border-low-gray rounded-xl focus:outline-none focus:ring-2 focus:ring-bite"
               type="password"
               placeholder="Repita a senha"
               value={confirmPassword}
@@ -211,7 +210,7 @@ export default function SignUp() {
                   href="/politica-de-privacidade"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline text-blue-500 hover:text-blue-700"
+                  className="underline text-brand-red hover:opacity-80"
                 >
                   Política de Privacidade
                 </Link>{" "}
@@ -220,7 +219,7 @@ export default function SignUp() {
                   href="/politica-de-privacidade"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline text-blue-500 hover:text-blue-700"
+                  className="underline text-brand-red hover:opacity-80"
                 >
                   Termos de Uso
                 </Link>
@@ -230,7 +229,7 @@ export default function SignUp() {
           </div>
 
           <button
-            className="w-full py-2 rounded bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-50 flex justify-center items-center max-h-[40px]"
+            className="w-full py-2 rounded-full bg-bite text-white font-medium hover:opacity-90 disabled:opacity-50 flex justify-center items-center max-h-[40px]"
             type="submit"
             disabled={loading}
           >
@@ -246,15 +245,17 @@ export default function SignUp() {
         <div>
           <p className="text-center">
             Já tem uma conta?{" "}
-            <Link href="/login" className="underline text-blue-500 hover:text-blue-700">
+            <Link href="/login" className="underline text-brand-red hover:opacity-80">
               Faça login
             </Link>
           </p>
         </div>
       </div>
       <div className="ml-20 text-center max-w-[500px] hidden lg:block">
-        <h2 style={{ fontSize: "40px", fontWeight: "bold", transform: "translateY(50%)" }}>Bem vindo ao</h2>
-        <Image src={LogoMark} alt="Bite Menu" height={130} width={500} />
+        <h2 className="mb-2" style={{ fontSize: "40px", fontWeight: "bold" }}>Bem vindo ao</h2>
+        <div className="mb-4 flex justify-center">
+          <BrandLogo large />
+        </div>
         <h2 style={{ fontSize: "30px" }}>Cadastre-se e comece a criar seu cardápio em minutos!</h2>
       </div>
     </div>

@@ -1,10 +1,9 @@
 "use client";
 
-import LogoMark from "../../../public/LogoMarca-sem-fundo.png";
+import BrandLogo from "@/components/BrandLogo";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import Image from "next/image";
 import Link from "next/link";
 import { useAlert } from "@/providers/AlertProvider";
 import { staffEmail } from "@/lib/staff";
@@ -66,14 +65,14 @@ export default function SignIn() {
 
   return (
     <div className="h-[100dvh] flex items-center justify-center">
-      <div className="max-w-[350px] w-full rounded-lg mt-6 p-6 space-y-6 bg-translucid shadow-[0_0_40px_var(--shadow)]">
+      <div className="max-w-[350px] w-full rounded-2xl mt-6 p-6 space-y-6 bg-translucid border border-brand-line">
         <h1 className="text-2xl font-semibold text-center mb-6">Login</h1>
         <form onSubmit={handleSignIn} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Email ou usuário</label>
             <input
               name="email"
-              className="w-[300px] px-3 py-2 bg-translucid border border-[var(--low-gray)] rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-[300px] px-3 py-2 bg-translucid border border-[var(--low-gray)] rounded-xl focus:outline-none focus:ring-2 focus:ring-bite"
               type="text"
               autoCapitalize="none"
               autoComplete="username"
@@ -88,20 +87,20 @@ export default function SignIn() {
             <label className="block text-sm font-medium mb-1">Senha</label>
             <input
               name="password"
-              className="w-[300px] px-3 py-2 bg-translucid border border-[var(--low-gray)] rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-[300px] px-3 py-2 bg-translucid border border-[var(--low-gray)] rounded-xl focus:outline-none focus:ring-2 focus:ring-bite"
               type="password"
               placeholder="Sua senha"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-            <Link href="/recuperar-senha" className="underline text-blue-500 hover:text-blue-700 text-sm">
+            <Link href="/recuperar-senha" className="underline text-brand-red hover:opacity-80 text-sm">
               Esqueci minha senha
             </Link>
           </div>
 
           <button
-            className="w-full py-2 rounded bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-50 flex justify-center items-center max-h-[40px]"
+            className="w-full py-2 rounded-full bg-bite text-white font-medium hover:opacity-90 disabled:opacity-50 flex justify-center items-center max-h-[40px]"
             type="submit"
             disabled={loading}
           >
@@ -118,14 +117,16 @@ export default function SignIn() {
         <div>
           <p className="text-center">
             Ainda não tem uma conta?{" "}
-            <Link href="/register" className="underline text-blue-500 hover:text-blue-700">
+            <Link href="/register" className="underline text-brand-red hover:opacity-80">
               Registre-se
             </Link>
           </p>
         </div>
       </div>
       <div className="ml-20 text-center max-w-[500px] hidden lg:block">
-        <Image src={LogoMark} alt="Bite Menu" height={130} width={500} />
+        <div className="mb-4 flex justify-center">
+          <BrandLogo large />
+        </div>
         <h2 style={{ fontSize: "30px" }}>Que bom te ter de volta! Entre na sua conta e administre seu cardápio.</h2>
       </div>
     </div>

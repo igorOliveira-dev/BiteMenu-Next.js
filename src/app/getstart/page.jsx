@@ -96,7 +96,7 @@ function ProgressBar({ currentStep, totalSteps }) {
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300"
                   style={{
-                    backgroundColor: isCompleted ? "#16a34a" : isCurrent ? "#155dfc" : "var(--low-gray)",
+                    backgroundColor: isCompleted ? "#16a34a" : isCurrent ? "#d42020" : "var(--low-gray)",
                     color: isCompleted || isCurrent ? "white" : "var(--gray)",
                     transform: isCurrent ? "scale(1.15)" : "scale(1)",
                   }}
@@ -105,7 +105,7 @@ function ProgressBar({ currentStep, totalSteps }) {
                 </div>
                 <span
                   className="hidden xs:block text-xs mt-1 text-center max-w-[64px] min-h-[30px] leading-tight"
-                  style={{ color: isCurrent ? "#155dfc" : "var(--gray)", fontWeight: isCurrent ? "600" : "400" }}
+                  style={{ color: isCurrent ? "var(--brand-red)" : "var(--gray)", fontWeight: isCurrent ? "600" : "400" }}
                 >
                   {step.title}
                 </span>
@@ -512,7 +512,7 @@ export default function GetStart() {
         maxLength={30}
         placeholder="Ex.: Lanchonete do Zé"
         autoFocus
-        className="w-full px-4 py-3 text-lg bg-translucid border border-[var(--low-gray)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+        className="w-full px-4 py-3 text-lg bg-translucid border border-[var(--low-gray)] rounded-xl focus:outline-none focus:ring-2 focus:ring-bite transition"
       />
       <div className="flex justify-between items-center mt-2">
         <span className="text-xs" style={{ color: "var(--gray)" }}>
@@ -533,11 +533,11 @@ export default function GetStart() {
               key={opt.id}
               type="button"
               onClick={() => toggleService(opt.id)}
-              className="cursor-pointer flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 font-medium text-sm"
+              className="cursor-pointer flex flex-col items-center justify-center p-4 rounded-xl border transition-all duration-200 font-medium text-sm"
               style={{
-                borderColor: isSelected ? "#155dfc" : "var(--low-gray)",
-                backgroundColor: isSelected ? "#155dfc15" : "transparent",
-                color: isSelected ? "#155dfc" : "var(--gray)",
+                borderColor: isSelected ? "#d42020" : "var(--low-gray)",
+                backgroundColor: isSelected ? "#d4202015" : "transparent",
+                color: isSelected ? "var(--brand-red)" : "var(--gray)",
                 transform: isSelected ? "scale(1.03)" : "scale(1)",
               }}
             >
@@ -562,8 +562,8 @@ export default function GetStart() {
               Logo <span className="font-normal opacity-60">(quadrada)</span>
             </p>
             <label
-              className="flex flex-col items-center justify-center h-28 w-28 border-2 border-dashed rounded-xl cursor-pointer hover:border-blue-400 transition overflow-hidden"
-              style={{ borderColor: logoPreview ? "#155dfc" : "var(--low-gray)" }}
+              className="flex flex-col items-center justify-center h-28 w-28 border-2 border-dashed rounded-xl cursor-pointer hover:border-bite transition overflow-hidden"
+              style={{ borderColor: logoPreview ? "#d42020" : "var(--low-gray)" }}
             >
               {logoPreview ? (
                 <img src={logoPreview} alt="Logo" className="object-contain w-full h-full" />
@@ -594,8 +594,8 @@ export default function GetStart() {
               Banner <span className="font-normal opacity-60">(retangular)</span>
             </p>
             <label
-              className="flex flex-col items-center justify-center h-28 w-[100%] border-2 border-dashed rounded-xl cursor-pointer hover:border-blue-400 transition overflow-hidden"
-              style={{ borderColor: bannerPreview ? "#155dfc" : "var(--low-gray)" }}
+              className="flex flex-col items-center justify-center h-28 w-[100%] border-2 border-dashed rounded-xl cursor-pointer hover:border-bite transition overflow-hidden"
+              style={{ borderColor: bannerPreview ? "#d42020" : "var(--low-gray)" }}
             >
               {bannerPreview ? (
                 <img src={bannerPreview} alt="Banner" className="object-cover w-full h-full" />
@@ -638,9 +638,9 @@ export default function GetStart() {
                   className="relative rounded-xl overflow-hidden transition-all duration-200 focus:outline-none"
                   style={{
                     height: "64px",
-                    border: isSelected ? "3px solid #155dfc" : "3px solid transparent",
+                    border: isSelected ? "3px solid #d42020" : "3px solid transparent",
                     transform: isSelected ? "scale(1.07)" : "scale(1)",
-                    boxShadow: isSelected ? "0 0 0 2px #155dfc40" : "none",
+                    boxShadow: isSelected ? "0 0 0 2px #d4202040" : "none",
                   }}
                 >
                   {/* Color strips */}
@@ -653,7 +653,7 @@ export default function GetStart() {
                   {isSelected && (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="bg-white rounded-full w-6 h-6 flex items-center justify-center shadow">
-                        <FaCheck size={10} style={{ color: "#155dfc" }} />
+                        <FaCheck size={10} style={{ color: "var(--brand-red)" }} />
                       </div>
                     </div>
                   )}
@@ -726,7 +726,7 @@ export default function GetStart() {
         <button
           type="button"
           onClick={handleSubmit}
-          className="cursor-pointer w-full py-4 bg-blue-600 text-white font-bold text-lg rounded-xl hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-2"
+          className="cursor-pointer w-full py-4 bg-bite text-white font-bold text-lg rounded-full hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2"
         >
           <FaCheck /> Criar meu cardápio!
         </button>
@@ -766,7 +766,7 @@ export default function GetStart() {
         <ProgressBar currentStep={currentStep} totalSteps={STEPS.length} />
 
         {/* Step container */}
-        <div className="rounded-2xl p-5 xs:p-7 bg-translucid shadow-[0_0_40px_var(--shadow)]">
+        <div className="rounded-2xl p-5 xs:p-7 bg-translucid border border-brand-line">
           {stepComponents[currentStep]}
 
           {/* Navigation buttons */}
@@ -786,7 +786,7 @@ export default function GetStart() {
               <button
                 type="button"
                 onClick={goNext}
-                className="cursor-pointer flex items-center gap-2 px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 active:scale-95 transition-all ml-auto"
+                className="cursor-pointer flex items-center gap-2 px-6 py-2 bg-bite text-white font-semibold rounded-full hover:opacity-90 active:scale-95 transition-all ml-auto"
               >
                 Continuar <FaArrowRight size={12} />
               </button>

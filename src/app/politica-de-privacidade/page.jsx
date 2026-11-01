@@ -231,7 +231,7 @@ const page = () => {
               href="https://supabase.com/privacy"
               target="_blank"
               rel="noopener noreferrer"
-              className="underline text-blue-500 hover:text-blue-700"
+              className="underline text-brand-red hover:opacity-80"
             >
               Política de Privacidade do Supabase
             </a>
@@ -402,7 +402,7 @@ const page = () => {
             A versão mais recente estará sempre disponível em{" "}
             <Link
               href="https://www.bitemenu.com.br/politica-de-privacidade"
-              className="underline text-blue-500 hover:text-blue-700"
+              className="underline text-brand-red hover:opacity-80"
             >
               https://bitemenu.com.br/politica-de-privacidade
             </Link>

@@ -87,7 +87,7 @@ export default function UpdatePasswordPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border-2 border-[var(--translucid)] bg-translucid px-3 py-2 outline-none"
+                className="w-full rounded-lg border border-[var(--translucid)] bg-translucid px-3 py-2 outline-none"
               />
             </div>
 
@@ -101,14 +101,14 @@ export default function UpdatePasswordPage() {
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full rounded-lg border-2 border-[var(--translucid)] bg-translucid px-3 py-2 outline-none"
+                className="w-full rounded-lg border border-[var(--translucid)] bg-translucid px-3 py-2 outline-none"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
+              className="w-full py-3 bg-bite text-white font-semibold rounded-full hover:opacity-90 transition"
             >
               {loading ? "Salvando..." : "Salvar nova senha"}
             </button>
