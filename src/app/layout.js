@@ -10,7 +10,7 @@ import { CookieConsentProvider } from "@/providers/CookieConsentProvider";
 import CookieBanner from "@/components/CookieBanner";
 import { ThemeColorProvider } from "@/providers/ThemeColorProvider";
 
-// Fonte do novo padrão visual, usada só dentro de .brand-scope; sem preload ela não baixa nas telas antigas
+// Fonte do site; sem preload ela não baixa no cardápio público, que mantém a fonte própria
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-jakarta", preload: false });
 
 export const metadata = {

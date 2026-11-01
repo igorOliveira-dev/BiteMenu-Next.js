@@ -25,17 +25,17 @@
 }
 
 :root {
-  --background: #f8ecec;
-  --foreground: #171717;
-  --gray: #333;
-  --low-gray: #cdcdcd;
+  --background: #fbf5ef;
+  --foreground: #2a2220;
+  --gray: #5f524d;
+  --low-gray: #e8dfd8;
   --dark-gray-90: #22222290;
-  --medium-gray: #aaa;
-  --low-translucid: #00000005;
-  --translucid: #00000012;
-  --high-translucid: #00000032;
+  --medium-gray: #b8aca5;
+  --low-translucid: #2a22200a;
+  --translucid: #2a22201a;
+  --high-translucid: #2a222052;
   --red: #d42020;
-  --shadow: #00000070;
+  --shadow: #2a222026;
   --theme-red: #ce0000;
   --theme-yellow: #ed8a00;
   --glow-bg: 0 0 8px rgba(255, 255, 255, 0.6), 0 0 16px rgba(255, 255, 255, 0.4), 0 0 32px rgba(255, 255, 255, 0.25);
@@ -50,16 +50,16 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #252323;
-    --foreground: #fafafa;
-    --gray: #ccc;
-    --low-gray: #222;
-    --medium-gray: #111;
-    --low-translucid: #ffffff05;
-    --translucid: #ffffff10;
-    --high-translucid: #ffffff32;
+    --background: #1c1716;
+    --foreground: #fbf5ef;
+    --gray: #c9bdb7;
+    --low-gray: #3a302d;
+    --medium-gray: #141010;
+    --low-translucid: #fbf5ef0a;
+    --translucid: #fbf5ef1a;
+    --high-translucid: #fbf5ef52;
     --red: #d42020;
-    --shadow: #000000;
+    --shadow: #00000066;
     --theme-red: #ff3535;
     --theme-yellow: #ffff30;
     --glow-bg: 0 0 8px rgba(0, 0, 0, 0.6), 0 0 16px rgba(0, 0, 0, 0.4), 0 0 32px rgba(0, 0, 0, 0.25);
@@ -74,17 +74,17 @@
 }
 
 [data-theme="light"] {
-  --background: #f8ecec;
-  --foreground: #171717;
-  --gray: #333;
-  --low-gray: #cdcdcd;
+  --background: #fbf5ef;
+  --foreground: #2a2220;
+  --gray: #5f524d;
+  --low-gray: #e8dfd8;
   --dark-gray-90: #22222290;
-  --medium-gray: #aaa;
-  --low-translucid: #00000005;
-  --translucid: #00000012;
-  --high-translucid: #00000032;
+  --medium-gray: #b8aca5;
+  --low-translucid: #2a22200a;
+  --translucid: #2a22201a;
+  --high-translucid: #2a222052;
   --red: #d42020;
-  --shadow: #00000070;
+  --shadow: #2a222026;
   --theme-red: #ce0000;
   --theme-yellow: #ed8a00;
   --glow-bg: 0 0 8px rgba(255, 255, 255, 0.6), 0 0 16px rgba(255, 255, 255, 0.4), 0 0 32px rgba(255, 255, 255, 0.25);
@@ -98,16 +98,16 @@
 }
 
 [data-theme="dark"] {
-  --background: #252323;
-  --foreground: #fafafa;
-  --gray: #ccc;
-  --low-gray: #222;
-  --medium-gray: #111;
-  --low-translucid: #ffffff05;
-  --translucid: #ffffff10;
-  --high-translucid: #ffffff32;
+  --background: #1c1716;
+  --foreground: #fbf5ef;
+  --gray: #c9bdb7;
+  --low-gray: #3a302d;
+  --medium-gray: #141010;
+  --low-translucid: #fbf5ef0a;
+  --translucid: #fbf5ef1a;
+  --high-translucid: #fbf5ef52;
   --red: #d42020;
-  --shadow: #000000;
+  --shadow: #00000066;
   --theme-red: #ff3535;
   --theme-yellow: #ffff30;
   --glow-bg: 0 0 8px rgba(0, 0, 0, 0.6), 0 0 16px rgba(0, 0, 0, 0.4), 0 0 32px rgba(0, 0, 0, 0.25);
@@ -156,15 +156,27 @@ html::-webkit-scrollbar-thumb {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-jakarta), Arial, Helvetica, sans-serif;
   max-width: 100dvw;
   overflow-x: hidden;
   transition: 0.4s;
 }
 
+/* o cardápio público (e a prévia dele no painel) mantém a fonte de antes; :has cobre os portais, como o carrinho */
+body:has(.public-menu),
+.menu-font {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* modais de edição abertos de dentro da prévia são do painel */
+.menu-font .fixed {
+  font-family: var(--font-jakarta), Arial, Helvetica, sans-serif;
+}
+
 .default-h1 {
   font-size: 32px;
-  font-weight: bold;
+  font-weight: 800;
+  letter-spacing: -0.035em;
 }
 
 h2 {
@@ -199,11 +211,17 @@ h3 {
 }
 
 .bg-translucid {
+  background-color: var(--brand-surface);
+}
+
+/* no cardápio público o fundo vem da cor do dono: continua translúcido */
+body:has(.public-menu) .bg-translucid,
+.menu-font .bg-translucid {
   background-color: var(--translucid);
 }
 
 .bg-translucid-50 {
-  background-color: #444444;
+  background-color: var(--low-gray);
 }
 
 .hover-bg-translucid:hover {
@@ -321,7 +339,7 @@ h3 {
   cursor: pointer;
   padding-inline: 16px;
   padding-block: 8px;
-  border-radius: 8px;
+  border-radius: 999px;
   background-color: var(--low-gray);
   transition: 0.3s;
   &:hover {
@@ -336,39 +354,26 @@ h3 {
 
 .cta-button {
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: 999px;
   padding-block: 12px;
   padding-inline: 22px;
   background-color: var(--red);
   color: #fafafa;
   transition: 0.3s;
-  border: 2px solid var(--translucid);
-  gap: 4px;
+  border: 2px solid transparent;
+  gap: 8px;
   font-weight: bold;
   &:hover {
     opacity: 0.8;
   }
   &.small {
-    padding: 6px 12px;
-    scale: 0.8;
+    padding: 8px 16px;
+    font-size: 14px;
   }
   &.has-icon {
     display: flex;
     align-items: center;
   }
-  &.glow-red {
-    box-shadow:
-      0 0 8px rgba(255, 0, 0, 0.6),
-      0 0 16px rgba(255, 0, 0, 0.4),
-      0 0 32px rgba(255, 0, 0, 0.25);
-  }
-}
-
-.glow-red {
-  box-shadow:
-    0 0 8px rgba(255, 0, 0, 0.6),
-    0 0 16px rgba(255, 0, 0, 0.4),
-    0 0 32px rgba(255, 0, 0, 0.25);
 }
 
 .glow-bg {
@@ -408,10 +413,6 @@ h3 {
 
 input[type="time"]::-webkit-calendar-picker-indicator {
   filter: invert(var(--time-icon-invert));
-}
-
-.cta-button:hover {
-  transform: scale(1.05);
 }
 
 .cta-button:active,
@@ -524,7 +525,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 
 /* Estado ON */
 .switch input:checked + .slider {
-  background-color: #de4a4a; /* verde bonito */
+  background-color: var(--red);
 }
 
 /* Move a bolinha */
@@ -534,7 +535,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 
 /* Opcional: foco acessível */
 .switch input:focus + .slider {
-  box-shadow: 0 0 0 3px rgba(222, 74, 74, 0.4);
+  box-shadow: 0 0 0 3px rgba(212, 32, 32, 0.4);
 }
 
 .pulse-btn {
@@ -543,13 +544,13 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 
 @keyframes pulseAnim {
   0% {
-    box-shadow: 0 0 0 0 rgba(29, 78, 216, 0.8);
+    box-shadow: 0 0 0 0 rgba(212, 32, 32, 0.8);
   }
   70% {
-    box-shadow: 0 0 0 10px rgba(29, 79, 216, 0.3);
+    box-shadow: 0 0 0 10px rgba(212, 32, 32, 0.3);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(29, 78, 216, 0.8);
+    box-shadow: 0 0 0 0 rgba(212, 32, 32, 0.8);
   }
 }
 
@@ -776,21 +777,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 
 body:has(.brand-scope) {
   background: var(--brand-bg);
-}
-
-.brand-scope .cta-button {
-  border-radius: 999px;
-  border-color: transparent;
-  gap: 8px;
-  &.small {
-    scale: 1;
-    padding: 8px 16px;
-    font-size: 14px;
-  }
-}
-
-.brand-scope .glow-red {
-  box-shadow: none;
 }
 
 .brand-scope .bg-degraded-t-speckled {

@@ -474,7 +474,7 @@ const Menu = (props) => {
           <BillingAlert setSelectedTab={setSelectedTab} className="my-2" />
           <LegacyPlanEndingBanner />
           <SurveyBanner />
-          <div className="min-h-[calc(100dvh-110px)] pb-2" style={{ backgroundColor }}>
+          <div className="menu-font min-h-[calc(100dvh-110px)] pb-2" style={{ backgroundColor }}>
             {/* Banner */}
             <div className={`relative w-full max-w-full ${BANNER_ASPECT_CLASS}`}>
               {bannerPreview ? (

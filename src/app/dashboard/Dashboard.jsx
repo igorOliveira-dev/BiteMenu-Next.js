@@ -202,9 +202,9 @@ const Dashboard = ({
   ];
 
   const navClass = (active) =>
-    `cursor-pointer w-full px-1 xxs:px-4 py-5 lg:py-3 lg:rounded-lg hover-bg-translucid transition-colors text-sm xs:text-base flex items-center gap-3 justify-center whitespace-nowrap ${
+    `cursor-pointer w-full px-1 xxs:px-4 py-5 lg:py-3 lg:rounded-xl hover-bg-translucid transition-colors text-sm xs:text-base flex items-center gap-3 justify-center whitespace-nowrap ${
       collapsed ? "lg:px-0" : "lg:justify-start lg:px-3"
-    } ${active ? "bg-translucid font-semibold" : ""}`;
+    } ${active ? "bg-brand-gradient text-white font-semibold" : ""}`;
 
   const labelClass = collapsed ? "hidden" : "hidden lg:block";
 
@@ -236,7 +236,7 @@ const Dashboard = ({
     <div className="flex w-[100dvw] pt-[85px] items-center lg:items-start lg:h-[calc(100dvh-110px)] lg:flex-row flex-col-reverse items-center">
       <div className="flex items-center">
         <aside
-          className={`lg:m-2 lg:rounded-lg bg-translucid lg:border-2 border-translucid h-full max-w-[812px] w-[calc(100dvw)] ${collapsed ? "lg:w-16" : "lg:w-60"} lg:transition-[width] lg:duration-200 shadow-[0_0_10px_var(--shadow)] flex flex-col justify-between items-stretch overflow-hidden lg:h-[calc(100dvh-110px)]`}
+          className={`lg:m-2 lg:rounded-2xl bg-brand-surface border-t lg:border border-brand-line h-full max-w-[812px] w-[calc(100dvw)] ${collapsed ? "lg:w-16" : "lg:w-60"} lg:transition-[width] lg:duration-200 flex flex-col justify-between items-stretch overflow-hidden lg:h-[calc(100dvh-110px)]`}
         >
           {/* Top section */}
           <div className="w-full flex lg:flex-col lg:gap-1 lg:p-2">
@@ -245,7 +245,7 @@ const Dashboard = ({
               aria-expanded={!collapsed}
               aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
               title={collapsed ? "Expandir menu" : "Recolher menu"}
-              className={`hidden lg:flex cursor-pointer items-center h-10 rounded-lg hover-bg-translucid transition-colors color-gray mb-1 ${collapsed ? "justify-center" : "justify-end px-3"}`}
+              className={`hidden lg:flex cursor-pointer items-center h-10 rounded-xl hover-bg-translucid transition-colors color-gray mb-1 ${collapsed ? "justify-center" : "justify-end px-3"}`}
             >
               <FaChevronLeft className={`text-sm transition-transform duration-200 ${collapsed ? "rotate-180" : ""}`} />
             </button>
@@ -261,7 +261,7 @@ const Dashboard = ({
                 <span className="relative shrink-0">
                   <Icon className="text-lg" />
                   {tab === "orders" && pendingOrdersCount > 0 && (
-                    <span className="absolute -top-2 -right-3 bg-red-500 text-white rounded-full text-[10px] min-w-[18px] h-[18px] px-1 flex items-center justify-center">
+                    <span className="absolute -top-2 -right-3 bg-bite ring-2 ring-brand-surface text-white rounded-full text-[10px] min-w-[18px] h-[18px] px-1 flex items-center justify-center">
                       {pendingOrdersCount}
                     </span>
                   )}
@@ -278,7 +278,7 @@ const Dashboard = ({
           </div>
 
           {/* Bottom section */}
-          <div className="w-full hidden lg:flex flex-col gap-1 p-2 border-t-2 border-[var(--translucid)]">
+          <div className="w-full hidden lg:flex flex-col gap-1 p-2 border-t border-brand-line">
             <Link href="/docs" title="Documentação" aria-label="Documentação" className={navClass(false)}>
               <FaBook className="text-lg shrink-0" />
               <span className={labelClass}>Documentação</span>
@@ -431,7 +431,7 @@ const Dashboard = ({
           <div className="grid gap-2 mb-6">
             <button
               onClick={() => shareUrl && setShowQrCode(true)}
-              className="disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer mt-2 p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border-2 border-[var(--translucid)] transition"
+              className="disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer mt-2 p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border border-[var(--translucid)] transition"
             >
               Opções de compartilhamento
             </button>
@@ -440,7 +440,7 @@ const Dashboard = ({
           <ul className="flex flex-col">
             <li>
               <button
-                className="w-full text-left px-2 py-2 hover:bg-[var(--translucid)] border-b-2 border-[var(--translucid)] rounded"
+                className="w-full text-left px-2 py-2 hover:bg-[var(--translucid)] border-b border-[var(--translucid)] rounded"
                 onClick={() => {
                   setSelectedTab("account");
                   setIsOpen(false);
@@ -450,21 +450,21 @@ const Dashboard = ({
               </button>
             </li>
             <li>
-              <button className="w-full flex text-left px-2 py-2 hover:bg-[var(--translucid)] border-b-2 border-[var(--translucid)] rounded">
+              <button className="w-full flex text-left px-2 py-2 hover:bg-[var(--translucid)] border-b border-[var(--translucid)] rounded">
                 <Link href="/docs" className="flex-1">
                   Documentação
                 </Link>
               </button>
             </li>
             <li>
-              <button className="w-full flex text-left px-2 py-2 hover:bg-[var(--translucid)] border-b-2 border-[var(--translucid)] rounded">
+              <button className="w-full flex text-left px-2 py-2 hover:bg-[var(--translucid)] border-b border-[var(--translucid)] rounded">
                 <Link href="/support" className="flex-1">
                   Suporte
                 </Link>
               </button>
             </li>
             <li>
-              <button className="w-full flex text-left px-2 py-2 hover:bg-[var(--translucid)] border-b-2 border-[var(--translucid)] rounded">
+              <button className="w-full flex text-left px-2 py-2 hover:bg-[var(--translucid)] border-b border-[var(--translucid)] rounded">
                 <Link href="/politica-de-privacidade" className="flex-1">
                   Política de privacidade
                 </Link>

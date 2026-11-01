@@ -17,10 +17,10 @@ import {
   LuZap,
 } from "react-icons/lu";
 
-import logo from "../../../public/brand/logo-sino.png";
 import menuExemplo from "../../../public/LandingPageImgs/cardapio-exemplo.webp";
 import menuCelularFrontal from "../../../public/LandingPageImgs/bitemenuCelular-frontal.png";
 
+import BrandLogo from "@/components/BrandLogo";
 import ThemeToggle from "@/components/ThemeToggle";
 import PlansSection from "@/components/PlansSection";
 import useUser from "@/hooks/useUser";
@@ -140,13 +140,6 @@ const testimonials = [
 // Depoimento fictício não pode ir ao ar: a seção só aparece em desenvolvimento
 const showTestimonials = process.env.NODE_ENV !== "production";
 
-const BrandLogo = ({ showName = true }) => (
-  <Link href="/" aria-label="Bite Menu" className="flex items-center gap-2 text-bite">
-    <Image src={logo} alt="" width={34} height={33} />
-    {showName && <span className="text-xl font-extrabold tracking-tight">Bite Menu</span>}
-  </Link>
-);
-
 // Print do cardápio real (ClientMenu) com dados fictícios
 const PhoneMock = () => (
   <div className="relative w-[250px] sm:w-[280px] shrink-0 self-start overflow-hidden rounded-t-[2.5rem] border-[7px] border-b-0 border-grafite bg-white">
@@ -192,7 +185,7 @@ export default function LandingPageV2() {
           <div>
             <p className="brand-eyebrow">Cardápio digital para pequenos negócios</p>
             <h1 className="brand-display mt-4">
-              Seu cardápio digital pronto em <span className="text-brand-red">5 minutos</span>
+              Seu cardápio digital pronto em <span className="whitespace-nowrap text-brand-red">5 minutos</span>
             </h1>
             <p className="mt-5 max-w-xl text-base text-brand-muted sm:text-lg">
               O cliente escolhe no celular e o pedido chega pronto no seu <strong>WhatsApp</strong>. Mudou o preço? Você

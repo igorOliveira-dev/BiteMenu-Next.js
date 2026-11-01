@@ -60,7 +60,7 @@ export function AlertProvider({ children, duration: defaultDuration = 4000 }) {
 
   const getBackgroundColor = (a) => {
     if (a.backgroundColor) return a.backgroundColor;
-    return "var(--low-gray)";
+    return "var(--brand-surface)";
   };
 
   const getTextColor = (a) => {
@@ -76,7 +76,7 @@ export function AlertProvider({ children, duration: defaultDuration = 4000 }) {
         {alerts.map((a) => (
           <div
             key={a.id}
-            className={`m-1 relative max-w-120 px-2 py-3 rounded transform transition-all duration-300 ease-in-out backdrop-blur-md flex items-center justify-between
+            className={`m-1 relative max-w-120 px-3 py-3 rounded-xl border border-brand-line overflow-hidden shadow-lg transform transition-all duration-300 ease-in-out backdrop-blur-md flex items-center justify-between
               ${a.visible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-5"}
             `}
             style={{
