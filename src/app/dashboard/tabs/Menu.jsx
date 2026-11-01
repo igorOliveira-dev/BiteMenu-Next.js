@@ -146,7 +146,7 @@ const Menu = (props) => {
         color={item.value}
         onChange={item.setter}
         aria-label={`Hexadecimal: ${item.label}`}
-        className="w-full p-2 rounded-lg border border-translucid bg-translucid text-sm uppercase"
+        className="w-full p-2 rounded-xl border border-translucid bg-translucid text-sm uppercase"
       />
     </>
   );
@@ -481,7 +481,7 @@ const Menu = (props) => {
                 <BannerImage desktop={bannerPreview} mobile={bannerMobileFile} alt="Preview do banner" />
               ) : (
                 <div
-                  className="bg-translucid relative w-full h-full rounded-lg flex items-center justify-center"
+                  className="bg-translucid relative w-full h-full rounded-xl flex items-center justify-center"
                   style={{
                     backgroundColor: getContrastTextColor(backgroundColor) === "white" ? "#ffffff30" : "#00000030",
                     color: getContrastTextColor(backgroundColor) === "white" ? "#ccc" : "#555",
@@ -521,7 +521,7 @@ const Menu = (props) => {
                   />
                 ) : (
                   <div
-                    className="bg-translucid relative w-full max-w-[80px] aspect-[1/1] rounded-lg flex items-center justify-center"
+                    className="bg-translucid relative w-full max-w-[80px] aspect-[1/1] rounded-xl flex items-center justify-center"
                     style={{
                       backgroundColor: getContrastTextColor(backgroundColor) === "white" ? "#ffffff30" : "#00000030",
                       color: getContrastTextColor(backgroundColor) === "white" ? "#ccc" : "#555",
@@ -602,7 +602,7 @@ const Menu = (props) => {
             aria-expanded={!collapsed}
             aria-label={collapsed ? "Expandir painel" : "Recolher painel"}
             title={collapsed ? "Expandir painel" : "Recolher painel"}
-            className={`flex shrink-0 cursor-pointer items-center h-10 rounded-lg hover-bg-translucid transition-colors color-gray ${collapsed ? "justify-center" : "justify-start px-3"}`}
+            className={`flex shrink-0 cursor-pointer items-center h-10 rounded-xl hover-bg-translucid transition-colors color-gray ${collapsed ? "justify-center" : "justify-start px-3"}`}
           >
             <FaChevronLeft className={`text-sm transition-transform duration-200 ${collapsed ? "" : "rotate-180"}`} />
           </button>
@@ -687,7 +687,7 @@ const Menu = (props) => {
                       <button
                         type="button"
                         onClick={() => setOpenColorIdx(openColorIdx === idx ? null : idx)}
-                        className="flex w-full items-center gap-3 rounded-lg p-2 cursor-pointer hover-bg-translucid transition text-left"
+                        className="flex w-full items-center gap-3 rounded-xl p-2 cursor-pointer hover-bg-translucid transition text-left"
                         aria-label={item.label}
                         aria-expanded={openColorIdx === idx}
                       >
@@ -746,7 +746,7 @@ const Menu = (props) => {
               setTempTitle(v);
             }}
             maxLength={30}
-            className="w-full p-2 rounded-lg border bg-translucid mb-4"
+            className="w-full p-2 rounded-xl border bg-translucid mb-4"
           />
 
           <div className="flex items-center justify-between mt-2">
@@ -758,7 +758,7 @@ const Menu = (props) => {
                 setTempTitle(propTitle);
                 closeAllModals();
               }}
-              className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded-lg"
+              className="cursor-pointer px-4 py-2 bg-low-gray text-foreground rounded-lg"
             >
               Cancelar
             </button>
@@ -780,7 +780,7 @@ const Menu = (props) => {
           <p className="text-[var(--gray)] mb-8">
             Utilize qualquer plano pago para remover a marca d'água do seu menu!
           </p>
-          <a href="/dashboard/pricing" className="block text-center cursor-pointer cta-button glow-red w-full">
+          <a href="/dashboard/pricing" className="block text-center cursor-pointer cta-button w-full">
             Ver planos
           </a>
         </GenericModal>
@@ -807,7 +807,7 @@ const Menu = (props) => {
             </label>
           )}
           <div className="flex justify-end gap-2 mt-4">
-            <button onClick={closeAllModals} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded-lg">
+            <button onClick={closeAllModals} className="cursor-pointer px-4 py-2 bg-low-gray text-foreground rounded-lg">
               Cancelar
             </button>
             <button
@@ -837,7 +837,7 @@ const Menu = (props) => {
             </button>
           )}
           <div className="flex justify-end gap-2 mt-4">
-            <button onClick={closeAllModals} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded-lg">
+            <button onClick={closeAllModals} className="cursor-pointer px-4 py-2 bg-low-gray text-foreground rounded-lg">
               Cancelar
             </button>
             <button

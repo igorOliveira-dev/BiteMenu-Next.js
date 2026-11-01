@@ -779,7 +779,7 @@ body:has(.brand-scope) {
   background: var(--brand-bg);
 }
 
-.brand-scope .bg-degraded-t-speckled {
+.bg-degraded-t-speckled {
   background: var(--brand-surface);
   border-width: 1px;
   border-radius: 1.75rem;

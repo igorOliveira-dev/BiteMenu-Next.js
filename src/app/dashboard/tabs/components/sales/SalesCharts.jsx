@@ -6,6 +6,10 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearSca
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
+
+// Tons da marca ajustados para as fatias se distinguirem; a legenda com nome e valor também identifica cada uma
+const CHART_COLORS = ["#d42020", "#8c7566", "#e0762f", "#a8325a"];
+
 export default function SalesCharts({ sales = [] }) {
   const paymentLabels = {
     cash: "Dinheiro",
@@ -47,7 +51,7 @@ export default function SalesCharts({ sales = [] }) {
     datasets: [
       {
         data: filteredPayments.map(([_, value]) => value),
-        backgroundColor: ["#4CAF50", "#2196F3", "#FFC107", "#9C27B0"].slice(0, filteredPayments.length),
+        backgroundColor: CHART_COLORS.slice(0, filteredPayments.length),
         borderWidth: 0,
       },
     ],
@@ -58,7 +62,7 @@ export default function SalesCharts({ sales = [] }) {
     datasets: [
       {
         data: filteredServices.map(([_, value]) => value),
-        backgroundColor: ["#FF5722", "#03A9F4", "#8BC34A", "#E91E63"].slice(0, filteredServices.length),
+        backgroundColor: CHART_COLORS.slice(0, filteredServices.length),
         borderWidth: 0,
       },
     ],
@@ -104,8 +108,8 @@ export default function SalesCharts({ sales = [] }) {
         {
           label: "Quantidade vendida",
           data: topProducts.map((p) => p.qty),
-          backgroundColor: "#4f46e5",
-          borderColor: "#463ede",
+          backgroundColor: "#d42020",
+          borderColor: "#d42020",
           borderWidth: 1,
           barThickness: 28,
         },
@@ -149,7 +153,7 @@ export default function SalesCharts({ sales = [] }) {
    * ------------------------ */
   const ChartCard = ({ title, data, items, labelsMap }) => {
     return (
-      <div className="bg-translucid border border-translucid rounded-lg p-4 sm:p-5">
+      <div className="bg-translucid border border-translucid rounded-xl p-4 sm:p-5">
         <h3 className="font-semibold color-gray mb-4">{title}</h3>
 
         <div className="grid grid-cols-1 xxs:grid-cols-[160px_1fr] gap-4 items-center">
@@ -191,7 +195,7 @@ export default function SalesCharts({ sales = [] }) {
       )}
 
       {topProductsBarData && (
-        <div className="bg-translucid border border-translucid rounded-lg p-4 sm:p-5 lg:col-span-2">
+        <div className="bg-translucid border border-translucid rounded-xl p-4 sm:p-5 lg:col-span-2">
           <h3 className="font-semibold color-gray mb-4">Top 5 produtos mais vendidos</h3>
 
           <div className="h-[320px] sm:h-[380px]">

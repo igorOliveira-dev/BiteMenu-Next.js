@@ -42,7 +42,7 @@ const emptyDraft = () => ({
   max_uses: "",
 });
 
-const inputClass = "input w-full rounded-lg bg-translucid p-2 text-sm";
+const inputClass = "input w-full rounded-xl bg-translucid p-2 text-sm";
 
 // Campo dd/mm/aaaa: dá para digitar (com máscara) ou escolher no calendário nativo
 function DateField({ value, onChange }) {
@@ -256,7 +256,7 @@ export default function CouponsModal({ menuId, currency, canCreate, showUpgrade,
                 key={opt.value}
                 type="button"
                 onClick={() => setDraft((d) => ({ ...d, type: opt.value }))}
-                className={`p-2 rounded-lg border-2 border-[var(--translucid)] cursor-pointer text-xs sm:text-sm font-semibold transition ${draft.type === opt.value ? "bg-green-600/80 text-white" : "hover:bg-[var(--translucid)]"}`}
+                className={`p-2 rounded-xl border-2 border-[var(--translucid)] cursor-pointer text-xs sm:text-sm font-semibold transition ${draft.type === opt.value ? "bg-green-600/80 text-white" : "hover:bg-[var(--translucid)]"}`}
               >
                 {opt.label}
               </button>
@@ -341,14 +341,14 @@ export default function CouponsModal({ menuId, currency, canCreate, showUpgrade,
             <button
               type="button"
               onClick={save}
-              className="cursor-pointer p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border-2 border-[var(--translucid)] transition"
+              className="cursor-pointer p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border border-[var(--translucid)] transition"
             >
               Salvar
             </button>
             <button
               type="button"
               onClick={() => setDraft(null)}
-              className="cursor-pointer p-2 font-semibold rounded-lg hover:bg-[var(--translucid)] border-2 border-[var(--translucid)] transition"
+              className="cursor-pointer p-2 font-semibold rounded-xl hover:bg-[var(--translucid)] border border-[var(--translucid)] transition"
             >
               Cancelar
             </button>
@@ -367,7 +367,7 @@ export default function CouponsModal({ menuId, currency, canCreate, showUpgrade,
             {(coupons || []).map((c) => (
               <div
                 key={c.id}
-                className="flex items-center justify-between p-2 rounded-lg border border-translucid bg-translucid"
+                className="flex items-center justify-between p-2 rounded-xl border border-translucid bg-translucid"
               >
                 <div className="min-w-0">
                   <div className="text-sm font-semibold line-clamp-1">
@@ -396,7 +396,7 @@ export default function CouponsModal({ menuId, currency, canCreate, showUpgrade,
           <button
             type="button"
             onClick={() => openForm()}
-            className="w-full mt-4 cursor-pointer p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border-2 border-[var(--translucid)] transition"
+            className="w-full mt-4 cursor-pointer p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border border-[var(--translucid)] transition"
           >
             + Novo cupom
           </button>

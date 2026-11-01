@@ -26,7 +26,7 @@ export async function staffApi(method, body) {
   return data;
 }
 
-const fieldClass = "w-full p-2 rounded-lg bg-translucid border-2 border-[var(--translucid)]";
+const fieldClass = "w-full p-2 rounded-xl bg-translucid border border-[var(--translucid)]";
 
 // Liga/desliga cada tela; desligada, os logins daquela função perdem acesso (staff_menu_id no banco)
 const SCREENS = [
@@ -131,7 +131,7 @@ const Team = ({ setSelectedTab }) => {
       <div className="flex items-center mb-2">
         <button
           type="button"
-          className="p-2 rounded-lg hover:bg-[var(--translucid)] transition cursor-pointer"
+          className="p-2 rounded-xl hover:bg-[var(--translucid)] transition cursor-pointer"
           onClick={() => setSelectedTab("account")}
           aria-label="Voltar"
         >
@@ -146,7 +146,7 @@ const Team = ({ setSelectedTab }) => {
         bitemenu.com.br/login com o usuário e a senha que você definir.
       </p>
 
-      <div className="bg-translucid border-2 border-[var(--translucid)] rounded-2xl p-4 mb-4 flex flex-col gap-3">
+      <div className="bg-translucid border border-[var(--translucid)] rounded-2xl p-4 mb-4 flex flex-col gap-3">
         {SCREENS.map(({ field, label, desc }) => (
           <label key={field} className="flex cursor-pointer items-center gap-3">
             <span className="switch shrink-0">
@@ -167,7 +167,7 @@ const Team = ({ setSelectedTab }) => {
 
       <form
         onSubmit={create}
-        className="bg-translucid border-2 border-[var(--translucid)] rounded-2xl p-4 mb-4 grid gap-3 sm:grid-cols-3"
+        className="bg-translucid border border-[var(--translucid)] rounded-2xl p-4 mb-4 grid gap-3 sm:grid-cols-3"
       >
         <label className="text-sm">
           Nome
@@ -221,7 +221,7 @@ const Team = ({ setSelectedTab }) => {
       ) : staff.length === 0 ? (
         <p className="p-6 text-center color-gray">Nenhum funcionário cadastrado.</p>
       ) : (
-        <div className="bg-translucid border-2 border-[var(--translucid)] rounded-2xl divide-y divide-[var(--translucid)]">
+        <div className="bg-translucid border border-[var(--translucid)] rounded-2xl divide-y divide-[var(--translucid)]">
           {staff.map((member) => (
             <div key={member.user_id} className="flex items-center justify-between gap-3 p-4">
               <div className="min-w-0">
@@ -243,7 +243,7 @@ const Team = ({ setSelectedTab }) => {
                   onClick={() => resetPassword(member)}
                   title="Nova senha"
                   aria-label="Nova senha"
-                  className="cursor-pointer p-2 rounded-lg hover:bg-[var(--translucid)] transition"
+                  className="cursor-pointer p-2 rounded-xl hover:bg-[var(--translucid)] transition"
                 >
                   <FaKey />
                 </button>
@@ -252,7 +252,7 @@ const Team = ({ setSelectedTab }) => {
                   onClick={() => remove(member)}
                   title="Remover"
                   aria-label="Remover"
-                  className="cursor-pointer p-2 rounded-lg text-red-500 hover:bg-[var(--translucid)] transition"
+                  className="cursor-pointer p-2 rounded-xl text-red-500 hover:bg-[var(--translucid)] transition"
                 >
                   <FaTrash />
                 </button>

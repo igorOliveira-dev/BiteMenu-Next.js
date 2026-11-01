@@ -1081,7 +1081,7 @@ const ConfigMenu = (props) => {
       <div className="flex items-center gap-2 pb-5">
         <button
           type="button"
-          className="cursor-pointer rounded-lg p-2 transition hover-bg-translucid"
+          className="cursor-pointer rounded-xl p-2 transition hover-bg-translucid"
           onClick={() => setSelectedTab("menu")}
           aria-label="Voltar"
         >
@@ -1433,7 +1433,7 @@ const ConfigMenu = (props) => {
               const ranges = isClosed ? [["", ""]] : splitRanges(value);
 
               return (
-                <div key={day} className="mb-4 grid grid-cols-[44px_1fr] items-start gap-3 rounded-xl border-2 border-[var(--translucid)] border-l-[var(--foreground)]/50 p-3 sm:grid-cols-[44px_1fr_auto]">
+                <div key={day} className="mb-4 grid grid-cols-[44px_1fr] items-start gap-3 rounded-xl border border-[var(--translucid)] border-l-[var(--foreground)]/50 p-3 sm:grid-cols-[44px_1fr_auto]">
                   <div className="pt-3 text-sm font-semibold">{dayLabels[day]}</div>
 
                   <div className="space-y-2">
@@ -1576,7 +1576,7 @@ const ConfigMenu = (props) => {
                 onClick={() => {
                   window.location.href = "/dashboard/pricing?plan=plus";
                 }}
-                className="h-11 cursor-pointer rounded-xl bg-[#d42020] px-5 text-sm font-semibold text-white transition hover:opacity-90"
+                className="h-11 cursor-pointer rounded-full bg-bite px-5 text-sm font-semibold text-white transition hover:opacity-90"
               >
                 Assinar Plus para liberar
               </button>
@@ -1584,7 +1584,7 @@ const ConfigMenu = (props) => {
               <button
                 type="button"
                 onClick={handleApplyLayout}
-                className="h-11 cursor-pointer rounded-xl bg-[#d42020] px-5 text-sm font-semibold text-white transition hover:opacity-90"
+                className="h-11 cursor-pointer rounded-full bg-bite px-5 text-sm font-semibold text-white transition hover:opacity-90"
               >
                 Aplicar estilo
               </button>

@@ -202,7 +202,7 @@ const Account = ({ setSelectedTab }) => {
         <div className="flex items-center mb-4">
           <button
             type="button"
-            className="p-2 rounded-lg hover:bg-[var(--translucid)] transition cursor-pointer"
+            className="p-2 rounded-xl hover:bg-[var(--translucid)] transition cursor-pointer"
             onClick={() => setSelectedTab("menu")}
             aria-label="Voltar"
           >
@@ -211,7 +211,7 @@ const Account = ({ setSelectedTab }) => {
           <h2 className="ml-2 text-xl font-semibold">Conta</h2>
         </div>
 
-        <div className="bg-translucid border-2 border-[var(--translucid)] rounded-2xl divide-y divide-[var(--translucid)]">
+        <div className="bg-translucid border border-[var(--translucid)] rounded-2xl divide-y divide-[var(--translucid)]">
           {/* Perfil */}
           <div className="flex items-center justify-between gap-3 p-4">
             <div className="min-w-0">
@@ -283,7 +283,7 @@ const Account = ({ setSelectedTab }) => {
                   value={phone}
                   onChange={(value) => setPhone(value)}
                   inputProps={{ required: true }}
-                  inputClass="!w-[220px] !px-3 !py-2 !bg-[var(--translucid)] !border !border-[var(--low-gray)] !rounded-lg !focus:outline-none !focus:ring-2 !focus:ring-blue-400 !pl-14"
+                  inputClass="!w-[220px] !px-3 !py-2 !bg-[var(--translucid)] !border !border-[var(--low-gray)] !rounded-xl !focus:outline-none !focus:ring-2 !focus:ring-bite !pl-14"
                   buttonClass="!border-r !border-[var(--low-gray)] !bg-[transparent] !rounded-l !hover:bg-[var(--low-gray)]"
                   containerClass="!flex !items-center"
                 />
@@ -303,7 +303,7 @@ const Account = ({ setSelectedTab }) => {
           {/* Sair */}
           <div className="flex items-center gap-3 p-4">
             <button
-              className="text-white cursor-pointer bg-red-600/70 hover:bg-red-600/90 border-2 border-[var(--translucid)] rounded-lg px-4 py-2 transition"
+              className="text-white cursor-pointer bg-red-600/70 hover:bg-red-600/90 border border-[var(--translucid)] rounded-lg px-4 py-2 transition"
               onClick={handleLogout}
             >
               Sair da conta
@@ -350,7 +350,7 @@ const Account = ({ setSelectedTab }) => {
             value={tempName ?? ""}
             maxLength={40}
             onChange={(e) => setTempName(e.target.value)}
-            className="w-full p-3 rounded-lg border border-[var(--translucid)] bg-translucid mb-4 outline-none transition focus:border-red-500/70"
+            className="w-full p-3 rounded-xl border border-[var(--translucid)] bg-translucid mb-4 outline-none transition focus:border-red-500/70"
           />
           <div className="flex justify-end gap-2">
             <button
@@ -358,7 +358,7 @@ const Account = ({ setSelectedTab }) => {
                 setTempName(name);
                 setNameModalOpen(false);
               }}
-              className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded-lg transition hover:opacity-80"
+              className="cursor-pointer px-4 py-2 bg-low-gray text-foreground rounded-lg transition hover:opacity-80"
             >
               Cancelar
             </button>
@@ -378,7 +378,7 @@ const Account = ({ setSelectedTab }) => {
             placeholder="Novo email"
             value={tempEmail ?? ""}
             onChange={(e) => setTempEmail(e.target.value)}
-            className="w-full p-3 rounded-lg border border-[var(--translucid)] bg-translucid mb-2 outline-none transition focus:border-red-500/70"
+            className="w-full p-3 rounded-xl border border-[var(--translucid)] bg-translucid mb-2 outline-none transition focus:border-red-500/70"
           />
           <p className="text-xs color-gray mb-4">Você precisará confirmar a alteração pelo link enviado ao novo email.</p>
           <div className="flex justify-end gap-2">
@@ -387,7 +387,7 @@ const Account = ({ setSelectedTab }) => {
                 setTempEmail(profile.email);
                 setEmailModalOpen(false);
               }}
-              className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded-lg transition hover:opacity-80"
+              className="cursor-pointer px-4 py-2 bg-low-gray text-foreground rounded-lg transition hover:opacity-80"
             >
               Cancelar
             </button>

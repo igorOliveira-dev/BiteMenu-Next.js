@@ -308,7 +308,7 @@ function SearchableSelect({
                     setSearch("");
                   }}
                   className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition ${
-                    opt.value === value ? "bg-blue-600/30" : "hover:bg-white/10"
+                    opt.value === value ? "bg-bite/15" : "hover:bg-white/10"
                   }`}
                 >
                   {opt.label}
@@ -382,7 +382,7 @@ function EmptyCatDrop({ catId, children }) {
   return (
     <div
       ref={setNodeRef}
-      style={{ outline: isOver ? "2px dashed #3b82f6" : "none" }}
+      style={{ outline: isOver ? "2px dashed #d42020" : "none" }}
       className="rounded-xl"
     >
       {children}
@@ -2993,7 +2993,7 @@ export default function MenuItems({
 
           <button
             onClick={() => openCategoryModal("create")}
-            className={`cursor-pointer px-4 py-2 bg-blue-600/80 border-2 border-[var(--translucid)] hover:bg-blue-700/80 text-white rounded-lg font-medium transition-all ${
+            className={`cursor-pointer px-4 py-2 bg-bite hover:opacity-90 text-white rounded-full font-medium transition-all ${
               showCatIndicator ? "pulse-btn" : ""
             }`}
           >
@@ -3013,7 +3013,7 @@ export default function MenuItems({
         >
           <button
             onClick={() => openCategoryModal("create")}
-            className={`cursor-pointer px-3 py-1 bg-blue-600/80 border-2 border-[var(--translucid)] hover:bg-blue-700/80 text-white rounded-lg ${showCatIndicator ? "pulse-btn" : ""}`}
+            className={`cursor-pointer px-3 py-1 bg-bite hover:opacity-90 text-white rounded-full ${showCatIndicator ? "pulse-btn" : ""}`}
           >
             + Categoria
           </button>
@@ -3397,7 +3397,7 @@ export default function MenuItems({
 
                         <button
                           onClick={() => openItemModal("create", cat.id)}
-                          className={`cursor-pointer px-4 py-2 bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white rounded-lg font-medium transition-all ${
+                          className={`cursor-pointer px-4 py-2 bg-bite hover:opacity-90 text-white rounded-full font-medium transition-all ${
                             cat.menu_items?.length === 0 ? "pulse-btn" : ""
                           }`}
                         >
@@ -3940,7 +3940,7 @@ export default function MenuItems({
               <button
                 onClick={closeModal}
                 disabled={saving}
-                className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded-lg w-[50%] disabled:opacity-60"
+                className="cursor-pointer px-4 py-2 bg-low-gray text-foreground rounded-lg w-[50%] disabled:opacity-60"
               >
                 Cancelar
               </button>
@@ -4323,7 +4323,7 @@ export default function MenuItems({
                     },
                   }))
                 }
-                className="cursor-pointer px-3 py-2 rounded-lg bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white text-sm transition"
+                className="cursor-pointer px-3 py-2 rounded-full bg-bite hover:opacity-90 text-white text-sm transition"
               >
                 + Grupo
               </button>
@@ -4470,7 +4470,7 @@ export default function MenuItems({
                     options: [...v.options, { name: "", price: "" }],
                   }))
                 }
-                className="cursor-pointer px-3 py-2 rounded-lg bg-blue-600/80 hover:bg-blue-700/80 border-2 border-[var(--translucid)] text-white text-sm transition"
+                className="cursor-pointer px-3 py-2 rounded-full bg-bite hover:opacity-90 text-white text-sm transition"
               >
                 + Opção
               </button>
@@ -4560,7 +4560,7 @@ export default function MenuItems({
                 <button
                   type="button"
                   onClick={closeAdditionalsCfgModal}
-                  className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded-lg"
+                  className="cursor-pointer px-4 py-2 bg-low-gray text-foreground rounded-lg"
                 >
                   Cancelar
                 </button>
@@ -4657,7 +4657,7 @@ export default function MenuItems({
                         <label
                           key={g.id}
                           className={`flex items-start gap-3 p-2 rounded-lg border cursor-pointer transition
-                        ${selectedImportIds.has(g.id) ? "border-blue-500 bg-blue-500/10" : "border-translucid bg-translucid"}`}
+                        ${selectedImportIds.has(g.id) ? "border-bite bg-bite/10" : "border-translucid bg-translucid"}`}
                         >
                           <input
                             type="checkbox"
@@ -4703,7 +4703,7 @@ export default function MenuItems({
           <div className="flex justify-end gap-2 mt-4">
             <button
               onClick={closeImportModal}
-              className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded-lg"
+              className="cursor-pointer px-4 py-2 bg-low-gray text-foreground rounded-lg"
             >
               Cancelar
             </button>

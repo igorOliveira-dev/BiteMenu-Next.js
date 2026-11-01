@@ -117,7 +117,7 @@ export default function OrdersFilter({ onChange, initial = {}, statusOptions = n
   ].filter(Boolean).length;
 
   const fieldClass =
-    "w-full border border-translucid rounded-lg px-3 py-2 text-sm bg-translucid color-gray outline-none focus:ring-2 focus:ring-blue-500/40 transition";
+    "w-full border border-translucid rounded-xl px-3 py-2 text-sm bg-translucid color-gray outline-none focus:ring-2 focus:ring-bite/40 transition";
 
   return (
     <div className="my-4 rounded-2xl border border-translucid bg-[var(--low-translucid)] overflow-hidden">
@@ -131,7 +131,7 @@ export default function OrdersFilter({ onChange, initial = {}, statusOptions = n
           <FaFilter />
           <strong>Filtros</strong>
           {activeCount > 0 && (
-            <span className="text-xs font-semibold rounded-full px-2 py-0.5 bg-blue-600/30">{activeCount}</span>
+            <span className="text-xs font-semibold rounded-full px-2 py-0.5 bg-bite/15">{activeCount}</span>
           )}
         </div>
 
@@ -245,7 +245,7 @@ export default function OrdersFilter({ onChange, initial = {}, statusOptions = n
                   onClick={() => setTableOnly((v) => !v)}
                   className={`cursor-pointer flex items-center gap-2 rounded-lg px-3 py-2 text-sm border transition ${
                     tableOnly
-                      ? "bg-blue-600/80 border-blue-600 text-white"
+                      ? "bg-bite border-bite text-white"
                       : "border-translucid bg-translucid color-gray hover:opacity-80"
                   }`}
                 >

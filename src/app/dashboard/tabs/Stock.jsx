@@ -23,7 +23,7 @@ function StockInput({ stock, value, onChange }) {
         value={value}
         placeholder="Sem controle"
         onChange={(e) => onChange(e.target.value)}
-        className="w-28 xs:w-32 p-2 rounded-lg bg-translucid border-2 border-[var(--translucid)] text-sm"
+        className="w-28 xs:w-32 p-2 rounded-xl bg-translucid border border-[var(--translucid)] text-sm"
       />
     </div>
   );
@@ -41,7 +41,7 @@ const STATUS = {
 
 const rowClass =
   "rounded-xl border border-translucid bg-[var(--low-translucid)] p-3 flex items-center justify-between gap-3";
-const fieldClass = "p-2 rounded-lg bg-translucid border-2 border-[var(--translucid)] text-sm";
+const fieldClass = "p-2 rounded-xl bg-translucid border border-[var(--translucid)] text-sm";
 
 const Stock = ({ setSelectedTab }) => {
   const { menu, loading: menuLoading } = useMenu();
@@ -198,7 +198,7 @@ const Stock = ({ setSelectedTab }) => {
     <div className="flex items-center gap-2">
       <button
         type="button"
-        className="p-2 rounded-lg hover:bg-[var(--translucid)] transition cursor-pointer"
+        className="p-2 rounded-xl hover:bg-[var(--translucid)] transition cursor-pointer"
         onClick={() => setSelectedTab("menu")}
         aria-label="Voltar ao cardápio"
       >
@@ -213,7 +213,7 @@ const Stock = ({ setSelectedTab }) => {
           type="button"
           disabled={refreshing || saving}
           onClick={refresh}
-          className="ml-auto shrink-0 cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-[var(--translucid)] transition disabled:opacity-50"
+          className="ml-auto shrink-0 cursor-pointer flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-[var(--translucid)] transition disabled:opacity-50"
         >
           <FaSyncAlt className={refreshing ? "animate-spin" : ""} />
           <span className="hidden xs:inline">Atualizar</span>
@@ -255,7 +255,7 @@ const Stock = ({ setSelectedTab }) => {
 
       {/* filtros fixos no topo enquanto rola a lista */}
       <div className="sticky top-0 z-[1] -mx-1 px-1 py-2 backdrop-blur-2xl flex flex-col gap-2">
-        <div className="flex gap-1 p-1 rounded-lg bg-translucid w-fit">
+        <div className="flex gap-1 p-1 rounded-xl bg-translucid w-fit">
           {[
             ["items", `Itens (${items.length})`],
             ["options", `Opções (${options.length})`],
@@ -350,7 +350,7 @@ const Stock = ({ setSelectedTab }) => {
           type="button"
           disabled={saving || changes.length === 0}
           onClick={() => setDrafts({})}
-          className="cursor-pointer px-4 py-2 rounded-lg text-sm hover:bg-[var(--translucid)] transition disabled:opacity-50"
+          className="cursor-pointer px-4 py-2 rounded-xl text-sm hover:bg-[var(--translucid)] transition disabled:opacity-50"
         >
           Descartar
         </button>

@@ -486,8 +486,8 @@ const SalesDashboard = ({ setSelectedTab }) => {
       {
         label: `Vendas (${currencySymbol})`,
         data: salesData.map((d) => d.total), // número (melhor)
-        borderColor: "#4f46e5",
-        backgroundColor: "rgba(79, 70, 229, 0.15)",
+        borderColor: "#d42020",
+        backgroundColor: "rgba(212, 32, 32, 0.15)",
         fill: true,
         pointRadius: 2,
         borderWidth: 1.4,
@@ -496,8 +496,8 @@ const SalesDashboard = ({ setSelectedTab }) => {
       {
         label: "Qtd. de vendas",
         data: salesData.map((d) => d.count),
-        borderColor: "#22c55e",
-        backgroundColor: "rgba(34, 197, 94, 0.15)",
+        borderColor: "#8c7566",
+        backgroundColor: "rgba(140, 117, 102, 0.15)",
 
         fill: false,
         pointRadius: 2,
@@ -598,7 +598,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                className="p-2 rounded-lg hover:bg-[var(--translucid)] transition cursor-pointer"
+                className="p-2 rounded-xl hover:bg-[var(--translucid)] transition cursor-pointer"
                 onClick={() => setSelectedTab("sales")}
                 aria-label="Voltar"
               >
@@ -636,7 +636,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
         </div>
 
         {hasNetValues && (
-          <div className="mb-3 p-3 bg-translucid rounded-lg">
+          <div className="mb-3 p-3 bg-translucid rounded-xl">
             <p>Selecione o tipo de valor exibido</p>
             <p className="text-sm mb-2 text-[var(--gray)]">Bruto inclui taxas; líquido considera os descontos aplicados.</p>
             <div className="inline-flex rounded-xl bg-translucid">
@@ -664,7 +664,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
         )}
 
         {/* Filtros (card) */}
-        <div className="bg-translucid border border-translucid rounded-lg p-4 mb-4">
+        <div className="bg-translucid border border-translucid rounded-xl p-4 mb-4">
           <div className="grid gap-3 sm:grid-cols-3 sm:items-end">
             <div className="flex flex-col gap-1">
               <label className="text-sm font-semibold">Início</label>
@@ -675,7 +675,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
                   setPendingStartDate(e.target.value);
                   setSingleDate("");
                 }}
-                className="input bg-translucid p-2 rounded-lg w-full"
+                className="input bg-translucid p-2 rounded-xl w-full"
               />
             </div>
 
@@ -688,12 +688,12 @@ const SalesDashboard = ({ setSelectedTab }) => {
                   setPendingEndDate(e.target.value);
                   setSingleDate("");
                 }}
-                className="input bg-translucid p-2 rounded-lg w-full"
+                className="input bg-translucid p-2 rounded-xl w-full"
               />
             </div>
 
             <button
-              className="cursor-pointer py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition w-full"
+              className="cursor-pointer py-2 px-3 bg-bite hover:opacity-90 text-white rounded-full transition w-full"
               onClick={() => {
                 // validação de limite já acontece no fetch, mas aqui dá um “feedback” antes
                 setStartDate(pendingStartDate);
@@ -709,19 +709,19 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
         {/* KPIs (grid) */}
         <div className="grid gap-4 sm:grid-cols-3 mb-4">
-          <div className="bg-translucid border border-translucid rounded-lg p-4 flex flex-col">
+          <div className="bg-translucid border border-translucid rounded-xl p-4 flex flex-col">
             <p className="text-sm color-gray">Total no período</p>
-            <p className="text-blue-500 text-2xl font-bold mt-1">{formatCurrency(totalPeriod, menu?.currency)}</p>
+            <p className="text-brand-red text-2xl font-bold mt-1">{formatCurrency(totalPeriod, menu?.currency)}</p>
             {renderVariation(calcVariation(totalPeriod, prevTotalPeriod))}
           </div>
 
-          <div className="bg-translucid border border-translucid rounded-lg p-4 flex flex-col">
+          <div className="bg-translucid border border-translucid rounded-xl p-4 flex flex-col">
             <p className="text-sm color-gray">Quantidade de vendas</p>
             <p className="text-green-500 text-2xl font-bold mt-1">{totalSalesCount}</p>
             {renderVariation(calcVariation(totalSalesCount, prevTotalSalesCount))}
           </div>
 
-          <div className="bg-translucid border border-translucid rounded-lg p-4 flex flex-col">
+          <div className="bg-translucid border border-translucid rounded-xl p-4 flex flex-col">
             <p className="text-sm color-gray">Ticket médio</p>
             <p className="text-2xl font-bold mt-1">{formatCurrency(averageTicket, menu?.currency)}</p>
             {renderVariation(calcVariation(averageTicket, prevAverageTicket))}
@@ -730,20 +730,20 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
         {/* Horário de pico */}
         {peakHour && (
-          <div className="bg-translucid border border-translucid rounded-lg p-4 mb-4 flex items-center gap-3">
+          <div className="bg-translucid border border-translucid rounded-xl p-4 mb-4 flex items-center gap-3">
             <span className="text-xl">⏰</span>
             <div>
               <p className="text-sm color-gray">Horário de pico no período</p>
               <p className="font-semibold">
                 Entre {pad2(peakHour.hour)}h e {pad2(peakHour.hour + 1)}h —{" "}
-                <span className="text-blue-500">{peakHour.count} pedidos</span> nesse horário
+                <span className="text-brand-red">{peakHour.count} pedidos</span> nesse horário
               </p>
             </div>
           </div>
         )}
 
         {/* Gráfico */}
-        <div className="bg-translucid border border-translucid rounded-lg p-4 overflow-x-auto">
+        <div className="bg-translucid border border-translucid rounded-xl p-4 overflow-x-auto">
           {salesData.length === 0 ? (
             <p className="text-center color-gray">Nenhuma venda nesse período.</p>
           ) : (

@@ -24,7 +24,7 @@ const NEXT = {
   received: {
     status: "preparing",
     label: "Começar preparo",
-    className: "bg-blue-600 hover:bg-blue-700",
+    className: "bg-bite hover:opacity-90",
   },
   preparing: {
     status: "ready",
@@ -54,13 +54,13 @@ function OrderCard({ order, onAdvance, dragging = false }) {
   const next = NEXT[order.status];
   return (
     <div
-      className={`rounded-2xl border-2 bg-translucid p-4 shadow-sm flex flex-col gap-3 ${
+      className={`rounded-2xl border bg-translucid p-4 shadow-sm flex flex-col gap-3 ${
         order.status === "preparing"
-          ? "border-blue-500/60"
+          ? "border-brasa/60"
           : "border-translucid"
       } ${dragging ? "shadow-[0_10px_30px_var(--shadow)] backdrop-blur-xl" : ""}`}
     >
-      <div className="flex items-start justify-between gap-2 border-b-2 border-[var(--translucid)] pb-2">
+      <div className="flex items-start justify-between gap-2 border-b border-[var(--translucid)] pb-2">
         <div className="min-w-0">
           <p className="text-lg font-bold">Nº {order.order_number ?? "—"}</p>
           <p className="text-xs color-gray">Pedido #{order.id.slice(0, 6)}</p>
@@ -135,7 +135,7 @@ function DraggableCard({ id, children }) {
       {...listeners}
       className={`select-none rounded-2xl transition ${isDragging ? "opacity-30" : ""} ${
         isOver && !isDragging
-          ? "ring-2 ring-blue-500 ring-offset-2 ring-offset-transparent"
+          ? "ring-2 ring-bite ring-offset-2 ring-offset-transparent"
           : ""
       }`}
     >
@@ -277,7 +277,7 @@ export default function Kitchen({ menu, reloadTrigger, onBack }) {
             {onBack && (
               <button
                 type="button"
-                className="p-2 rounded-lg hover:bg-[var(--translucid)] transition cursor-pointer"
+                className="p-2 rounded-xl hover:bg-[var(--translucid)] transition cursor-pointer"
                 onClick={onBack}
                 aria-label="Voltar"
               >
@@ -304,7 +304,7 @@ export default function Kitchen({ menu, reloadTrigger, onBack }) {
               <button
                 type="button"
                 onClick={() => saveOrder([])}
-                className="ml-auto flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1 text-sm color-gray transition hover:bg-[var(--translucid)]"
+                className="ml-auto flex cursor-pointer items-center gap-1.5 rounded-xl px-2 py-1 text-sm color-gray transition hover:bg-[var(--translucid)]"
               >
                 <FaUndo /> Ordem de chegada
               </button>

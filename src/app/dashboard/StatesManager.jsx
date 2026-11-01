@@ -661,7 +661,7 @@ export default function StatesManager({
         ${selectedTab === "menu" || selectedTab === "configMenu" ? "" : "hidden"}
         `}
       >
-        <div className="bg-[var(--low-gray)] border-2 border-translucid text-[var(--foreground)] p-4 rounded-lg shadow-lg xs:w-[340px]">
+        <div className="bg-[var(--low-gray)] border border-translucid text-[var(--foreground)] p-4 rounded-lg shadow-lg xs:w-[340px]">
           <div className="flex justify-between items-center">
             <strong>Alterações não salvas</strong>
             <span className="text-sm">{changedFields.length}</span>
@@ -782,7 +782,7 @@ export default function StatesManager({
 
             {/* Botões fixos */}
             <div className="mt-2 flex justify-center gap-2 pt-2">
-              <button onClick={revertAll} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded">
+              <button onClick={revertAll} className="cursor-pointer px-4 py-2 bg-low-gray text-foreground rounded">
                 Descartar tudo
               </button>
               <button

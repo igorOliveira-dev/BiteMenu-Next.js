@@ -115,7 +115,7 @@ export default function WhatsappMessage({ setSelectedTab }) {
   );
 
   const tabClass = (active) =>
-    `flex-1 cursor-pointer rounded-lg py-1.5 text-sm transition ${active ? "bg-[var(--translucid)] font-medium" : "color-gray"}`;
+    `flex-1 cursor-pointer rounded-xl py-1.5 text-sm transition ${active ? "bg-[var(--translucid)] font-medium" : "color-gray"}`;
 
   if (loading || userLoading) return <Loading />;
   if (!menu) return <p>Você ainda não criou seu cardápio.</p>;
@@ -125,7 +125,7 @@ export default function WhatsappMessage({ setSelectedTab }) {
       <div className="mb-6 flex items-center gap-2 lg:mb-8">
         <button
           type="button"
-          className="p-2 rounded-lg hover:bg-[var(--translucid)] transition cursor-pointer"
+          className="p-2 rounded-xl hover:bg-[var(--translucid)] transition cursor-pointer"
           onClick={goBack}
           aria-label="Voltar aos pedidos"
         >

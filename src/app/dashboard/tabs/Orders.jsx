@@ -652,7 +652,7 @@ const Orders = ({
               href={`/menu/${menu.slug}?balcao=1`}
               target="_blank"
               rel="noopener noreferrer"
-              className="ml-auto flex items-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+              className="ml-auto flex items-center gap-2 rounded-full bg-bite px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90"
             >
               <FaPlus /> Novo pedido
             </a>
@@ -982,18 +982,18 @@ const Orders = ({
                                         <span
                                           className={`h-0.5 flex-1 ${
                                             i <= stepIndex
-                                              ? "bg-blue-500"
+                                              ? "bg-bite"
                                               : "bg-[var(--translucid)]"
                                           }`}
                                         />
                                       )}
                                       <span
                                         title={ORDER_STATUS[step]}
-                                        className={`h-3 w-3 shrink-0 rounded-full border-2 ${
+                                        className={`h-3 w-3 shrink-0 rounded-full border ${
                                           i < stepIndex
-                                            ? "border-blue-500 bg-blue-500"
+                                            ? "border-bite bg-bite"
                                             : i === stepIndex
-                                              ? "border-blue-500 bg-blue-500 ring-4 ring-blue-500/25"
+                                              ? "border-bite bg-bite ring-4 ring-bite/25"
                                               : "border-[var(--gray)] opacity-40"
                                         }`}
                                       />
@@ -1035,7 +1035,7 @@ const Orders = ({
                                 onChange={(e) =>
                                   assignCourier(order.id, e.target.value)
                                 }
-                                className={`min-w-0 flex-1 cursor-pointer rounded-lg border-2 bg-translucid p-1.5 ${
+                                className={`min-w-0 flex-1 cursor-pointer rounded-xl border bg-translucid p-1.5 ${
                                   order.assigned_to
                                     ? "border-[var(--translucid)]"
                                     : "border-yellow-500/50"
@@ -1147,7 +1147,7 @@ const Orders = ({
                           </button>
                           <button
                             onClick={() => finalizeOrder(order.id)}
-                            className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+                            className="flex cursor-pointer items-center justify-center gap-2 rounded-full bg-bite px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90"
                           >
                             <FaCheck /> Finalizar
                           </button>
@@ -1197,10 +1197,10 @@ const Orders = ({
 
             {summaryLoading ? (
               <div className="space-y-2">
-                <div className="h-5 w-36 rounded-lg bg-translucid" />
-                <div className="h-10 w-full rounded-lg bg-translucid" />
-                <div className="h-10 w-full rounded-lg bg-translucid" />
-                <div className="h-4 w-28 rounded-lg bg-translucid" />
+                <div className="h-5 w-36 rounded-xl bg-translucid" />
+                <div className="h-10 w-full rounded-xl bg-translucid" />
+                <div className="h-10 w-full rounded-xl bg-translucid" />
+                <div className="h-4 w-28 rounded-xl bg-translucid" />
               </div>
             ) : (
               <>
@@ -1220,7 +1220,7 @@ const Orders = ({
                     <span>Pagos ({summary.paidCount})</span>
                     <span>{paidPct}%</span>
                   </div>
-                  <div className="h-2 w-full overflow-hidden rounded-lg bg-translucid">
+                  <div className="h-2 w-full overflow-hidden rounded-xl bg-translucid">
                     <div
                       className="h-full bg-green-600"
                       style={{ width: `${paidPct}%` }}
@@ -1702,7 +1702,7 @@ const Orders = ({
                                         items_list: updated,
                                       });
                                     }}
-                                    className="cursor-pointer rounded-xl bg-blue-600 px-3 py-2 text-sm text-white transition hover:bg-blue-700"
+                                    className="cursor-pointer rounded-full bg-bite px-3 py-2 text-sm text-white transition hover:opacity-90"
                                   >
                                     + Opção
                                   </button>
@@ -1840,7 +1840,7 @@ const Orders = ({
                       new Set(prev).add(updatedItems.length - 1),
                     );
                   }}
-                  className="mt-4 cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-white transition hover:bg-blue-700"
+                  className="mt-4 cursor-pointer rounded-full bg-bite px-4 py-3 text-white transition hover:opacity-90"
                 >
                   + Adicionar item
                 </button>
@@ -1873,7 +1873,7 @@ const Orders = ({
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <button
                     type="submit"
-                    className="w-full cursor-pointer rounded-xl bg-blue-600 py-3 text-white transition hover:bg-blue-700"
+                    className="w-full cursor-pointer rounded-full bg-bite py-3 text-white transition hover:opacity-90"
                   >
                     Salvar alterações
                   </button>

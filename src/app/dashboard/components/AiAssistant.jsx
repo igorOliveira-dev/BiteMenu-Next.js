@@ -264,7 +264,7 @@ function UpsellMessage() {
       </p>
       <a
         href="/dashboard/pricing"
-        className="mt-1 flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 font-semibold text-white no-underline transition hover:bg-red-700"
+        className="mt-1 flex items-center justify-center gap-2 rounded-full bg-bite px-4 py-2.5 font-semibold text-white no-underline transition hover:bg-red-700"
       >
         <FaMagic /> Quero o plano Business
       </a>
@@ -656,7 +656,7 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Abrir Bite Menu IA"
-          className={`fixed right-4 z-100 ${position} flex h-12 items-center gap-2 rounded-full bg-red-600 px-4 font-semibold text-white shadow-lg cursor-pointer transition hover:bg-red-700`}
+          className={`fixed right-4 z-100 ${position} flex h-12 items-center gap-2 rounded-full bg-bite px-4 font-semibold text-white shadow-lg cursor-pointer transition hover:bg-red-700`}
         >
           <FaMagic /> <span className="hidden xs:inline">Bite Menu IA</span>
         </button>
@@ -673,7 +673,7 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
             style={{ animation: "ai-pop .25s ease-out" }}
           >
             {/* faixa vermelha fina no topo */}
-            <div className="h-1 bg-red-600" />
+            <div className="h-1 bg-bite" />
             <div className="flex min-h-0 flex-1 flex-col">
               <div className="relative flex items-center justify-between px-5 pt-4 pb-4">
                 <div className="flex items-center gap-3">
@@ -725,7 +725,7 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
                 <div
                   className={`max-w-[85%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2.5 text-sm ${
                     m.role === "user"
-                      ? "max-h-60 overflow-y-auto rounded-br-md bg-red-600 text-white"
+                      ? "max-h-60 overflow-y-auto rounded-br-md bg-bite text-white"
                       : "rounded-tl-md bg-translucid"
                   }`}
                 >
@@ -827,7 +827,7 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
               type="submit"
               disabled={sending || hasPending || limitReached || !input.trim()}
               aria-label="Enviar"
-              className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl bg-red-600 text-white transition hover:bg-red-700 disabled:opacity-40"
+              className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl bg-bite text-white transition hover:bg-red-700 disabled:opacity-40"
             >
               <FaPaperPlane />
             </button>

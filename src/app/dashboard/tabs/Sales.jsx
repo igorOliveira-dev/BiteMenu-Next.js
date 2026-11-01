@@ -638,7 +638,7 @@ const Sales = ({ setSelectedTab }) => {
                               }))
                             }
                             className={`cursor-pointer flex items-center gap-2 text-sm px-3 py-1.5 rounded-xl transition-all border border-translucid
-                            ${isActive ? "bg-[#6060ff80] border-[#6060ff] shadow-md" : "bg-translucid hover:opacity-90"}`}
+                            ${isActive ? "bg-bite/15 border-bite font-semibold" : "bg-translucid hover:opacity-90"}`}
                           >
                             <span>Ordenar por {label}</span>
                             {isActive &&
@@ -1223,7 +1223,7 @@ const Sales = ({ setSelectedTab }) => {
                                         items_list: updated,
                                       });
                                     }}
-                                    className="cursor-pointer rounded-xl bg-blue-600 px-3 py-2 text-sm text-white transition hover:bg-blue-700"
+                                    className="cursor-pointer rounded-full bg-bite px-3 py-2 text-sm text-white transition hover:opacity-90"
                                   >
                                     + Opção
                                   </button>
@@ -1361,7 +1361,7 @@ const Sales = ({ setSelectedTab }) => {
                       new Set(prev).add(updatedItems.length - 1),
                     );
                   }}
-                  className="mt-4 cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-white transition hover:bg-blue-700"
+                  className="mt-4 cursor-pointer rounded-full bg-bite px-4 py-3 text-white transition hover:opacity-90"
                 >
                   + Adicionar item
                 </button>
@@ -1382,7 +1382,7 @@ const Sales = ({ setSelectedTab }) => {
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <button
                     type="submit"
-                    className="w-full cursor-pointer rounded-xl bg-blue-600 py-3 text-white transition hover:bg-blue-700"
+                    className="w-full cursor-pointer rounded-full bg-bite py-3 text-white transition hover:opacity-90"
                   >
                     Salvar alterações
                   </button>

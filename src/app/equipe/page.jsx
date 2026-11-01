@@ -73,7 +73,7 @@ export default function EquipePage() {
 
   return (
     <>
-      <header className="z-10 backdrop-blur-2xl flex items-center fixed top-0 w-[calc(100%-20px)] justify-between gap-2 p-2 m-2 my-3 bg-translucid border-2 border-translucid rounded-lg shadow-[0_0_10px_var(--shadow)]">
+      <header className="z-10 backdrop-blur-2xl flex items-center fixed top-0 w-[calc(100%-20px)] justify-between gap-2 p-2 m-2 my-3 bg-translucid border border-translucid rounded-xl shadow-[0_0_10px_var(--shadow)]">
         <div className="min-w-0 px-2">
           <p className="font-semibold truncate">{menu?.title || "Bite Menu"}</p>
           <p className="text-xs color-gray truncate">
@@ -85,7 +85,7 @@ export default function EquipePage() {
           <button
             type="button"
             onClick={signOut}
-            className="cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-[var(--translucid)] transition"
+            className="cursor-pointer flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-[var(--translucid)] transition"
           >
             <FaSignOutAlt /> Sair
           </button>

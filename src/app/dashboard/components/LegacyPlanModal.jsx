@@ -189,7 +189,7 @@ export default function LegacyPlanModal({ profile }) {
           </div>
 
           {c.showNews && (
-            <div className="p-4 rounded-2xl border-2 border-[var(--translucid)] bg-translucid text-sm">
+            <div className="p-4 rounded-2xl border border-[var(--translucid)] bg-translucid text-sm">
               <p className="font-semibold mb-2 flex items-center gap-2">
                 <FaBolt className="text-red-500" /> Novidade: plano {business.name}
               </p>
@@ -207,19 +207,19 @@ export default function LegacyPlanModal({ profile }) {
           <div className="text-sm">
             <p className="font-semibold mb-2 text-center">Agora você pode pagar de 3 formas:</p>
             <div className="flex flex-wrap justify-center gap-2">
-              <span className="flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 border-[var(--translucid)]">
+              <span className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--translucid)]">
                 <MdPix className="text-teal-500" /> Pix <span className="text-xs opacity-70">(novo)</span>
               </span>
-              <span className="flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 border-[var(--translucid)]">
+              <span className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--translucid)]">
                 <FaCreditCard /> Cartão de crédito
               </span>
-              <span className="flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 border-[var(--translucid)]">
+              <span className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--translucid)]">
                 <FaBarcode /> Boleto
               </span>
             </div>
           </div>
 
-          <div className="flex gap-3 p-4 rounded-2xl border-2 border-amber-500/40 bg-amber-500/10 text-sm">
+          <div className="flex gap-3 p-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 text-sm">
             <FaExchangeAlt className="text-amber-500 shrink-0 mt-1" />
             <p>
               <strong>Por que preciso reassinar?</strong> Trocamos o sistema de pagamentos do Bite Menu. As assinaturas
@@ -232,13 +232,13 @@ export default function LegacyPlanModal({ profile }) {
           </p>
 
           <div className="flex flex-col items-center gap-3 pt-2">
-            <a href="/dashboard/pricing" className="cta-button glow-red has-icon text-center w-full xs:w-auto">
+            <a href="/dashboard/pricing" className="cta-button has-icon text-center w-full xs:w-auto">
               <FaBolt /> {c.cta}
             </a>
             <button
               onClick={close}
               type="button"
-              className="cursor-pointer w-full xs:w-64 px-4 py-3 font-semibold bg-translucid border-2 border-[var(--translucid)] hover:opacity-80 rounded-lg"
+              className="cursor-pointer w-full xs:w-64 px-4 py-3 font-semibold bg-translucid border border-[var(--translucid)] hover:opacity-80 rounded-xl"
             >
               Fechar
             </button>

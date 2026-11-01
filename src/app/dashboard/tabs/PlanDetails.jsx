@@ -108,7 +108,7 @@ const CancelModal = ({ canceling, onClose, onConfirm }) => {
             type="button"
             onClick={() => onConfirm(reason, comment.trim())}
             disabled={canceling}
-            className="h-11 cursor-pointer rounded-xl bg-[#d42020] px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+            className="h-11 cursor-pointer rounded-full bg-bite px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
           >
             {canceling ? "Cancelando..." : "Confirmar cancelamento"}
           </button>
@@ -151,7 +151,7 @@ const BillingCard = ({ billing, canCancel, canceling, onCancel, changingMethod, 
 
   if (billing === undefined) {
     return (
-      <div className="mt-4 h-[236px] w-full max-w-[1024px] rounded-2xl bg-translucid border-2 border-[var(--translucid)] animate-pulse" />
+      <div className="mt-4 h-[236px] w-full max-w-[1024px] rounded-2xl bg-translucid border border-[var(--translucid)] animate-pulse" />
     );
   }
   if (!billing) return null;
@@ -161,8 +161,8 @@ const BillingCard = ({ billing, canCancel, canceling, onCancel, changingMethod, 
   const isYearly = billing.interval === "YEARLY";
 
   return (
-    <div className="mt-4 w-full max-w-[1024px] rounded-2xl bg-translucid border-2 border-[var(--translucid)] overflow-hidden">
-      <div className="flex items-center justify-between gap-3 p-4 border-b-2 border-[var(--translucid)]">
+    <div className="mt-4 w-full max-w-[1024px] rounded-2xl bg-translucid border border-[var(--translucid)] overflow-hidden">
+      <div className="flex items-center justify-between gap-3 p-4 border-b border-[var(--translucid)]">
         <p className="font-semibold">Faturamento</p>
         <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--translucid)]">
           {INTERVAL_LABELS[billing.interval] ?? billing.interval}
@@ -170,7 +170,7 @@ const BillingCard = ({ billing, canCancel, canceling, onCancel, changingMethod, 
       </div>
 
       {billing.scheduledChange && !billing.cancelAtPeriodEnd && (
-        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm bg-amber-500/10 border-b-2 border-[var(--translucid)]">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm bg-amber-500/10 border-b border-[var(--translucid)]">
           <span>
             Troca agendada: a partir de <strong>{formatDate(billing.scheduledChange.effectiveAt)}</strong> você passa
             para o plano <strong className="capitalize">{billing.scheduledChange.plan}</strong>.
@@ -228,7 +228,7 @@ const BillingCard = ({ billing, canCancel, canceling, onCancel, changingMethod, 
                   key={value}
                   onClick={() => onChangeMethod(value, label).then((ok) => ok && setPicking(false))}
                   disabled={changingMethod}
-                  className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg border-2 border-[var(--translucid)] hover:bg-[var(--translucid)] transition cursor-pointer disabled:opacity-50"
+                  className="flex items-center gap-2 text-sm px-3 py-2 rounded-xl border border-[var(--translucid)] hover:bg-[var(--translucid)] transition cursor-pointer disabled:opacity-50"
                   type="button"
                 >
                   <Icon /> {label}
@@ -257,7 +257,7 @@ const BillingCard = ({ billing, canCancel, canceling, onCancel, changingMethod, 
                       href={b.boletoUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-3 py-1.5 rounded-lg hover:bg-[var(--translucid)] transition"
+                      className="px-3 py-1.5 rounded-xl hover:bg-[var(--translucid)] transition"
                     >
                       Abrir
                     </a>
@@ -286,7 +286,7 @@ const BillingCard = ({ billing, canCancel, canceling, onCancel, changingMethod, 
         <div className="flex justify-between items-center gap-2 p-3 border-t-2 border-[var(--translucid)]">
           <a
             href="/dashboard/pricing"
-            className="text-sm px-3 py-1.5 rounded-lg hover:bg-[var(--translucid)] transition"
+            className="text-sm px-3 py-1.5 rounded-xl hover:bg-[var(--translucid)] transition"
           >
             Trocar de plano
           </a>
@@ -445,7 +445,7 @@ export default function PlanDetails({ setSelectedTab }) {
       <LegacyPlanNotice info={legacyPlanInfo(p)} className="mb-4 max-w-[1024px]" />
 
       {p.validapay_subscription_id && p.cancel_at_period_end && (
-        <div className="flex flex-wrap items-center justify-between gap-3 p-4 mb-4 rounded-2xl border-2 border-red-500/30 bg-red-500/10 max-w-[1024px]">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-4 mb-4 rounded-2xl border border-red-500/30 bg-red-500/10 max-w-[1024px]">
           <p>
             Assinatura cancelada. Você mantém acesso ao plano <span className="capitalize">{p.role}</span>
             {accessUntil ? ` até ${accessUntil}` : " até o fim do período já pago"}. Depois disso seu plano volta pra
@@ -462,7 +462,7 @@ export default function PlanDetails({ setSelectedTab }) {
         </div>
       )}
 
-      <div className="flex flex-col justify-center p-4 bg-translucid border-2 border-[var(--translucid)] rounded-2xl text-center w-full max-w-[1024px]">
+      <div className="flex flex-col justify-center p-4 bg-translucid border border-[var(--translucid)] rounded-2xl text-center w-full max-w-[1024px]">
         <p className="text-sm color-gray">Plano atual:</p>
         <p className="capitalize default-h1 mb-2">{p.role}</p>
 

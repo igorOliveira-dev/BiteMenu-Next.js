@@ -68,7 +68,7 @@ export default function Delivery({ menu, reloadTrigger, onBack, courierId }) {
         {onBack && (
           <button
             type="button"
-            className="p-2 rounded-lg hover:bg-[var(--translucid)] transition cursor-pointer"
+            className="p-2 rounded-xl hover:bg-[var(--translucid)] transition cursor-pointer"
             onClick={onBack}
             aria-label="Voltar"
           >
@@ -97,11 +97,11 @@ export default function Delivery({ menu, reloadTrigger, onBack, courierId }) {
             return (
               <div
                 key={order.id}
-                className={`rounded-2xl border-2 bg-translucid p-4 shadow-sm flex flex-col gap-3 ${
-                  onTheWay ? "border-blue-500/60" : "border-translucid"
+                className={`rounded-2xl border bg-translucid p-4 shadow-sm flex flex-col gap-3 ${
+                  onTheWay ? "border-brasa/60" : "border-translucid"
                 }`}
               >
-                <div className="flex items-start justify-between gap-2 border-b-2 border-[var(--translucid)] pb-2">
+                <div className="flex items-start justify-between gap-2 border-b border-[var(--translucid)] pb-2">
                   <div className="min-w-0">
                     <p className="text-lg font-bold">Nº {order.order_number ?? "—"}</p>
                     <p className="text-xs color-gray">Pedido #{order.id.slice(0, 6)}</p>
@@ -155,7 +155,7 @@ export default function Delivery({ menu, reloadTrigger, onBack, courierId }) {
                 </div>
 
                 {inKitchen ? (
-                  <p className="w-full py-3 rounded-lg bg-[var(--translucid)] text-center font-semibold color-gray">
+                  <p className="w-full py-3 rounded-xl bg-[var(--translucid)] text-center font-semibold color-gray">
                     Em preparo na cozinha
                   </p>
                 ) : (
@@ -163,7 +163,7 @@ export default function Delivery({ menu, reloadTrigger, onBack, courierId }) {
                     type="button"
                     onClick={() => setStatus(order, onTheWay ? "delivered" : "out_for_delivery")}
                     className={`cursor-pointer w-full py-3 rounded-lg text-white font-semibold transition ${
-                      onTheWay ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700"
+                      onTheWay ? "bg-green-600 hover:bg-green-700" : "bg-bite hover:opacity-90"
                     }`}
                   >
                     {onTheWay ? "Entregue" : "Saí para entrega"}

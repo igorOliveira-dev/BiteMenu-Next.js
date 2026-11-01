@@ -169,7 +169,7 @@ const ChangePlanModal = ({ plan, cycle, currentPlanName, onClose }) => {
             <button
               onClick={onClose}
               disabled={confirming}
-              className="cursor-pointer px-4 py-2 bg-translucid border-2 border-[var(--translucid)] hover:opacity-80 rounded disabled:opacity-50"
+              className="cursor-pointer px-4 py-2 bg-translucid border border-[var(--translucid)] hover:opacity-80 rounded disabled:opacity-50"
               type="button"
             >
               Voltar
@@ -177,7 +177,7 @@ const ChangePlanModal = ({ plan, cycle, currentPlanName, onClose }) => {
             <button
               onClick={confirmChange}
               disabled={!preview || confirming}
-              className="cta-button glow-red disabled:opacity-50 disabled:cursor-not-allowed"
+              className="cta-button disabled:opacity-50 disabled:cursor-not-allowed"
               type="button"
             >
               {confirming ? "Processando..." : "Confirmar troca"}
@@ -266,7 +266,7 @@ const PlansSection = ({ showFree = false }) => {
       <h2 className="font-bold scale-130 xxs:scale-150 mt-4 lg:mt-0 mb-8 text-center">Planos disponíveis:</h2>
 
       {maintenance && (
-        <div className="w-full max-w-[700px] mb-8 p-4 rounded-xl bg-amber-500/10 border-2 border-amber-500/40 text-sm text-center">
+        <div className="w-full max-w-[700px] mb-8 p-4 rounded-xl bg-amber-500/10 border border-amber-500/40 text-sm text-center">
           <strong>Contratação temporariamente indisponível.</strong>
           <br />
           Estamos trocando nosso sistema de pagamentos. Em breve você poderá assinar normalmente.
@@ -278,7 +278,7 @@ const PlansSection = ({ showFree = false }) => {
         <LegacyPlanNotice info={legacyPlanInfo(profile)} showPlansLink={false} className="w-full max-w-[700px] mb-8" />
       )}
 
-      <div className="flex p-1 mb-8 rounded-full bg-translucid border-2 border-[var(--translucid)] text-sm">
+      <div className="flex p-1 mb-8 rounded-full bg-translucid border border-[var(--translucid)] text-sm">
         {[
           ["monthly", "Mensal"],
           ["yearly", "Anual (2 meses grátis)"],
@@ -332,7 +332,7 @@ const PlansSection = ({ showFree = false }) => {
         {plans.filter((plan) => plan.id !== "free").map((plan) => (
           <div
             key={plan.name}
-            className={`relative p-4 px-6 bg-degraded-t-speckled border-2 rounded-xl w-64 flex flex-col gap-6 justify-between transition ${
+            className={`relative p-4 px-6 bg-degraded-t-speckled border rounded-xl w-64 flex flex-col gap-6 justify-between transition ${
               highlight === plan.id ? "border-[var(--red)]" : "border-[var(--translucid)]"
             }`}
           >
@@ -384,7 +384,7 @@ const PlansSection = ({ showFree = false }) => {
             {plan.id !== "free" && (
               <div className="w-full flex flex-col gap-2">
                 <button
-                  className="cta-button glow-red disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="cta-button disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={plan.comingSoon || maintenance || !!loadingPlan || isCurrent(plan)}
                   onClick={() => handleSelect(plan)}
                 >
