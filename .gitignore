@@ -49,3 +49,8 @@ graphify-out/
 
 # logs da migração de assinaturas (contêm emails e links de checkout)
 migracao-*.json
+
+# PWA gerado pelo next-pwa
+public/sw.js
+public/fallback-*.js
+public/workbox-*.js
