@@ -43,11 +43,23 @@ const faqs = [
   },
 ];
 
+// FAQPage (schema.org): perguntas e respostas legíveis por buscadores e IAs
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((item) => ({
+    "@type": "Question",
+    name: item.q,
+    acceptedAnswer: { "@type": "Answer", text: item.a },
+  })),
+};
+
 const page = () => {
   const [openFaq, setOpenFaq] = useState(null);
 
   return (
     <div className="flex flex-col items-center">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <div className="fixed bg-translucid rounded-lg backdrop-blur-2xl top-2 left-2 z-50">
         <Return />
       </div>

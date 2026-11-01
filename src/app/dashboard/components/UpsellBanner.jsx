@@ -6,6 +6,7 @@ import { FaBolt, FaTimes } from "react-icons/fa";
 import useUser from "@/hooks/useUser";
 import { upsellAds } from "@/consts/upsellAds";
 import { plansBlockedFor } from "@/consts/Plans";
+import { brToday } from "@/lib/brDate";
 
 const STORAGE_KEY = "bite_menu_upsell";
 const DAY = 86400000;
@@ -54,8 +55,12 @@ export default function UpsellBanner({ selectedTab, collapsed }) {
   const [dx, setDx] = useState(0);
   const drag = useRef(null); // { startX, moved }
 
+  // legacy_plan_until fica salvo depois do rebaixamento (fluxo de reassinatura): só data futura bloqueia o anúncio
   const eligible =
-    profile?.role === "free" && !profile.legacy_plan_until && !plansBlockedFor(user?.email) && user?.created_at;
+    profile?.role === "free" &&
+    !(profile.legacy_plan_until > brToday()) &&
+    !plansBlockedFor(user?.email) &&
+    user?.created_at;
 
   useEffect(() => {
     if (!eligible) return setAd(null);

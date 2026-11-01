@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { formatCurrency, getCurrencySymbol } from "@/lib/formatCurrency";
 import { useAlert } from "@/providers/AlertProvider";
 import { useConfirm } from "@/providers/ConfirmProvider";
+import UpdatePlanModal from "../UpdatePlanModal";
 
 const num = (v) => parseFloat(String(v ?? "").replace(",", "."));
 
@@ -111,9 +112,10 @@ export default function CouponsModal({ menuId, currency, canCreate, showUpgrade,
   const confirm = useConfirm();
   const [coupons, setCoupons] = useState(null);
   const [draft, setDraft] = useState(null);
+  const [showPlanModal, setShowPlanModal] = useState(false);
 
   useEffect(() => {
-    if (!menuId || !canCreate) return;
+    if (!menuId) return;
     supabase
       .from("coupons")
       .select("*")
@@ -123,7 +125,7 @@ export default function CouponsModal({ menuId, currency, canCreate, showUpgrade,
         if (error) console.error("fetch coupons error:", error);
         setCoupons(data || []);
       });
-  }, [menuId, canCreate]);
+  }, [menuId]);
 
   const describe = (c) => {
     const main =
@@ -184,6 +186,9 @@ export default function CouponsModal({ menuId, currency, canCreate, showUpgrade,
       return alert("Limite de usos: informe um número inteiro maior que zero.", "error");
     }
 
+    // fora do Pro dá pra montar o cupom, mas só salva assinando
+    if (!canCreate) return setShowPlanModal(true);
+
     const isPct = draft.type === "percentage";
     const payload = {
       menu_id: menuId,
@@ -231,11 +236,15 @@ export default function CouponsModal({ menuId, currency, canCreate, showUpgrade,
       title={draft ? (draft.id ? "Editar cupom" : "Novo cupom") : "Cupons"}
       onClose={draft ? () => setDraft(null) : onClose}
     >
-      {!canCreate ? (
-        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/20 p-4 text-sm">
-          Criar cupons é uma função exclusiva do Bite Menu Pro. Faça upgrade para criar os seus!
-        </div>
-      ) : draft ? (
+      {showPlanModal && (
+        <UpdatePlanModal
+          plan="pro"
+          title="Cupons de desconto"
+          text="Assine o plano Pro para salvar seus cupons. Crie cupons de desconto, frete grátis e valor fixo para atrair e trazer clientes de volta."
+          onClose={() => setShowPlanModal(false)}
+        />
+      )}
+      {draft ? (
         <div className="space-y-3">
           <div className="grid grid-cols-3 gap-2">
             {[

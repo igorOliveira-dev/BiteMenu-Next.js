@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import useUser from "@/hooks/useUser";
-import { FaChevronLeft, FaPen, FaChevronRight } from "react-icons/fa";
+import { STAFF_PLAN_ROLES } from "@/lib/staff";
+import { FaChevronLeft, FaPen, FaChevronRight, FaLock } from "react-icons/fa";
 import Loading from "@/components/Loading";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
@@ -30,6 +31,9 @@ const Account = ({ setSelectedTab }) => {
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [tempEmail, setTempEmail] = useState(profile?.email);
 
+  const [deletionRequestedAt, setDeletionRequestedAt] = useState(profile?.deletion_requested_at ?? null);
+  const [deletionSaving, setDeletionSaving] = useState(false);
+
   // quando o profile carregar, preenche o telefone
   useEffect(() => {
     if (profile?.phone) {
@@ -44,6 +48,7 @@ const Account = ({ setSelectedTab }) => {
     if (profile?.email) {
       setTempEmail(profile.email); // adicionado
     }
+    setDeletionRequestedAt(profile?.deletion_requested_at ?? null);
   }, [profile]);
 
   async function handleLogout() {
@@ -151,6 +156,42 @@ const Account = ({ setSelectedTab }) => {
     setSaving(false);
   };
 
+  // Pedido de exclusão (POST) ou desistência (DELETE); a exclusão em si é feita manualmente
+  const handleDeletionRequest = async (cancel = false) => {
+    const ok = await confirm(
+      cancel
+        ? "Cancelar o pedido de exclusão? Seu cardápio volta a ficar no ar."
+        : "Quer mesmo excluir sua conta? Seu cardápio sai do ar na hora e todos os seus dados (cardápio, produtos, pedidos e imagens) serão apagados em até 15 dias. Isso não pode ser desfeito depois da exclusão.",
+    );
+    if (!ok) return;
+
+    setDeletionSaving(true);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const res = await fetch("/api/account/deletion", {
+        method: cancel ? "DELETE" : "POST",
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Erro inesperado");
+
+      // mantém o profile em cache (useUser) coerente ao trocar de aba
+      profile.deletion_requested_at = data.deletion_requested_at;
+      setDeletionRequestedAt(data.deletion_requested_at);
+      customAlert(
+        cancel ? "Pedido de exclusão cancelado." : "Pedido de exclusão registrado. Avisaremos por e-mail quando for concluída.",
+        "success",
+      );
+    } catch (err) {
+      console.error(err);
+      customAlert("Não foi possível concluir. Tente novamente ou escreva para contato@bitemenu.com.br.", "error");
+    } finally {
+      setDeletionSaving(false);
+    }
+  };
+
   if (loading) {
     return <Loading />;
   }
@@ -208,6 +249,30 @@ const Account = ({ setSelectedTab }) => {
             </span>
           </button>
 
+          {/* Equipe (logins de caixa/cozinha/entregador): aparece em qualquer plano, só cria no Business */}
+          <button
+            type="button"
+            onClick={() => setSelectedTab("team")}
+            className="flex w-full items-center justify-between gap-3 p-4 text-left cursor-pointer transition hover:bg-[var(--translucid)]"
+          >
+            <div>
+              <p className="text-sm color-gray">Equipe</p>
+              <p className="text-lg font-semibold">Logins de caixa, cozinha e entregador</p>
+            </div>
+            <span className="flex items-center gap-2 text-sm color-gray">
+              {!STAFF_PLAN_ROLES.includes(profile?.role) && (
+                <span
+                  title="Plano Business"
+                  className="flex shrink-0 items-center gap-1 rounded-full bg-[var(--translucid)] px-2 py-1 text-xs"
+                >
+                  <FaLock className="text-[10px]" />
+                  <span className="hidden xs:inline">Business</span>
+                </span>
+              )}
+              Gerenciar <FaChevronRight />
+            </span>
+          </button>
+
           {/* Telefone */}
           <div className="p-4">
             <label className="block text-sm color-gray mb-2">Telefone</label>
@@ -243,13 +308,39 @@ const Account = ({ setSelectedTab }) => {
             >
               Sair da conta
             </button>
-            {profile?.role === "admin" && (
+            {["admin", "designer"].includes(profile?.role) && (
               <a href="/admin" className="underline color-gray">
                 Admin page
               </a>
             )}
           </div>
         </div>
+
+        {/* Exclusão de conta (LGPD): só registra o pedido; a exclusão é feita manualmente em até 15 dias */}
+        <div className="px-4 pt-3 pb-6 text-sm color-gray">
+          {deletionRequestedAt ? (
+            <p>
+              Exclusão de conta solicitada em {new Date(deletionRequestedAt).toLocaleDateString("pt-BR")}. Seu cardápio
+              está fora do ar e seus dados serão apagados em até 15 dias.{" "}
+              <button
+                onClick={() => handleDeletionRequest(true)}
+                disabled={deletionSaving}
+                className="cursor-pointer underline hover:opacity-80 disabled:opacity-50"
+              >
+                {deletionSaving ? "Cancelando..." : "Cancelar pedido"}
+              </button>
+            </p>
+          ) : (
+            <button
+              onClick={() => handleDeletionRequest()}
+              disabled={deletionSaving}
+              className="cursor-pointer underline hover:text-red-500 transition disabled:opacity-50"
+            >
+              {deletionSaving ? "Enviando..." : "Excluir minha conta"}
+            </button>
+          )}
+        </div>
+
       </div>
       {nameModalOpen && (
         <GenericModal title="Alterar nome" onClose={() => setNameModalOpen(false)} maxWidth={"420px"} wfull>

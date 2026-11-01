@@ -1,6 +1,6 @@
 // src/components/components/CartDrawer.jsx
 "use client";
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import React, { Suspense, useEffect, useState, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { FaChevronLeft, FaCopy, FaTimes, FaWhatsapp, FaSpinner, FaReceipt } from "react-icons/fa";
 import MyOrdersModal from "./MyOrdersModal";
@@ -10,15 +10,30 @@ import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { supabase } from "@/lib/supabaseClient";
+import { getStoreState } from "@/lib/queries/menus";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { useAlert } from "@/providers/AlertProvider";
 import { useSearchParams, useRouter } from "next/navigation";
 import { calculateComboDiscount } from "@/lib/comboDiscount";
 import { applyCoupon } from "@/lib/couponDiscount";
+import { STOCK_ROLES, stockPayload } from "@/lib/stock";
 import { saveReceipt } from "@/lib/orderReceipts";
+import { renderWhatsappMessage } from "@/lib/whatsappMessage";
 import { getContrastTextColor } from "@/utils/color";
+import AddressFields, { EMPTY_ADDRESS, formatAddress } from "@/components/AddressFields";
+import { currentPosition, distanceKm, feeForDistance, geocodeAddress } from "@/lib/deliveryRadius";
 
-export default function CartDrawer({
+// useSearchParams (mesa/balcão) exige Suspense na página cacheada por ISR;
+// sem isso o /menu/[slug] estático quebra com erro 500
+export default function CartDrawer(props) {
+  return (
+    <Suspense fallback={null}>
+      <CartDrawerContent {...props} />
+    </Suspense>
+  );
+}
+
+function CartDrawerContent({
   menu,
   combos = [],
   open,
@@ -68,6 +83,39 @@ export default function CartDrawer({
   }, [tableId, menu?.id]);
   // ────────────────────────────────────────────────────────────────────────
 
+  // ── Pedido de balcão (botão "Novo pedido" do painel) ─────────────────────
+  // ?balcao=1 só vale se a conta logada é a do dono ou de alguém da equipe deste cardápio:
+  // nome/telefone opcionais e o pedido é gravado direto, sem WhatsApp
+  const counterRequested = searchParams.get("balcao") === "1";
+  const [counterMode, setCounterMode] = useState(false);
+
+  useEffect(() => {
+    if (!counterRequested || !menu?.id) {
+      setCounterMode(false);
+      return;
+    }
+
+    let active = true;
+    (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      let linked = user.id === menu.owner_id;
+      if (!linked) {
+        const { data: staffMenuId } = await supabase.rpc("staff_menu_id");
+        linked = staffMenuId === menu.id;
+      }
+      if (active) setCounterMode(linked);
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [counterRequested, menu?.id, menu?.owner_id]);
+  // ────────────────────────────────────────────────────────────────────────
+
   // pega apenas os items do menu atual
   const currentItems = cart.getItems(menu?.id);
   const currentTotalItems = cart.totalItems(menu?.id);
@@ -84,7 +132,7 @@ export default function CartDrawer({
   }, [menu?.categories]);
 
   // mova esta linha para ANTES do useMemo do discountAmount
-  const hasPlusPermissions = ["plus", "pro", "admin"].includes(ownerRole ?? "free");
+  const hasPlusPermissions = ["plus", "pro", "business", "admin", "designer"].includes(ownerRole ?? "free");
 
   const { totalDiscount: comboDiscount } = useMemo(() => {
     if (!hasPlusPermissions) return { totalDiscount: 0 };
@@ -115,7 +163,7 @@ export default function CartDrawer({
   const [selectedService, setSelectedService] = useState(null);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [costumerName, setCostumerName] = useState("");
-  const [costumerAddress, setCostumerAddress] = useState("");
+  const [costumerAddressParts, setCostumerAddressParts] = useState(EMPTY_ADDRESS);
   const [costumerPhone, setCostumerPhone] = useState("");
 
   const [costumerNeighborhood, setCostumerNeighborhood] = useState("");
@@ -126,7 +174,7 @@ export default function CartDrawer({
   // do pedido usam os mesmos valores sem mudanças.
   // ponytail: valida só no navegador (o total do pedido já é calculado aqui);
   // se precisar de blindagem, recalcular o total no servidor.
-  const canUseCoupon = ["pro", "admin"].includes(ownerRole ?? "free");
+  const canUseCoupon = ["pro", "business", "admin", "designer"].includes(ownerRole ?? "free");
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState(null);
 
@@ -170,6 +218,26 @@ export default function CartDrawer({
     customAlert("Este cupom atingiu o limite de usos ou expirou. Confira o novo total.", "error");
     return false;
   };
+
+  // Valida e dá baixa no estoque (plano Business) ao confirmar, tudo ou nada.
+  // Faltou algo: nada é baixado e o cliente ajusta o carrinho. Erro de rede/RPC não bloqueia a venda.
+  const consumeStock = async () => {
+    if (!STOCK_ROLES.includes(ownerRole)) return true;
+    const { data, error } = await supabase.rpc("consume_stock", {
+      p_menu_id: menu.id,
+      p_items: stockPayload(currentItems),
+    });
+    if (error || typeof data?.ok !== "boolean") {
+      console.error("consume_stock error:", error || data);
+      return true;
+    }
+    if (data.ok) return true;
+    customAlert(
+      `Estoque insuficiente: ${data.missing.map((s) => `${s.name} (restam ${s.available})`).join(", ")}. Ajuste o carrinho.`,
+      "error",
+    );
+    return false;
+  };
   // ────────────────────────────────────────────────────────────────────────
 
   const [showWhatsappButtonOnPixStage, setShowWhatsappButtonOnPixStage] = useState(false);
@@ -188,10 +256,36 @@ export default function CartDrawer({
 
   const canUseZones = menu?.delivery_fee_mode === "zones" && hasPlusPermissions && deliveryZones.length > 0;
 
+  // taxa por raio: delivery_radius também é lazy-loaded; coordenadas do cliente vêm do endereço ou do GPS
+  const [deliveryRadius, setDeliveryRadius] = useState(null);
+  const [customerCoords, setCustomerCoords] = useState(null);
+  const [radiusStatus, setRadiusStatus] = useState("");
+  const canUseRadius =
+    menu?.delivery_fee_mode === "radius" &&
+    hasPlusPermissions &&
+    deliveryRadius?.lat != null &&
+    deliveryRadius?.tiers?.length > 0;
+  const customerDistance =
+    canUseRadius && customerCoords
+      ? distanceKm({ lat: deliveryRadius.lat, lng: deliveryRadius.lng }, customerCoords)
+      : null;
+  const radiusFee = customerDistance != null ? feeForDistance(deliveryRadius.tiers, customerDistance) : null;
+
+  const locateCustomer = async (fromAddress) => {
+    setRadiusStatus("loading");
+    const pos = fromAddress ? await geocodeAddress(costumerAddressParts) : await currentPosition();
+    setRadiusStatus(pos ? "" : fromAddress ? "notFound" : "denied");
+    setCustomerCoords(pos);
+  };
+  // com bairros de entrega, o bairro vem da zona escolhida
+  const costumerAddress = formatAddress(
+    canUseZones ? { ...costumerAddressParts, neighborhood: costumerNeighborhood } : costumerAddressParts,
+  );
+
   const serviceOptions = [
     {
       id: "delivery",
-      label: !canUseZones
+      label: !canUseZones && !canUseRadius
         ? `Entrega ${normalizeMoney(menu.delivery_fee) > 0 ? `(${formatCurrency(normalizeMoney(menu.delivery_fee), menu?.currency)})` : ""}`
         : "Entrega",
     },
@@ -268,6 +362,25 @@ export default function CartDrawer({
         }
       });
   }, [open, menu?.id, menu?.delivery_fee_mode, hasPlusPermissions, deliveryZones.length]);
+
+  useEffect(() => {
+    if (!open || menu?.delivery_fee_mode !== "radius" || !hasPlusPermissions || deliveryRadius) return;
+
+    supabase
+      .from("menus")
+      .select("delivery_radius")
+      .eq("id", menu.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.delivery_radius) setDeliveryRadius(data.delivery_radius);
+      });
+  }, [open, menu?.id, menu?.delivery_fee_mode, hasPlusPermissions, deliveryRadius]);
+
+  // endereço mudou: a distância calculada não vale mais
+  useEffect(() => {
+    setCustomerCoords(null);
+    setRadiusStatus("");
+  }, [costumerAddressParts]);
 
   useEffect(() => {
     if (tableInfo) {
@@ -365,24 +478,26 @@ export default function CartDrawer({
     }
   }, [open]);
 
-  // Ler dados no local storage
+  // Ler dados no local storage (no balcão não: os dados são de cada cliente atendido)
   useEffect(() => {
     if (!open) return;
     if (typeof window === "undefined") return;
+    if (counterRequested) return;
 
     try {
       const stored = localStorage.getItem("customerInfo");
       if (stored) {
-        const { name = "", phone = "", address = "", neighborhood = "" } = JSON.parse(stored);
+        const { name = "", phone = "", address = "", addressParts } = JSON.parse(stored);
         setCostumerName(name);
         setCostumerPhone(phone);
-        setCostumerAddress(address);
+        // endereço salvo no formato antigo (texto livre) vira a rua, pro cliente completar
+        setCostumerAddressParts(addressParts ?? { ...EMPTY_ADDRESS, street: address });
         console.log("📥 LocalStorage carregado:", { name, phone, address });
       }
     } catch (error) {
       console.warn("⚠ Erro ao ler customerInfo do localStorage", error);
     }
-  }, [open]);
+  }, [open, counterRequested]);
 
   // calcular taxa de entrega
   useEffect(() => {
@@ -391,9 +506,11 @@ export default function CartDrawer({
       return;
     }
 
-    const fee = getSelectedDeliveryFee(menu, costumerNeighborhood, hasPlusPermissions, deliveryZones);
+    const fee = canUseRadius
+      ? (radiusFee ?? 0)
+      : getSelectedDeliveryFee(menu, costumerNeighborhood, hasPlusPermissions, deliveryZones);
     setDeliveryFeeValue(fee);
-  }, [menu, selectedService, costumerNeighborhood, hasPlusPermissions, deliveryZones]);
+  }, [menu, selectedService, costumerNeighborhood, hasPlusPermissions, deliveryZones, canUseRadius, radiusFee]);
 
   const drawerSubtotal = cart.totalPrice(menu?.id) || 0;
   const drawerSubtotalAfterDiscount = Math.max(0, drawerSubtotal - discountAmount);
@@ -402,10 +519,12 @@ export default function CartDrawer({
   // guardar no local storage
   const saveCustomerInfo = () => {
     if (typeof window === "undefined") return;
+    if (counterRequested) return;
     const customerInfo = {
       name: costumerName,
       phone: costumerPhone,
       address: costumerAddress,
+      addressParts: costumerAddressParts,
     };
     localStorage.setItem("customerInfo", JSON.stringify(customerInfo));
     console.log("💾 LocalStorage salvo no fechamento:", customerInfo);
@@ -515,29 +634,29 @@ export default function CartDrawer({
       })
       .join("\n\n");
 
-    const trocoInfo =
-      selectedPayment === "cash" && needsChange
-        ? `\n💵 Troco para: ${formatCurrency(normalizeMoney(changeForAmount), menu?.currency)}`
-        : "";
+    const isDelivery = selectedService === "delivery";
 
-    const customerInfo = `
-👤 Nome: ${costumerName}
-📞 Telefone: ${costumerPhone}
-${selectedService === "delivery" && canUseZones && costumerNeighborhood ? `🏘 Bairro: ${costumerNeighborhood}\n` : ""}
-${selectedService === "delivery" && costumerAddress ? `📍 Endereço: ${costumerAddress}\n` : ""}
-💳 Pagamento: ${paymentLabel || paymentOptions.find((p) => p.id === selectedPayment)?.label || "-"}${trocoInfo}
-🚚 Serviço: ${serviceOptions.find((s) => s.id === selectedService)?.label || "-"}`;
-
-    const message = `‼️ Pedido de ${menu.title}
-
-${itemsList}
-
-————————————
-Subtotal: ${formatCurrency(subtotal, menu?.currency)}
-${discount > 0 ? `Desconto: -${formatCurrency(discount, menu?.currency)}\n` : ""}${appliedCouponCode ? `Cupom: ${appliedCouponCode}\n` : ""}${selectedService === "delivery" ? `Frete: ${formatCurrency(deliveryFee, menu?.currency)}` : ""}
-💰 Total: ${formatCurrency(total, menu?.currency)}
-
-${customerInfo}`;
+    // valor vazio = a linha da tag some da mensagem
+    const customTemplate = ["business", "admin", "designer"].includes(ownerRole) ? menu?.whatsapp_template : null;
+    const message = renderWhatsappMessage(customTemplate, {
+      estabelecimento: menu.title,
+      itens: itemsList,
+      subtotal: formatCurrency(subtotal, menu?.currency),
+      desconto: discount > 0 ? formatCurrency(discount, menu?.currency) : "",
+      cupom: appliedCouponCode || "",
+      frete: isDelivery ? formatCurrency(deliveryFee, menu?.currency) : "",
+      total: formatCurrency(total, menu?.currency),
+      nome: costumerName,
+      telefone: costumerPhone,
+      bairro: isDelivery && canUseZones ? costumerNeighborhood : "",
+      endereco: isDelivery ? costumerAddress : "",
+      pagamento: paymentLabel || paymentOptions.find((p) => p.id === selectedPayment)?.label || "-",
+      troco:
+        selectedPayment === "cash" && needsChange
+          ? formatCurrency(normalizeMoney(changeForAmount), menu?.currency)
+          : "",
+      servico: serviceOptions.find((s) => s.id === selectedService)?.label || "-",
+    });
 
     const rawPhone = establishmentPhone || menu?.owner_phone || menu?.phone || null;
     if (!rawPhone) return null;
@@ -549,12 +668,12 @@ ${customerInfo}`;
 
   // ── Validação comum ──────────────────────────────────────────────────────
   function validateCustomerFields() {
-    if (costumerName.trim().length < 3) {
+    if (!counterMode && costumerName.trim().length < 3) {
       customAlert("O nome deve ter pelo menos 3 letras.", "error");
       return false;
     }
 
-    if (!tableInfo && costumerPhone.length < 5) {
+    if (!tableInfo && !counterMode && costumerPhone.length < 5) {
       customAlert("Número de telefone inválido.", "error");
       return false;
     }
@@ -575,9 +694,20 @@ ${customerInfo}`;
       }
     }
 
-    if (selectedService === "delivery" && costumerAddress.trim().length < 10) {
-      customAlert("O endereço deve ter pelo menos 10 letras.", "error");
+    if (selectedService === "delivery" && costumerAddressParts.street.trim().length < 3) {
+      customAlert("Informe a rua do endereço.", "error");
       return false;
+    }
+
+    if (selectedService === "delivery" && canUseRadius) {
+      if (!customerCoords) {
+        customAlert("Calcule a taxa de entrega antes de continuar.", "error");
+        return false;
+      }
+      if (radiusFee === null) {
+        customAlert("No momento, seu endereço está fora da área de entrega.", "error");
+        return false;
+      }
     }
 
     if (!selectedService) {
@@ -604,9 +734,9 @@ ${customerInfo}`;
       }
     }
 
-    if (!(await consumeCoupon())) return;
+    if (!(await consumeCoupon()) || !(await consumeStock())) return;
 
-    if (tableInfo) {
+    if (tableInfo || counterMode) {
       finalizeTableOrder();
       return;
     }
@@ -629,10 +759,11 @@ ${customerInfo}`;
       return;
     }
 
-    if (!(await consumeCoupon())) return;
+    if (!(await consumeCoupon()) || !(await consumeStock())) return;
 
-    if (tableInfo) {
-      if (selectedPayment === "pix" && menu.pix_key !== null) {
+    if (tableInfo || counterMode) {
+      // no balcão o caixa recebe o PIX na hora: sem a etapa de envio do comprovante
+      if (tableInfo && selectedPayment === "pix" && menu.pix_key !== null) {
         finalizeTableOrder({ goToStage: "sendPix" });
       } else {
         finalizeTableOrder();
@@ -649,8 +780,9 @@ ${customerInfo}`;
     }
   };
 
-  // ── Pedido de mesa: sem WhatsApp, cai direto na aba Pedidos ──────────────
+  // ── Pedido de mesa ou de balcão: sem WhatsApp, cai direto na aba Pedidos ─
   const finalizeTableOrder = async ({ goToStage = "tableSuccess" } = {}) => {
+    const deliveryFee = !tableInfo && selectedService === "delivery" ? deliveryFeeValue : 0;
     const subtotal = (currentItems || []).reduce((acc, item) => {
       const base = (Number(item.price) || 0) * (Number(item.qty) || 0);
       const extrasPerItem = (item.additionals || []).reduce((s, a) => s + (Number(a.price) || 0), 0);
@@ -658,7 +790,7 @@ ${customerInfo}`;
       return acc + base + extras;
     }, 0);
 
-    const total = Math.max(0, subtotal - discountAmount);
+    const total = Math.max(0, subtotal - discountAmount) + deliveryFee;
     setFinalValue(total);
     setPurchaseStage("confirmingTable");
 
@@ -669,9 +801,9 @@ ${customerInfo}`;
       payment_method: selectedPayment || null,
       change_requested: selectedPayment === "cash" ? needsChange : null,
       change_for_amount: selectedPayment === "cash" && needsChange ? normalizeMoney(changeForAmount) : null,
-      service: "dinein",
-      table_id: tableInfo.id,
-      table_label: tableInfo.label,
+      service: tableInfo ? "dinein" : selectedService,
+      table_id: tableInfo?.id ?? null,
+      table_label: tableInfo?.label ?? null,
       items_list: (currentItems || []).map((it) => ({
         name: it.name,
         qty: it.qty,
@@ -680,9 +812,9 @@ ${customerInfo}`;
         additionals: it.additionals || [],
         note: it.note || "",
       })),
-      neighborhood: null,
-      address: null,
-      delivery_fee: 0,
+      neighborhood: !tableInfo && selectedService === "delivery" && canUseZones ? costumerNeighborhood : null,
+      address: !tableInfo && selectedService === "delivery" ? costumerAddress : null,
+      delivery_fee: deliveryFee,
       discount: discountAmount,
       is_paid: false,
       total,
@@ -704,23 +836,34 @@ ${customerInfo}`;
       return;
     }
 
-    saveReceipt(menu?.id, {
-      id: `local-${Date.now()}`,
-      menuTitle: menu?.title,
-      createdAt: payload.created_at,
-      costumerName: payload.costumer_name,
-      paymentMethod: payload.payment_method,
-      service: payload.service,
-      tableLabel: payload.table_label,
-      itemsList: payload.items_list,
-      subtotal,
-      deliveryFee: 0,
-      discount: discountAmount,
-      total,
-      isPaid: false,
-    });
+    // no balcão o pedido é do cliente, não de quem registrou: fica fora de "Meus pedidos" deste aparelho
+    if (!counterMode) {
+      saveReceipt(menu?.id, {
+        id: `local-${Date.now()}`,
+        menuTitle: menu?.title,
+        createdAt: payload.created_at,
+        costumerName: payload.costumer_name,
+        paymentMethod: payload.payment_method,
+        service: payload.service,
+        tableLabel: payload.table_label,
+        itemsList: payload.items_list,
+        subtotal,
+        deliveryFee: 0,
+        discount: discountAmount,
+        total,
+        isPaid: false,
+      });
+    }
 
     cart.clear(menu?.id);
+    if (counterMode) {
+      // próximo cliente do balcão começa em branco
+      setCostumerName("");
+      setCostumerPhone("");
+      setCostumerAddressParts(EMPTY_ADDRESS);
+      setCostumerNeighborhood("");
+      setSearch("");
+    }
     setPurchaseStage(goToStage);
   };
   // ────────────────────────────────────────────────────────────────────────
@@ -975,11 +1118,7 @@ ${customerInfo}`;
               <button
                 onClick={async () => {
                   // controle manual vale mais que o horário: confere o estado atual no banco
-                  const { data: store } = await supabase
-                    .from("menus")
-                    .select("manual_control, is_open")
-                    .eq("id", menu.id)
-                    .maybeSingle();
+                  const { data: store } = await getStoreState(supabase, menu.id);
                   const openNow = store?.manual_control ? store.is_open : isOpen;
 
                   if (!openNow) {
@@ -1031,7 +1170,10 @@ ${customerInfo}`;
       {isPurchaseModalOpen && (
         <div className="fixed inset-0 z-65 flex items-center justify-center" style={{ color: foregroundToUse }}>
           <div className={backdropClasses} aria-hidden="true" />
-          <div className="relative rounded-lg p-6 w-[90%] max-w-md z-70" style={{ backgroundColor: bgColor }}>
+          <div
+            className="relative rounded-lg p-6 w-[90%] max-w-md z-70 max-h-[100dvh] overflow-y-auto overscroll-contain"
+            style={{ backgroundColor: bgColor }}
+          >
             {purchaseStage === "confirmingTable" && (
               <svg
                 className="absolute inset-0 w-full h-full pointer-events-none overflow-visible"
@@ -1113,7 +1255,14 @@ ${customerInfo}`;
             ) : purchaseStage === "costumerInfos" ? (
               <div className="flex flex-col gap-2">
                 <div>
-                  <label className="block text-sm font-medium">Digite seu nome:</label>
+                  {counterMode && (
+                    <p className="mb-2 rounded p-2 text-sm" style={{ backgroundColor: translucidToUse }}>
+                      Pedido de balcão: nome e telefone são opcionais e o pedido vai direto para Pedidos recebidos.
+                    </p>
+                  )}
+                  <label className="block text-sm font-medium">
+                    {counterMode ? "Nome do cliente (opcional):" : "Digite seu nome:"}
+                  </label>
                   <input
                     type="text"
                     placeholder="Nome"
@@ -1128,12 +1277,14 @@ ${customerInfo}`;
                 </div>
                 {!tableInfo && (
                   <div>
-                    <label className="block text-sm font-medium">Digite seu número para contato:</label>
+                    <label className="block text-sm font-medium">
+                      {counterMode ? "Telefone do cliente (opcional):" : "Digite seu número para contato:"}
+                    </label>
                     <PhoneInput
                       country="br"
                       value={costumerPhone}
                       onChange={(value) => setCostumerPhone(value)}
-                      inputProps={{ required: true }}
+                      inputProps={{ required: !counterMode }}
                       inputClass="!w-full !px-3 !py-2 !border !rounded !focus:outline-none !focus:ring-2 !focus:ring-blue-400 !pl-14"
                       buttonClass="!border-r !bg-transparent !rounded-l"
                       containerClass="!flex !items-center !mb-2"
@@ -1210,19 +1361,63 @@ ${customerInfo}`;
                     )}
 
                     <div>
-                      <label className="block text-sm font-medium">Digite seu endereço:</label>
-                      <input
-                        type="text"
-                        placeholder="Endereço"
-                        value={costumerAddress}
-                        onChange={(e) => {
-                          setCostumerAddress(e.target.value);
-                        }}
-                        maxLength={80}
-                        className="w-full p-2 rounded mb-2"
-                        style={{ backgroundColor: translucidToUse }}
-                      />
+                      <label className="block text-sm font-medium mb-1">Endereço de entrega:</label>
+                      <div className="mb-2">
+                        <AddressFields
+                          value={costumerAddressParts}
+                          onChange={setCostumerAddressParts}
+                          hideNeighborhood={canUseZones}
+                          inputClassName="w-full p-2 rounded"
+                          inputStyle={{ backgroundColor: translucidToUse }}
+                        />
+                      </div>
                     </div>
+
+                    {canUseRadius && (
+                      <div className="mb-2 text-sm">
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => locateCustomer(true)}
+                            disabled={radiusStatus === "loading"}
+                            className="cursor-pointer rounded p-2 font-semibold disabled:opacity-50"
+                            style={{ backgroundColor: translucidToUse }}
+                          >
+                            Calcular taxa de entrega
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => locateCustomer(false)}
+                            disabled={radiusStatus === "loading"}
+                            className="cursor-pointer rounded p-2 disabled:opacity-50"
+                            style={{ backgroundColor: translucidToUse }}
+                          >
+                            Usar minha localização
+                          </button>
+                        </div>
+                        <p className="mt-1" style={{ color: grayToUse }}>
+                          {radiusStatus === "loading"
+                            ? "Calculando..."
+                            : radiusStatus === "notFound"
+                              ? "Não achamos seu endereço no mapa. Confira os dados ou use sua localização."
+                              : radiusStatus === "denied"
+                                ? "Não foi possível obter sua localização."
+                                : customerDistance == null
+                                  ? "Preencha o endereço e calcule a taxa."
+                                  : radiusFee === null
+                                    ? `Fora da área de entrega (${customerDistance.toFixed(1)} km).`
+                                    : null}
+                        </p>
+                        {customerDistance != null && radiusFee !== null && (
+                          <p style={{ color: grayToUse }}>
+                            Distância: {customerDistance.toFixed(1)} km · Taxa de entrega:{" "}
+                            <strong style={{ color: foregroundToUse }}>
+                              {formatCurrency(deliveryFeeValue, menu?.currency)}
+                            </strong>
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </>
                 )}
                 <>
@@ -1372,8 +1567,8 @@ ${customerInfo}`;
                     ? "Após fazer o PIX, mostre o comprovante para o estabelecimento."
                     : "Após fazer o PIX, envie o comprovante pelo WhatsApp!"}
                 </p>
-                {showWhatsappButtonOnPixStage &&
-                  (tableInfo ? (
+                {tableInfo ? (
+                  showWhatsappButtonOnPixStage && (
                     <button
                       onClick={() => setPurchaseStage("tableSuccess")}
                       className="cursor-pointer w-full py-2 px-4 rounded font-bold text-white flex items-center justify-center gap-2 mt-2"
@@ -1381,7 +1576,8 @@ ${customerInfo}`;
                     >
                       Concluir pedido
                     </button>
-                  ) : (
+                  )
+                ) : (
                     <a href={whatsappURL || "#"} rel="noopener noreferrer">
                       <span
                         className="cursor-pointer py-2 px-4 rounded font-bold flex items-center justify-center gap-2 mt-2"
@@ -1391,7 +1587,7 @@ ${customerInfo}`;
                         Enviar confirmação
                       </span>
                     </a>
-                  ))}
+                )}
               </div>
             ) : purchaseStage === "tableSuccess" ? (
               <div
@@ -1399,7 +1595,9 @@ ${customerInfo}`;
                 style={{ animation: "popInAnim 0.35s ease-out" }}
               >
                 <p className="text-sm" style={{ color: grayToUse }}>
-                  Seu pedido foi enviado para a {tableInfo?.label || "mesa"} e já está na cozinha!
+                  {counterMode
+                    ? "Pedido registrado! Ele já aparece em Pedidos recebidos."
+                    : `Seu pedido foi enviado para a ${tableInfo?.label || "mesa"} e já está na cozinha!`}
                 </p>
                 {finalValue > 0 && (
                   <p className="mt-2 font-semibold">

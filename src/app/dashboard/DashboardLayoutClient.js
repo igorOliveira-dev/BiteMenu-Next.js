@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { hasMenu } from "@/lib/queries/menus";
+import { getStaff } from "@/lib/staff";
 import Loading from "@/components/Loading";
 import useUser from "@/hooks/useUser";
 import Image from "next/image";
@@ -15,6 +16,7 @@ import PrivacyAcceptModal from "@/components/PrivacyAcceptModal";
 import { CURRENT_PRIVACY_VERSION } from "@/lib/privacy";
 import useAcquisitionSourceModal from "@/hooks/useAcquisitionSourceModal";
 import AcquisitionSourceModal from "@/app/dashboard/components/AcquisitionSourceModal";
+import LegacyPlanModal from "@/app/dashboard/components/LegacyPlanModal";
 
 export default function DashboardLayoutClient({ children }) {
   const router = useRouter();
@@ -38,7 +40,8 @@ export default function DashboardLayoutClient({ children }) {
         const { data: menus } = await hasMenu(supabase, user.id);
 
         if (!menus || menus.length === 0) {
-          router.replace("/getstart");
+          const { data: staff } = await getStaff(supabase, user.id);
+          router.replace(staff ? "/equipe" : "/getstart");
           return;
         }
 
@@ -72,7 +75,7 @@ export default function DashboardLayoutClient({ children }) {
       } else {
         setShowPlanButton(false);
       }
-      if (ownerPlan === "pro") {
+      if (ownerPlan === "pro" || ownerPlan === "business") {
         setShowDownloadButton(true);
       } else {
         setShowDownloadButton(false);
@@ -155,6 +158,7 @@ export default function DashboardLayoutClient({ children }) {
           onClose={() => setShowPrivacyModal(false)}
         />
       )}
+      {!showPrivacyModal && <LegacyPlanModal profile={profile} />}
       {acquisitionModal.show && !showPrivacyModal && (
         <AcquisitionSourceModal onClose={acquisitionModal.onClose} onSubmit={acquisitionModal.onSubmit} />
       )}

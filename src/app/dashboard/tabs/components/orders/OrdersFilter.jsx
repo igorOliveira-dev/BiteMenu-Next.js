@@ -20,7 +20,8 @@ function FilterChip({ label, onRemove }) {
   );
 }
 
-export default function OrdersFilter({ onChange, initial = {} }) {
+// statusOptions: [[valor, rótulo]] das etapas da equipe (Business); null esconde o filtro
+export default function OrdersFilter({ onChange, initial = {}, statusOptions = null }) {
   const { menu } = useMenu();
 
   const allowedPayments = useMemo(() => {
@@ -37,6 +38,8 @@ export default function OrdersFilter({ onChange, initial = {} }) {
   const [deliveryType, setDeliveryType] = useState(initial.deliveryType ?? "all");
   const [payment, setPayment] = useState(initial.payment ?? "all");
   const [tableOnly, setTableOnly] = useState(initial.tableOnly ?? false);
+  const [status, setStatus] = useState(initial.status ?? "all");
+  const statusLabel = statusOptions?.find(([value]) => value === status)?.[1];
 
   // só mostra o filtro "somente mesas" se o estabelecimento já tiver algum pedido vindo de mesa
   useEffect(() => {
@@ -73,16 +76,18 @@ export default function OrdersFilter({ onChange, initial = {} }) {
       deliveryType,
       payment,
       tableOnly,
+      status: statusOptions ? status : "all",
       search: debouncedSearch,
       sortDir,
     });
-  }, [isPaid, deliveryType, payment, tableOnly, debouncedSearch, sortDir]);
+  }, [isPaid, deliveryType, payment, tableOnly, status, Boolean(statusOptions), debouncedSearch, sortDir]);
 
   const clearAll = () => {
     setIsPaid("all");
     setDeliveryType("all");
     setPayment("all");
     setTableOnly(false);
+    setStatus("all");
     setSearch("");
     setDebouncedSearch(""); // força limpeza imediata sem esperar o debounce
   };
@@ -102,9 +107,14 @@ export default function OrdersFilter({ onChange, initial = {} }) {
     faceToFace: "Atendimento presencial",
   };
 
-  const activeCount = [deliveryType !== "all", payment !== "all", isPaid !== "all", tableOnly, Boolean(search)].filter(
-    Boolean,
-  ).length;
+  const activeCount = [
+    deliveryType !== "all",
+    payment !== "all",
+    isPaid !== "all",
+    tableOnly,
+    Boolean(statusLabel),
+    Boolean(search),
+  ].filter(Boolean).length;
 
   const fieldClass =
     "w-full border border-translucid rounded-lg px-3 py-2 text-sm bg-translucid color-gray outline-none focus:ring-2 focus:ring-blue-500/40 transition";
@@ -196,7 +206,7 @@ export default function OrdersFilter({ onChange, initial = {} }) {
               </div>
 
               <div>
-                <label className="block text-xs color-gray mb-1">Status</label>
+                <label className="block text-xs color-gray mb-1">Pago</label>
                 <select value={isPaid} onChange={(e) => setIsPaid(e.target.value)} className={fieldClass}>
                   <option className="text-black" value="all">
                     Pagos e não pagos
@@ -209,6 +219,22 @@ export default function OrdersFilter({ onChange, initial = {} }) {
                   </option>
                 </select>
               </div>
+
+              {statusOptions && (
+                <div>
+                  <label className="block text-xs color-gray mb-1">Status do pedido</label>
+                  <select value={status} onChange={(e) => setStatus(e.target.value)} className={fieldClass}>
+                    <option className="text-black" value="all">
+                      Todos os status
+                    </option>
+                    {statusOptions.map(([value, label]) => (
+                      <option className="text-black" key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
             {hasTableOrders && (
@@ -251,6 +277,7 @@ export default function OrdersFilter({ onChange, initial = {} }) {
               onRemove={() => setIsPaid("all")}
             />
           )}
+          {statusLabel && <FilterChip label={`Status: ${statusLabel}`} onRemove={() => setStatus("all")} />}
           {tableOnly && hasTableOrders && (
             <FilterChip label="Somente mesas" onRemove={() => setTableOnly(false)} />
           )}

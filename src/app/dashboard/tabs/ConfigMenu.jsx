@@ -27,6 +27,9 @@ import { useConfirm } from "@/providers/ConfirmProvider";
 import useUser from "@/hooks/useUser";
 import { supabase } from "@/lib/supabaseClient";
 import { updateMenuById } from "@/lib/queries/menus";
+import AddressFields, { formatAddress, mapsUrl } from "@/components/AddressFields";
+import { currentPosition, geocodeAddress } from "@/lib/deliveryRadius";
+import { shiftTime, splitRanges } from "@/utils/storeHours";
 
 const DEFAULT_HOURS = {
   mon: "09:00-18:00",
@@ -231,6 +234,146 @@ function TextInput({ className = "", ...props }) {
   return <input {...props} className={cx(INPUT_CLASS, className)} />;
 }
 
+// endereço antigo (texto livre) continua valendo até o dono preencher o formato estruturado
+function AddressEditor({ legacyAddress, details, onChange }) {
+  const formatted = details ? formatAddress(details) : legacyAddress;
+
+  return (
+    <div className="space-y-2">
+      {!details && legacyAddress ? (
+        <Notice>
+          Endereço atual: <strong>{legacyAddress}</strong>
+          <br />
+          Preencha os campos abaixo para padronizar e facilitar a localização no mapa.
+        </Notice>
+      ) : null}
+
+      <AddressFields
+        value={details}
+        onChange={onChange}
+        inputClassName={INPUT_CLASS}
+        canClear={!details && !!legacyAddress}
+      />
+
+      {formatted ? (
+        <div className="space-y-2">
+          <p className="text-xs opacity-70">
+            Como aparece no cardápio: <strong>{formatted}</strong>
+          </p>
+          <iframe
+            title="Localização no mapa"
+            src={`https://maps.google.com/maps?q=${encodeURIComponent(formatted)}&output=embed`}
+            className="h-48 w-full rounded-xl border border-[var(--translucid)]"
+            loading="lazy"
+          />
+          <a
+            href={mapsUrl(formatted)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs underline opacity-70"
+          >
+            <FaMapMarkerAlt /> Abrir no Google Maps
+          </a>
+        </div>
+      ) : details ? (
+        <p className="text-xs opacity-60">Preencha ao menos a rua para o endereço aparecer no cardápio.</p>
+      ) : null}
+    </div>
+  );
+}
+
+// taxa por raio: localização da loja + faixas "até X km → valor"
+function RadiusEditor({ value, onChange, addressDetails, currency }) {
+  const r = value ?? { lat: null, lng: null, tiers: [] };
+  const [status, setStatus] = useState("");
+  const hasLocation = r.lat != null && r.lng != null;
+
+  const locate = async (fromAddress) => {
+    setStatus("loading");
+    const pos = fromAddress ? await geocodeAddress(addressDetails) : await currentPosition();
+    if (!pos) return setStatus(fromAddress ? "notFound" : "denied");
+    setStatus("");
+    onChange({ ...r, ...pos });
+  };
+
+  const setTier = (id, field, v) =>
+    onChange({
+      ...r,
+      tiers: r.tiers.map((t) => (t.id === id ? { ...t, [field]: String(v).replace(",", ".").replace("-", "") } : t)),
+    });
+
+  return (
+    <div className="space-y-3 pt-1">
+      <div className="space-y-2">
+        <p className="text-xs opacity-70">Localização da loja (ponto de partida das entregas)</p>
+        <div className="flex flex-wrap gap-2">
+          <GhostButton onClick={() => locate(true)} disabled={!formatAddress(addressDetails)}>
+            <FaMapMarkerAlt className="text-xs" /> Usar o endereço da loja
+          </GhostButton>
+          <GhostButton onClick={() => locate(false)}>Usar minha localização atual</GhostButton>
+        </div>
+        {status === "loading" && <p className="text-xs opacity-60">Localizando...</p>}
+        {status === "notFound" && (
+          <p className="text-xs text-red-400">
+            Não achamos o endereço no mapa. Confira o endereço ou use sua localização atual (estando na loja).
+          </p>
+        )}
+        {status === "denied" && <p className="text-xs text-red-400">Não foi possível obter sua localização.</p>}
+        {hasLocation ? (
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs underline opacity-70"
+          >
+            <FaMapMarkerAlt /> Conferir localização no mapa
+          </a>
+        ) : (
+          <p className="text-xs opacity-60">Localização ainda não definida.</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-xs opacity-70">
+          Faixas de distância (em linha reta). Vale a menor faixa que cobre o cliente; acima da maior, não entrega.
+        </p>
+        {r.tiers.map((t) => (
+          <div key={t.id} className="grid grid-cols-[1fr_1fr_44px] gap-2">
+            <TextInput
+              type="number"
+              min="0"
+              step="0.1"
+              value={t.km}
+              onChange={(e) => setTier(t.id, "km", e.target.value)}
+              placeholder="Até (km)"
+            />
+            <TextInput
+              type="number"
+              min="0"
+              step="0.01"
+              value={t.fee}
+              onChange={(e) => setTier(t.id, "fee", e.target.value)}
+              placeholder={getCurrencySymbol(currency)}
+            />
+            <button
+              type="button"
+              onClick={() => onChange({ ...r, tiers: r.tiers.filter((x) => x.id !== t.id) })}
+              aria-label="Remover faixa"
+              className="flex h-11 cursor-pointer items-center justify-center rounded-xl border border-red-500/30 text-red-400 transition hover:bg-red-500/15"
+            >
+              <FaTrash className="text-xs" />
+            </button>
+          </div>
+        ))}
+        <GhostButton onClick={() => onChange({ ...r, tiers: [...r.tiers, { id: createZoneId(), km: "", fee: "" }] })}>
+          <FaPlus className="text-xs" />
+          Adicionar faixa
+        </GhostButton>
+      </div>
+    </div>
+  );
+}
+
 function TextArea({ className = "", ...props }) {
   return <textarea {...props} className={cx(INPUT_CLASS, "h-auto py-3", className)} />;
 }
@@ -400,11 +543,12 @@ function timeToMinutes(time) {
   return hours * 60 + minutes;
 }
 
-function isCloseBeforeOpen(openTime, closeTime) {
+// fechamento antes da abertura = turno vira a noite e fecha no dia seguinte
+function isOvernight(openTime, closeTime) {
   const open = timeToMinutes(openTime);
   const close = timeToMinutes(closeTime);
   if (open === null || close === null) return false;
-  return close < open;
+  return close > 0 && close < open;
 }
 
 const ConfigMenu = (props) => {
@@ -483,6 +627,17 @@ const ConfigMenu = (props) => {
       return next;
     });
   };
+
+  // aberto a partir do indicador de status no banner (aba Menu)
+  useEffect(() => {
+    let section = null;
+    try {
+      section = sessionStorage.getItem("configMenuSection");
+      sessionStorage.removeItem("configMenuSection");
+    } catch {}
+    if (section) toggleSection(section);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const slug = usingExternal ? externalState?.slug : slugLocal;
   const setSlug = usingExternal ? (value) => externalSetState((p) => ({ ...p, slug: value })) : setSlugLocal;
@@ -733,7 +888,6 @@ const ConfigMenu = (props) => {
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, [openColorIdx]);
 
-  const hasPlusPermissions = userRole === "admin" || userRole === "plus" || userRole === "pro";
 
   const suggestRandomPalette = () => {
     let next = Math.floor(Math.random() * COLOR_PALETTES.length);
@@ -809,12 +963,6 @@ const ConfigMenu = (props) => {
   };
 
   const toggleDeliveryMode = (mode) => {
-    if (mode === "zones" && !hasPlusPermissions) {
-      customAlert?.("Taxa por bairro está disponível apenas no Plus ou Pro.", "error");
-      setDeliveryFeeMode("fixed");
-      return;
-    }
-
     if (deliveryFeeMode === mode) {
       setDeliveryFeeMode("fixed");
       return;
@@ -849,31 +997,47 @@ const ConfigMenu = (props) => {
     setDeliveryZones((prev) => prev.filter((zone) => zone.id !== id));
   };
 
-  const updateDayHour = (day, field, value) => {
-    const currentValue = hours?.[day];
+  // cada dia: "HH:MM-HH:MM" ou vários turnos "HH:MM-HH:MM,HH:MM-HH:MM"
+  const setDayRanges = (day, ranges) => {
+    safeSetHours((prev) => ({
+      ...prev,
+      [day]: ranges.map(([open, close]) => `${open}-${close}`).join(","),
+    }));
+  };
 
-    if (currentValue === null) return;
+  const updateDayHour = (day, index, field, value) => {
+    const ranges = splitRanges(hours?.[day]);
+    if (!ranges[index] || !value) return;
 
-    const [currentOpen = "09:00", currentClose = "18:00"] =
-      typeof currentValue === "string" ? currentValue.split("-") : ["09:00", "18:00"];
-
+    const [currentOpen, currentClose] = ranges[index];
     const openTime = field === "open" ? value : currentOpen;
-    let closeTime = field === "close" ? value : currentClose;
+    const closeTime = field === "close" ? value : currentClose;
+    if (openTime === currentOpen && closeTime === currentClose) return;
 
-    if (closeTime === "00:00") {
-      closeTime = "23:59";
-      customAlert("Meia-noite foi ajustada para 23:59.", "info");
-    }
-
-    if (isCloseBeforeOpen(openTime, closeTime)) {
-      customAlert("O horário de fechamento não pode ser antes do horário de abertura.", "error");
+    if (openTime === closeTime) {
+      customAlert("A abertura e o fechamento não podem ser no mesmo horário.", "error");
       return;
     }
 
-    safeSetHours((prev) => ({
-      ...prev,
-      [day]: `${openTime}-${closeTime}`,
-    }));
+    ranges[index] = [openTime, closeTime];
+    setDayRanges(day, ranges);
+  };
+
+  const addDayRange = (day) => {
+    const ranges = splitRanges(hours?.[day]);
+    if (ranges.length >= 2) return; // no máximo 2 horários por dia
+    const last = ranges[ranges.length - 1];
+    const open = last ? shiftTime(last[1], 60) : "18:00";
+    setDayRanges(day, [...ranges, [open, shiftTime(open, 240)]]);
+  };
+
+  const removeDayRange = (day, index) => {
+    const ranges = splitRanges(hours?.[day]);
+    if (ranges.length <= 1) return;
+    setDayRanges(
+      day,
+      ranges.filter((_, i) => i !== index),
+    );
   };
 
   if (loading) return <Loading />;
@@ -885,7 +1049,9 @@ const ConfigMenu = (props) => {
     const count = selectedServices?.length || 0;
     const parts = [`${count} serviço${count === 1 ? "" : "s"}`];
     if (selectedServices?.includes("delivery")) {
-      parts.push(deliveryFeeMode === "zones" ? "frete por bairro" : "frete fixo");
+      parts.push(
+        deliveryFeeMode === "zones" ? "frete por bairro" : deliveryFeeMode === "radius" ? "frete por raio" : "frete fixo",
+      );
     }
     return parts.join(" · ");
   })();
@@ -964,21 +1130,29 @@ const ConfigMenu = (props) => {
               <Counter value={propDescription || ""} max={200} />
             </Field>
 
-            <Field label="Endereço">
-              <div className="relative">
-                <FaMapMarkerAlt className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs opacity-60" />
-                <TextInput
-                  className="pl-9"
-                  value={propAddress || ""}
-                  onChange={(e) => {
-                    const value = e.target.value.slice(0, 255);
-                    if (usingExternal) externalSetState((p) => ({ ...p, address: value }));
-                    else if (typeof propSetAddress === "function") propSetAddress(value);
-                  }}
-                  placeholder="Ex.: Rua das Flores, 120 - Centro"
-                  maxLength={255}
+            <Field label="Endereço" hint="Digite o CEP para preencher automaticamente.">
+              {usingExternal ? (
+                <AddressEditor
+                  legacyAddress={externalState.address}
+                  details={externalState.addressDetails}
+                  onChange={(addressDetails) => externalSetState((p) => ({ ...p, addressDetails }))}
                 />
-              </div>
+              ) : (
+                <div className="relative">
+                  <FaMapMarkerAlt className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs opacity-60" />
+                  <TextInput
+                    className="pl-9"
+                    value={propAddress || ""}
+                    onChange={(e) => {
+                      const value = e.target.value.slice(0, 255);
+                      if (usingExternal) externalSetState((p) => ({ ...p, address: value }));
+                      else if (typeof propSetAddress === "function") propSetAddress(value);
+                    }}
+                    placeholder="Ex.: Rua das Flores, 120 - Centro"
+                    maxLength={255}
+                  />
+                </div>
+              )}
             </Field>
 
             <Field label="Link do cardápio">
@@ -1031,7 +1205,7 @@ const ConfigMenu = (props) => {
 
             {selectedServices?.includes("delivery") && (
               <Field label="Cobrança do frete">
-                <div className="grid gap-2 sm:grid-cols-2">
+                <div className="grid gap-2 sm:grid-cols-3">
                   <OptionCard
                     selected={deliveryFeeMode === "fixed"}
                     title="Taxa fixa"
@@ -1044,6 +1218,14 @@ const ConfigMenu = (props) => {
                     description="Um valor para cada bairro."
                     onClick={() => toggleDeliveryMode("zones")}
                   />
+                  {usingExternal && (
+                    <OptionCard
+                      selected={deliveryFeeMode === "radius"}
+                      title="Taxa por raio"
+                      description="Valor pela distância até o cliente."
+                      onClick={() => toggleDeliveryMode("radius")}
+                    />
+                  )}
                 </div>
 
                 {deliveryFeeMode === "fixed" && (
@@ -1059,64 +1241,66 @@ const ConfigMenu = (props) => {
                   </div>
                 )}
 
-                {deliveryFeeMode === "zones" &&
-                  (!hasPlusPermissions ? (
-                    <Notice>Taxa por bairro é exclusiva do Plus ou Pro. Seu cardápio continua com taxa fixa.</Notice>
-                  ) : (
-                    <div className="space-y-2 pt-1">
-                      {deliveryZones.length === 0 ? (
-                        <p className="text-xs opacity-60">Nenhum bairro cadastrado ainda.</p>
-                      ) : (
-                        deliveryZones.map((zone) => (
-                          <div key={zone.id} className="grid grid-cols-[1fr_110px_44px] gap-2">
-                            <TextInput
-                              value={zone.name}
-                              onChange={(e) => updateDeliveryZone(zone.id, "name", e.target.value)}
-                              placeholder="Bairro"
-                            />
-                            <TextInput
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={zone.shipping_fee}
-                              onChange={(e) => updateDeliveryZone(zone.id, "shipping_fee", e.target.value)}
-                              placeholder={getCurrencySymbol(currency)}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeDeliveryZone(zone.id)}
-                              aria-label={`Remover ${zone.name || "bairro"}`}
-                              className="flex h-11 cursor-pointer items-center justify-center rounded-xl border border-red-500/30 text-red-400 transition hover:bg-red-500/15"
-                            >
-                              <FaTrash className="text-xs" />
-                            </button>
-                          </div>
-                        ))
-                      )}
+                {deliveryFeeMode === "radius" && usingExternal && (
+                  <RadiusEditor
+                    value={externalState.deliveryRadius}
+                    onChange={(deliveryRadius) => externalSetState((p) => ({ ...p, deliveryRadius }))}
+                    addressDetails={externalState.addressDetails}
+                    currency={currency}
+                  />
+                )}
 
-                      <GhostButton onClick={addDeliveryZone}>
-                        <FaPlus className="text-xs" />
-                        Adicionar bairro
-                      </GhostButton>
-                    </div>
-                  ))}
+                {deliveryFeeMode === "zones" && (
+                  <div className="space-y-2 pt-1">
+                    {deliveryZones.length === 0 ? (
+                      <p className="text-xs opacity-60">Nenhum bairro cadastrado ainda.</p>
+                    ) : (
+                      deliveryZones.map((zone) => (
+                        <div key={zone.id} className="grid grid-cols-[1fr_110px_44px] gap-2">
+                          <TextInput
+                            value={zone.name}
+                            onChange={(e) => updateDeliveryZone(zone.id, "name", e.target.value)}
+                            placeholder="Bairro"
+                          />
+                          <TextInput
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={zone.shipping_fee}
+                            onChange={(e) => updateDeliveryZone(zone.id, "shipping_fee", e.target.value)}
+                            placeholder={getCurrencySymbol(currency)}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeDeliveryZone(zone.id)}
+                            aria-label={`Remover ${zone.name || "bairro"}`}
+                            className="flex h-11 cursor-pointer items-center justify-center rounded-xl border border-red-500/30 text-red-400 transition hover:bg-red-500/15"
+                          >
+                            <FaTrash className="text-xs" />
+                          </button>
+                        </div>
+                      ))
+                    )}
+
+                    <GhostButton onClick={addDeliveryZone}>
+                      <FaPlus className="text-xs" />
+                      Adicionar bairro
+                    </GhostButton>
+                  </div>
+                )}
               </Field>
             )}
 
             <Field label={`Valor mínimo de pedido (${getCurrencySymbol(currency)})`}>
-              {hasPlusPermissions ? (
-                <TextInput
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={minimumOrderValue || ""}
-                  onChange={(e) => setMinimumOrderValue(String(e.target.value).replace(",", "."))}
-                  placeholder="Ex.: 15.00"
-                  className="max-w-xs"
-                />
-              ) : (
-                <Notice>Valor mínimo de pedido é exclusivo do Plus ou Pro.</Notice>
-              )}
+              <TextInput
+                type="number"
+                min="0"
+                step="0.01"
+                value={minimumOrderValue || ""}
+                onChange={(e) => setMinimumOrderValue(String(e.target.value).replace(",", "."))}
+                placeholder="Ex.: 15.00"
+                className="max-w-xs"
+              />
             </Field>
           </div>
         </SectionCard>
@@ -1246,33 +1430,63 @@ const ConfigMenu = (props) => {
             {dayOrder.map((day) => {
               const value = hours?.[day];
               const isClosed = value === null;
-              const [openTime, closeTime] = typeof value === "string" ? value.split("-") : ["", ""];
+              const ranges = isClosed ? [["", ""]] : splitRanges(value);
 
               return (
-                <div key={day} className="grid grid-cols-[44px_1fr] items-center gap-3 sm:grid-cols-[44px_1fr_auto]">
-                  <div className="text-sm font-semibold">{dayLabels[day]}</div>
+                <div key={day} className="mb-4 grid grid-cols-[44px_1fr] items-start gap-3 rounded-xl border-2 border-[var(--translucid)] border-l-[var(--foreground)]/50 p-3 sm:grid-cols-[44px_1fr_auto]">
+                  <div className="pt-3 text-sm font-semibold">{dayLabels[day]}</div>
 
-                  <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                    <input
-                      type="time"
-                      value={openTime || ""}
-                      disabled={isClosed}
-                      onChange={(e) => updateDayHour(day, "open", e.target.value)}
-                      onBlur={(e) => updateDayHour(day, "open", e.target.value)}
-                      className={cx(INPUT_CLASS, "disabled:cursor-not-allowed disabled:opacity-40")}
-                    />
-                    <span className="text-xs opacity-60">até</span>
-                    <input
-                      type="time"
-                      value={closeTime || ""}
-                      disabled={isClosed}
-                      onChange={(e) => updateDayHour(day, "close", e.target.value)}
-                      onBlur={(e) => updateDayHour(day, "close", e.target.value)}
-                      className={cx(INPUT_CLASS, "disabled:cursor-not-allowed disabled:opacity-40")}
-                    />
+                  <div className="space-y-2">
+                    {ranges.map(([openTime, closeTime], index) => (
+                      <div key={index}>
+                        <div className="grid grid-cols-[1fr_auto_1fr_44px] items-center gap-2">
+                          <input
+                            type="time"
+                            value={openTime || ""}
+                            disabled={isClosed}
+                            onChange={(e) => updateDayHour(day, index, "open", e.target.value)}
+                            onBlur={(e) => updateDayHour(day, index, "open", e.target.value)}
+                            className={cx(INPUT_CLASS, "disabled:cursor-not-allowed disabled:opacity-40")}
+                          />
+                          <span className="text-xs opacity-60">até</span>
+                          <input
+                            type="time"
+                            value={closeTime || ""}
+                            disabled={isClosed}
+                            onChange={(e) => updateDayHour(day, index, "close", e.target.value)}
+                            onBlur={(e) => updateDayHour(day, index, "close", e.target.value)}
+                            className={cx(INPUT_CLASS, "disabled:cursor-not-allowed disabled:opacity-40")}
+                          />
+                          {ranges.length > 1 ? (
+                            <button
+                              type="button"
+                              onClick={() => removeDayRange(day, index)}
+                              aria-label="Remover horário"
+                              className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-red-500/30 text-red-400 transition hover:bg-red-500/15"
+                            >
+                              <FaTrash className="text-xs" />
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => addDayRange(day)}
+                              disabled={isClosed}
+                              aria-label="Adicionar horário"
+                              className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-[var(--translucid)] transition hover:bg-[var(--translucid)] disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              <FaPlus className="text-xs" />
+                            </button>
+                          )}
+                        </div>
+                        {/* linha sempre reservada: os blocos não mudam de tamanho com ou sem o aviso */}
+                        <p className="mt-1 h-4 truncate text-xs leading-4 opacity-60">
+                          {!isClosed && isOvernight(openTime, closeTime) ? `Fecha às ${closeTime} do dia seguinte` : ""}
+                        </p>
+                      </div>
+                    ))}
                   </div>
 
-                  <label className="col-start-2 inline-flex cursor-pointer items-center gap-2 text-xs opacity-70 sm:col-start-3">
+                  <label className="col-start-2 inline-flex cursor-pointer items-center gap-2 text-xs opacity-70 sm:col-start-3 sm:pt-3">
                     <span className="switch">
                       <input
                         type="checkbox"
@@ -1295,6 +1509,11 @@ const ConfigMenu = (props) => {
               );
             })}
           </div>
+
+          <p className="mt-3 text-xs opacity-60">
+            Use o + para ter um segundo horário no dia (ex.: almoço e jantar). Para virar a
+            noite, coloque o fechamento antes da abertura (ex.: 20:00 até 02:00).
+          </p>
 
           <GhostButton
             className="mt-4"
@@ -1373,6 +1592,7 @@ const ConfigMenu = (props) => {
           </div>
         </div>
       )}
+
     </div>
   );
 };

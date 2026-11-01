@@ -34,10 +34,16 @@ export default function useMenu() {
       const fetchMenu = async () => {
         setLoading(true);
 
-        const { data, error } = await supabase.from("menus").select("*").eq("owner_id", user.id).single();
+        let { data, error } = await supabase.from("menus").select("*").eq("owner_id", user.id).single();
 
         if (error && error.code !== "PGRST116") {
           console.error("Erro ao buscar menu:", error);
+        }
+
+        // funcionário (caixa/cozinha): cardápio de quem o cadastrou; null se o Business do dono não está ativo
+        if (!data) {
+          const { data: staffMenuId } = await supabase.rpc("staff_menu_id");
+          if (staffMenuId) ({ data } = await supabase.from("menus").select("*").eq("id", staffMenuId).single());
         }
 
         cachedMenu = data ?? null;
@@ -56,4 +62,8 @@ export default function useMenu() {
   }, [user, userLoading]);
 
   return { menu, loading };
+}
+
+export function updateCachedMenu(patch) {
+  if (cachedMenu) cachedMenu = { ...cachedMenu, ...patch };
 }

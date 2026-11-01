@@ -20,6 +20,9 @@ import {
   TouchSensor,
   useSensor,
   useSensors,
+  useDroppable,
+  DragOverlay,
+  MeasuringStrategy,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -45,8 +48,9 @@ import {
 } from "react-icons/fa";
 import { useAlert } from "@/providers/AlertProvider";
 import { useConfirm } from "@/providers/ConfirmProvider";
-import { uploadItemImage } from "@/lib/uploadImage";
+import { uploadItemImage, removeUnusedImages } from "@/lib/uploadImage";
 import UpdatePlanModal from "../UpdatePlanModal";
+import { goToPlan, nextPlan, BUSINESS_LIMIT_TEXT } from "@/app/dashboard/components/PlanLockNotice";
 import { fileToThumbnailWebp, fileToWebp } from "@/app/utils/imageToWebp";
 import { FaEllipsisVertical } from "react-icons/fa6";
 import { createPortal } from "react-dom";
@@ -54,6 +58,8 @@ import { useLayoutEffect } from "react";
 import { supabaseImg } from "@/lib/imageUtils";
 import ActionsMenu from "@/components/ActionMenu";
 import CouponsModal from "./CouponsModal";
+import { STOCK_ROLES } from "@/lib/stock";
+import { FaBoxes, FaLayerGroup, FaLock, FaSort, FaTicketAlt, FaTools } from "react-icons/fa";
 import { getContrastTextColor as contrastText } from "@/utils/color";
 
 const getContrastTextColor = (hex) => contrastText(hex, "#000000");
@@ -316,8 +322,93 @@ function SearchableSelect({
   );
 }
 
+// ---------- drag de itens entre categorias (lista principal e modal de ordenação) ----------
+const DROP_CAT = "drop-cat-";
+const SORT_CAT = "sortcat-";
+
+const findItemCatId = (cats, id) =>
+  cats.find((c) => (c.menu_items || []).some((it) => it.id === id))?.id;
+
+const overCatId = (cats, overId) =>
+  String(overId).startsWith(DROP_CAT)
+    ? String(overId).slice(DROP_CAT.length)
+    : findItemCatId(cats, overId);
+
+// onDragOver: leva o item ativo para a categoria sob o cursor
+function moveItemAcrossCats(cats, activeId, overId) {
+  const from = findItemCatId(cats, activeId);
+  const to = overCatId(cats, overId);
+  if (!from || !to || from === to) return cats;
+  const item = cats
+    .find((c) => c.id === from)
+    .menu_items.find((it) => it.id === activeId);
+  return cats.map((c) => {
+    if (c.id === from)
+      return {
+        ...c,
+        menu_items: c.menu_items.filter((it) => it.id !== activeId),
+      };
+    if (c.id === to) {
+      const items = [...(c.menu_items || [])];
+      const idx = items.findIndex((it) => it.id === overId);
+      items.splice(idx === -1 ? items.length : idx, 0, {
+        ...item,
+        category_id: to,
+      });
+      return { ...c, menu_items: items };
+    }
+    return c;
+  });
+}
+
+// onDragEnd: reordena dentro da categoria final e normaliza position
+function reorderItemInCat(cats, activeId, overId) {
+  const catId = findItemCatId(cats, activeId);
+  return cats.map((c) => {
+    if (c.id !== catId) return c;
+    const oldIdx = c.menu_items.findIndex((it) => it.id === activeId);
+    const newIdx = c.menu_items.findIndex((it) => it.id === overId);
+    const items =
+      newIdx === -1 || newIdx === oldIdx
+        ? c.menu_items
+        : arrayMove(c.menu_items, oldIdx, newIdx);
+    return { ...c, menu_items: items.map((it, i) => ({ ...it, position: i })) };
+  });
+}
+
+// Área para soltar itens em categoria vazia
+function EmptyCatDrop({ catId, children }) {
+  const { setNodeRef, isOver } = useDroppable({ id: `${DROP_CAT}${catId}` });
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ outline: isOver ? "2px dashed #3b82f6" : "none" }}
+      className="rounded-xl"
+    >
+      {children}
+    </div>
+  );
+}
+
+// Remede as listas o tempo todo: itens mudam de categoria durante o arraste
+const DND_MEASURING = { droppable: { strategy: MeasuringStrategy.Always } };
+
+// Prévia que segue o cursor durante o arraste (portal para não sofrer com transform do modal)
+function DragPreview({ children }) {
+  if (typeof document === "undefined") return null;
+  return createPortal(
+    <DragOverlay>{children || null}</DragOverlay>,
+    document.body,
+  );
+}
+
 // Linha arrastável genérica; children recebe as props da alça de arraste
-function SortableRow({ id, className, children }) {
+function SortableRow({
+  id,
+  className,
+  children,
+  dragStyle = { opacity: 0.75 },
+}) {
   const {
     attributes,
     listeners,
@@ -332,7 +423,7 @@ function SortableRow({ id, className, children }) {
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
-        opacity: isDragging ? 0.75 : 1,
+        ...(isDragging ? dragStyle : null),
       }}
       className={className}
     >
@@ -353,8 +444,10 @@ function SortableMenuItem({
   foregroundToUse,
   grayToUse,
   canShowPromoPrice,
+  showStock,
   getContrastTextColor,
   currency,
+  overlay = false,
 }) {
   const {
     attributes,
@@ -364,7 +457,9 @@ function SortableMenuItem({
     transition,
     isDragging,
   } = useSortable({
-    id: item.id,
+    // a cópia exibida no DragOverlay não pode registrar o mesmo id
+    id: overlay ? `overlay-${item.id}` : item.id,
+    disabled: overlay,
   });
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -379,7 +474,8 @@ function SortableMenuItem({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.75 : 1,
+    opacity: isDragging ? 0.4 : 1,
+    cursor: overlay ? "grabbing" : undefined,
   };
 
   const dragHandleProps = {
@@ -388,7 +484,20 @@ function SortableMenuItem({
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="flex gap-2 items-stretch">
+    <div ref={setNodeRef} style={style} className="flex gap-1 items-stretch">
+      <button
+        type="button"
+        {...dragHandleProps}
+        title="Arrastar item"
+        className="flex items-center justify-center px-1 rounded-lg cursor-grab active:cursor-grabbing"
+        style={{
+          touchAction: "none",
+          color: grayToUse,
+          backgroundColor: isLightBg ? "#ffffff10" : "#00000010",
+        }}
+      >
+        <FaGripVertical />
+      </button>
       <div
         className="flex-1 flex rounded-lg overflow-hidden transition-opacity"
         style={{
@@ -509,11 +618,7 @@ function SortableMenuItem({
 
           <div className="flex items-start gap-3 min-w-0 pr-8">
             {item.image_url && (
-              <div
-                {...dragHandleProps}
-                className="cursor-grab active:cursor-grabbing"
-                style={{ touchAction: "none", flexShrink: 0 }}
-              >
+              <div style={{ flexShrink: 0 }}>
                 <img
                   src={
                     item.thumb_url ||
@@ -538,6 +643,11 @@ function SortableMenuItem({
                 style={{ color: foregroundToUse }}
               >
                 {item.name}
+                {showStock && item.stock === 0 && (
+                  <span className="ml-2 align-middle text-xs font-semibold text-red-500">
+                    Esgotado
+                  </span>
+                )}
               </div>
               <div
                 className="text-sm line-clamp-1"
@@ -588,6 +698,7 @@ export default function MenuItems({
   backgroundColor,
   detailsColor,
   changedFields,
+  onOpenStock,
 }) {
   const { menu, loading: menuLoading } = useMenu();
   const ownerRole = useOwnerRole(menu?.owner_id);
@@ -645,9 +756,10 @@ export default function MenuItems({
 
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const hasPlusPermissions =
-    ownerRole === "admin" || ownerRole === "plus" || ownerRole === "pro";
+    ["plus", "pro", "business", "admin", "designer"].includes(ownerRole);
 
   const [showCatIndicator, setShowCatIndicator] = useState(false);
 
@@ -673,8 +785,17 @@ export default function MenuItems({
 
   // collapse map for sort modal
   const [sortCollapsed, setSortCollapsed] = useState({});
-  // refs to DOM nodes (used for FLIP)
-  const domRefs = useRef({});
+  // item sendo arrastado (prévia do DragOverlay) e estado antes do arraste
+  const [draggingItem, setDraggingItem] = useState(null);
+  const dragBeforeRef = useRef(null);
+  // evita loop de onDragOver trocando de categoria várias vezes no mesmo frame
+  const crossMoveLockRef = useRef(false);
+  const lockCrossMove = () => {
+    crossMoveLockRef.current = true;
+    requestAnimationFrame(() => {
+      crossMoveLockRef.current = false;
+    });
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -692,6 +813,21 @@ export default function MenuItems({
 
   const [combos, setCombos] = useState(null);
   const [combosModalOpen, setCombosModalOpen] = useState(false);
+
+  // barra "Ferramentas" (ordenar, combos, cupons, estoque) recolhível; lido após o mount (hidratação)
+  const [toolsOpen, setToolsOpen] = useState(true);
+  useEffect(() => {
+    try {
+      setToolsOpen(localStorage.getItem("menu-tools-open") !== "0");
+    } catch {}
+  }, []);
+  const toggleTools = () => {
+    const next = !toolsOpen;
+    setToolsOpen(next);
+    try {
+      localStorage.setItem("menu-tools-open", next ? "1" : "0");
+    } catch {}
+  };
   const [couponsModalOpen, setCouponsModalOpen] = useState(false);
   const [comboFormOpen, setComboFormOpen] = useState(false);
   const [comboDraft, setComboDraft] = useState(null);
@@ -762,6 +898,7 @@ export default function MenuItems({
             position,
             visible,
             starred,
+            stock,
             mandatory_additional,
             additionals_limit
           )
@@ -799,7 +936,14 @@ export default function MenuItems({
     return () => {
       mounted = false;
     };
-  }, [menuLoading, menu?.id]);
+  }, [menuLoading, menu?.id, reloadKey]);
+
+  // o assistente de IA criou produtos / mudou estoque: recarrega a lista
+  useEffect(() => {
+    const reload = () => setReloadKey((k) => k + 1);
+    window.addEventListener("menu-items-changed", reload);
+    return () => window.removeEventListener("menu-items-changed", reload);
+  }, []);
 
   useEffect(() => {
     console.log("Owner role atualizado:", ownerRole);
@@ -1412,35 +1556,14 @@ export default function MenuItems({
     );
 
     try {
-      // se o item tiver imagem, remove também do bucket
-      if (itemToDelete?.image_url) {
-        const pathStart = itemToDelete.image_url.indexOf(
-          "/object/public/product-images/",
-        );
-        if (pathStart !== -1) {
-          const path = itemToDelete.image_url.substring(
-            pathStart + "/object/public/product-images/".length,
-          );
-          await supabase.storage.from("product-images").remove([path]);
-        }
-      }
-      if (itemToDelete?.thumb_url) {
-        const pathStart = itemToDelete.thumb_url.indexOf(
-          "/object/public/product-images/",
-        );
-        if (pathStart !== -1) {
-          const path = itemToDelete.thumb_url.substring(
-            pathStart + "/object/public/product-images/".length,
-          );
-          await supabase.storage.from("product-images").remove([path]);
-        }
-      }
-
       const { error } = await supabase
         .from("menu_items")
         .delete()
         .eq("id", itemId);
       if (error) throw error;
+
+      // só depois do banco: remove a imagem do bucket se nenhum outro item usa
+      await removeUnusedImages([itemToDelete?.image_url, itemToDelete?.thumb_url]);
 
       alert?.("Item removido", "success");
       return true;
@@ -1695,6 +1818,13 @@ export default function MenuItems({
       return alert?.("Desconto percentual não pode passar de 100%.", "error");
     }
 
+    // fora do Plus dá pra montar o combo, mas só salva assinando
+    if (!hasPlusPermissions) {
+      setPlanModalFeature("combos");
+      setPlanModalOpen(true);
+      return;
+    }
+
     const payload = {
       menu_id: menu.id,
       scope,
@@ -1751,46 +1881,6 @@ export default function MenuItems({
       setCombos(before);
       alert?.("Erro ao remover combo", "error");
     }
-  };
-
-  // ---------- helpers FLIP ----------
-  const captureRects = () => {
-    const map = {};
-    Object.keys(domRefs.current).forEach((key) => {
-      const el = domRefs.current[key];
-      if (el && el.getBoundingClientRect) map[key] = el.getBoundingClientRect();
-    });
-    return map;
-  };
-
-  const runFlip = (beforeRects = {}) => {
-    requestAnimationFrame(() => {
-      const afterRects = captureRects();
-      Object.keys(beforeRects).forEach((key) => {
-        const before = beforeRects[key];
-        const after = afterRects[key];
-        const el = domRefs.current[key];
-        if (!before || !after || !el) return;
-        const dx = before.left - after.left;
-        const dy = before.top - after.top;
-        if (dx === 0 && dy === 0) return;
-        el.style.transform = `translate(${dx}px, ${dy}px)`;
-        el.style.transition = "transform 0s";
-        // force reflow
-        // eslint-disable-next-line no-unused-expressions
-        el.offsetHeight;
-        requestAnimationFrame(() => {
-          el.style.transition = "transform 240ms cubic-bezier(.2,.9,.2,1)";
-          el.style.transform = "";
-          const cleanup = () => {
-            el.style.transition = "";
-            el.style.transform = "";
-            el.removeEventListener("transitionend", cleanup);
-          };
-          el.addEventListener("transitionend", cleanup);
-        });
-      });
-    });
   };
 
   // ---------- modal helpers ----------
@@ -2007,7 +2097,6 @@ export default function MenuItems({
     ordering.forEach((c) => {
       collapsedMap[c.id] = false;
     });
-    domRefs.current = {};
     setSortCollapsed(collapsedMap);
     setModalPayload({
       type: "sort",
@@ -2016,15 +2105,6 @@ export default function MenuItems({
     });
     setModalOpen(true);
     setTimeout(() => setModalPayload((p) => ({ ...p })), 10);
-  };
-
-  // swap util
-  const swap = (arr, i, j) => {
-    const next = [...arr];
-    const tmp = next[i];
-    next[i] = next[j];
-    next[j] = tmp;
-    return next;
   };
 
   const persistCategoryItemsOrder = async (categoryId, orderedItems) => {
@@ -2043,48 +2123,50 @@ export default function MenuItems({
     }
   };
 
-  const handleItemsDragEnd = async (categoryId, event) => {
-    const { active, over } = event;
+  const findDraggedItem = (cats, id) =>
+    (cats || []).flatMap((c) => c.menu_items || []).find((it) => it.id === id) ??
+    null;
 
-    if (!over || active.id === over.id) return;
+  const handleItemDragStart = ({ active }) => {
+    dragBeforeRef.current = categories;
+    setDraggingItem(findDraggedItem(categories, active.id));
+  };
 
-    const before = categories;
+  const handleItemDragOver = ({ active, over }) => {
+    if (!over || crossMoveLockRef.current) return;
+    const next = moveItemAcrossCats(categories, active.id, over.id);
+    if (next === categories) return;
+    lockCrossMove();
+    setCategories(next);
+  };
 
-    let reorderedItems = null;
+  const handleItemDragCancel = () => {
+    setDraggingItem(null);
+    if (dragBeforeRef.current) setCategories(dragBeforeRef.current);
+  };
 
-    setCategories((prev = []) =>
-      prev.map((cat) => {
-        if (cat.id !== categoryId) return cat;
+  const handleItemsDragEnd = async ({ active, over }) => {
+    setDraggingItem(null);
+    const before = dragBeforeRef.current;
+    if (!before) return;
 
-        const oldIndex = (cat.menu_items || []).findIndex(
-          (it) => it.id === active.id,
-        );
-        const newIndex = (cat.menu_items || []).findIndex(
-          (it) => it.id === over.id,
-        );
+    const next = reorderItemInCat(categories, active.id, over?.id);
+    setCategories(next);
 
-        if (oldIndex === -1 || newIndex === -1) return cat;
-
-        reorderedItems = arrayMove(
-          cat.menu_items || [],
-          oldIndex,
-          newIndex,
-        ).map((it, index) => ({
-          ...it,
-          position: index,
-        }));
-
-        return {
-          ...cat,
-          menu_items: reorderedItems,
-        };
-      }),
-    );
-
-    if (!reorderedItems) return;
+    const fromId = findItemCatId(before, active.id);
+    const toId = findItemCatId(next, active.id);
+    const ids = (cats, id) =>
+      (cats.find((c) => c.id === id)?.menu_items || [])
+        .map((it) => it.id)
+        .join();
+    if (fromId === toId && ids(before, fromId) === ids(next, toId)) return;
 
     try {
-      await persistCategoryItemsOrder(categoryId, reorderedItems);
+      // salva a categoria de destino e, se mudou, a de origem
+      for (const catId of new Set([toId, fromId])) {
+        const cat = next.find((c) => c.id === catId);
+        if (cat) await persistCategoryItemsOrder(catId, cat.menu_items || []);
+      }
     } catch (err) {
       console.error("Erro ao salvar ordem dos itens:", err);
       setCategories(before);
@@ -2092,34 +2174,52 @@ export default function MenuItems({
     }
   };
 
-  // MOVES com FLIP
-  const moveCategory = (index, direction) => {
-    const before = captureRects();
-    setModalPayload((p) => {
-      const ordering = p.data?.ordering ?? [];
-      const to = index + direction;
-      if (to < 0 || to >= ordering.length) return p;
-      const nextOrdering = swap(ordering, index, to);
-      return { ...p, data: { ...p.data, ordering: nextOrdering } };
+  // ---------- drag no modal de ordenação (categorias e itens) ----------
+  const setOrdering = (fn) =>
+    setModalPayload((p) => ({
+      ...p,
+      data: { ...p.data, ordering: fn(p.data?.ordering ?? []) },
+    }));
+
+  const isSortCat = (id) => String(id).startsWith(SORT_CAT);
+
+  // categoria só colide com categoria; item só com item/categoria vazia
+  const sortCollision = (args) =>
+    closestCenter({
+      ...args,
+      droppableContainers: args.droppableContainers.filter(
+        (c) => isSortCat(c.id) === isSortCat(args.active.id),
+      ),
     });
-    requestAnimationFrame(() => runFlip(before));
+
+  const handleSortDragStart = ({ active }) => {
+    if (isSortCat(active.id)) return;
+    setDraggingItem(
+      findDraggedItem(modalPayload.data?.ordering, active.id),
+    );
   };
 
-  const moveItem = (catIndex, itemIndex, direction) => {
-    const before = captureRects();
-    setModalPayload((p) => {
-      const ordering = p.data?.ordering ?? [];
-      const cat = ordering[catIndex];
-      if (!cat) return p;
-      const items = cat.menu_items || [];
-      const to = itemIndex + direction;
-      if (to < 0 || to >= items.length) return p;
-      const newItems = swap(items, itemIndex, to);
-      const newOrdering = [...ordering];
-      newOrdering[catIndex] = { ...cat, menu_items: newItems };
-      return { ...p, data: { ...p.data, ordering: newOrdering } };
-    });
-    requestAnimationFrame(() => runFlip(before));
+  const handleSortDragOver = ({ active, over }) => {
+    if (!over || isSortCat(active.id) || crossMoveLockRef.current) return;
+    const ordering = modalPayload.data?.ordering ?? [];
+    const next = moveItemAcrossCats(ordering, active.id, over.id);
+    if (next === ordering) return;
+    lockCrossMove();
+    setOrdering(() => next);
+  };
+
+  const handleSortDragEnd = ({ active, over }) => {
+    setDraggingItem(null);
+    if (!over) return;
+    if (isSortCat(active.id)) {
+      setOrdering((o) => {
+        const from = o.findIndex((c) => SORT_CAT + c.id === active.id);
+        const to = o.findIndex((c) => SORT_CAT + c.id === over.id);
+        return from === -1 || to === -1 ? o : arrayMove(o, from, to);
+      });
+      return;
+    }
+    setOrdering((o) => reorderItemInCat(o, active.id, over.id));
   };
 
   const toggleCollapse = (catId) => {
@@ -2240,6 +2340,20 @@ export default function MenuItems({
           return;
         }
       }
+      // fora do Plus dá pra preencher a promoção, mas só salva assinando (limpar ou manter a antiga pode)
+      const savedPromo = categories
+        ?.flatMap((c) => c.menu_items || [])
+        .find((it) => it.id === itemId)?.promo_price;
+      if (
+        !canShowPromoPrice &&
+        promoNum !== null &&
+        promoNum !== (savedPromo != null ? Number(savedPromo) : null)
+      ) {
+        setPlanModalFeature("promo_price");
+        setPlanModalOpen(true);
+        setSaving(false);
+        return;
+      }
       data.promo_price = promoNum;
 
       const groups = normalizeOptionGroups(data.option_groups || []);
@@ -2299,7 +2413,10 @@ export default function MenuItems({
           await saveOptionGroups(newItem.id, data.option_groups);
         }
       } else if (mode === "edit" && itemId) {
-        await updateItem(itemId, {
+        const oldItem = categories
+          .flatMap((c) => c.menu_items || [])
+          .find((it) => it.id === itemId);
+        const saved = await updateItem(itemId, {
           name: data.name,
           price: data.price,
           promo_price: data.promo_price,
@@ -2308,6 +2425,9 @@ export default function MenuItems({
           image_url: data.image_url ?? "",
           thumb_url: data.thumb_url ?? "",
         });
+        if (saved && oldItem?.image_url !== saved.image_url) {
+          await removeUnusedImages([oldItem?.image_url, oldItem?.thumb_url]);
+        }
         await saveOptionGroups(itemId, data.option_groups ?? []);
       }
     }
@@ -2333,7 +2453,6 @@ export default function MenuItems({
 
       toggleItemStarred(item.id, item.starred);
     } else {
-      alert?.("Assine o plano Plus ou Pro para destacar itens!");
       if (!planModalOpen) {
         setPlanModalFeature("highlight_items");
         setPlanModalOpen(true);
@@ -2720,7 +2839,8 @@ export default function MenuItems({
     if (role === "free") return 20;
     if (role === "plus") return 50;
     if (role === "pro") return 200;
-    if (role === "admin") return Infinity;
+    if (role === "business") return 500;
+    if (role === "admin" || role === "designer") return Infinity;
     return 20;
   };
 
@@ -2733,7 +2853,8 @@ export default function MenuItems({
     if (role === "free") return 4;
     if (role === "plus") return 10;
     if (role === "pro") return 20;
-    if (role === "admin") return Infinity;
+    if (role === "business") return 100;
+    if (role === "admin" || role === "designer") return Infinity;
     return 4;
   };
 
@@ -2788,6 +2909,13 @@ export default function MenuItems({
     }));
   };
 
+  const toolButtonStyle = {
+    backgroundColor: translucidToUse,
+    color: foregroundToUse,
+    border: "2px solid",
+    borderColor: translucidToUse,
+  };
+
   if (menuLoading || loading || categories === null || ownerRole === null)
     return <div className="p-4">Carregando categorias...</div>;
   if (!menu) return <div className="p-4">Você ainda não criou um menu.</div>;
@@ -2796,50 +2924,47 @@ export default function MenuItems({
     <div
       className={`p-4 ${changedFields.length > 0 ? "pb-48 lg:pb-34" : "pb-12 lg:pb-0"}`}
     >
-      <div className="mb-4">
-        <div className="flex gap-2">
-          {categories.length > 0 && (
-            <>
-              <button
-                onClick={openSortModal}
-                className="cursor-pointer px-3 py-1 hover:opacity-75 rounded-lg"
-                style={{
-                  backgroundColor: translucidToUse,
-                  color: foregroundToUse,
-                  border: "2px solid",
-                  borderColor: translucidToUse,
-                }}
-              >
-                Ordenar itens
-              </button>
-              <button
-                onClick={() => setCombosModalOpen(true)}
-                className="cursor-pointer px-3 py-1 hover:opacity-75 rounded-lg font-bold"
-                style={{
-                  backgroundColor: translucidToUse,
-                  color: foregroundToUse,
-                  border: "2px solid",
-                  borderColor: translucidToUse,
-                }}
-              >
-                + Criar combo
-              </button>
-              <button
-                onClick={() => setCouponsModalOpen(true)}
-                className="cursor-pointer px-3 py-1 hover:opacity-75 rounded-lg font-bold"
-                style={{
-                  backgroundColor: translucidToUse,
-                  color: foregroundToUse,
-                  border: "2px solid",
-                  borderColor: translucidToUse,
-                }}
-              >
-                + Cupons
-              </button>
-            </>
+      {categories.length > 0 && (
+        <div className="mb-4">
+          <button
+            type="button"
+            onClick={toggleTools}
+            aria-expanded={toolsOpen}
+            className="cursor-pointer flex items-center gap-2 px-3 py-1 hover:opacity-75 rounded-lg font-semibold"
+            style={{ ...toolButtonStyle, borderColor: "transparent", backgroundColor: "transparent" }}
+          >
+            <FaTools /> Ferramentas
+            <FaChevronDown className={`text-xs transition-transform ${toolsOpen ? "rotate-180" : ""}`} />
+          </button>
+
+          {toolsOpen && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {[
+                { label: "Ordenar itens", Icon: FaSort, onClick: openSortModal },
+                { label: "Combos", Icon: FaLayerGroup, onClick: () => setCombosModalOpen(true), locked: !hasPlusPermissions },
+                {
+                  label: "Cupons",
+                  Icon: FaTicketAlt,
+                  onClick: () => setCouponsModalOpen(true),
+                  locked: !["pro", "business", "admin", "designer"].includes(ownerRole),
+                },
+                { label: "Estoque", Icon: FaBoxes, onClick: onOpenStock, locked: !STOCK_ROLES.includes(ownerRole) },
+              ].map(({ label, Icon, onClick, locked }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={onClick}
+                  className="cursor-pointer flex items-center gap-2 px-3 py-1 hover:opacity-75 rounded-lg"
+                  style={toolButtonStyle}
+                >
+                  <Icon className="text-sm opacity-80" /> {label}
+                  {locked && <FaLock className="text-xs opacity-60" />}
+                </button>
+              ))}
+            </div>
           )}
         </div>
-      </div>
+      )}
 
       {categories.length === 0 && (
         <div
@@ -3078,6 +3203,15 @@ export default function MenuItems({
           </div>
         )}
 
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          measuring={DND_MEASURING}
+          onDragStart={handleItemDragStart}
+          onDragOver={handleItemDragOver}
+          onDragEnd={handleItemsDragEnd}
+          onDragCancel={handleItemDragCancel}
+        >
         {categories.map((cat) => (
           <div
             key={cat.id}
@@ -3233,16 +3367,12 @@ export default function MenuItems({
 
             {!collapsedCategories[cat.id] && (
               <>
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={(event) => handleItemsDragEnd(cat.id, event)}
-                >
                   <SortableContext
                     items={(cat.menu_items || []).map((it) => it.id)}
                     strategy={verticalListSortingStrategy}
                   >
                     {(cat.menu_items || []).length === 0 ? (
+                      <EmptyCatDrop catId={cat.id}>
                       <div
                         className="mt-3 flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center"
                         style={{
@@ -3274,6 +3404,7 @@ export default function MenuItems({
                           + Criar primeiro item
                         </button>
                       </div>
+                      </EmptyCatDrop>
                     ) : (
                       <div className="flex flex-col gap-2">
                         {(cat.menu_items || []).map((it) => (
@@ -3290,6 +3421,7 @@ export default function MenuItems({
                             foregroundToUse={foregroundToUse}
                             grayToUse={grayToUse}
                             canShowPromoPrice={canShowPromoPrice}
+                            showStock={STOCK_ROLES.includes(ownerRole)}
                             getContrastTextColor={getContrastTextColor}
                             currency={menu?.currency}
                           />
@@ -3297,7 +3429,6 @@ export default function MenuItems({
                       </div>
                     )}
                   </SortableContext>
-                </DndContext>
                 {cat.menu_items?.length > 0 && (
                   <button
                     onClick={() => openItemModal("create", cat.id)}
@@ -3310,6 +3441,28 @@ export default function MenuItems({
             )}
           </div>
         ))}
+        <DragPreview>
+          {draggingItem && (
+            <SortableMenuItem
+              overlay
+              item={draggingItem}
+              cat={{ id: draggingItem.category_id }}
+              openItemModal={openItemModal}
+              deleteItem={deleteItem}
+              duplicateItem={duplicateItem}
+              toggleItemVisibility={toggleItemVisibility}
+              detailsColor={detailsColor}
+              backgroundColor={backgroundColor}
+              foregroundToUse={foregroundToUse}
+              grayToUse={grayToUse}
+              canShowPromoPrice={canShowPromoPrice}
+              showStock={STOCK_ROLES.includes(ownerRole)}
+              getContrastTextColor={getContrastTextColor}
+              currency={menu?.currency}
+            />
+          )}
+        </DragPreview>
+        </DndContext>
       </div>
 
       {/* Modal */}
@@ -3407,8 +3560,6 @@ export default function MenuItems({
                             webpFile,
                             thumbFile,
                             menu?.owner_id,
-                            modalPayload.data.image_url,
-                            modalPayload.data.thumb_url,
                           );
 
                           setModalPayload((p) => ({
@@ -3427,12 +3578,14 @@ export default function MenuItems({
                               "Essa imagem é pesada demais. Tente recortar ou escolher outra.",
                               "error",
                             );
-                          } else {
+                          } else if (err instanceof DOMException) {
                             alert?.("Tipo de imagem não suportado.", "error");
+                          } else {
+                            alert?.("Erro ao enviar imagem. Tente novamente.", "error");
                           }
                         } finally {
                           setUploadingImage(false);
-                          e.currentTarget.value = "";
+                          e.target.value = "";
                         }
                       }}
                     />
@@ -3525,23 +3678,8 @@ export default function MenuItems({
                           </span>
                           <input
                             type="text"
-                            value={
-                              canShowPromoPrice
-                                ? (modalPayload.data.promo_price ?? "")
-                                : ""
-                            }
+                            value={modalPayload.data.promo_price ?? ""}
                             onChange={(e) => {
-                              if (!canShowPromoPrice) {
-                                if (!planModalOpen) {
-                                  alert(
-                                    "Assine o plano Plus ou Pro para criar promoções!",
-                                  );
-                                  setPlanModalFeature("promo_price");
-                                  setPlanModalOpen(true);
-                                }
-                                return;
-                              }
-
                               let value = e.target.value;
                               value = value.replace(/[^0-9.,]/g, "");
                               value = value.replace(",", ".");
@@ -3655,127 +3793,144 @@ export default function MenuItems({
             </>
           )}
 
-          {/* Ordenação (com FLIP + colapso) */}
+          {/* Ordenação: arraste categorias e itens (inclusive entre categorias) */}
           {modalPayload.type === "sort" && (
             <>
+              <p className="text-sm color-gray mb-2">
+                Arraste pelo ícone <FaGripVertical className="inline" /> para
+                reordenar. Itens podem ser movidos entre categorias.
+              </p>
               <div className="space-y-3 max-h-[60vh] overflow-auto pr-2">
-                {(modalPayload.data?.ordering || []).map((cat, catIdx) => {
-                  const collapsed = !!sortCollapsed[cat.id];
-                  return (
-                    <div
-                      key={cat.id ?? `cat-${catIdx}`}
-                      ref={(el) => {
-                        if (el) domRefs.current[`cat-${cat.id ?? catIdx}`] = el;
-                        else delete domRefs.current[`cat-${cat.id ?? catIdx}`];
-                        if (el && cat.id != null)
-                          domRefs.current[`cat-${cat.id}`] = el;
-                      }}
-                      className="p-2 rounded-lg bg-translucid"
-                      style={{
-                        transition:
-                          "transform 200ms ease, box-shadow 200ms ease",
-                      }}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-3">
-                          <button
-                            className="cursor-pointer"
-                            onClick={() => toggleCollapse(cat.id)}
-                            title={
-                              collapsed ? "Mostrar itens" : "Recolher itens"
-                            }
-                          >
-                            {collapsed ? <FaChevronRight /> : <FaChevronDown />}
-                          </button>
-                          <div className="flex flex-col">
-                            <strong>{cat.name}</strong>
-                            <span className="text-sm color-gray">
-                              ({(cat.menu_items || []).length} itens)
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => moveCategory(catIdx, -1)}
-                            disabled={catIdx === 0}
-                            className="disabled:opacity-50 p-1 cursor-pointer"
-                            title="Mover categoria para cima"
-                          >
-                            <FaChevronUp />
-                          </button>
-                          <button
-                            onClick={() => moveCategory(catIdx, 1)}
-                            disabled={
-                              catIdx ===
-                              (modalPayload.data?.ordering?.length ?? 1) - 1
-                            }
-                            className="disabled:opacity-50 p-1 cursor-pointer"
-                            title="Mover categoria para baixo"
-                          >
-                            <FaChevronDown />
-                          </button>
-                        </div>
-                      </div>
-
-                      <div
-                        className="overflow-hidden"
-                        style={{
-                          maxHeight: collapsed ? 0 : undefined,
-                          transition:
-                            "max-height 200ms ease, opacity 180ms ease, transform 180ms ease",
-                          opacity: collapsed ? 0 : 1,
-                          transform: collapsed
-                            ? "translateY(-6px)"
-                            : "translateY(0)",
-                        }}
-                      >
-                        <div className="space-y-2 pt-1 pb-1">
-                          {(cat.menu_items || []).map((it, itIdx) => (
-                            <div
-                              key={it.id ?? `it-${itIdx}`}
-                              ref={(el) => {
-                                if (el)
-                                  domRefs.current[
-                                    `it-${it.id ?? `${catIdx}-${itIdx}`}`
-                                  ] = el;
-                                else
-                                  delete domRefs.current[
-                                    `it-${it.id ?? `${catIdx}-${itIdx}`}`
-                                  ];
-                                if (el && it.id != null)
-                                  domRefs.current[`it-${it.id}`] = el;
-                              }}
-                              className="flex items-center justify-between bg-transparent px-2 py-1 rounded-lg bg-translucid"
-                            >
-                              <div className="truncate">{it.name}</div>
-                              <div className="flex items-center gap-1">
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={sortCollision}
+                  measuring={DND_MEASURING}
+                  onDragStart={handleSortDragStart}
+                  onDragOver={handleSortDragOver}
+                  onDragEnd={handleSortDragEnd}
+                >
+                  <SortableContext
+                    items={(modalPayload.data?.ordering || []).map(
+                      (c) => SORT_CAT + c.id,
+                    )}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {(modalPayload.data?.ordering || []).map((cat) => {
+                      const collapsed = !!sortCollapsed[cat.id];
+                      const items = cat.menu_items || [];
+                      return (
+                        <SortableRow
+                          key={cat.id}
+                          id={SORT_CAT + cat.id}
+                          className="p-2 rounded-lg bg-translucid"
+                          dragStyle={{
+                            position: "relative",
+                            zIndex: 10,
+                            boxShadow: "0 8px 24px rgba(0,0,0,.25)",
+                          }}
+                        >
+                          {(handleProps) => (
+                            <>
+                              <div className="flex items-center gap-2 mb-2">
                                 <button
-                                  onClick={() => moveItem(catIdx, itIdx, -1)}
-                                  disabled={itIdx === 0}
-                                  className="disabled:opacity-50 p-1 cursor-pointer"
-                                  title="Mover item para cima"
+                                  type="button"
+                                  {...handleProps}
+                                  className="p-1 cursor-grab active:cursor-grabbing color-gray"
+                                  style={{ touchAction: "none" }}
+                                  title="Arrastar categoria"
                                 >
-                                  <FaChevronUp />
+                                  <FaGripVertical />
                                 </button>
                                 <button
-                                  onClick={() => moveItem(catIdx, itIdx, 1)}
-                                  disabled={
-                                    itIdx === (cat.menu_items?.length ?? 1) - 1
+                                  className="cursor-pointer flex items-center gap-2 min-w-0 text-left"
+                                  onClick={() => toggleCollapse(cat.id)}
+                                  title={
+                                    collapsed
+                                      ? "Mostrar itens"
+                                      : "Recolher itens"
                                   }
-                                  className="disabled:opacity-50 p-1 cursor-pointer"
-                                  title="Mover item para baixo"
                                 >
-                                  <FaChevronDown />
+                                  {collapsed ? (
+                                    <FaChevronRight />
+                                  ) : (
+                                    <FaChevronDown />
+                                  )}
+                                  <strong className="truncate">
+                                    {cat.name}
+                                  </strong>
+                                  <span className="text-sm color-gray shrink-0">
+                                    ({items.length} itens)
+                                  </span>
                                 </button>
                               </div>
-                            </div>
-                          ))}
+
+                              {!collapsed && (
+                                <SortableContext
+                                  items={items.map((it) => it.id)}
+                                  strategy={verticalListSortingStrategy}
+                                >
+                                  {items.length === 0 ? (
+                                    <EmptyCatDrop catId={cat.id}>
+                                      <div className="text-sm color-gray text-center py-3 border border-dashed border-translucid rounded-lg">
+                                        Solte itens aqui
+                                      </div>
+                                    </EmptyCatDrop>
+                                  ) : (
+                                    <div className="space-y-2">
+                                      {items.map((it) => (
+                                        <SortableRow
+                                          key={it.id}
+                                          id={it.id}
+                                          className="flex items-center gap-2 px-2 py-1 rounded-lg bg-translucid"
+                                          dragStyle={{ opacity: 0 }}
+                                        >
+                                          {(itemHandleProps) => (
+                                            <>
+                                              <button
+                                                type="button"
+                                                {...itemHandleProps}
+                                                className="p-1 cursor-grab active:cursor-grabbing color-gray"
+                                                style={{ touchAction: "none" }}
+                                                title="Arrastar item"
+                                              >
+                                                <FaGripVertical size={12} />
+                                              </button>
+                                              <div className="truncate">
+                                                {it.name}
+                                              </div>
+                                            </>
+                                          )}
+                                        </SortableRow>
+                                      ))}
+                                    </div>
+                                  )}
+                                </SortableContext>
+                              )}
+                            </>
+                          )}
+                        </SortableRow>
+                      );
+                    })}
+                  </SortableContext>
+                  <DragPreview>
+                    {draggingItem && (
+                      // mesmas camadas do modal para manter a cor da linha
+                      <div
+                        className="rounded-lg shadow-lg"
+                        style={{ backgroundColor: "var(--low-gray)" }}
+                      >
+                        <div className="rounded-lg bg-translucid">
+                          <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-translucid cursor-grabbing">
+                            <span className="p-1 color-gray">
+                              <FaGripVertical size={12} />
+                            </span>
+                            <div className="truncate">{draggingItem.name}</div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    )}
+                  </DragPreview>
+                </DndContext>
               </div>
             </>
           )}
@@ -4600,62 +4755,55 @@ export default function MenuItems({
             aplicados a um item, categoria ou ao carrinho todo.
           </p>
 
-          {hasPlusPermissions ? (
-            <>
-              <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
-                {(combos || []).length === 0 && (
-                  <p className="text-sm color-gray text-center py-4">
-                    Nenhum combo criado ainda.
-                  </p>
-                )}
-                {(combos || []).map((combo) => {
-                  const { target, trigger, discount } = describeCombo(combo);
-                  return (
-                    <div
-                      key={combo.id}
-                      className="flex items-center justify-between p-2 rounded-lg border border-translucid bg-translucid"
-                    >
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold line-clamp-1">
-                          {target}
-                        </div>
-                        <div className="text-xs color-gray">
-                          {trigger} → {discount}
-                        </div>
+          <>
+            <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+              {(combos || []).length === 0 && (
+                <p className="text-sm color-gray text-center py-4">
+                  Nenhum combo criado ainda.
+                </p>
+              )}
+              {(combos || []).map((combo) => {
+                const { target, trigger, discount } = describeCombo(combo);
+                return (
+                  <div
+                    key={combo.id}
+                    className="flex items-center justify-between p-2 rounded-lg border border-translucid bg-translucid"
+                  >
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold line-clamp-1">
+                        {target}
                       </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <button
-                          onClick={() => openComboForm(combo)}
-                          className="p-2 cursor-pointer"
-                        >
-                          <FaPen size={13} />
-                        </button>
-                        <button
-                          onClick={() => deleteCombo(combo.id)}
-                          className="p-2 cursor-pointer text-red-500"
-                        >
-                          <FaTrash size={13} />
-                        </button>
+                      <div className="text-xs color-gray">
+                        {trigger} → {discount}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => openComboForm(null)}
-                className="w-full mt-4 cursor-pointer p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border-2 border-[var(--translucid)] transition"
-              >
-                + Novo combo
-              </button>
-            </>
-          ) : (
-            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/20 p-4 text-sm">
-              Criar combos é uma função exclusiva do Bite Menu Plus ou Pro. Faça
-              upgrade para criar os seus!
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button
+                        onClick={() => openComboForm(combo)}
+                        className="p-2 cursor-pointer"
+                      >
+                        <FaPen size={13} />
+                      </button>
+                      <button
+                        onClick={() => deleteCombo(combo.id)}
+                        className="p-2 cursor-pointer text-red-500"
+                      >
+                        <FaTrash size={13} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          )}
+
+            <button
+              type="button"
+              onClick={() => openComboForm(null)}
+              className="w-full mt-4 cursor-pointer p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border-2 border-[var(--translucid)] transition"
+            >
+              + Novo combo
+            </button>
+          </>
         </GenericModal>
       )}
 
@@ -4663,7 +4811,7 @@ export default function MenuItems({
         <CouponsModal
           menuId={menu?.id}
           currency={menu?.currency}
-          canCreate={ownerRole === "admin" || ownerRole === "pro"}
+          canCreate={["pro", "business", "admin", "designer"].includes(ownerRole)}
           showUpgrade={ownerRole === "free"}
           onClose={() => setCouponsModalOpen(false)}
         />
@@ -4878,10 +5026,12 @@ export default function MenuItems({
         <UpdatePlanModal
           onClose={closePlanModal}
           title={
-            planModalFeature === "promo_price"
-              ? "Preços promocionais são vantagens exclusivas do Plus"
+            planModalFeature === "combos"
+              ? "Combos"
+              : planModalFeature === "promo_price"
+              ? "Preços promocionais"
               : planModalFeature === "highlight_items"
-                ? "Itens em destaque são vantagens exclusivas do Plus"
+                ? "Itens em destaque"
                 : planModalFeature === "items_limit"
                   ? "Você atingiu o limite de itens do seu plano"
                   : planModalFeature === "categories_limit"
@@ -4889,8 +5039,12 @@ export default function MenuItems({
                     : ""
           }
           text={
-            planModalFeature === "promo_price"
-              ? "Crie preços promocionais que chamam atenção e incentivam a decisão de compra no seu menu."
+            planModalFeature.endsWith("_limit") && ownerRole === "business"
+              ? BUSINESS_LIMIT_TEXT
+              : planModalFeature === "combos"
+              ? "Assine o plano Plus para salvar seus combos. Monte combos com desconto automático e aumente o ticket médio."
+              : planModalFeature === "promo_price"
+              ? "Assine o plano Plus para salvar o preço promocional. Crie preços promocionais que chamam atenção e incentivam a decisão de compra no seu menu."
               : planModalFeature === "highlight_items"
                 ? "Destaque os itens mais estratégicos do seu menu e guie o olhar dos clientes para o que mais vende."
                 : planModalFeature === "items_limit"
@@ -4910,13 +5064,14 @@ export default function MenuItems({
                 ? "https://rfgkalwtrxbiqrqwxmxf.supabase.co/storage/v1/object/sign/utilImages/starred_items.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xOTdiYmQzMC01Njg2LTQzNTQtOWE2ZS1iOTA4YjlmNGRhYjIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ1dGlsSW1hZ2VzL3N0YXJyZWRfaXRlbXMucG5nIiwiaWF0IjoxNzY4NTcxMTY5LCJleHAiOjgwNzU3NzExNjl9.v7wkyYJZ8fMn1b34AdPUEzBvz1_AtBtHQeI_tq5s1n8"
                 : null
           }
+          plan={planModalFeature.endsWith("_limit") ? undefined : "plus"}
+          ctaText={planModalFeature.endsWith("_limit") && ownerRole === "business" ? "Falar com o suporte" : undefined}
           onCta={() => {
-            // promo/destaque e limites do free resolvem no Plus; limites do Plus, no Pro
-            const target =
-              planModalFeature.endsWith("_limit") && ownerRole !== "free"
-                ? "pro"
-                : "plus";
-            window.location.href = `/dashboard/pricing?plan=${target}`;
+            // promo/destaque resolvem no Plus; limite leva pro plano seguinte (Business: suporte)
+            if (!planModalFeature.endsWith("_limit")) return goToPlan("plus");
+            const next = nextPlan(ownerRole);
+            if (next) goToPlan(next);
+            else window.location.href = "/support";
           }}
         />
       )}

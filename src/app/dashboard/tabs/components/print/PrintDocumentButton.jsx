@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 import { FaPrint } from "react-icons/fa";
 import GenericModal from "@/components/GenericModal";
@@ -131,6 +131,36 @@ function PrintHeader({ title, document }) {
 const PRINT_STYLE_KEY = "bitemenu-print-style";
 const PAPER_SIZE_KEY = "bitemenu-print-paper";
 const paperSizes = ["paper-80mm", "paper-58mm", "paper-a4"];
+const PRINT_ORDER_KEY = "bitemenu-print-order";
+
+// blocos reordenáveis da impressão (estilo com cabeçalho). Cabeçalho e
+// destaque continuam sempre no topo.
+export const PRINT_SECTIONS = [
+  { id: "cliente", label: "Cliente e serviço" },
+  { id: "endereco", label: "Endereço de entrega" },
+  { id: "itens", label: "Itens do pedido" },
+  { id: "valores", label: "Pagamento e valores" },
+];
+const defaultPrintOrder = PRINT_SECTIONS.map((s) => s.id);
+
+export function loadPrintOrder() {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(PRINT_ORDER_KEY));
+    if (
+      Array.isArray(saved) &&
+      saved.length === defaultPrintOrder.length &&
+      defaultPrintOrder.every((id) => saved.includes(id))
+    )
+      return saved;
+  } catch {}
+  return defaultPrintOrder;
+}
+
+export function savePrintOrder(order) {
+  try {
+    window.localStorage.setItem(PRINT_ORDER_KEY, JSON.stringify(order));
+  } catch {}
+}
 
 // linha "rótulo .... valor"
 function PrintRow({ label, value, className = "" }) {
@@ -152,6 +182,7 @@ export default function PrintDocumentButton({
   currency,
   menuName,
   canPrint,
+  canCustomizeOrder = false, // ordem dos blocos personalizada (plano Business)
   onDenied,
   triggerClassName,
   triggerLabel = null, // se null, mostra só o ícone
@@ -164,6 +195,7 @@ export default function PrintDocumentButton({
   const [paperSize, setPaperSize] = useState("paper-80mm");
   // estilo antigo (sem cabeçalho), lembrado neste navegador
   const [classicStyle, setClassicStyle] = useState(false);
+  const [printOrder, setPrintOrder] = useState(defaultPrintOrder);
   const printRef = useRef(null);
 
   useEffect(() => {
@@ -206,6 +238,17 @@ export default function PrintDocumentButton({
       ? `${document.orderNumber} (${shortId})`
       : shortId;
 
+  // renderiza os blocos na ordem escolhida, com divisória entre eles
+  const renderSections = (sections) =>
+    printOrder
+      .filter((id) => sections[id])
+      .map((id, i) => (
+        <Fragment key={id}>
+          {i > 0 && <hr />}
+          {sections[id]}
+        </Fragment>
+      ));
+
   const handleToggleClassicStyle = (value) => {
     setClassicStyle(value);
     try {
@@ -217,7 +260,10 @@ export default function PrintDocumentButton({
     <>
       <button
         type="button"
-        onClick={() => setModalOpen(true)}
+        onClick={() => {
+          setPrintOrder(canCustomizeOrder ? loadPrintOrder() : defaultPrintOrder);
+          setModalOpen(true);
+        }}
         title="Imprimir"
         className={
           triggerClassName ||
@@ -499,89 +545,97 @@ export default function PrintDocumentButton({
           {!classicStyle && printMode === "full" && (
             <>
               <PrintHeader title={receiptTitle} document={document} />
-              {menuName && <p>{menuName}</p>}
-              <p>
-                <strong>Cliente:</strong> {document.costumerName}
-              </p>
-              <p>
-                <strong>Telefone:</strong> {document.costumerPhone}
-              </p>
-              <p>
-                <strong>Serviço:</strong> {serviceText}
-              </p>
-              {document.service === "delivery" &&
-                (document.address || document.neighborhood) && (
-                  <div className="print-box">
-                    <strong>ENDEREÇO DE ENTREGA</strong>
-                    {document.address && <div>{document.address}</div>}
-                    {document.neighborhood && (
-                      <div>Bairro: {document.neighborhood}</div>
-                    )}
-                  </div>
-                )}
-              <hr />
-              {document.itemsList.map((item, index) => {
-                const adds = item.additionals || [];
-                const unit =
-                  (Number(item.price) || 0) +
-                  adds.reduce((sa, a) => sa + (Number(a.price) || 0), 0);
-                return (
-                  <div key={index} className="print-item">
-                    <PrintRow
-                      label={
-                        <strong>
-                          {item.qty}x {item.name}
-                        </strong>
-                      }
-                      value={formatCurrency(
-                        unit * (Number(item.qty) || 0),
-                        currency,
+              {renderSections({
+                cliente: (
+                  <>
+                    {menuName && <p>{menuName}</p>}
+                    <p>
+                      <strong>Cliente:</strong> {document.costumerName}
+                    </p>
+                    <p>
+                      <strong>Telefone:</strong> {document.costumerPhone}
+                    </p>
+                    <p>
+                      <strong>Serviço:</strong> {serviceText}
+                    </p>
+                  </>
+                ),
+                endereco: document.service === "delivery" &&
+                  (document.address || document.neighborhood) && (
+                    <div className="print-box">
+                      <strong>ENDEREÇO DE ENTREGA</strong>
+                      {document.address && <div>{document.address}</div>}
+                      {document.neighborhood && (
+                        <div>Bairro: {document.neighborhood}</div>
                       )}
+                    </div>
+                  ),
+                itens: document.itemsList.map((item, index) => {
+                  const adds = item.additionals || [];
+                  const unit =
+                    (Number(item.price) || 0) +
+                    adds.reduce((sa, a) => sa + (Number(a.price) || 0), 0);
+                  return (
+                    <div key={index} className="print-item">
+                      <PrintRow
+                        label={
+                          <strong>
+                            {item.qty}x {item.name}
+                          </strong>
+                        }
+                        value={formatCurrency(
+                          unit * (Number(item.qty) || 0),
+                          currency,
+                        )}
+                      />
+                      {adds.map((add, i) => (
+                        <div key={i} className="print-sub">
+                          + {add.name}
+                        </div>
+                      ))}
+                      {item.note && (
+                        <div className="print-sub">Obs: {item.note}</div>
+                      )}
+                    </div>
+                  );
+                }),
+                valores: (
+                  <>
+                    <PrintRow label="Itens" value={totalItens} />
+                    <PrintRow
+                      label="Pagamento"
+                      value={paymentLabels[document.paymentMethod] || "—"}
                     />
-                    {adds.map((add, i) => (
-                      <div key={i} className="print-sub">
-                        + {add.name}
-                      </div>
-                    ))}
-                    {item.note && (
-                      <div className="print-sub">Obs: {item.note}</div>
+                    <PrintRow
+                      label="Subtotal"
+                      value={formatCurrency(document.subtotal, currency)}
+                    />
+                    {document.discount > 0 && (
+                      <PrintRow
+                        label="Desconto"
+                        value={`-${formatCurrency(document.discount, currency)}`}
+                      />
                     )}
-                  </div>
-                );
+                    {document.service === "delivery" && (
+                      <PrintRow
+                        label="Entrega"
+                        value={formatCurrency(document.deliveryFee, currency)}
+                      />
+                    )}
+                    <PrintRow
+                      className="print-total"
+                      label="TOTAL"
+                      value={formatCurrency(document.total, currency)}
+                    />
+                    {document.netTotal != null && (
+                      <PrintRow
+                        label="Líquido"
+                        value={formatCurrency(document.netTotal, currency)}
+                      />
+                    )}
+                  </>
+                ),
               })}
-              <hr />
-              <PrintRow label="Itens" value={totalItens} />
-              <PrintRow
-                label="Pagamento"
-                value={paymentLabels[document.paymentMethod] || "—"}
-              />
-              <PrintRow
-                label="Subtotal"
-                value={formatCurrency(document.subtotal, currency)}
-              />
-              {document.discount > 0 && (
-                <PrintRow
-                  label="Desconto"
-                  value={`-${formatCurrency(document.discount, currency)}`}
-                />
-              )}
-              {document.service === "delivery" && (
-                <PrintRow
-                  label="Entrega"
-                  value={formatCurrency(document.deliveryFee, currency)}
-                />
-              )}
-              <PrintRow
-                className="print-total"
-                label="TOTAL"
-                value={formatCurrency(document.total, currency)}
-              />
-              {document.netTotal != null && (
-                <PrintRow
-                  label="Líquido"
-                  value={formatCurrency(document.netTotal, currency)}
-                />
-              )}
             </>
           )}
 
@@ -589,40 +643,43 @@ export default function PrintDocumentButton({
             <>
               <PrintHeader title="COZINHA" document={document} />
               {serviceText && (
-                <div className="print-banner">
-                  {serviceText.toUpperCase()}
-                </div>
+                <div className="print-banner">{serviceText.toUpperCase()}</div>
               )}
-              {menuName && (
-                <p>
-                  {menuName}
-                </p>
-              )}
-              {document.costumerName && (
-                <p>
-                  <strong>Cliente:</strong> {document.costumerName}
-                </p>
-              )}
-              <hr />
-              {document.itemsList.map((item, index) => (
-                <div key={index} className="print-item">
-                  <strong>
-                    {item.qty}x {item.name}
-                  </strong>
-                  {(item.additionals || []).map((add, i) => (
-                    <div key={i} className="print-sub">
-                      + {add.name}
-                    </div>
-                  ))}
-                  {item.note && (
-                    <div className="print-note">
-                      OBS: {item.note.toUpperCase()}
-                    </div>
-                  )}
-                  <hr />
-                </div>
-              ))}
-              <PrintRow label="Total de itens" value={totalItens} />
+              {renderSections({
+                cliente: (menuName || document.costumerName) && (
+                  <>
+                    {menuName && <p>{menuName}</p>}
+                    {document.costumerName && (
+                      <p>
+                        <strong>Cliente:</strong> {document.costumerName}
+                      </p>
+                    )}
+                  </>
+                ),
+                itens: (
+                  <>
+                    {document.itemsList.map((item, index) => (
+                      <div key={index} className="print-item">
+                        <strong>
+                          {item.qty}x {item.name}
+                        </strong>
+                        {(item.additionals || []).map((add, i) => (
+                          <div key={i} className="print-sub">
+                            + {add.name}
+                          </div>
+                        ))}
+                        {item.note && (
+                          <div className="print-note">
+                            OBS: {item.note.toUpperCase()}
+                          </div>
+                        )}
+                        <hr />
+                      </div>
+                    ))}
+                    <PrintRow label="Total de itens" value={totalItens} />
+                  </>
+                ),
+              })}
             </>
           )}
 
@@ -632,37 +689,41 @@ export default function PrintDocumentButton({
               {document.costumerName && (
                 <div className="print-banner">{document.costumerName}</div>
               )}
-              {menuName && (
-                <p>
-                  {menuName}
-                </p>
-              )}
-              <p>
-                <strong>Serviço:</strong> {serviceText}
-              </p>
-              <hr />
-              {document.itemsList.map((item, index) => (
-                <div key={index} className="print-item">
-                  <strong>
-                    {item.qty}x {item.name}
-                  </strong>
-                  {(item.additionals || []).map((add, i) => (
-                    <div key={i} className="print-sub">
-                      + {add.name}
-                    </div>
-                  ))}
-                  {item.note && (
-                    <div className="print-sub">Obs: {item.note}</div>
-                  )}
-                </div>
-              ))}
-              <hr />
-              <PrintRow label="Itens" value={totalItens} />
-              <PrintRow
-                className="print-total"
-                label="TOTAL"
-                value={formatCurrency(document.total, currency)}
-              />
+              {renderSections({
+                cliente: (
+                  <>
+                    {menuName && <p>{menuName}</p>}
+                    <p>
+                      <strong>Serviço:</strong> {serviceText}
+                    </p>
+                  </>
+                ),
+                itens: document.itemsList.map((item, index) => (
+                  <div key={index} className="print-item">
+                    <strong>
+                      {item.qty}x {item.name}
+                    </strong>
+                    {(item.additionals || []).map((add, i) => (
+                      <div key={i} className="print-sub">
+                        + {add.name}
+                      </div>
+                    ))}
+                    {item.note && (
+                      <div className="print-sub">Obs: {item.note}</div>
+                    )}
+                  </div>
+                )),
+                valores: (
+                  <>
+                    <PrintRow label="Itens" value={totalItens} />
+                    <PrintRow
+                      className="print-total"
+                      label="TOTAL"
+                      value={formatCurrency(document.total, currency)}
+                    />
+                  </>
+                ),
+              })}
             </>
           )}
         </div>

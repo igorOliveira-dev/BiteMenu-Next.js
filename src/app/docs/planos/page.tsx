@@ -94,7 +94,7 @@ const page = () => {
       <section className="mt-4 scroll-mt-[90px]" id="pro">
         <h2 className="docs-title">Plano Pro</h2>
         <p className="docs-paragraph">
-          O <strong>Plano Pro</strong> é o plano mais completo, destinado a estabelecimentos que buscam maximizar sua
+          O <strong>Plano Pro</strong> é destinado a estabelecimentos que buscam maximizar sua
           presença digital e otimizar suas operações. Ele inclui todos os recursos dos planos anteriores, além de:
         </p>
         <ul className="docs-paragraph list-disc pl-6">
@@ -104,10 +104,59 @@ const page = () => {
           <li>Impressão de pedidos</li>
           <li>Dashboard de vendas para análise de desempenho</li>
           <li>Download de relatório de vendas em CSV</li>
-          <li>Acesso ao aplicativo Bite Menu para não precisar acessar o site</li>
+          <li>Criação de cupons de desconto para o cardápio</li>
           <li>Prioridade no suporte</li>
         </ul>
       </section>
+
+      <section className="mt-4 scroll-mt-[90px]" id="business">
+        <h2 className="docs-title">Plano Business</h2>
+        <p className="docs-paragraph">
+          O <strong>Plano Business</strong> é o plano mais completo, voltado para estabelecimentos com operação maior.
+          Ele inclui todos os recursos do Pro, além de:
+        </p>
+        <ul className="docs-paragraph list-disc pl-6">
+          <li>Sem limites de itens, categorias e mesas</li>
+          <li>
+            <Link href="/docs/bite-menu-ia" className="underline text-blue-500 hover:text-blue-700">
+              Bite Menu IA
+            </Link>
+            : assistente que altera o cardápio por você a partir de um pedido em texto
+          </li>
+          <li>Controle de estoque</li>
+          <li>
+            Mensagem do WhatsApp personalizada: edite a mensagem de confirmação do pedido que o cliente envia, usando
+            tags para inserir os dados do pedido onde quiser
+          </li>
+          <li>Ordem da impressão personalizada: escolha a ordem das informações que aparecem na impressão do pedido</li>
+          <li>
+            Logins para a equipe: crie acessos de caixa, cozinha e entregador, cada um com usuário e senha próprios e
+            sem acesso ao cardápio, às vendas ou ao plano
+          </li>
+          <li>
+            Tela da cozinha: fila de preparo com os itens, adicionais e observações de cada pedido, onde a cozinha marca
+            o início do preparo e quando o pedido fica pronto
+          </li>
+          <li>
+            Tela de entregas: pedidos de entrega com endereço, link para o mapa, telefone, valor a cobrar e troco, onde o
+            entregador marca a saída e a entrega
+          </li>
+          <li>
+            Atribuição de entregas: escolha qual entregador leva cada pedido (com um único entregador, todas as entregas
+            vão para ele automaticamente)
+          </li>
+          <li>Status do pedido nos Pedidos (recebido, preparando, pronto, saiu para entrega, entregue), com filtro por status</li>
+        </ul>
+        <p className="docs-paragraph">
+          As telas de caixa, cozinha e entregas começam desativadas: ative cada uma em Conta → Equipe conforme a
+          necessidade. Ao desativar uma tela, os logins daquela função perdem o acesso na hora. O funcionário entra em{" "}
+          <a href="https://www.bitemenu.com.br/login" className="underline text-blue-500 hover:text-blue-700">
+            bitemenu.com.br/login
+          </a>{" "}
+          com o usuário e a senha definidos pelo dono; para trocar a senha, o dono gera uma nova na aba Equipe.
+        </p>
+      </section>
+
 
       <section className="mt-4 scroll-mt-[90px]" id="troca-de-plano">
         <h2 className="docs-title">Troca de Plano</h2>

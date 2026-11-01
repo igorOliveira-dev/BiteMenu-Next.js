@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabaseClient";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { cache } from "react";
 
 export const getMenuBySlug = cache(async (slug) => {
@@ -15,6 +16,7 @@ export const getMenuBySlug = cache(async (slug) => {
       description,
       address,
       banner_url,
+      banner_mobile_url,
       logo_url,
       background_color,
       title_color,
@@ -27,6 +29,7 @@ export const getMenuBySlug = cache(async (slug) => {
       minimum_order_value,
       pix_key,
       orders,
+      whatsapp_template,
       layout,
       currency,
       timezone,
@@ -48,6 +51,7 @@ export const getMenuBySlug = cache(async (slug) => {
           mandatory_additional,
           additionals_limit,
           visible,
+          stock,
           option_groups (
             id,
             name,
@@ -73,7 +77,9 @@ export const getMenuBySlug = cache(async (slug) => {
     .order("position", { foreignTable: "categories.menu_items.option_groups.option_choices", ascending: true })
     .maybeSingle();
 
-  if (error) return null;
+  // lança em vez de retornar null: com ISR, um erro momentâneo do banco ficaria
+  // cacheado como "menu não encontrado"; lançando, o Next mantém a versão anterior
+  if (error) throw error;
   return menu || null;
 });
 
@@ -81,19 +87,30 @@ export const getMenuBySlug = cache(async (slug) => {
 export async function getOwnerInfo(menu) {
   let ownerPhone = null;
   let ownerRole = "free";
+  let deletionRequested = false;
 
   if (menu?.owner_id) {
-    const { data: profile } = await supabase
+    // service role (só servidor): assim profiles não precisa ser legível pela chave anon
+    const { data: profile, error } = await supabaseAdmin
       .from("profiles")
-      .select("phone, role")
+      .select("phone, role, deletion_requested_at")
       .eq("id", menu.owner_id)
       .maybeSingle();
+    // mesmo motivo do getMenuBySlug: não cachear o cardápio como plano "free" por um erro
+    if (error) throw error;
 
     if (profile) {
       ownerPhone = profile.phone || null;
       ownerRole = profile.role || "free";
+      deletionRequested = !!profile.deletion_requested_at;
     }
   }
 
-  return { ownerPhone, ownerRole };
+  return { ownerPhone, ownerRole, deletionRequested };
+}
+
+// Estoque das opções (plano Business), por nome: ver src/lib/stock.js
+export async function getOptionStock(menuId) {
+  const { data } = await supabase.from("option_stock").select("name_key, stock").eq("menu_id", menuId);
+  return data || [];
 }

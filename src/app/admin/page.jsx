@@ -2,13 +2,18 @@
 
 import React, { useEffect, useState } from "react";
 import useAllMenus from "@/hooks/useAllMenus";
+import useUser from "@/hooks/useUser";
 import { supabase } from "@/lib/supabaseClient";
 import Loading from "@/components/Loading";
 import Return from "@/components/Return";
+import SearchSelect from "@/components/SearchSelect";
 import { ACQUISITION_SOURCE_LABELS } from "@/lib/acquisitionSourceOptions";
 import {
   AreaChart,
   Area,
+  ComposedChart,
+  Bar,
+  Legend,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -18,6 +23,9 @@ import {
 
 const Admin = () => {
   const { menus, loading: menusLoading } = useAllMenus();
+  // designer não vê nada de pagamento (ValidaPay)
+  const { profile } = useUser();
+  const isAdmin = profile?.role === "admin";
   const [fullMenus, setFullMenus] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,6 +39,40 @@ const Admin = () => {
   const [onlyLast7Days, setOnlyLast7Days] = useState(false);
   const [showOnlyPlusPro, setShowOnlyPlusPro] = useState(false);
   const [utmSource, setUtmSource] = useState("");
+
+  const [subStatuses, setSubStatuses] = useState({});
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    supabase.auth
+      .getSession()
+      .then(({ data }) =>
+        fetch("/api/validapay/admin-statuses", {
+          headers: { Authorization: `Bearer ${data.session?.access_token}` },
+        }),
+      )
+      .then((res) => (res.ok ? res.json() : {}))
+      .then(setSubStatuses)
+      .catch(() => {});
+  }, [isAdmin]);
+
+  // 🔹 Novos clientes x novos pagantes por dia
+  const [daily, setDaily] = useState(null);
+  const [dailyRange, setDailyRange] = useState(30);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    supabase.auth
+      .getSession()
+      .then(({ data }) =>
+        fetch("/api/validapay/admin-daily", {
+          headers: { Authorization: `Bearer ${data.session?.access_token}` },
+        }),
+      )
+      .then((res) => (res.ok ? res.json() : null))
+      .then(setDaily)
+      .catch(() => {});
+  }, [isAdmin]);
 
   const PAGE_SIZE = 15;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -172,7 +214,7 @@ const Admin = () => {
   }
 
   if (showOnlyPlusPro) {
-    visibleMenus = visibleMenus.filter((m) => ["plus", "pro"].includes(m.owner_role));
+    visibleMenus = visibleMenus.filter((m) => ["plus", "pro", "business"].includes(m.owner_role));
   }
 
   if (utmSource) {
@@ -182,6 +224,42 @@ const Admin = () => {
   }
 
   const utmSources = [...new Set(fullMenus.map((m) => m.owner_acquisition_source).filter(Boolean))].sort();
+
+  // Dias no fuso do navegador, do mais antigo pro de hoje
+  const dayKey = (d) => new Date(d).toLocaleDateString("en-CA");
+  const dailyData = [];
+  if (daily) {
+    // Novos clientes = menus criados
+    const menuDates = fullMenus.map((m) => m.created_at).sort();
+    const menusPerDay = {};
+    const payingPerDay = {};
+    menuDates.forEach((d) => (menusPerDay[dayKey(d)] = (menusPerDay[dayKey(d)] || 0) + 1));
+    daily.paying.forEach((d) => (payingPerDay[dayKey(d)] = (payingPerDay[dayKey(d)] || 0) + 1));
+
+    // "all": do primeiro menu até hoje
+    const days =
+      dailyRange === "all" && menuDates.length
+        ? Math.ceil((new Date(dayKey(new Date())) - new Date(dayKey(menuDates[0]))) / 86400000) + 1
+        : dailyRange === "all"
+          ? 1
+          : dailyRange;
+
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const key = dayKey(date);
+      dailyData.push({
+        day: date.toLocaleDateString(
+          "pt-BR",
+          days > 90 ? { day: "2-digit", month: "2-digit", year: "2-digit" } : { day: "2-digit", month: "2-digit" },
+        ),
+        clientes: menusPerDay[key] || 0,
+        pagantes: payingPerDay[key] || 0,
+      });
+    }
+  }
+  const dailyMenus = dailyData.reduce((s, d) => s + d.clientes, 0);
+  const dailyPaying = dailyData.reduce((s, d) => s + d.pagantes, 0);
 
   const paginatedMenus = visibleMenus.slice(0, visibleCount);
   const hasMore = visibleCount < visibleMenus.length;
@@ -193,6 +271,34 @@ const Admin = () => {
         <h1 className="default-h1 text-center">Admin dashboard</h1>
       </div>
 
+      {isAdmin && (
+        <>
+          <p className="text-center mb-2 text-sm">
+            <a href="/admin/motivos-cancelamento" className="underline text-blue-500">
+              Motivos de cancelamento
+            </a>
+          </p>
+
+          <p className="text-center mb-2 text-sm">
+            <a href="/admin/pagamentos" className="underline text-blue-500">
+              Pagamentos ValidaPay
+            </a>
+          </p>
+
+          <p className="text-center mb-2 text-sm">
+            <a href="/admin/remarketing" className="underline text-blue-500">
+              Remarketing por e-mail
+            </a>
+          </p>
+        </>
+      )}
+
+      <p className="text-center mb-2 text-sm">
+        <a href="/admin/pesquisa-de-perfil" className="underline text-blue-500">
+          Pesquisa de perfil
+        </a>
+      </p>
+
       <p className="text-center mb-4 text-sm">
         <button onClick={() => setShowCharts(!showCharts)}>{showCharts ? "Ocultar gráficos" : "Mostrar gráficos"}</button>
       </p>
@@ -200,6 +306,72 @@ const Admin = () => {
       {showCharts && (
         <>
           {" "}
+          {/* 🔹 Novos clientes x novos pagantes por dia */}
+          {isAdmin && (
+            <div className="w-full max-w-4xl mx-auto mb-10">
+              <h3 className="text-sm text-gray-400 mb-2 text-center">Novos clientes x novos pagantes por dia</h3>
+              <div className="flex flex-wrap justify-center gap-2 mb-2">
+                {[
+                  [7, "7 dias"],
+                  [30, "30 dias"],
+                  [90, "90 dias"],
+                  [180, "180 dias"],
+                  [365, "1 ano"],
+                  ["all", "Tudo"],
+                ].map(([n, label]) => (
+                  <button
+                    key={n}
+                    onClick={() => setDailyRange(n)}
+                    className={`px-3 py-1 rounded text-xs border ${
+                      dailyRange === n ? "bg-blue-600 border-blue-600 text-white" : "bg-translucid border-translucid"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {!daily ? (
+                <p className="text-center text-xs text-gray-400 h-64 flex items-center justify-center">Carregando...</p>
+              ) : (
+                <>
+                  <p className="text-center text-xs text-gray-400 mb-2">
+                    {dailyMenus} novos menus · {dailyPaying} pagantes
+                    <br />
+                    <span className="text-[11px]">pagantes = 1º pagamento de assinatura ValidaPay (Stripe antigo não entra)</span>
+                  </p>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart data={dailyData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                        <XAxis dataKey="day" stroke="#999" fontSize={12} />
+                        <YAxis stroke="#999" fontSize={12} allowDecimals={false} />
+                        <Tooltip
+                          contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #333" }}
+                          labelStyle={{ color: "#fff" }}
+                        />
+                        <Legend wrapperStyle={{ fontSize: 12 }} />
+                        <Area
+                          type="monotone"
+                          dataKey="clientes"
+                          name="Novos clientes (menus)"
+                          stroke="#3b82f6"
+                          fill="#3b82f6"
+                          fillOpacity={0.2}
+                          strokeWidth={2}
+                        />
+                        <Bar
+                          dataKey="pagantes"
+                          name="Novos pagantes"
+                          fill="#22c55e"
+                          barSize={dailyData.length > 30 ? undefined : 12}
+                        />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
           {/* 🔹 Gráfico de crescimento acumulado de clientes (menus) */}
           {monthlyGrowth.length > 0 && (
             <div className="w-full max-w-4xl mx-auto h-64 mb-10">
@@ -239,23 +411,20 @@ const Admin = () => {
           className="px-3 py-1 w-full rounded bg-translucid border border-translucid text-sm max-w-lg"
         />
 
-        <select
+        <SearchSelect
           value={utmSource}
-          onChange={(e) => setUtmSource(e.target.value)}
-          className="px-3 py-1 w-full rounded bg-translucid border border-translucid text-sm max-w-lg"
-        >
-          <option value="">Todas as origens (utm_source)</option>
-          <option value="none">Sem origem</option>
-          {utmSources.map((src) => (
-            <option key={src} value={src}>
-              {ACQUISITION_SOURCE_LABELS[src] || src}
-            </option>
-          ))}
-        </select>
+          onChange={setUtmSource}
+          className="max-w-lg"
+          options={[
+            { value: "", label: "Todas as origens (utm_source)" },
+            { value: "none", label: "Sem origem" },
+            ...utmSources.map((src) => ({ value: src, label: ACQUISITION_SOURCE_LABELS[src] || src })),
+          ]}
+        />
 
         <div className="flex gap-4 flex-wrap justify-center">
           <label className="flex items-center gap-2 text-sm text-gray-300">
-            Apenas Plus/Pro
+            Apenas Plus/Pro/Business
             <input
               type="checkbox"
               checked={showOnlyPlusPro}
@@ -308,7 +477,9 @@ const Admin = () => {
                     ? "border-blue-500"
                     : menu.owner_role === "pro"
                       ? "border-4 border-blue-900"
-                      : "border-translucid"
+                      : menu.owner_role === "business"
+                        ? "border-4 border-amber-500"
+                        : "border-translucid"
               } rounded-lg flex flex-col gap-2`}
             >
               <div className="flex items-center gap-2">
@@ -340,6 +511,12 @@ const Admin = () => {
                   </span>
                 )}
               </p>
+
+              {subStatuses[menu.owner_id] && (
+                <p className="text-xs text-gray-400">
+                  ValidaPay: <span className="font-mono text-white">{subStatuses[menu.owner_id]}</span>
+                </p>
+              )}
 
               <p className="text-xs text-gray-400">
                 email: <span className="font-semibold text-white">{menu.owner_email}</span>

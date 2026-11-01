@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { plans, plansBlockedFor } from "@/consts/Plans";
 import { FaCheck } from "react-icons/fa";
 import useUser from "@/hooks/useUser";
@@ -188,7 +189,9 @@ const ChangePlanModal = ({ plan, cycle, currentPlanName, onClose }) => {
   );
 };
 
-const PlansSection = () => {
+const freePlan = plans.find((plan) => plan.id === "free");
+
+const PlansSection = ({ showFree = false }) => {
   const [loadingPlan, setLoadingPlan] = useState(null);
   const [cycle, setCycle] = useState("monthly"); // "monthly" | "yearly"
   const [billing, setBilling] = useState(null); // assinatura atual (quem já assina)
@@ -299,14 +302,46 @@ const PlansSection = () => {
       </p>
 
       <div className="w-full max-w-[1248px] flex justify-around flex-wrap gap-6 lg:gap-12">
-        {plans.map((plan) => (
+        {showFree && (
+          <div className="p-4 px-6 bg-bite text-white rounded-card w-64 flex flex-col gap-6 justify-between">
+            <div>
+              <h2 className="font-bold mb-2 text-center">{freePlan.name}</h2>
+              <hr className="border-white/30 mb-4" />
+              <p className="text-4xl font-bold text-center mb-4">
+                <span className="text-base mr-1">R$</span>0
+                <span className="text-base"> para sempre</span>
+              </p>
+              <ul className="mt-2">
+                {freePlan.features.map((feature) => (
+                  <li key={feature} className="flex items-center gap-2 mt-1 pb-0.5 border-b-2 border-white/20">
+                    <FaCheck className="shrink-0" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <Link
+              href={user ? "/dashboard" : "/register"}
+              className="w-full py-3 rounded-full bg-white text-bite font-bold text-center transition hover:opacity-90"
+            >
+              {user ? "Acessar cardápio" : "Criar grátis"}
+            </Link>
+          </div>
+        )}
+        {/* Free fica fora da lista: só aparece no card acima, com showFree */}
+        {plans.filter((plan) => plan.id !== "free").map((plan) => (
           <div
             key={plan.name}
             className={`relative p-4 px-6 bg-degraded-t-speckled border-2 rounded-xl w-64 flex flex-col gap-6 justify-between transition ${
               highlight === plan.id ? "border-[var(--red)]" : "border-[var(--translucid)]"
             }`}
           >
-            {highlight === plan.id && (
+            {plan.comingSoon && (
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-0.5 rounded-full bg-[var(--red)] text-white text-xs font-semibold">
+                Em breve
+              </span>
+            )}
+            {highlight === plan.id && !plan.comingSoon && (
               <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-0.5 rounded-full bg-[var(--red)] text-white text-xs font-semibold">
                 Recomendado pra você
               </span>
@@ -337,7 +372,7 @@ const PlansSection = () => {
                 {plan.features.map((feature, index) => (
                   <div key={index}>
                     <li className="flex items-center gap-2 mt-1">
-                      <FaCheck className="text-[var(--red)]" />
+                      <FaCheck className="shrink-0 text-[var(--red)]" />
                       {feature}
                     </li>
                     <hr className="border border-translucid" />
@@ -350,10 +385,12 @@ const PlansSection = () => {
               <div className="w-full flex flex-col gap-2">
                 <button
                   className="cta-button glow-red disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={maintenance || !!loadingPlan || isCurrent(plan)}
+                  disabled={plan.comingSoon || maintenance || !!loadingPlan || isCurrent(plan)}
                   onClick={() => handleSelect(plan)}
                 >
-                  {maintenance
+                  {plan.comingSoon
+                    ? "Em breve"
+                    : maintenance
                     ? "Indisponível"
                     : isCurrent(plan)
                     ? "Plano atual"

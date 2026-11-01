@@ -1,20 +1,32 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
+import { Fragment, useEffect, useState, useRef, useMemo } from "react";
 import useMenu from "@/hooks/useMenu";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { useAlert } from "@/providers/AlertProvider";
 import { supabase } from "@/lib/supabaseClient";
 import { updateMenuById } from "@/lib/queries/menus";
+import { getOrdersSummary } from "@/lib/queries/orders";
 import Loading from "@/components/Loading";
 import {
   FaCheck,
   FaTrash,
   FaMoneyBill,
   FaChevronDown,
+  FaChevronLeft,
+  FaChevronRight,
+  FaPlus,
   FaSyncAlt,
   FaPhoneAlt,
   FaClipboardList,
+  FaWhatsapp,
+  FaPrint,
+  FaLock,
+  FaUtensils,
+  FaMotorcycle,
+  FaShoppingBag,
+  FaChair,
+  FaUser,
 } from "react-icons/fa";
 import GenericModal from "@/components/GenericModal";
 import { useConfirm } from "@/providers/ConfirmProvider";
@@ -22,11 +34,24 @@ import OrdersFilter from "./components/orders/OrdersFilter";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import useUser from "@/hooks/useUser";
 import UpdatePlanModal from "./components/UpdatePlanModal";
+import { mapsUrl } from "@/components/AddressFields";
 import PrintDocumentButton, {
   normalizeOrderForPrint,
 } from "./components/print/PrintDocumentButton";
+import PrintOrderModal from "./components/print/PrintOrderModal";
+import { ORDER_STATUS, STAFF_PLAN_ROLES } from "@/lib/staff";
+import { staffApi } from "./Team";
 
 const PAGE_SIZE = 10;
+
+// Avançar a etapa pelo painel (rótulo do botão pela etapa de destino)
+const ADVANCE_LABEL = {
+  preparing: "Começar preparo",
+  ready: "Marcar pronto",
+  out_for_delivery: "Saiu para entrega",
+  delivered: "Marcar entregue",
+};
+const STATUS_FLOW = Object.keys(ORDER_STATUS);
 
 const paymentLabels = {
   pix: "Pix",
@@ -34,6 +59,27 @@ const paymentLabels = {
   credit: "Crédito",
   cash: "Dinheiro",
   stripe: "Stripe",
+};
+
+const serviceIcons = {
+  delivery: FaMotorcycle,
+  pickup: FaShoppingBag,
+  dinein: FaUtensils,
+  faceToFace: FaUser,
+};
+
+const chipClass =
+  "inline-flex items-center gap-1.5 rounded-full border border-translucid bg-[var(--translucid)] px-2.5 py-1 color-gray";
+
+// "14:32" se for hoje, senão "12/10 14:32"
+const formatOrderTime = (value) => {
+  const date = new Date(value);
+  const time = date.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  if (date.toDateString() === new Date().toDateString()) return time;
+  return `${date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} ${time}`;
 };
 
 const serviceLabels = {
@@ -95,14 +141,25 @@ const Orders = ({
   setSelectedTab,
   reloadTrigger,
   setOrderQuantityChangeTrigger,
+  staff = false, // login da equipe (caixa): só os pedidos, sem as configurações do cardápio
 }) => {
   const { menu, loading } = useMenu();
   const { profile, loadingProfile } = useUser();
   const customAlert = useAlert();
   const [printUpsell, setPrintUpsell] = useState(false);
+  // plano do estabelecimento: o caixa não tem profile, mas só entra com o Business do dono ativo
+  const planRole = staff ? "business" : profile?.role;
+  const canCustomize = ["business", "admin", "designer"].includes(planRole);
+  // etapas da equipe: Business + tela ligada na aba Equipe
+  const teamPlan = STAFF_PLAN_ROLES.includes(planRole);
+  const kitchenOn = teamPlan && menu?.kitchen_enabled === true;
+  const deliveryOn = teamPlan && menu?.delivery_enabled === true;
+  const canAssign = deliveryOn; // dono e caixa atribuem entregas
+  const [couriers, setCouriers] = useState([]);
   const confirm = useConfirm();
 
   const [showConfig, setShowConfig] = useState(false);
+  const [printOrderModalOpen, setPrintOrderModalOpen] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
@@ -125,10 +182,6 @@ const Orders = ({
   const [enabledOrders, setEnabledOrders] = useState(false);
 
   const [soundNewOrder, setSoundNewOrder] = useState(true);
-
-  const [manualStoreControl, setManualStoreControl] = useState(false);
-  const [storeOpen, setStoreOpen] = useState(false);
-  const [resetModalOpen, setResetModalOpen] = useState(false);
 
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [summary, setSummary] = useState({
@@ -174,14 +227,6 @@ const Orders = ({
       setSoundNewOrder(menu.sound_new_order);
     }
   }, [menu?.sound_new_order]);
-
-  useEffect(() => {
-    setManualStoreControl(!!menu?.manual_control);
-    setStoreOpen(!!menu?.is_open);
-    // só ao carregar o menu: depender dos campos faz o efeito reverter o clique
-    // seguinte com o valor antigo, já que os handlers mutam `menu` após o await
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [menu?.id]);
 
   useEffect(() => {
     if (menu?.delivery_fee_on_sales !== undefined) {
@@ -235,61 +280,24 @@ const Orders = ({
       q = q.not("table_id", "is", null);
     }
 
+    if (filters.status && filters.status !== "all") {
+      q = q.eq("status", filters.status);
+    }
+
     if (filters.dateFrom)
       q = q.gte("created_at", new Date(filters.dateFrom).toISOString());
     if (filters.dateTo)
       q = q.lte("created_at", new Date(filters.dateTo).toISOString());
 
     if (filters.search && filters.search.trim() !== "") {
-      const term = filters.search.trim();
+      // vírgula e parênteses quebram a sintaxe do .or() do PostgREST
+      const term = filters.search.trim().replace(/[,()]/g, "");
       q = q.or(
         `costumer_name.ilike.%${term}%,costumer_phone.ilike.%${term}%,id_text.ilike.${term}%`,
       );
     }
 
     return q.order("updated_at", { ascending: false });
-  };
-
-  const buildSummaryQuery = (filters) => {
-    let q = supabase
-      .from("orders")
-      .select("is_paid,service,items_list,updated_at,delivery_fee,discount", {
-        count: "exact",
-      })
-      .eq("menu_id", menu.id)
-      .order("updated_at", { ascending: false });
-
-    // oculta pedidos Stripe enquanto não pagos
-    q = q.or("payment_method.neq.stripe,is_paid.eq.true");
-
-    if (filters.isPaid === true) q = q.eq("is_paid", true);
-    if (filters.isPaid === false) q = q.eq("is_paid", false);
-
-    if (filters.deliveryType && filters.deliveryType !== "all") {
-      q = q.eq("service", filters.deliveryType);
-    }
-
-    if (filters.payment && filters.payment !== "all") {
-      q = q.eq("payment_method", filters.payment);
-    }
-
-    if (filters.tableOnly) {
-      q = q.not("table_id", "is", null);
-    }
-
-    if (filters.dateFrom)
-      q = q.gte("created_at", new Date(filters.dateFrom).toISOString());
-    if (filters.dateTo)
-      q = q.lte("created_at", new Date(filters.dateTo).toISOString());
-
-    if (filters.search && filters.search.trim() !== "") {
-      const term = filters.search.trim();
-      q = q.or(
-        `costumer_name.ilike.%${term}%,costumer_phone.ilike.%${term}%,id_text.ilike.${term}%`,
-      );
-    }
-
-    return q;
   };
 
   const fetchMore = async (isReset = false, currentFilters = filters) => {
@@ -336,47 +344,20 @@ const Orders = ({
     if (!menu?.id) return;
     setSummaryLoading(true);
 
-    const PAGE = 1000;
-    let all = [];
-    let from = 0;
-
     try {
-      while (true) {
-        const to = from + PAGE - 1;
-        const { data, error, count } = await buildSummaryQuery(
-          currentFilters,
-        ).range(from, to);
+      // somado no banco: antes baixava todos os pedidos (com items_list) a cada atualização
+      const { data, error } = await getOrdersSummary(supabase, menu.id, currentFilters);
+      if (error) throw error;
 
-        if (error) throw error;
-        if (typeof count === "number") setTotalCount(count);
-
-        const chunk = data || [];
-        all = all.concat(chunk);
-
-        if (chunk.length < PAGE) break;
-        from += PAGE;
-      }
-
-      let paidTotal = 0;
-      let pendingTotal = 0;
-      let paidCount = 0;
-      let pendingCount = 0;
-
-      for (const o of all) {
-        const total = computeTotalWithDelivery(o);
-        if (o.is_paid) {
-          paidTotal += total;
-          paidCount += 1;
-        } else {
-          pendingTotal += total;
-          pendingCount += 1;
-        }
-      }
-
-      const count = all.length;
+      const count = Number(data?.count) || 0;
+      const paidCount = Number(data?.paid_count) || 0;
+      const pendingCount = Number(data?.pending_count) || 0;
+      const paidTotal = Number(data?.paid_total) || 0;
+      const pendingTotal = Number(data?.pending_total) || 0;
       const avgTicket = count > 0 ? (paidTotal + pendingTotal) / count : 0;
-      const lastUpdatedAt = all[0]?.updated_at || null;
+      const lastUpdatedAt = data?.last_updated_at || null;
 
+      setTotalCount(count);
       setSummary({
         count,
         paidCount,
@@ -417,6 +398,58 @@ const Orders = ({
     fetchSummary();
   };
 
+  // Avança ou volta a etapa do pedido (voltar desfaz um clique errado; o pedido reaparece na tela da cozinha/entregas)
+  const changeStatus = async (order, status) => {
+    const { error } = await supabase
+      .from("orders")
+      .update({ status })
+      .eq("id", order.id);
+    if (error) return customAlert("Erro ao atualizar pedido", "error");
+
+    setOrders((prev) =>
+      prev.map((o) => (o.id === order.id ? { ...o, status } : o)),
+    );
+    customAlert(`Pedido em "${ORDER_STATUS[status]}"`, "success");
+  };
+
+  useEffect(() => {
+    if (!canAssign) return;
+    // o caixa lê os colegas direto (RLS: mesma equipe); o dono pela API da aba Equipe
+    const fetchCouriers = staff
+      ? supabase
+          .from("menu_staff")
+          .select("user_id, name, role")
+          .then(({ data, error }) => {
+            if (error) throw error;
+            return data;
+          })
+      : staffApi("GET");
+    fetchCouriers
+      .then((list) => setCouriers(list.filter((m) => m.role === "entregador")))
+      .catch((err) => console.error("Erro ao buscar entregadores:", err));
+  }, [canAssign, staff]);
+
+  // null = sem entregador (não aparece pra nenhum; com um único entregador o banco atribui a ele)
+  const assignCourier = async (id, userId) => {
+    // devolve o valor gravado: com um único entregador o trigger reatribui a ele
+    const { data, error } = await supabase
+      .from("orders")
+      .update({ assigned_to: userId || null })
+      .eq("id", id)
+      .select("assigned_to")
+      .single();
+    if (error) return customAlert("Erro ao atribuir entregador", "error");
+    const { assigned_to } = data;
+
+    setOrders((prev) =>
+      prev.map((o) => (o.id === id ? { ...o, assigned_to } : o)),
+    );
+    customAlert(
+      assigned_to ? "Entregador atribuído!" : "Entregador removido da entrega",
+      "success",
+    );
+  };
+
   const handleToggleDeliveryFeeOnSales = async (value) => {
     setDeliveryFeeOnSales(value);
 
@@ -443,41 +476,6 @@ const Orders = ({
       setSoundNewOrder(!value);
     } else {
       customAlert("Configuração de som atualizada!", "success");
-    }
-  };
-
-  const handleToggleManualStoreControl = async (value) => {
-    setManualStoreControl(value);
-
-    const { error } = await updateMenuById(supabase, menu.id, {
-      manual_control: value,
-    });
-
-    if (error) {
-      customAlert("Erro ao atualizar controle manual da loja.", "error");
-      setManualStoreControl(!value);
-    } else {
-      menu.manual_control = value; // useMenu mantém o menu em cache entre abas
-
-      customAlert("Controle manual da loja atualizado!", "success");
-    }
-  };
-
-  const handleToggleStoreOpen = async (resetCounter = false) => {
-    const value = !storeOpen;
-    setStoreOpen(value);
-
-    const { error } = await updateMenuById(supabase, menu.id, {
-      is_open: value,
-      ...(resetCounter ? { order_counter: 0 } : {}),
-    });
-
-    if (error) {
-      customAlert("Erro ao atualizar status da loja.", "error");
-      setStoreOpen(!value);
-    } else {
-      menu.is_open = value;
-      customAlert(value ? "Loja aberta!" : "Loja fechada!", "success");
     }
   };
 
@@ -625,21 +623,6 @@ const Orders = ({
     return subtotal - computeDiscount(order) + delivery;
   };
 
-  const getPrimaryItemText = (order) => {
-    const items = order?.items_list || [];
-    if (items.length === 0) return "Sem itens";
-
-    const firstThree = items.slice(0, 3);
-
-    const text = firstThree
-      .map((item) => `${item.qty}x ${item.name}`)
-      .join(" • ");
-
-    const remaining = items.length - 3;
-
-    return remaining > 0 ? `${text} + ${remaining} item(ns)` : text;
-  };
-
   const paidPct =
     summary.count > 0
       ? Math.round((summary.paidCount / summary.count) * 100)
@@ -663,7 +646,42 @@ const Orders = ({
           >
             <FaSyncAlt />
           </button>
+          {/* pedido de balcão/telefone: usa o próprio cardápio (itens, combos, cupons e estoque já tratados lá) no modo balcão */}
+          {enabledOrders && menu?.slug && (
+            <a
+              href={`/menu/${menu.slug}?balcao=1`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-auto flex items-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+            >
+              <FaPlus /> Novo pedido
+            </a>
+          )}
         </div>
+
+        {/* só o dono: atalhos da equipe e configurações do cardápio */}
+        {!staff && (
+          <>
+        {/* atalhos de operação da equipe (Business, telas ligadas na aba Equipe) */}
+        {(kitchenOn || deliveryOn) && (
+          <div className="mb-4 flex gap-2">
+            {[
+              kitchenOn && { tab: "kitchen", Icon: FaUtensils, label: "Cozinha" },
+              deliveryOn && { tab: "delivery", Icon: FaMotorcycle, label: "Entregas" },
+            ]
+              .filter(Boolean)
+              .map(({ tab, Icon, label }) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setSelectedTab(tab)}
+                  className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-translucid bg-[var(--low-translucid)] px-3 py-2 text-sm font-semibold transition hover:bg-[var(--translucid)]"
+                >
+                  <Icon /> {label}
+                </button>
+              ))}
+          </div>
+        )}
 
         <button
           onClick={() => setShowConfig(!showConfig)}
@@ -680,6 +698,49 @@ const Orders = ({
         <div
           className={`${showConfig ? "h-auto border p-3 sm:p-4" : "h-0"} max-w-[calc(100%-6px)] overflow-hidden rounded-2xl border-translucid bg-translucid transition-all duration-500`}
         >
+          <p className="mb-2 text-sm font-medium">Personalização</p>
+
+          <div className="flex flex-col gap-1">
+            {[
+              {
+                Icon: FaWhatsapp,
+                title: "Mensagem do WhatsApp",
+                desc: "Personalize o texto que o cliente envia",
+                onClick: () => setSelectedTab("whatsappMessage"),
+              },
+              {
+                Icon: FaPrint,
+                title: "Ordem da impressão",
+                desc: "Escolha a ordem das informações impressas",
+                onClick: () => setPrintOrderModalOpen(true),
+              },
+            ].map(({ Icon, title, desc, onClick }) => (
+              <button
+                key={title}
+                type="button"
+                onClick={onClick}
+                className="flex min-w-0 cursor-pointer items-center gap-3 rounded-xl p-2 text-left transition hover:bg-[var(--translucid)]"
+              >
+                <Icon className="shrink-0 opacity-80" />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold leading-tight">{title}</span>
+                  <span className="mt-0.5 block text-xs leading-snug color-gray">{desc}</span>
+                </span>
+                {!canCustomize && (
+                  <span
+                    title="Plano Business"
+                    className="flex shrink-0 items-center gap-1 rounded-full bg-[var(--translucid)] px-2 py-1 text-xs color-gray"
+                  >
+                    <FaLock className="text-[10px]" />
+                    <span className="hidden xs:inline">Business</span>
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          <hr className="my-3 border-translucid" />
+
           <p className="mb-3 text-sm font-medium">Receber pedidos</p>
 
           <label className="mb-2 flex cursor-pointer items-center gap-3">
@@ -767,62 +828,9 @@ const Orders = ({
           <p className="mt-2 text-xs color-gray">
             Quando ativado, o sistema tocará um som ao chegar um novo pedido.
           </p>
-
-          <hr className="my-3 border-translucid" />
-
-          <p className="mb-2 text-sm font-medium">Abertura da loja</p>
-
-          <label className="flex items-center gap-2">
-            <span className="switch">
-              <input
-                type="checkbox"
-                checked={manualStoreControl}
-                onChange={(e) =>
-                  handleToggleManualStoreControl(e.target.checked)
-                }
-              />
-              <span className="slider"></span>
-            </span>
-
-            <span>Controle manual de abertura e fechamento</span>
-          </label>
-
-          <p className="mt-2 mb-3 text-xs color-gray">
-            Quando ativado, o horário de funcionamento é ignorado e a loja só
-            abre e fecha pelo botão abaixo.
-          </p>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() =>
-                storeOpen ? setResetModalOpen(true) : handleToggleStoreOpen()
-              }
-              disabled={!manualStoreControl}
-              className={`flex-1 cursor-pointer rounded-xl px-3 py-2 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-40 ${
-                storeOpen
-                  ? "bg-red-600 hover:bg-red-700"
-                  : "bg-green-600 hover:bg-green-700"
-              }`}
-            >
-              {storeOpen ? "Fechar loja" : "Abrir loja"}
-            </button>
-
-            {manualStoreControl ? (
-              <span
-                className={`shrink-0 text-sm font-semibold ${
-                  storeOpen ? "text-green-500" : "text-red-500"
-                }`}
-              >
-                {storeOpen ? "Loja aberta" : "Loja fechada"}
-              </span>
-            ) : (
-              <span className="shrink-0 text-sm color-gray">
-                Pelo horário
-              </span>
-            )}
-          </div>
         </div>
+          </>
+        )}
 
         {!enabledOrders ? (
           <p className="p-6 text-center color-gray">
@@ -830,7 +838,18 @@ const Orders = ({
           </p>
         ) : (
           <div>
-            <OrdersFilter onChange={setFilters} />
+            <OrdersFilter
+              onChange={setFilters}
+              statusOptions={
+                kitchenOn || deliveryOn
+                  ? Object.entries(ORDER_STATUS).filter(
+                      ([value]) =>
+                        deliveryOn ||
+                        !["out_for_delivery", "delivered"].includes(value),
+                    )
+                  : null
+              }
+            />
 
             {orders.length === 0 ? (
               <p className="p-6 text-center color-gray">
@@ -843,181 +862,295 @@ const Orders = ({
                   const subtotal = computeSubtotal(order);
                   const deliveryFee = computeDeliveryFee(order);
                   const discount = computeDiscount(order);
-                  const orderDate = new Date(order.updated_at).toLocaleString(
-                    "pt-BR",
+                  const items = order.items_list || [];
+                  const ServiceIcon = serviceIcons[order.service] || FaShoppingBag;
+
+                  // etapas que fazem sentido pra este pedido, conforme as telas ligadas
+                  const steps = [
+                    "received",
+                    ...(kitchenOn ? ["preparing", "ready"] : []),
+                    ...(deliveryOn && order.service === "delivery"
+                      ? ["out_for_delivery", "delivered"]
+                      : []),
+                  ];
+                  const stepIndex = steps.indexOf(order.status);
+                  const showSteps = steps.length > 1;
+                  // etapa anterior/próxima entre as do card (cobre status fora da lista, ex.: "ready" com a cozinha desligada)
+                  const nextStatus = steps.find(
+                    (st) =>
+                      STATUS_FLOW.indexOf(st) >
+                      STATUS_FLOW.indexOf(order.status),
                   );
+                  const prevStatus = [...steps].reverse().find(
+                    (st) =>
+                      STATUS_FLOW.indexOf(st) <
+                      STATUS_FLOW.indexOf(order.status),
+                  );
+                  const showCourier =
+                    canAssign &&
+                    couriers.length > 0 &&
+                    order.service === "delivery" &&
+                    order.status !== "delivered";
 
                   return (
                     <div
                       key={order.id}
-                      className="rounded-2xl border border-translucid bg-translucid p-4 shadow-sm transition hover:shadow-md"
+                      className={`overflow-hidden rounded-2xl border border-translucid border-l-2 bg-translucid shadow-sm transition hover:shadow-md ${
+                        order.is_paid ? "border-l-green-500" : "border-l-yellow-500"
+                      }`}
                     >
-                      <div
-                        className="mb-2 flex items-center justify-between text-sm border-b-2 pb-1 border-[var(--translucid)]"
-                        style={{ color: "var(--gray)" }}
-                      >
-                        <p>
-                          <strong>Pedido:</strong> #{order?.id?.slice(0, 6)}
-                        </p>
-                        <p className="font-semibold">
-                          Nº {order.order_number ?? "—"}
-                        </p>
-                      </div>
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="min-w-0 flex-1">
-                          <div className="mb-3 flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <div className="mb-1 flex items-center gap-2">
-                                <h3 className="truncate text-lg font-semibold">
-                                  {order.costumer_name || "Cliente"}
-                                </h3>
-                                <span
-                                  className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
-                                    order.is_paid
-                                      ? "bg-green-600/40"
-                                      : "bg-yellow-500/40"
-                                  }`}
-                                >
-                                  {order.is_paid ? "Pago" : "Pendente"}
-                                </span>
-                              </div>
-                              <p className="text-sm color-gray">{orderDate}</p>
-                            </div>
-
-                            <div className="text-right min-w-[80px]">
-                              <p className="text-xs uppercase tracking-wide color-gray">
-                                Total
-                              </p>
-                              <p className="font-bold">
-                                {formatCurrency(total, menu?.currency)}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="mb-3 flex flex-wrap gap-2 text-sm">
-                            <span className="rounded-full border border-translucid px-3 py-1 color-gray bg-[var(--translucid)]">
-                              {serviceLabels[order.service] || "Não informado"}
-                            </span>
-                            {order.table_label && (
-                              <span className="rounded-full border border-translucid px-3 py-1 color-gray bg-[var(--translucid)]">
-                                {order.table_label}
-                              </span>
-                            )}
-                            <span className="rounded-full border border-translucid px-3 py-1 color-gray bg-[var(--translucid)]">
-                              {paymentLabels[order.payment_method] ||
-                                "Não informado"}
-                            </span>
-                            {order.change_requested && (
-                              <span className="rounded-full border border-translucid px-3 py-1 color-gray bg-[var(--translucid)]">
-                                Troco para:{" "}
-                                {formatCurrency(
-                                  order.change_for_amount,
-                                  menu?.currency,
-                                )}
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="mt-12 rounded-xl">
-                            <p className="mb-1 text-xs uppercase tracking-wide font-bold">
-                              Resumo do pedido
+                      {/* cabeçalho: identificação + total */}
+                      <div className="flex items-start justify-between gap-3 p-4 pb-3">
+                        <div className="min-w-0">
+                          <div className="flex items-baseline gap-2">
+                            <p className="text-2xl font-bold leading-none">
+                              Nº {order.order_number ?? "—"}
                             </p>
-                            <p className="font-medium line-clamp-1">
-                              {getPrimaryItemText(order)}
+                            <p className="text-xs color-gray">
+                              #{order?.id?.slice(0, 6)}
                             </p>
-                            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm color-gray">
-                              <span>
-                                {order.items_list?.length || 0}{" "}
-                                {order.items_list?.length === 1
-                                  ? "item"
-                                  : "itens"}
-                              </span>
-                              {order.service === "delivery" ? (
-                                <>
-                                  <span>
-                                    Subtotal:{" "}
-                                    {formatCurrency(subtotal, menu?.currency)}
-                                  </span>
-                                  <span>
-                                    Entrega:{" "}
-                                    {formatCurrency(
-                                      deliveryFee,
-                                      menu?.currency,
-                                    )}
-                                  </span>
-                                </>
-                              ) : null}
-                              {discount > 0 ? (
-                                <span className="text-green-500">
-                                  Desconto: -
-                                  {formatCurrency(discount, menu?.currency)}
-                                </span>
-                              ) : null}
-                            </div>
                           </div>
+                          <p className="mt-1.5 truncate text-base font-semibold">
+                            {order.costumer_name || "Cliente"}
+                          </p>
+                          <p className="text-xs color-gray">
+                            {formatOrderTime(order.updated_at)}
+                          </p>
                         </div>
 
-                        <div className="flex w-full flex-col gap-2 sm:w-[220px]">
+                        <div className="shrink-0 text-right">
+                          <p className="text-xl font-bold leading-none">
+                            {formatCurrency(total, menu?.currency)}
+                          </p>
+                          <span
+                            className={`mt-2 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+                              order.is_paid
+                                ? "bg-green-600/30 text-green-500"
+                                : "bg-yellow-500/30 text-yellow-500"
+                            }`}
+                          >
+                            {order.is_paid ? "Pago" : "Pendente"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* serviço, mesa, pagamento, troco */}
+                      <div className="flex flex-wrap gap-1.5 px-4 pb-3 text-xs">
+                        <span className={chipClass}>
+                          <ServiceIcon />
+                          {serviceLabels[order.service] || "Não informado"}
+                        </span>
+                        {order.table_label && (
+                          <span className={chipClass}>
+                            <FaChair />
+                            {order.table_label}
+                          </span>
+                        )}
+                        <span className={chipClass}>
+                          <FaMoneyBill />
+                          {paymentLabels[order.payment_method] || "Não informado"}
+                        </span>
+                        {order.change_requested && (
+                          <span className={chipClass}>
+                            Troco para{" "}
+                            {formatCurrency(order.change_for_amount, menu?.currency)}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* progresso da equipe (Business) */}
+                      {(showSteps || showCourier) && (
+                        <div className="mx-4 mb-3 flex flex-col gap-2 rounded-xl bg-[var(--low-translucid)] p-3">
+                          {showSteps && (
+                            <div className="flex flex-col gap-1.5">
+                              <div className="flex items-center gap-3">
+                                <button
+                                  type="button"
+                                  disabled={!prevStatus}
+                                  onClick={() => changeStatus(order, prevStatus)}
+                                  title={prevStatus ? `Voltar para "${ORDER_STATUS[prevStatus]}"` : undefined}
+                                  aria-label="Voltar etapa"
+                                  className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border border-translucid bg-[var(--translucid)] text-sm transition hover:opacity-80 disabled:cursor-default disabled:opacity-30"
+                                >
+                                  <FaChevronLeft />
+                                </button>
+
+                                <div className="flex flex-1 items-center">
+                                  {steps.map((step, i) => (
+                                    <Fragment key={step}>
+                                      {i > 0 && (
+                                        <span
+                                          className={`h-0.5 flex-1 ${
+                                            i <= stepIndex
+                                              ? "bg-blue-500"
+                                              : "bg-[var(--translucid)]"
+                                          }`}
+                                        />
+                                      )}
+                                      <span
+                                        title={ORDER_STATUS[step]}
+                                        className={`h-3 w-3 shrink-0 rounded-full border-2 ${
+                                          i < stepIndex
+                                            ? "border-blue-500 bg-blue-500"
+                                            : i === stepIndex
+                                              ? "border-blue-500 bg-blue-500 ring-4 ring-blue-500/25"
+                                              : "border-[var(--gray)] opacity-40"
+                                        }`}
+                                      />
+                                    </Fragment>
+                                  ))}
+                                </div>
+
+                                <button
+                                  type="button"
+                                  disabled={!nextStatus}
+                                  onClick={() => changeStatus(order, nextStatus)}
+                                  title={nextStatus ? ADVANCE_LABEL[nextStatus] : undefined}
+                                  aria-label="Avançar etapa"
+                                  className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border border-translucid bg-[var(--translucid)] text-sm transition hover:opacity-80 disabled:cursor-default disabled:opacity-30"
+                                >
+                                  <FaChevronRight />
+                                </button>
+                              </div>
+
+                              <p className="text-center text-xs">
+                                <span className="font-semibold">
+                                  {ORDER_STATUS[order.status] ?? "—"}
+                                </span>
+                                {nextStatus && (
+                                  <span className="color-gray">
+                                    {" "}· próximo: {ORDER_STATUS[nextStatus]}
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                          )}
+
+                          {showCourier && (
+                            <label className="flex items-center gap-2 text-sm">
+                              <FaMotorcycle className="shrink-0 opacity-70" />
+                              <span className="color-gray">Entregador</span>
+                              <select
+                                value={order.assigned_to ?? ""}
+                                onChange={(e) =>
+                                  assignCourier(order.id, e.target.value)
+                                }
+                                className={`min-w-0 flex-1 cursor-pointer rounded-lg border-2 bg-translucid p-1.5 ${
+                                  order.assigned_to
+                                    ? "border-[var(--translucid)]"
+                                    : "border-yellow-500/50"
+                                }`}
+                              >
+                                <option value="">Sem entregador</option>
+                                {couriers.map((c) => (
+                                  <option key={c.user_id} value={c.user_id}>
+                                    {c.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          )}
+                        </div>
+                      )}
+
+                      {/* itens + composição do valor */}
+                      <div className="mx-4 mb-3 rounded-xl border border-translucid p-3">
+                        {items.length === 0 ? (
+                          <p className="text-sm color-gray">Sem itens</p>
+                        ) : (
+                          <ul className="space-y-1 text-sm">
+                            {items.slice(0, 3).map((item, i) => (
+                              <li key={i} className="flex gap-2">
+                                <span className="shrink-0 font-semibold">
+                                  {item.qty}x
+                                </span>
+                                <span className="truncate">
+                                  {item.name || "Item sem nome"}
+                                </span>
+                              </li>
+                            ))}
+                            {items.length > 3 && (
+                              <li className="text-xs color-gray">
+                                + {items.length - 3}{" "}
+                                {items.length - 3 === 1 ? "item" : "itens"}
+                              </li>
+                            )}
+                          </ul>
+                        )}
+
+                        {(order.service === "delivery" || discount > 0) && (
+                          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 border-t border-translucid pt-2 text-xs color-gray">
+                            <span>
+                              Subtotal {formatCurrency(subtotal, menu?.currency)}
+                            </span>
+                            {order.service === "delivery" && (
+                              <span>
+                                Entrega{" "}
+                                {formatCurrency(deliveryFee, menu?.currency)}
+                              </span>
+                            )}
+                            {discount > 0 && (
+                              <span className="text-green-500">
+                                Desconto -
+                                {formatCurrency(discount, menu?.currency)}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* ações */}
+                      <div className="flex flex-col-reverse gap-2 border-t border-translucid p-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => openOrderModal(order)}
+                            className="flex-1 cursor-pointer rounded-xl border border-translucid bg-[var(--translucid)] px-3 py-2 text-sm font-medium transition hover:opacity-80 sm:flex-none"
+                          >
+                            Ver detalhes
+                          </button>
+                          <PrintDocumentButton
+                            document={normalizeOrderForPrint(order, {
+                              deliveryFeeOnSales,
+                            })}
+                            currency={menu?.currency}
+                            menuName={menu?.title}
+                            canPrint={
+                              ["pro", "business", "admin", "designer"].includes(planRole)
+                            }
+                            canCustomizeOrder={["business", "admin", "designer"].includes(planRole)}
+                            onDenied={() => setPrintUpsell(true)}
+                            fileNamePrefix="pedido"
+                            receiptTitle="PEDIDO"
+                            triggerClassName="flex cursor-pointer items-center justify-center gap-2 rounded-xl border bg-[var(--translucid)] border-translucid px-3 py-2 text-sm font-medium transition hover:opacity-80"
+                          />
+                          <button
+                            onClick={() => deleteOrder(order.id)}
+                            title="Excluir pedido"
+                            aria-label="Excluir pedido"
+                            className="flex cursor-pointer items-center justify-center rounded-xl border border-red-500/20 bg-red-500/30 px-3 text-sm transition hover:bg-red-500/50"
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 sm:flex">
+                          <button
+                            onClick={() => togglePaid(order.id, order.is_paid)}
+                            className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                              order.is_paid
+                                ? "border border-translucid bg-translucid hover:opacity-80"
+                                : "bg-yellow-500 text-black hover:bg-yellow-600"
+                            }`}
+                          >
+                            <FaMoneyBill />
+                            {order.is_paid ? "Desfazer pagamento" : "Pagar"}
+                          </button>
                           <button
                             onClick={() => finalizeOrder(order.id)}
-                            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+                            className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
                           >
-                            <FaCheck /> Finalizar pedido
+                            <FaCheck /> Finalizar
                           </button>
-
-                          <div className="grid grid-cols-4 gap-2">
-                            <button
-                              onClick={() => openOrderModal(order)}
-                              className="w-full cursor-pointer rounded-xl border bg-[var(--translucid)] border-translucid px-3 py-2 text-sm font-medium transition hover:opacity-80 col-span-3"
-                            >
-                              Ver detalhes
-                            </button>
-                            <PrintDocumentButton
-                              document={normalizeOrderForPrint(order, {
-                                deliveryFeeOnSales,
-                              })}
-                              currency={menu?.currency}
-                              menuName={menu?.title}
-                              canPrint={
-                                profile?.role === "pro" ||
-                                profile?.role === "admin"
-                              }
-                              onDenied={() =>
-                                profile?.role === "free"
-                                  ? setPrintUpsell(true)
-                                  : customAlert(
-                                      "Recurso disponível apenas para o plano Pro",
-                                      "error",
-                                    )
-                              }
-                              fileNamePrefix="pedido"
-                              receiptTitle="PEDIDO"
-                              triggerClassName="flex cursor-pointer items-center justify-center gap-2 rounded-xl border bg-[var(--translucid)] border-translucid px-3 py-2 text-sm font-medium transition hover:opacity-80"
-                            />
-                          </div>
-
-                          <div className="grid grid-cols-4 gap-2">
-                            <button
-                              onClick={() =>
-                                togglePaid(order.id, order.is_paid)
-                              }
-                              className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition col-span-3 ${
-                                order.is_paid
-                                  ? "border border-translucid bg-translucid hover:opacity-80"
-                                  : "bg-yellow-500 text-black hover:bg-yellow-600"
-                              }`}
-                            >
-                              <FaMoneyBill />
-                              {order.is_paid ? "Desfazer" : "Pagar"}
-                            </button>
-
-                            <button
-                              onClick={() => deleteOrder(order.id)}
-                              className="flex items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/40 px-4 text-sm font-semibold transition hover:opacity-90 cursor-pointer"
-                            >
-                              <FaTrash />
-                            </button>
-                          </div>
                         </div>
                       </div>
                     </div>
@@ -1124,47 +1257,6 @@ const Orders = ({
             )}
           </div>
         </aside>
-      ) : null}
-
-      {resetModalOpen ? (
-        <GenericModal
-          title="Resetar numeração dos pedidos?"
-          onClose={() => setResetModalOpen(false)}
-          wfull
-          maxWidth={"420px"}
-          py={"24px"}
-        >
-          <p className="mb-2 text-sm">
-            Deseja reiniciar a numeração dos pedidos ao fechar a loja?
-          </p>
-          <p className="mb-6 text-xs color-gray">
-            Se estiver fechando para um intervalo, é recomendável escolher
-            &quot;Não&quot;: a numeração continua de onde parou quando você
-            abrir a loja de novo.
-          </p>
-          <div className="grid gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setResetModalOpen(false);
-                handleToggleStoreOpen();
-              }}
-              className="cursor-pointer p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border-2 border-[var(--translucid)] transition"
-            >
-              Não, manter numeração
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setResetModalOpen(false);
-                handleToggleStoreOpen(true);
-              }}
-              className="cursor-pointer p-2 font-semibold rounded-lg hover:bg-[var(--translucid)] border-2 border-[var(--translucid)] transition"
-            >
-              Sim, resetar numeração
-            </button>
-          </div>
-        </GenericModal>
       ) : null}
 
       {orderModalOpen && selectedOrder ? (
@@ -1290,6 +1382,16 @@ const Orders = ({
                         })
                       }
                     />
+                    {selectedOrder.address ? (
+                      <a
+                        href={mapsUrl(selectedOrder.address)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-1 inline-block text-xs underline opacity-70"
+                      >
+                        Ver no mapa
+                      </a>
+                    ) : null}
                   </div>
                 ) : null}
               </SectionCard>
@@ -1791,15 +1893,16 @@ const Orders = ({
           </div>
         </GenericModal>
       ) : null}
+      {printOrderModalOpen && (
+        <PrintOrderModal canSave={canCustomize} onClose={() => setPrintOrderModalOpen(false)} />
+      )}
+
       {printUpsell && (
         <UpdatePlanModal
           onClose={() => setPrintUpsell(false)}
-          title="Impressão de pedidos é do plano Pro"
+          title="Impressão de pedidos"
+          plan="pro"
           text="Imprima cada pedido com um clique e mande direto pra cozinha. Também libera o dashboard e o relatório de vendas."
-          ctaText="Conhecer o Pro"
-          onCta={() => {
-            window.location.href = "/dashboard/pricing?plan=pro";
-          }}
         />
       )}
     </div>

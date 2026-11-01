@@ -1,14 +1,19 @@
 import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { addDays, brToday } from "@/lib/brDate";
-import { legacyPlanInfo, SUBSCRIBE_DAYS_BEFORE_END } from "@/lib/legacyPlan";
+import { legacyNotice, legacyPlanInfo, LEGACY_STAGES } from "@/lib/legacyPlan";
 import { sendLegacyPlanEmail } from "@/lib/emails/legacyPlanEmails";
 
 // E-mails pra quem tem plano com data de término (Stripe antiga / teste grátis).
-// POST { kind: "announce" | "reminder", mode: "dry-run" | "test" | "send", testTo? }
+// POST { kind: "announce" | "reminder", mode: "dry-run" | "test" | "send", testTo?, stage? }
 // Authorization: Bearer CRON_SECRET
 // - announce: todos com plano ainda dentro da data (rodado uma vez, à mão)
-// - reminder: só quem termina daqui a 2 dias (pg_cron chama todo dia)
+// - reminder: pg_cron chama todo dia; cada um recebe o e-mail da etapa de hoje (D = legacy_plan_until):
+//   d5 (cupom 25%), d2 (lembrete), d1 (último dia), free (voltou ao Free, cupom de reativação).
+//   No modo test, `stage` escolhe qual etapa mandar.
+
+// ~1s por destinatário (limite do Resend): 72 clientes passam de 60s
+export const maxDuration = 300;
 
 const json = (body, status = 200) => Response.json(body, { status });
 
@@ -23,24 +28,26 @@ async function recipients(kind) {
   let query = supabaseAdmin
     .from("profiles")
     .select("id, email, display_name, role, legacy_plan_until")
-    .in("role", ["plus", "pro"])
     .not("legacy_plan_until", "is", null);
 
   query =
     kind === "reminder"
-      ? query.eq("legacy_plan_until", addDays(today, SUBSCRIBE_DAYS_BEFORE_END))
-      : query.gte("legacy_plan_until", today);
+      ? query.in("role", ["free", "plus", "pro"]).in("legacy_plan_until", [5, 2, 1, 0].map((d) => addDays(today, d)))
+      : query.in("role", ["plus", "pro"]).gt("legacy_plan_until", today);
 
   const { data, error } = await query;
   if (error) throw error;
-  return data.filter((p) => p.email).map((p) => ({ ...p, info: legacyPlanInfo(p) }));
+  return data
+    .filter((p) => p.email)
+    .map((p) => (kind === "reminder" ? { ...p, notice: legacyNotice(p) } : { ...p, info: legacyPlanInfo(p) }))
+    .filter((p) => p.notice || p.info);
 }
 
 export async function POST(req) {
   if (!authorized(req)) return json({ error: "Unauthorized" }, 401);
 
   try {
-    const { kind, mode = "dry-run", testTo } = await req.json();
+    const { kind, mode = "dry-run", testTo, stage = "d5" } = await req.json();
     if (!["announce", "reminder"].includes(kind)) return json({ error: "kind inválido" }, 400);
 
     const list = await recipients(kind);
@@ -49,7 +56,7 @@ export async function POST(req) {
       return json({
         kind,
         count: list.length,
-        recipients: list.map((p) => ({ email: p.email, plan: p.role, ends: p.legacy_plan_until })),
+        recipients: list.map((p) => ({ email: p.email, plan: p.role, ends: p.legacy_plan_until, stage: p.notice?.stage })),
       });
     }
 
@@ -62,6 +69,13 @@ export async function POST(req) {
         .eq("email", testTo)
         .maybeSingle();
       if (ownError) throw ownError;
+      if (kind === "reminder") {
+        if (!LEGACY_STAGES.includes(stage)) return json({ error: `stage inválido (${LEGACY_STAGES.join(", ")})` }, 400);
+        const notice = legacyNotice(own, stage);
+        if (!notice) return json({ error: `${testTo} precisa ter legacy_plan_until e role plus/pro` }, 400);
+        await sendLegacyPlanEmail(stage, testTo, { name: own.display_name, notice });
+        return json({ kind, stage, sentTo: testTo, plan: own.role, ends: own.legacy_plan_until });
+      }
       const info = legacyPlanInfo(own);
       if (!info) {
         return json({ error: `${testTo} não tem plano com data de término válida (role plus/pro e legacy_plan_until futura)` }, 400);
@@ -77,11 +91,12 @@ export async function POST(req) {
     for (const p of list) {
       try {
         // mesmo cliente + mesma data = mesmo e-mail: rodar de novo no mesmo dia não duplica
+        const template = p.notice?.stage ?? kind;
         await sendLegacyPlanEmail(
-          kind,
+          template,
           p.email,
-          { name: p.display_name, info: p.info },
-          `legacy-${kind}-${p.id}-${p.legacy_plan_until}`,
+          { name: p.display_name, info: p.info, notice: p.notice },
+          `legacy-${template}-${p.id}-${p.legacy_plan_until}`,
         );
         sent.push(p.email);
       } catch (err) {

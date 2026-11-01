@@ -6,14 +6,19 @@ import Menu from "./tabs/Menu";
 import Orders from "./tabs/Orders";
 import Sales from "./tabs/Sales";
 import Tables from "./tabs/Tables";
+import Stock from "./tabs/Stock";
+import WhatsappMessage from "./tabs/WhatsappMessage";
 import { useAlert } from "@/providers/AlertProvider";
 import ConfigMenu from "./tabs/ConfigMenu";
-import { FaBars, FaChevronLeft, FaHeadset, FaQrcode } from "react-icons/fa";
+import { FaBars, FaBook, FaChevronLeft, FaHeadset, FaQrcode } from "react-icons/fa";
 import Account from "./tabs/Account";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SalesDashboard from "./tabs/SalesDashboard";
 import PlanDetails from "./tabs/PlanDetails";
+import Team from "./tabs/Team";
+import Kitchen from "@/app/equipe/Kitchen";
+import Delivery from "@/app/equipe/Delivery";
 import UpsellBanner from "./components/UpsellBanner";
 import GenericModal from "@/components/GenericModal";
 import QrCodeModal from "./tabs/components/menu/QrCodeModal";
@@ -274,6 +279,11 @@ const Dashboard = ({
 
           {/* Bottom section */}
           <div className="w-full hidden lg:flex flex-col gap-1 p-2 border-t-2 border-[var(--translucid)]">
+            <Link href="/docs" title="Documentação" aria-label="Documentação" className={navClass(false)}>
+              <FaBook className="text-lg shrink-0" />
+              <span className={labelClass}>Documentação</span>
+            </Link>
+
             <Link href="/support" title="Suporte" aria-label="Suporte" className={navClass(false)}>
               <FaHeadset className="text-lg shrink-0" />
               <span className={labelClass}>Suporte</span>
@@ -331,7 +341,7 @@ const Dashboard = ({
         </div>
         {selectedTab === "orders" && (
           <div className="block">
-            <Orders reloadTrigger={reloadOrderTrigger} setOrderQuantityChangeTrigger={setOrderQuantityChangeTrigger} />
+            <Orders setSelectedTab={setSelectedTab} reloadTrigger={reloadOrderTrigger} setOrderQuantityChangeTrigger={setOrderQuantityChangeTrigger} />
           </div>
         )}
         {selectedTab === "sales" && (
@@ -342,6 +352,16 @@ const Dashboard = ({
         {selectedTab === "tables" && (
           <div className="block">
             <Tables />
+          </div>
+        )}
+        {selectedTab === "stock" && (
+          <div className="block">
+            <Stock setSelectedTab={setSelectedTab} />
+          </div>
+        )}
+        {selectedTab === "whatsappMessage" && (
+          <div className="block">
+            <WhatsappMessage setSelectedTab={setSelectedTab} />
           </div>
         )}
         {selectedTab === "salesDashboard" && (
@@ -375,6 +395,21 @@ const Dashboard = ({
         {selectedTab === "account" && (
           <div className="block">
             <Account setSelectedTab={setSelectedTab} />
+          </div>
+        )}
+        {selectedTab === "kitchen" && menu && (
+          <div className="block pt-2">
+            <Kitchen menu={menu} reloadTrigger={reloadOrderTrigger} onBack={() => setSelectedTab("orders")} />
+          </div>
+        )}
+        {selectedTab === "delivery" && menu && (
+          <div className="block pt-2">
+            <Delivery menu={menu} reloadTrigger={reloadOrderTrigger} onBack={() => setSelectedTab("orders")} />
+          </div>
+        )}
+        {selectedTab === "team" && (
+          <div className="block">
+            <Team setSelectedTab={setSelectedTab} />
           </div>
         )}
         {selectedTab === "planDetails" && (
@@ -412,6 +447,13 @@ const Dashboard = ({
                 }}
               >
                 Conta
+              </button>
+            </li>
+            <li>
+              <button className="w-full flex text-left px-2 py-2 hover:bg-[var(--translucid)] border-b-2 border-[var(--translucid)] rounded">
+                <Link href="/docs" className="flex-1">
+                  Documentação
+                </Link>
               </button>
             </li>
             <li>

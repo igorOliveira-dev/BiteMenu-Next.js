@@ -21,10 +21,6 @@ const SalesSummary = ({
   const ownerRole = useOwnerRole(menu?.owner_id);
   const [showUpdatePlanModal, setShowUpdatePlanModal] = useState(false);
 
-  const upgradePlan = () => {
-    window.location.href = "/dashboard/pricing?plan=pro";
-  };
-
   if (loading || loadingSales) return <Loading />;
 
   return (
@@ -61,12 +57,12 @@ const SalesSummary = ({
 
       {showUpdatePlanModal && (
         <UpdatePlanModal
-          title="Veja o dashboard de vendas completo com o Bite Menu Pro"
+          title="Dashboard de vendas completo"
+          plan="pro"
           text="Analise detalhes de vendas, produtos mais vendidos, horários de pico, e muito mais para otimizar seu negócio."
           image="https://rfgkalwtrxbiqrqwxmxf.supabase.co/storage/v1/object/sign/utilImages/dash_vendas.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xOTdiYmQzMC01Njg2LTQzNTQtOWE2ZS1iOTA4YjlmNGRhYjIiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ1dGlsSW1hZ2VzL2Rhc2hfdmVuZGFzLnBuZyIsImlhdCI6MTc3NzIzNTM5MiwiZXhwIjo4MDg0NDM1MzkyfQ.KqRDAMsYqM5yEu_eZGme_fdFwSsbcsoDnEBhB6L14_I"
           isOpen={showUpdatePlanModal}
           onClose={() => setShowUpdatePlanModal(false)}
-          onCta={upgradePlan}
         />
       )}
     </div>

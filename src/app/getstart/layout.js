@@ -6,6 +6,7 @@ import useUser from "@/hooks/useUser";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { hasMenu } from "@/lib/queries/menus";
+import { getStaff } from "@/lib/staff";
 
 export default function GetstartLayout({ children }) {
   const router = useRouter();
@@ -19,6 +20,12 @@ export default function GetstartLayout({ children }) {
 
         if (menus && menus.length > 0) {
           router.replace("/dashboard");
+          return;
+        }
+
+        const { data: staff } = await getStaff(supabase, user.id);
+        if (staff) {
+          router.replace("/equipe");
           return;
         }
 

@@ -11,12 +11,14 @@ const page = () => {
       <div className="max-w-2xl flex flex-col gap-6 p-4 pt-12">
         <h1 className="default-h1">Termos de Uso – Bite Menu</h1>
 
-        <p>Última atualização: 04/10/2026</p>
+        <p>Última atualização: 30/10/2026</p>
 
         <p>
-          Bem-vindo ao <strong>Bite Menu</strong>. Antes de utilizar a plataforma, leia atentamente estes Termos de Uso. Eles
-          regulam a relação entre você (doravante <strong>"Usuário"</strong> ou <strong>"Estabelecimento"</strong>) e o Bite
-          Menu no acesso e uso de todos os serviços oferecidos.
+          Bem-vindo ao <strong>Bite Menu</strong>, plataforma operada por{" "}
+          <strong>67.096.848 IGOR VENTURA DE OLIVEIRA</strong>, inscrita no CNPJ sob o nº 67.096.848/0001-37. Antes de
+          utilizar a plataforma, leia atentamente estes Termos de Uso. Eles regulam a relação entre você (doravante{" "}
+          <strong>"Usuário"</strong> ou <strong>"Estabelecimento"</strong>) e o Bite Menu no acesso e uso de todos os
+          serviços oferecidos.
         </p>
 
         {/* 1. Aceitação dos Termos */}

@@ -1,3 +1,4 @@
+import { Plus_Jakarta_Sans } from "next/font/google";
 import { ConfirmProvider } from "@/providers/ConfirmProvider";
 import "./globals.css";
 import { AlertProvider } from "@/providers/AlertProvider";
@@ -8,6 +9,9 @@ import PWAGuard from "./PWAGuard";
 import { CookieConsentProvider } from "@/providers/CookieConsentProvider";
 import CookieBanner from "@/components/CookieBanner";
 import { ThemeColorProvider } from "@/providers/ThemeColorProvider";
+
+// Fonte do novo padrão visual, usada só dentro de .brand-scope; sem preload ela não baixa nas telas antigas
+const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-jakarta", preload: false });
 
 export const metadata = {
   metadataBase: new URL("https://www.bitemenu.com.br"),
@@ -65,7 +69,7 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="pt-br">
-      <body className={`antialiased`}>
+      <body className={`${jakarta.variable} antialiased`}>
         <ThemeColorProvider>
           <CookieConsentProvider>
             <ConfirmProvider>

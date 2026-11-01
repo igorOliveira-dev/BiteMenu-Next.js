@@ -37,22 +37,47 @@ export function nowInZone(timeZone, date = new Date()) {
   return { dayKey: p.weekday.toLowerCase(), mins: Number(p.hour) * 60 + Number(p.minute) };
 }
 
-export function isOpenNow(hours, timeZone, date) {
-  const { dayKey, mins } = nowInZone(timeZone, date);
-  const todayHours = hours?.[dayKey];
-  if (!todayHours) return false;
+// Cada dia guarda uma string com um ou mais turnos separados por vírgula:
+// "09:00-18:00" (formato antigo, continua válido) ou "11:00-14:00,18:00-23:00".
+// Se o fechamento for antes da abertura ("20:00-02:00"), o turno vai até o dia seguinte.
+export function splitRanges(value) {
+  if (typeof value !== "string" || !value) return [];
+  return value
+    .split(",")
+    .map((r) => r.trim().split("-"))
+    .filter(([open, close]) => open && close);
+}
 
-  const [openStr, closeStr] = todayHours.split("-");
-  return mins >= toMinutes(openStr) && mins <= toMinutes(closeStr);
+function parseRanges(value) {
+  return splitRanges(value).map(([open, close]) => ({
+    open,
+    close,
+    openMin: toMinutes(open),
+    closeMin: toMinutes(close),
+    overnight: toMinutes(close) <= toMinutes(open),
+  }));
+}
+
+function prevDayKey(dayKey) {
+  return weekOrder[(weekOrder.indexOf(dayKey) + 6) % 7];
+}
+
+// turno em andamento agora (de hoje ou da madrugada vindo de ontem)
+function currentRange(hours, timeZone, date) {
+  const { dayKey, mins } = nowInZone(timeZone, date);
+  const today = parseRanges(hours?.[dayKey]).find((r) =>
+    r.overnight ? mins >= r.openMin : mins >= r.openMin && mins <= r.closeMin,
+  );
+  if (today) return today;
+  return parseRanges(hours?.[prevDayKey(dayKey)]).find((r) => r.overnight && mins < r.closeMin) || null;
+}
+
+export function isOpenNow(hours, timeZone, date) {
+  return !!currentRange(hours, timeZone, date);
 }
 
 export function getClosingTime(hours, timeZone, date) {
-  const { dayKey } = nowInZone(timeZone, date);
-  const todayHours = hours?.[dayKey] || null;
-  if (!todayHours) return null;
-
-  const [, closeStr] = todayHours.split("-");
-  return closeStr;
+  return currentRange(hours, timeZone, date)?.close || null;
 }
 
 export function getNextOpenInfo(hours, timeZone, date) {
@@ -60,24 +85,21 @@ export function getNextOpenInfo(hours, timeZone, date) {
 
   const { dayKey: todayKey, mins } = nowInZone(timeZone, date);
   const todayIndex = weekOrder.indexOf(todayKey);
+  const firstOpen = (value) => parseRanges(value).sort((a, b) => a.openMin - b.openMin)[0];
 
-  // 1. Ainda pode abrir hoje?
-  const todayHours = hours[todayKey];
-  if (todayHours) {
-    const [openStr] = todayHours.split("-");
-    if (toMinutes(openStr) > mins) {
-      return { label: "hoje", time: openStr };
-    }
-  }
+  // 1. Ainda abre hoje?
+  const later = parseRanges(hours[todayKey])
+    .filter((r) => r.openMin > mins)
+    .sort((a, b) => a.openMin - b.openMin)[0];
+  if (later) return { label: "hoje", time: later.open };
 
   // 2. Procura nos próximos dias
   for (let offset = 1; offset <= 6; offset++) {
     const dayKey = weekOrder[(todayIndex + offset) % 7];
-    const dayHours = hours[dayKey];
-    if (dayHours) {
-      const [openStr] = dayHours.split("-");
+    const first = firstOpen(hours[dayKey]);
+    if (first) {
       const label = offset === 1 ? "amanhã" : dayNames[dayKey];
-      return { label, time: openStr };
+      return { label, time: first.open };
     }
   }
 

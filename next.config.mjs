@@ -22,6 +22,19 @@ const withPWA = withPWAInit({
         cacheableResponse: { statuses: [0, 200] },
       },
     },
+    {
+      // Imagens otimizadas pelo Next (servidas pela VPS a partir do Supabase)
+      urlPattern: /\/_next\/image\?url=/,
+      handler: "CacheFirst",
+      options: {
+        cacheName: "next-images",
+        expiration: {
+          maxEntries: 300,
+          maxAgeSeconds: 7 * 24 * 60 * 60, // 7 dias
+        },
+        cacheableResponse: { statuses: [0, 200] },
+      },
+    },
   ],
 });
 

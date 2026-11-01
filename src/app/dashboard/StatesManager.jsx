@@ -12,6 +12,12 @@ import { FaChevronLeft } from "react-icons/fa";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import { getContrastTextColor } from "@/utils/color";
+import { removeUnusedImages } from "@/lib/uploadImage";
+import { formatAddress } from "@/components/AddressFields";
+import useUser from "@/hooks/useUser";
+import UpdatePlanModal from "./tabs/components/UpdatePlanModal";
+import AiAssistant from "./components/AiAssistant";
+import { AI_PLAN_ROLES } from "@/lib/assistant";
 
 /**
  * StatesManager (versão com checagem de auth e tratamento RLS/storage)
@@ -179,16 +185,27 @@ async function uploadAndReplace(file, folderPrefix = "", oldPublicUrl = null) {
   return newPublicUrl;
 }
 
+// delivery_radius do banco -> estado do formulário (km/fee como string, igual aos bairros)
+const normalizeRadius = (r) => ({
+  lat: r?.lat ?? null,
+  lng: r?.lng ?? null,
+  tiers: Array.isArray(r?.tiers)
+    ? r.tiers.map((t, index) => ({ id: t?.id || `tier-${index}`, km: String(t?.km ?? ""), fee: String(t?.fee ?? "") }))
+    : [],
+});
+
 /* ---------------- componente principal ---------------- */
 export default function StatesManager({
   keys = [
     "title",
     "description",
     "address",
+    "addressDetails",
     "backgroundColor",
     "titleColor",
     "detailsColor",
     "bannerFile",
+    "bannerMobileFile",
     "logoFile",
     "slug",
     "selectedServices",
@@ -196,6 +213,7 @@ export default function StatesManager({
     "deliveryFee",
     "deliveryZones",
     "deliveryFeeMode",
+    "deliveryRadius",
     "minimumOrderValue",
     "pixKey",
     "hours",
@@ -206,6 +224,7 @@ export default function StatesManager({
   defaultFolderPrefix,
 }) {
   const { menu: menuFromServer, loading } = useMenu();
+  const { profile } = useUser();
   const customAlert = useAlert();
   const confirm = useConfirm();
 
@@ -218,6 +237,7 @@ export default function StatesManager({
   const [localState, setLocalState] = useState(0);
   const [changedFields, setChangedFields] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [plusUpsell, setPlusUpsell] = useState(null);
 
   useEffect(() => {
     if (changedFields.length === 0) return;
@@ -240,10 +260,12 @@ export default function StatesManager({
       title: menuFromServer.title ?? "",
       description: menuFromServer.description ?? "",
       address: menuFromServer.address ?? "",
+      addressDetails: menuFromServer.address_details ?? null,
       backgroundColor: menuFromServer.background_color ?? "#F8F9FA",
       titleColor: menuFromServer.title_color ?? "#007BFF",
       detailsColor: menuFromServer.details_color ?? "#28A745",
       bannerFile: menuFromServer.banner_url ?? null,
+      bannerMobileFile: menuFromServer.banner_mobile_url ?? null,
       logoFile: menuFromServer.logo_url ?? null,
       slug: menuFromServer.slug ?? "",
       selectedServices: menuFromServer.services ?? [],
@@ -260,6 +282,7 @@ export default function StatesManager({
           }))
         : [],
       deliveryFeeMode: menuFromServer.delivery_fee_mode ?? "fixed",
+      deliveryRadius: normalizeRadius(menuFromServer.delivery_radius),
       minimumOrderValue:
         menuFromServer.minimum_order_value !== undefined && menuFromServer.minimum_order_value !== null
           ? String(menuFromServer.minimum_order_value)
@@ -330,26 +353,76 @@ export default function StatesManager({
     return !menuFromServer?.id || data[0].id !== menuFromServer.id;
   }
 
-  const saveAll = async () => {
-    if (!localState) return;
+  // aiState: estado já com as alterações do assistente (o setLocalState ainda não refletiu).
+  // Nos botões, o argumento é o evento de clique e vale o localState.
+  const saveAll = async (aiState) => {
+    const fromAi = !!aiState?.selectedServices;
+    const state = fromAi ? aiState : localState;
+    if (!state) return false;
+    const changed = detectChanges(state, serverState, keys);
 
     // slug pode terminar em "-" se salvou sem tirar o foco do campo
-    const slug = (localState.slug || "").replace(/-+$/, "");
+    const slug = (state.slug || "").replace(/-+$/, "");
 
     if (await isSlugDuplicated(slug)) {
       customAlert?.("O slug selecionado já foi usado. Escolha outro.", "error");
       return;
     }
 
-    if (localState.title === "") {
+    if (state.title === "") {
       customAlert?.("O título não pode ficar vazio.", "error");
       return;
     }
 
-    const ok = await confirm("Quer mesmo salvar todas as alterações?");
-    if (!ok) {
-      console.log("[submit] usuário cancelou");
-      return;
+    // taxa por bairro/raio e pedido mínimo: dá pra preencher em qualquer plano, mas só salva com Plus
+    if (!["plus", "pro", "business", "admin", "designer"].includes(profile?.role)) {
+      const zones =
+        state.deliveryFeeMode === "zones" &&
+        (changed.includes("deliveryFeeMode") || changed.includes("deliveryZones"));
+      const radius =
+        state.deliveryFeeMode === "radius" &&
+        (changed.includes("deliveryFeeMode") || changed.includes("deliveryRadius"));
+      const minimum = changed.includes("minimumOrderValue") && state.minimumOrderValue !== "";
+      if (zones || radius || minimum) {
+        setPlusUpsell(
+          zones
+            ? {
+                title: "Taxa por bairro",
+                text: "Assine o plano Plus para salvar a taxa por bairro. Cobre uma taxa de entrega diferente para cada bairro.",
+              }
+            : radius
+            ? {
+                title: "Taxa por raio",
+                text: "Assine o plano Plus para salvar a taxa por raio. Cobre a entrega pela distância até o cliente.",
+              }
+            : {
+                title: "Valor mínimo de pedido",
+                text: "Assine o plano Plus para salvar o valor mínimo. Defina um valor mínimo para aceitar pedidos.",
+              },
+        );
+        return;
+      }
+    }
+
+    if (state.deliveryFeeMode === "radius") {
+      const r = state.deliveryRadius;
+      if (r?.lat == null || r?.lng == null) {
+        customAlert?.("Defina a localização da loja para a taxa por raio.", "error");
+        return;
+      }
+      if (!r.tiers.some((t) => Number(t.km) > 0)) {
+        customAlert?.("Adicione ao menos uma faixa de distância para a taxa por raio.", "error");
+        return;
+      }
+    }
+
+    // pelo assistente o dono já confirmou no chat
+    if (!fromAi) {
+      const ok = await confirm("Quer mesmo salvar todas as alterações?");
+      if (!ok) {
+        console.log("[submit] usuário cancelou");
+        return false;
+      }
     }
 
     try {
@@ -365,7 +438,7 @@ export default function StatesManager({
       }
 
       // payload
-      const cleanedZones = (localState.deliveryZones || [])
+      const cleanedZones = (state.deliveryZones || [])
         .map((z) => ({
           id: z.id,
           name: z.name?.trim(),
@@ -374,32 +447,46 @@ export default function StatesManager({
         .filter((z) => z.name);
 
       const payload = {
-        title: localState.title,
-        description: localState.description,
-        address: localState.address,
-        background_color: localState.backgroundColor,
-        title_color: localState.titleColor,
-        details_color: localState.detailsColor,
+        title: state.title,
+        description: state.description,
+        // formato estruturado substitui o texto livre antigo; sem ele, o texto antigo é mantido
+        address: state.addressDetails ? formatAddress(state.addressDetails) : state.address,
+        // só envia quando preenchido: não quebra o salvamento se a coluna ainda não existir
+        ...(state.addressDetails && { address_details: state.addressDetails }),
+        background_color: state.backgroundColor,
+        title_color: state.titleColor,
+        details_color: state.detailsColor,
         slug,
-        services: localState.selectedServices,
-        payments: localState.selectedPayments,
+        services: state.selectedServices,
+        payments: state.selectedPayments,
 
         delivery_fee:
-          localState.deliveryFee !== "" && localState.deliveryFee !== null ? Number(localState.deliveryFee) : null,
+          state.deliveryFee !== "" && state.deliveryFee !== null ? Number(state.deliveryFee) : null,
 
         delivery_zones: cleanedZones,
 
-        delivery_fee_mode: localState.deliveryFeeMode,
+        delivery_fee_mode: state.deliveryFeeMode,
+
+        // só envia quando mexido: não quebra o salvamento se a coluna ainda não existir
+        ...(changed.includes("deliveryRadius") && {
+          delivery_radius: {
+            lat: state.deliveryRadius.lat,
+            lng: state.deliveryRadius.lng,
+            tiers: state.deliveryRadius.tiers
+              .filter((t) => Number(t.km) > 0)
+              .map((t) => ({ id: t.id, km: Number(t.km), fee: Number(t.fee || 0) })),
+          },
+        }),
 
         minimum_order_value:
-          localState.minimumOrderValue !== "" && localState.minimumOrderValue !== null
-            ? Number(localState.minimumOrderValue)
+          state.minimumOrderValue !== "" && state.minimumOrderValue !== null
+            ? Number(state.minimumOrderValue)
             : null,
 
-        pix_key: localState.pixKey || null,
-        hours: localState.hours,
-        currency: localState.currency || "BRL",
-        timezone: localState.timezone || "America/Sao_Paulo",
+        pix_key: state.pixKey || null,
+        hours: state.hours,
+        currency: state.currency || "BRL",
+        timezone: state.timezone || "America/Sao_Paulo",
       };
 
       // folderPrefix: use prop defaultFolderPrefix se fornecida, senão userId/menuId
@@ -410,23 +497,25 @@ export default function StatesManager({
       let bannerUrl = null;
       let logoUrl = null;
 
-      if (localState.bannerFile instanceof File) {
-        bannerUrl = await uploadAndReplace(localState.bannerFile, folderPrefix, serverState?.bannerFile || null);
-      } else if (typeof localState.bannerFile === "string") {
-        bannerUrl = localState.bannerFile;
+      if (state.bannerFile instanceof File) {
+        bannerUrl = await uploadAndReplace(state.bannerFile, folderPrefix, serverState?.bannerFile || null);
+      } else if (typeof state.bannerFile === "string") {
+        bannerUrl = state.bannerFile;
       } else {
         bannerUrl = null;
       }
 
-      if (localState.logoFile instanceof File) {
-        logoUrl = await uploadAndReplace(localState.logoFile, folderPrefix, serverState?.logoFile || null);
-      } else if (typeof localState.logoFile === "string") {
-        logoUrl = localState.logoFile;
+      if (state.logoFile instanceof File) {
+        logoUrl = await uploadAndReplace(state.logoFile, folderPrefix, serverState?.logoFile || null);
+      } else if (typeof state.logoFile === "string") {
+        logoUrl = state.logoFile;
       } else {
         logoUrl = null;
       }
 
       payload.banner_url = bannerUrl;
+      // recorte do celular é enviado já pronto pelo modal do banner (Menu.jsx); sem banner, sem recorte
+      payload.banner_mobile_url = bannerUrl && typeof state.bannerMobileFile === "string" ? state.bannerMobileFile : null;
       payload.logo_url = logoUrl;
 
       // Atualizar DB — RLS pode bloquear se 'user' não for owner ou se token ausente
@@ -439,7 +528,7 @@ export default function StatesManager({
           .single();
 
         if (error) {
-          console.error("[StatesManager] supabase update error:", error);
+          console.error("[StatesManager] supabase update error:", error?.code, error?.message, error?.details);
           if (error?.message?.toLowerCase()?.includes("row-level")) {
             customAlert?.(
               "Atualização bloqueada por políticas de segurança do banco (RLS). Verifique se o usuário é o owner do menu.",
@@ -451,14 +540,27 @@ export default function StatesManager({
           throw error;
         }
 
+        // banner/logo trocados no modal: o arquivo antigo só sai do bucket depois de salvar
+        await removeUnusedImages(
+          [
+            [serverState?.bannerFile, data.banner_url],
+            [serverState?.bannerMobileFile, data.banner_mobile_url],
+            [serverState?.logoFile, data.logo_url],
+          ]
+            .filter(([old, now]) => typeof old === "string" && old !== now)
+            .map(([old]) => old),
+        );
+
         const normalized = {
           title: data.title ?? "",
           description: data.description ?? "",
           address: data.address ?? "",
+          addressDetails: data.address_details ?? null,
           backgroundColor: data.background_color ?? "#F8F9FA",
           titleColor: data.title_color ?? "#007BFF",
           detailsColor: data.details_color ?? "#28A745",
           bannerFile: data.banner_url ?? null,
+          bannerMobileFile: data.banner_mobile_url ?? null,
           logoFile: data.logo_url ?? null,
           slug: data.slug ?? "",
           selectedServices: data.services ?? [],
@@ -472,6 +574,7 @@ export default function StatesManager({
               }))
             : [],
           deliveryFeeMode: data.delivery_fee_mode ?? null,
+          deliveryRadius: normalizeRadius(data.delivery_radius),
           minimumOrderValue:
             data.minimum_order_value !== undefined && data.minimum_order_value !== null
               ? String(data.minimum_order_value)
@@ -487,6 +590,7 @@ export default function StatesManager({
         setChangedFields([]);
         customAlert?.("Alterações salvas com sucesso.", "success");
         if (typeof onSave === "function") onSave(normalized);
+        return true;
       } else {
         // insert (caso sem menuFromServer.id)
         const { data, error } = await supabase.from(TABLE_NAME).insert(payload).select().single();
@@ -501,10 +605,12 @@ export default function StatesManager({
           title: data.title ?? "",
           description: data.description ?? "",
           address: data.address ?? "",
+          addressDetails: data.address_details ?? null,
           backgroundColor: data.background_color ?? "#F8F9FA",
           titleColor: data.title_color ?? "#007BFF",
           detailsColor: data.details_color ?? "#28A745",
           bannerFile: data.banner_url ?? null,
+          bannerMobileFile: data.banner_mobile_url ?? null,
           logoFile: data.logo_url ?? null,
           slug: data.slug ?? "",
           selectedServices: data.services ?? [],
@@ -525,6 +631,7 @@ export default function StatesManager({
         setChangedFields([]);
         customAlert?.("Cardápio criado e salvo com sucesso.", "success");
         if (typeof onSave === "function") onSave(normalized);
+        return true;
       }
     } catch (err) {
       console.error("[StatesManager] saveAll error (detailed):", err);
@@ -582,6 +689,14 @@ export default function StatesManager({
     );
   };
 
+  // assistente: aplica no painel e já salva (se o save barrar, fica pendente no "Alterações não salvas")
+  // estoque e produtos novos o AiAssistant grava direto
+  const applyAiChanges = async (changes) => {
+    const next = { ...localState, ...changes };
+    setLocalState(next);
+    return saveAll(next);
+  };
+
   if (loading || !localState) return <Loading />;
 
   return (
@@ -595,6 +710,18 @@ export default function StatesManager({
         setSelectedTab={setSelectedTab}
       />
       {ChangesPopup()}
+      {(selectedTab === "menu" || selectedTab === "configMenu") && (
+        <AiAssistant
+          localState={localState}
+          onApply={applyAiChanges}
+          raised={changedFields.length > 0}
+          showButton={selectedTab !== "menu"}
+          allowed={AI_PLAN_ROLES.includes(profile?.role)}
+        />
+      )}
+      {plusUpsell && (
+        <UpdatePlanModal plan="plus" title={plusUpsell.title} text={plusUpsell.text} onClose={() => setPlusUpsell(null)} />
+      )}
       {showChanges && (
         <GenericModal title="Alterações não salvas" onClose={() => setShowChanges(false)}>
           <div className="flex flex-col max-h-80 w-full">
@@ -612,10 +739,12 @@ export default function StatesManager({
                     title: "Título",
                     description: "Descrição",
                     address: "Endereço",
+                    addressDetails: "Endereço",
                     backgroundColor: "Cor de fundo",
                     titleColor: "Cor do título",
                     detailsColor: "Cor dos detalhes",
                     bannerFile: "Banner",
+                    bannerMobileFile: "Banner (celular)",
                     logoFile: "Logo",
                     slug: "Identificador",
                     selectedServices: "Serviços selecionados",
@@ -623,6 +752,7 @@ export default function StatesManager({
                     deliveryFee: "Taxa de entrega",
                     deliveryZones: "Bairros de entrega",
                     deliveryFeeMode: "Modo do frete",
+                    deliveryRadius: "Taxa por raio",
                     pixKey: "Chave PIX",
                     hours: "Horário",
                     currency: "Moeda",

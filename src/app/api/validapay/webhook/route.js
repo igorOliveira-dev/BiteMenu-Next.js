@@ -79,7 +79,7 @@ export async function POST(req) {
       const sub = await validapay(`/v1/subscriptions/${evt.subscriptionId}`);
       const plan =
         planFromPriceId(activePriceId(sub.items)) ?? planFromPriceId(activePriceId(evt.items)) ?? evt.metadata?.plan;
-      if (!["plus", "pro"].includes(plan)) {
+      if (!["plus", "pro", "business"].includes(plan)) {
         console.error(`[ValidaPay Webhook] Plano não identificado na assinatura ${evt.subscriptionId}`);
         return new Response("ok");
       }
