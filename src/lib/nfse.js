@@ -9,6 +9,8 @@ import { priceInfo } from "@/lib/validapay";
 const CNPJ = "67096848000137";
 const MUNICIPIO = "3503604"; // código IBGE (7 dígitos) do município do CNPJ
 const COD_TRIBUTACAO = "010501"; // cTribNac (6 dígitos), o mesmo usado nas notas emitidas no portal
+// Alíquota aproximada do Simples (%) que vai na nota; 6 = 1ª faixa do Anexo III. Conferir com a contabilidade.
+const ALIQUOTA_SIMPLES = 6;
 
 // Faturas pagas antes disso não entram (notas anteriores ficaram fora da automação)
 export const DESDE = "2026-11-01T03:00:00Z";
@@ -79,6 +81,6 @@ export function nfsePayload(sub, invoice, numero, email) {
     valor_servico: invoice.summary.total,
     tributacao_iss: 1, // operação tributável
     tipo_retencao_iss: 1, // não retido
-    indicador_total_tributacao: 0, // não informa estimativa de tributos
+    percentual_total_tributos_simples_nacional: ALIQUOTA_SIMPLES,
   };
 }
