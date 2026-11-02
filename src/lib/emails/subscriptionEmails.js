@@ -4,6 +4,7 @@ import { brDate } from "@/lib/brDate";
 
 // E-mails da assinatura enviados pelo Bite Menu (os automáticos da ValidaPay ficam desligados).
 // Disparados pelo webhook da ValidaPay; idempotencyKey = id do evento, pra retentativa não duplicar e-mail.
+// O "nfse" sai pelo cron /api/cron/nfse quando a nota é autorizada.
 
 export const SITE = "https://www.bitemenu.com.br";
 const PLAN_DETAILS_URL = `${SITE}/dashboard?tab=planDetails`;
@@ -96,6 +97,16 @@ const TEMPLATES = {
       `<p>Como não conseguimos confirmar o pagamento, sua assinatura do plano <strong>${planName(plan)}</strong> foi encerrada e sua conta voltou para o plano Free.</p>
        <p>Seu cardápio e seus dados continuam salvos. Para voltar a usar todos os recursos, é só assinar de novo.</p>
        ${button(PRICING_URL, "Assinar novamente")}`,
+    ),
+  }),
+
+  nfse: ({ amount, description, danfseUrl }) => ({
+    subject: "Nota fiscal do seu pagamento no Bite Menu",
+    html: shell(
+      "Sua nota fiscal está disponível",
+      `<p>A nota fiscal do seu pagamento de <strong>${brl(amount)}</strong> foi emitida.</p>
+       <p style="color:#555;">${esc(description)}</p>
+       ${button(danfseUrl, "Baixar nota fiscal")}`,
     ),
   }),
 

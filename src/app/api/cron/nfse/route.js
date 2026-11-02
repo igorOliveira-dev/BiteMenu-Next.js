@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { validapay } from "@/lib/validapay";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { focus, nfsePayload, brNow, ref, DESDE } from "@/lib/nfse";
+import { sendSubscriptionEmail } from "@/lib/emails/subscriptionEmails";
 
 // NFS-e das faturas pagas na ValidaPay, chamado pelo pg_cron uma vez por dia (tasks/nfse.sql).
 // POST { mode: "dry-run" | "send" }  ·  Authorization: Bearer CRON_SECRET
@@ -52,12 +53,26 @@ async function refresh() {
   for (const row of open) {
     const { status, data } = await focus(`/nfsen/${ref(row.numero_dps)}`);
     if (status === 404 && row.status === "pendente") await save(row.numero_dps, await send(row.numero_dps, row.payload));
-    else if (status === 200)
+    else if (status === 200) {
       await save(row.numero_dps, {
         status: data.status,
         url_danfse: data.url_danfse ?? null,
         erro: data.erros?.map((e) => e.mensagem).join(" | ") || null,
       });
+      // Só na passagem pra autorizado (a linha sai da lista de abertas), então não repete
+      if (data.status === "autorizado" && data.url_danfse) {
+        await sendSubscriptionEmail(
+          "nfse",
+          row.payload?.email_tomador,
+          {
+            amount: row.payload.valor_servico,
+            description: row.payload.descricao_servico,
+            danfseUrl: data.url_danfse,
+          },
+          `nfse-${row.numero_dps}`,
+        );
+      }
+    }
   }
 }
 
