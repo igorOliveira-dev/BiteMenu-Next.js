@@ -64,7 +64,8 @@ export function nfsePayload(sub, invoice, numero, email) {
     emitente_dps: 1,
     codigo_municipio_emissora: MUNICIPIO,
     cnpj_prestador: CNPJ,
-    codigo_opcao_simples_nacional: 2, // MEI
+    codigo_opcao_simples_nacional: 3, // ME/EPP optante pelo Simples
+    regime_tributario_simples_nacional: 1, // tributos federais e ISS apurados pelo Simples
     regime_especial_tributacao: 0,
     // Sem CPF/CNPJ a nota sai sem tomador identificado
     ...(doc && {
