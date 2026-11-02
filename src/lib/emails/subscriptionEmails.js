@@ -68,6 +68,17 @@ const TEMPLATES = {
     ),
   }),
 
+  boletoReminder: ({ plan, amount, dueDate, boletoUrl }) => ({
+    subject: "Seu boleto do Bite Menu vence amanhã",
+    html: shell(
+      "Seu boleto vence amanhã",
+      `<p>Passando pra lembrar que o boleto da sua assinatura do plano <strong>${planName(plan)}</strong> vence amanhã.</p>
+       <p>Valor: <strong>${brl(amount)}</strong><br/>Vencimento: <strong>${date(dueDate)}</strong></p>
+       ${button(boletoUrl, "Abrir boleto")}
+       <p style="color:#555;">Pagando pelo QR Code Pix do boleto, a confirmação é na hora. Se já pagou, pode ignorar este e-mail.</p>`,
+    ),
+  }),
+
   paymentFailed: ({ plan, amount, reason, nextRetryAt }) => ({
     subject: "Não conseguimos processar o pagamento da sua assinatura",
     html: shell(
