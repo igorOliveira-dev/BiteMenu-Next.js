@@ -53,7 +53,8 @@ export function describeInvoice(sub, invoice) {
   return `Bite Menu - cardápio digital para restaurantes (www.bitemenu.com.br): ${text}. Fatura ${invoice.invoiceNumber}.`;
 }
 
-export function nfsePayload(sub, invoice, numero) {
+// email: o de login no Bite Menu; o digitado na página da ValidaPay às vezes vem errado
+export function nfsePayload(sub, invoice, numero, email) {
   const doc = (sub.document ?? sub.customer?.document ?? "").replace(/\D/g, "");
   return {
     data_emissao: brNow(),
@@ -68,8 +69,8 @@ export function nfsePayload(sub, invoice, numero) {
     // Sem CPF/CNPJ a nota sai sem tomador identificado
     ...(doc && {
       [doc.length === 14 ? "cnpj_tomador" : "cpf_tomador"]: doc,
-      razao_social_tomador: sub.customer?.name ?? sub.name,
-      email_tomador: sub.email,
+      razao_social_tomador: (sub.customer?.name ?? sub.name)?.trim(),
+      email_tomador: email ?? sub.email,
     }),
     codigo_municipio_prestacao: MUNICIPIO,
     codigo_tributacao_nacional_iss: COD_TRIBUTACAO,

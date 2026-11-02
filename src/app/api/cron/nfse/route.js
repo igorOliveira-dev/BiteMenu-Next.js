@@ -95,8 +95,17 @@ export async function POST(req) {
     const emitted = new Set(done.map((r) => r.invoice_id));
     const fresh = (await paidInvoices()).filter(({ invoice }) => !emitted.has(invoice.invoiceId));
 
+    // Assinatura antiga (já trocada/cancelada) não está mais no profile: fica o e-mail da ValidaPay
+    const { data: profiles, error: profilesError } = await supabaseAdmin
+      .from("profiles")
+      .select("email, validapay_subscription_id")
+      .not("validapay_subscription_id", "is", null);
+    if (profilesError) throw profilesError;
+    const emailOf = new Map(profiles.map((p) => [p.validapay_subscription_id, p.email]));
+    const payloadOf = (sub, invoice, numero) => nfsePayload(sub, invoice, numero, emailOf.get(sub.subscriptionId));
+
     if (mode === "dry-run") {
-      return json({ count: fresh.length, notas: fresh.map(({ sub, invoice }) => nfsePayload(sub, invoice, null)) });
+      return json({ count: fresh.length, notas: fresh.map(({ sub, invoice }) => payloadOf(sub, invoice, null)) });
     }
 
     const results = [];
@@ -109,7 +118,7 @@ export async function POST(req) {
       if (error?.code === "23505") continue; // outra rodada já pegou essa fatura
       if (error) throw error;
 
-      const payload = nfsePayload(sub, invoice, row.numero_dps);
+      const payload = payloadOf(sub, invoice, row.numero_dps);
       const result = await send(row.numero_dps, payload);
       await save(row.numero_dps, { payload, ...result });
       results.push({ invoice: invoice.invoiceId, numero_dps: row.numero_dps, ...result });
