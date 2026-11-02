@@ -346,7 +346,7 @@ export default function LandingPageV2() {
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-card bg-bite p-6 text-white">
-              <p className="text-5xl font-extrabold tracking-tighter">1.900+</p>
+              <p className="text-5xl font-extrabold tracking-tighter">2000+</p>
               <p className="mt-3 text-sm sm:text-base">estabelecimentos cadastrados</p>
             </div>
             {numbers.map((n) => (
@@ -363,6 +363,7 @@ export default function LandingPageV2() {
       </section>
 
       {/* DEPOIMENTOS */}
+      {/*
       {showTestimonials && (
         <section className="px-4 pb-16 sm:pb-24">
           <div className="mx-auto max-w-6xl">
@@ -410,6 +411,7 @@ export default function LandingPageV2() {
           </div>
         </section>
       )}
+      */}
 
       {/* FRASE + CTA */}
       <section className="bg-brand-gradient px-4 py-16 text-white sm:py-24">

@@ -12,7 +12,7 @@
 - Sem taxa por venda e sem limite de pedidos em nenhum plano; os planos mudam a quantidade de itens/categorias e recursos extras
 - Pedidos: o cliente monta o carrinho e o pedido chega formatado no WhatsApp do estabelecimento; o pagamento do pedido é combinado direto com o estabelecimento (dinheiro, Pix, maquininha)
 - Recursos: categorias e produtos, personalização visual, itens em destaque e promoções, horários de funcionamento, aba de pedidos, análise de vendas, assistente Bite Menu IA (plano Business)
-- Mais de 1900 estabelecimentos usam a plataforma
+- Mais de 2000 estabelecimentos usam a plataforma
 
 ## Produto
 
