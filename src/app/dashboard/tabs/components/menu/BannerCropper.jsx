@@ -41,7 +41,7 @@ export default function BannerCropper({ sources, saved, onAreaChange, onPick, on
             type="button"
             onClick={() => setMode(key)}
             className={`cursor-pointer flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium border transition ${
-              mode === key ? "border-bite bg-bite/10" : "border-[var(--low-gray)] opacity-70 hover:opacity-100"
+              mode === key ? "border-brand-select bg-brand-select/10" : "border-[var(--low-gray)] opacity-70 hover:opacity-100"
             }`}
           >
             <Icon /> {label}
@@ -86,7 +86,7 @@ export default function BannerCropper({ sources, saved, onAreaChange, onPick, on
             value={view.zoom}
             onChange={(e) => setView({ zoom: Number(e.target.value) })}
             aria-label="Zoom"
-            className="w-full accent-bite"
+            className="w-full accent-[var(--brand-select)]"
           />
           <p className="text-xs color-gray text-center">
             Arraste e use o zoom para ajustar. Confira as duas abas: celular e computador.

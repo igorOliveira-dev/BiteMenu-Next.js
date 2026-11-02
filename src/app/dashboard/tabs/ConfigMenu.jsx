@@ -15,6 +15,8 @@ import {
   FaTrash,
   FaPlus,
   FaCheck,
+  FaSearch,
+  FaTimes,
 } from "react-icons/fa";
 import { HexColorPicker, HexColorInput } from "react-colorful";
 import { COLOR_PALETTES } from "@/consts/colorPallets";
@@ -104,6 +106,17 @@ const paymentOptions = [
   { id: "pix", label: "PIX" },
 ];
 
+// O que cada seção tem, pra busca achar pelo nome do campo e por palavras que o dono usaria
+const SECTION_SEARCH = {
+  basico: "informações básicas nome do estabelecimento descrição endereço cep localização mapa link do cardápio url endereço do site moeda",
+  servicos: `serviços entrega delivery frete taxa fixa bairro raio km distância valor mínimo de pedido ${serviceOptions.map((o) => o.label).join(" ")}`,
+  pagamentos: `pagamentos formas de pagamento chave pix cartão ${paymentOptions.map((o) => o.label).join(" ")}`,
+  aparencia: "aparência cores cor do fundo cor do título cor dos detalhes paleta estilo do menu layout padrão lista grade visual",
+  horarios: "horários horário de funcionamento abertura fechamento abrir fechar dias da semana fuso horário",
+};
+
+const normalizeSearch = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
 const dayLabels = {
   mon: "Seg",
   tue: "Ter",
@@ -123,14 +136,14 @@ function cx(...classes) {
 /* --- Blocos visuais padronizados (mesma borda, mesmo raio, mesma altura) --- */
 
 const INPUT_CLASS =
-  "h-11 w-full rounded-xl border border-[var(--translucid)] bg-translucid px-3 text-[15px] outline-none transition focus:border-red-500/70";
+  "h-11 w-full rounded-xl border border-[var(--translucid)] bg-translucid px-3 text-[15px] outline-none transition focus:border-brand-select/70";
 
-function SectionCard({ id, icon, title, summary, open, onToggle, sectionRef, children }) {
+function SectionCard({ id, icon, title, summary, open, onToggle, sectionRef, hidden, children }) {
   return (
     <section
       ref={sectionRef}
       id={id}
-      className="overflow-hidden rounded-2xl border border-[var(--translucid)] bg-translucid"
+      className={cx("overflow-hidden rounded-2xl border border-[var(--translucid)] bg-translucid", hidden && "hidden")}
     >
       <button
         type="button"
@@ -141,7 +154,7 @@ function SectionCard({ id, icon, title, summary, open, onToggle, sectionRef, chi
         <span
           className={cx(
             "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition",
-            open ? "border-red-500/50 bg-red-500/15 text-red-400" : "border-[var(--translucid)] bg-translucid",
+            open ? "border-brand-select/50 bg-brand-select/15 text-brand-eyebrow" : "border-[var(--translucid)] bg-translucid",
           )}
         >
           {icon}
@@ -227,7 +240,7 @@ function Counter({ value = "", max }) {
 }
 
 function Notice({ children }) {
-  return <div className="rounded-xl border border-amber-500/30 bg-amber-500/15 p-3 text-xs">{children}</div>;
+  return <div className="rounded-xl border border-st-wait/30 bg-st-wait/15 p-3 text-xs">{children}</div>;
 }
 
 function TextInput({ className = "", ...props }) {
@@ -314,11 +327,11 @@ function RadiusEditor({ value, onChange, addressDetails, currency }) {
         </div>
         {status === "loading" && <p className="text-xs opacity-60">Localizando...</p>}
         {status === "notFound" && (
-          <p className="text-xs text-red-400">
+          <p className="text-xs text-brand-red">
             Não achamos o endereço no mapa. Confira o endereço ou use sua localização atual (estando na loja).
           </p>
         )}
-        {status === "denied" && <p className="text-xs text-red-400">Não foi possível obter sua localização.</p>}
+        {status === "denied" && <p className="text-xs text-brand-red">Não foi possível obter sua localização.</p>}
         {hasLocation ? (
           <a
             href={`https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}`}
@@ -359,16 +372,16 @@ function RadiusEditor({ value, onChange, addressDetails, currency }) {
               type="button"
               onClick={() => onChange({ ...r, tiers: r.tiers.filter((x) => x.id !== t.id) })}
               aria-label="Remover faixa"
-              className="flex h-11 cursor-pointer items-center justify-center rounded-xl border border-red-500/30 text-red-400 transition hover:bg-red-500/15"
+              className="flex h-11 cursor-pointer items-center justify-center rounded-xl border border-translucid color-gray transition hover:text-brand-red hover:border-bite/30 hover:bg-bite/10"
             >
               <FaTrash className="text-xs" />
             </button>
           </div>
         ))}
-        <GhostButton onClick={() => onChange({ ...r, tiers: [...r.tiers, { id: createZoneId(), km: "", fee: "" }] })}>
+        <button type="button" onClick={() => onChange({ ...r, tiers: [...r.tiers, { id: createZoneId(), km: "", fee: "" }] })} className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl border border-info/40 px-4 text-sm font-semibold text-info transition hover:bg-info/10">
           <FaPlus className="text-xs" />
           Adicionar faixa
-        </GhostButton>
+        </button>
       </div>
     </div>
   );
@@ -384,7 +397,7 @@ function GhostButton({ className = "", children, ...props }) {
       type="button"
       {...props}
       className={cx(
-        "inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl border border-[var(--translucid)] bg-translucid px-4 text-sm font-semibold transition hover:border-red-500/40",
+        "inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl border border-[var(--translucid)] bg-translucid px-4 text-sm font-semibold transition hover:border-brand-select/40",
         className,
       )}
     >
@@ -401,15 +414,15 @@ function OptionCard({ selected, multi, title, description, onClick }) {
       className={cx(
         "flex w-full cursor-pointer items-start gap-3 rounded-xl border p-3 text-left transition",
         selected
-          ? "border-red-500/60 bg-red-500/15"
-          : "border-[var(--translucid)] bg-translucid hover:border-red-500/30",
+          ? "border-brand-select/60 bg-brand-select/10"
+          : "border-[var(--translucid)] bg-translucid hover:border-brand-select/30",
       )}
     >
       <span
         className={cx(
           "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center border transition",
           multi ? "rounded-md" : "rounded-full",
-          selected ? "border-red-500 bg-red-500 text-white" : "border-[var(--high-translucid)] text-transparent",
+          selected ? "border-brand-select bg-brand-select text-white" : "border-[var(--high-translucid)] text-transparent",
         )}
       >
         <FaCheck className="text-[9px]" />
@@ -615,6 +628,19 @@ const ConfigMenu = (props) => {
     aparencia: useRef(null),
     horarios: useRef(null),
   };
+
+  // ---- Busca: mostra só as seções que têm o que foi digitado; se sobrar uma, ela abre ----
+  const [search, setSearch] = useState("");
+  const searchWords = normalizeSearch(search).split(/\s+/).filter(Boolean);
+  const matchingSections = Object.keys(SECTION_SEARCH).filter((key) =>
+    searchWords.every((w) => normalizeSearch(SECTION_SEARCH[key]).includes(w)),
+  );
+  const isHidden = (key) => searchWords.length > 0 && !matchingSections.includes(key);
+
+  useEffect(() => {
+    if (searchWords.length && matchingSections.length === 1) setOpenSection(matchingSections[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   const toggleSection = (key) => {
     setOpenSection((prev) => {
@@ -1087,8 +1113,36 @@ const ConfigMenu = (props) => {
         >
           <FaChevronLeft />
         </button>
-        <h2 className="text-lg font-semibold">Configurações do cardápio</h2>
+        <h2 className="font-semibold">Configurações do cardápio</h2>
       </div>
+
+      <div className="relative mb-4 max-w-[1080px]">
+        <FaSearch className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm opacity-50" />
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Pesquisar configuração (ex.: pix, horário, taxa de entrega)"
+          aria-label="Pesquisar configuração"
+          className={cx(INPUT_CLASS, "pl-10 pr-10 [&::-webkit-search-cancel-button]:hidden")}
+        />
+        {search && (
+          <button
+            type="button"
+            onClick={() => setSearch("")}
+            aria-label="Limpar pesquisa"
+            className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full opacity-60 transition hover:bg-[var(--translucid)] hover:opacity-100"
+          >
+            <FaTimes className="text-xs" />
+          </button>
+        )}
+      </div>
+
+      {searchWords.length > 0 && matchingSections.length === 0 && (
+        <p className="mb-4 max-w-[1080px] rounded-2xl border border-dashed border-[var(--translucid)] p-6 text-center text-sm color-gray">
+          Nenhuma configuração encontrada para "{search.trim()}".
+        </p>
+      )}
 
       <div className="max-w-[1080px] space-y-3">
         <SectionCard
@@ -1099,6 +1153,7 @@ const ConfigMenu = (props) => {
           summary={basicoSummary}
           open={openSection === "basico"}
           onToggle={() => toggleSection("basico")}
+          hidden={isHidden("basico")}
         >
           <div className="grid gap-5">
             <Field label="Nome do estabelecimento">
@@ -1187,6 +1242,7 @@ const ConfigMenu = (props) => {
           summary={servicosSummary}
           open={openSection === "servicos"}
           onToggle={() => toggleSection("servicos")}
+          hidden={isHidden("servicos")}
         >
           <div className="grid gap-5">
             <Field label="Como o cliente recebe o pedido">
@@ -1274,7 +1330,7 @@ const ConfigMenu = (props) => {
                             type="button"
                             onClick={() => removeDeliveryZone(zone.id)}
                             aria-label={`Remover ${zone.name || "bairro"}`}
-                            className="flex h-11 cursor-pointer items-center justify-center rounded-xl border border-red-500/30 text-red-400 transition hover:bg-red-500/15"
+                            className="flex h-11 cursor-pointer items-center justify-center rounded-xl border border-translucid color-gray transition hover:text-brand-red hover:border-bite/30 hover:bg-bite/10"
                           >
                             <FaTrash className="text-xs" />
                           </button>
@@ -1282,10 +1338,10 @@ const ConfigMenu = (props) => {
                       ))
                     )}
 
-                    <GhostButton onClick={addDeliveryZone}>
+                    <button type="button" onClick={addDeliveryZone} className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl border border-info/40 px-4 text-sm font-semibold text-info transition hover:bg-info/10">
                       <FaPlus className="text-xs" />
                       Adicionar bairro
-                    </GhostButton>
+                    </button>
                   </div>
                 )}
               </Field>
@@ -1313,6 +1369,7 @@ const ConfigMenu = (props) => {
           summary={pagamentosSummary}
           open={openSection === "pagamentos"}
           onToggle={() => toggleSection("pagamentos")}
+          hidden={isHidden("pagamentos")}
         >
           <div className="grid gap-5">
             <div className="grid gap-2 sm:grid-cols-2">
@@ -1347,6 +1404,7 @@ const ConfigMenu = (props) => {
           summary={aparenciaSummary}
           open={openSection === "aparencia"}
           onToggle={() => toggleSection("aparencia")}
+          hidden={isHidden("aparencia")}
         >
           <div className="grid gap-5">
             <Field label="Cores">
@@ -1420,6 +1478,7 @@ const ConfigMenu = (props) => {
           summary={horariosSummary}
           open={openSection === "horarios"}
           onToggle={() => toggleSection("horarios")}
+          hidden={isHidden("horarios")}
         >
           <div className="mb-4">
             <Field label="Fuso horário" hint="A loja abre e fecha neste fuso, independente de onde o cliente esteja.">
@@ -1462,7 +1521,7 @@ const ConfigMenu = (props) => {
                               type="button"
                               onClick={() => removeDayRange(day, index)}
                               aria-label="Remover horário"
-                              className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-red-500/30 text-red-400 transition hover:bg-red-500/15"
+                              className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-translucid color-gray transition hover:text-brand-red hover:border-bite/30 hover:bg-bite/10"
                             >
                               <FaTrash className="text-xs" />
                             </button>
@@ -1474,7 +1533,7 @@ const ConfigMenu = (props) => {
                               aria-label="Adicionar horário"
                               className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-[var(--translucid)] transition hover:bg-[var(--translucid)] disabled:cursor-not-allowed disabled:opacity-40"
                             >
-                              <FaPlus className="text-xs" />
+                              <FaPlus className="text-xs text-info" />
                             </button>
                           )}
                         </div>
@@ -1584,7 +1643,7 @@ const ConfigMenu = (props) => {
               <button
                 type="button"
                 onClick={handleApplyLayout}
-                className="h-11 cursor-pointer rounded-full bg-bite px-5 text-sm font-semibold text-white transition hover:opacity-90"
+                className="h-11 cursor-pointer rounded-full bg-verde px-5 text-sm font-semibold text-white transition hover:opacity-90"
               >
                 Aplicar estilo
               </button>

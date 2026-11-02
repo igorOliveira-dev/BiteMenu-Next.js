@@ -275,7 +275,7 @@ function SearchableSelect({
 
       {open && (
         <div
-          className="absolute z-50 -top-1 mt-1 w-full rounded-lg border border-translucid bg-[var(--low-gray)] shadow-lg overflow-hidden"
+          className="absolute z-50 -top-1 mt-1 w-full rounded-xl border border-translucid bg-brand-surface shadow-lg overflow-hidden"
           style={{ maxHeight: 260 }}
         >
           <div className="border-b bg-[var(--translucid)] border-[var(--translucid)]">
@@ -308,7 +308,7 @@ function SearchableSelect({
                     setSearch("");
                   }}
                   className={`w-full text-left px-3 py-2 text-sm cursor-pointer transition ${
-                    opt.value === value ? "bg-bite/15" : "hover:bg-white/10"
+                    opt.value === value ? "bg-brand-select/15" : "hover:bg-[var(--translucid)]"
                   }`}
                 >
                   {opt.label}
@@ -602,7 +602,7 @@ function SortableMenuItem({
                   deleteItem(cat.id, item.id);
                   setMenuOpen(false);
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left cursor-pointer transition text-red-500"
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left cursor-pointer transition text-brand-red"
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.backgroundColor = menuHover)
                 }
@@ -2685,6 +2685,7 @@ export default function MenuItems({
     const actionLabel = hidden ? "Ocultar" : "Exibir";
     const ok = await confirm(
       `${actionLabel} a opção "${choiceName}" do grupo "${groupName}" em todos os itens do cardápio que a possuem?`,
+      { tone: "confirm" },
     );
     if (!ok) return;
 
@@ -2925,7 +2926,7 @@ export default function MenuItems({
       className={`p-4 ${changedFields.length > 0 ? "pb-48 lg:pb-34" : "pb-12 lg:pb-0"}`}
     >
       {categories.length > 0 && (
-        <div className="mb-4">
+        <div className="mb-4 panel-font">
           <button
             type="button"
             onClick={toggleTools}
@@ -2954,7 +2955,7 @@ export default function MenuItems({
                   key={label}
                   type="button"
                   onClick={onClick}
-                  className="cursor-pointer flex items-center gap-2 px-3 py-1 hover:opacity-75 rounded-lg"
+                  className="cursor-pointer flex items-center gap-2 px-3 py-1 hover:opacity-75 rounded-full"
                   style={toolButtonStyle}
                 >
                   <Icon className="text-sm opacity-80" /> {label}
@@ -2993,7 +2994,7 @@ export default function MenuItems({
 
           <button
             onClick={() => openCategoryModal("create")}
-            className={`cursor-pointer px-4 py-2 bg-bite hover:opacity-90 text-white rounded-full font-medium transition-all ${
+            className={`cursor-pointer px-4 py-2 bg-azul hover:opacity-90 text-white rounded-full font-medium transition-all ${
               showCatIndicator ? "pulse-btn" : ""
             }`}
           >
@@ -3013,7 +3014,7 @@ export default function MenuItems({
         >
           <button
             onClick={() => openCategoryModal("create")}
-            className={`cursor-pointer px-3 py-1 bg-bite hover:opacity-90 text-white rounded-full ${showCatIndicator ? "pulse-btn" : ""}`}
+            className={`panel-font shrink-0 cursor-pointer px-3 py-1 bg-azul hover:opacity-90 text-white rounded-full ${showCatIndicator ? "pulse-btn" : ""}`}
           >
             + Categoria
           </button>
@@ -3350,7 +3351,7 @@ export default function MenuItems({
                       deleteCategory(cat.id);
                       setCategoryMenuOpenId(null);
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left cursor-pointer transition text-red-500"
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left cursor-pointer transition text-brand-red"
                     onMouseEnter={(e) =>
                       (e.currentTarget.style.backgroundColor = menuHover)
                     }
@@ -3397,7 +3398,7 @@ export default function MenuItems({
 
                         <button
                           onClick={() => openItemModal("create", cat.id)}
-                          className={`cursor-pointer px-4 py-2 bg-bite hover:opacity-90 text-white rounded-full font-medium transition-all ${
+                          className={`cursor-pointer px-4 py-2 bg-azul hover:opacity-90 text-white rounded-full font-medium transition-all ${
                             cat.menu_items?.length === 0 ? "pulse-btn" : ""
                           }`}
                         >
@@ -3513,7 +3514,7 @@ export default function MenuItems({
                 <div className="mb-2">
                   <div className="text-sm color-gray mb-1">Imagem do item:</div>
 
-                  <label className="text-center flex flex-col items-center justify-center w-30 h-30 border-2 border-dashed border-translucid rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
+                  <label className="text-center flex flex-col items-center justify-center w-30 h-30 border border-dashed border-[var(--high-translucid)] rounded-2xl cursor-pointer hover:bg-[var(--low-translucid)] transition-all overflow-hidden">
                     {modalPayload.data.image_url ? (
                       <img
                         src={supabaseImg(modalPayload.data.image_url, {
@@ -3599,7 +3600,7 @@ export default function MenuItems({
                           data: { ...p.data, image_url: "", thumb_url: "" },
                         }))
                       }
-                      className="mt-1 text-sm text-red-500 hover:underline"
+                      className="mt-1 text-sm text-brand-red hover:underline"
                       type="button"
                     >
                       Remover imagem
@@ -3940,14 +3941,14 @@ export default function MenuItems({
               <button
                 onClick={closeModal}
                 disabled={saving}
-                className="cursor-pointer px-4 py-2 bg-low-gray text-foreground rounded-lg w-[50%] disabled:opacity-60"
+                className="cursor-pointer px-4 py-2 border border-brand-line hover:bg-[var(--translucid)] rounded-full transition w-[50%] disabled:opacity-60"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleModalSave}
                 disabled={saving || uploadingImage}
-                className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded-lg w-[50%] disabled:opacity-60 flex items-center justify-center gap-2"
+                className="cursor-pointer px-4 py-2 bg-verde text-white rounded-full transition hover:opacity-90 w-[50%] disabled:opacity-60 flex items-center justify-center gap-2"
               >
                 {saving ? (
                   <>
@@ -4287,7 +4288,7 @@ export default function MenuItems({
                               };
                             })
                           }
-                          className="w-full text-sm cursor-pointer px-2 py-1 rounded-lg border border-dashed border-[var(--gray)] color-gray hover:opacity-80 transition"
+                          className="w-full text-sm cursor-pointer px-2 py-1 rounded-lg border border-dashed border-info/50 text-info hover:bg-info/10 transition"
                         >
                           + Opção
                         </button>
@@ -4323,7 +4324,7 @@ export default function MenuItems({
                     },
                   }))
                 }
-                className="cursor-pointer px-3 py-2 rounded-full bg-bite hover:opacity-90 text-white text-sm transition"
+                className="cursor-pointer px-3 py-2 rounded-full border border-info/40 text-info hover:bg-info/10 text-sm transition"
               >
                 + Grupo
               </button>
@@ -4353,7 +4354,7 @@ export default function MenuItems({
                 )
                   closeOptionGroupsModal();
               }}
-              className="cursor-pointer px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm"
+              className="cursor-pointer px-4 py-2 bg-verde hover:opacity-90 text-white rounded-full text-sm"
             >
               Salvar
             </button>
@@ -4449,7 +4450,7 @@ export default function MenuItems({
                         // salva já se o resto estiver válido; senão fica pro "Salvar" do modal
                         persistVariations(dropEmptyVariationRows(next), true);
                       }}
-                      className="h-9 w-9 flex shrink-0 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/40 text-sm font-semibold transition hover:opacity-90 cursor-pointer"
+                      className="h-9 w-9 flex shrink-0 items-center justify-center rounded-2xl border border-translucid color-gray hover:text-brand-red hover:border-bite/30 hover:bg-bite/10 text-sm font-semibold transition hover:opacity-90 cursor-pointer"
                       aria-label="Remover opção"
                     >
                       <FaTrash size={13} />
@@ -4470,7 +4471,7 @@ export default function MenuItems({
                     options: [...v.options, { name: "", price: "" }],
                   }))
                 }
-                className="cursor-pointer px-3 py-2 rounded-full bg-bite hover:opacity-90 text-white text-sm transition"
+                className="cursor-pointer px-3 py-2 rounded-full border border-info/40 text-info hover:bg-info/10 text-sm transition"
               >
                 + Opção
               </button>
@@ -4483,7 +4484,7 @@ export default function MenuItems({
                     closeVariationsModal();
                     persistVariations(null);
                   }}
-                  className="flex items-center gap-2 px-3 py-2 rounded-2xl border border-red-500/20 bg-red-500/40 text-sm font-semibold transition hover:opacity-90 cursor-pointer"
+                  className="flex items-center gap-2 px-3 py-2 rounded-2xl border border-translucid color-gray hover:text-brand-red hover:border-bite/30 hover:bg-bite/10 text-sm font-semibold transition hover:opacity-90 cursor-pointer"
                 >
                   <FaTrash size={12} /> Remover
                 </button>
@@ -4498,7 +4499,7 @@ export default function MenuItems({
                 );
                 if (await persistVariations(next)) closeVariationsModal();
               }}
-              className="cursor-pointer px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm"
+              className="cursor-pointer px-4 py-2 bg-verde hover:opacity-90 text-white rounded-full text-sm"
             >
               Salvar
             </button>
@@ -4560,7 +4561,7 @@ export default function MenuItems({
                 <button
                   type="button"
                   onClick={closeAdditionalsCfgModal}
-                  className="cursor-pointer px-4 py-2 bg-low-gray text-foreground rounded-lg"
+                  className="cursor-pointer px-4 py-2 border border-brand-line hover:bg-[var(--translucid)] rounded-full transition"
                 >
                   Cancelar
                 </button>
@@ -4592,7 +4593,7 @@ export default function MenuItems({
                     closeAdditionalsCfgModal();
                     persistOptionGroups(groups);
                   }}
-                  className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded-lg"
+                  className="cursor-pointer px-4 py-2 bg-verde text-white rounded-full transition hover:opacity-90"
                 >
                   Confirmar
                 </button>
@@ -4657,7 +4658,7 @@ export default function MenuItems({
                         <label
                           key={g.id}
                           className={`flex items-start gap-3 p-2 rounded-lg border cursor-pointer transition
-                        ${selectedImportIds.has(g.id) ? "border-bite bg-bite/10" : "border-translucid bg-translucid"}`}
+                        ${selectedImportIds.has(g.id) ? "border-brand-select bg-brand-select/10" : "border-translucid bg-translucid"}`}
                         >
                           <input
                             type="checkbox"
@@ -4703,7 +4704,7 @@ export default function MenuItems({
           <div className="flex justify-end gap-2 mt-4">
             <button
               onClick={closeImportModal}
-              className="cursor-pointer px-4 py-2 bg-low-gray text-foreground rounded-lg"
+              className="cursor-pointer px-4 py-2 border border-brand-line hover:bg-[var(--translucid)] rounded-full transition"
             >
               Cancelar
             </button>
@@ -4734,7 +4735,7 @@ export default function MenuItems({
                 closeImportModal();
                 persistOptionGroups(groups);
               }}
-              className="cursor-pointer px-4 py-2 bg-green-600 disabled:opacity-50 text-white rounded-lg"
+              className="cursor-pointer px-4 py-2 bg-verde disabled:opacity-50 text-white rounded-full transition hover:opacity-90"
             >
               Importar ({selectedImportIds.size})
             </button>
@@ -4786,7 +4787,7 @@ export default function MenuItems({
                       </button>
                       <button
                         onClick={() => deleteCombo(combo.id)}
-                        className="p-2 cursor-pointer text-red-500"
+                        className="p-2 cursor-pointer color-gray hover:text-brand-red transition"
                       >
                         <FaTrash size={13} />
                       </button>
@@ -4799,7 +4800,7 @@ export default function MenuItems({
             <button
               type="button"
               onClick={() => openComboForm(null)}
-              className="w-full mt-4 cursor-pointer p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border-2 border-[var(--translucid)] transition"
+              className="w-full mt-4 cursor-pointer p-2 bg-azul text-white font-semibold rounded-full hover:opacity-90 transition"
             >
               + Novo combo
             </button>
@@ -4851,7 +4852,7 @@ export default function MenuItems({
                         // carrinho só faz sentido por valor, mas deixamos livre pra escolher também por quantidade total
                       }))
                     }
-                    className={`flex-1 p-2 rounded-lg border-2 border-[var(--translucid)] cursor-pointer text-sm font-semibold transition ${comboDraft.scope === opt.value ? "bg-green-600/80 text-white" : "hover:bg-[var(--translucid)]"}`}
+                    className={`flex-1 p-2 rounded-xl border border-[var(--translucid)] cursor-pointer text-sm font-semibold transition ${comboDraft.scope === opt.value ? "bg-brand-select text-white" : "hover:bg-[var(--translucid)]"}`}
                   >
                     {opt.label}
                   </button>
@@ -4905,7 +4906,7 @@ export default function MenuItems({
                   onClick={() =>
                     setComboDraft((d) => ({ ...d, trigger_type: "quantity" }))
                   }
-                  className={`flex-1 p-2 rounded-lg border-2 border-[var(--translucid)] cursor-pointer text-sm font-semibold transition ${comboDraft.trigger_type === "quantity" ? "bg-green-600/80 text-white" : "hover:bg-[var(--translucid)]"}`}
+                  className={`flex-1 p-2 rounded-xl border border-[var(--translucid)] cursor-pointer text-sm font-semibold transition ${comboDraft.trigger_type === "quantity" ? "bg-brand-select text-white" : "hover:bg-[var(--translucid)]"}`}
                 >
                   Por quantidade
                 </button>
@@ -4914,7 +4915,7 @@ export default function MenuItems({
                   onClick={() =>
                     setComboDraft((d) => ({ ...d, trigger_type: "value" }))
                   }
-                  className={`flex-1 p-2 rounded-lg border-2 border-[var(--translucid)] cursor-pointer text-sm font-semibold transition ${comboDraft.trigger_type === "value" ? "bg-green-600/80 text-white" : "hover:bg-[var(--translucid)]"}`}
+                  className={`flex-1 p-2 rounded-xl border border-[var(--translucid)] cursor-pointer text-sm font-semibold transition ${comboDraft.trigger_type === "value" ? "bg-brand-select text-white" : "hover:bg-[var(--translucid)]"}`}
                 >
                   Por valor gasto
                 </button>
@@ -4961,7 +4962,7 @@ export default function MenuItems({
                       discount_type: "percentage",
                     }))
                   }
-                  className={`flex-1 p-2 rounded-lg border-2 border-[var(--translucid)] cursor-pointer text-sm font-semibold transition ${comboDraft.discount_type === "percentage" ? "bg-green-600/80 text-white" : "hover:bg-[var(--translucid)]"}`}
+                  className={`flex-1 p-2 rounded-xl border border-[var(--translucid)] cursor-pointer text-sm font-semibold transition ${comboDraft.discount_type === "percentage" ? "bg-brand-select text-white" : "hover:bg-[var(--translucid)]"}`}
                 >
                   Porcentagem (%)
                 </button>
@@ -4970,7 +4971,7 @@ export default function MenuItems({
                   onClick={() =>
                     setComboDraft((d) => ({ ...d, discount_type: "fixed" }))
                   }
-                  className={`flex-1 p-2 rounded-lg border-2 border-[var(--translucid)] cursor-pointer text-sm font-semibold transition ${comboDraft.discount_type === "fixed" ? "bg-green-600/80 text-white" : "hover:bg-[var(--translucid)]"}`}
+                  className={`flex-1 p-2 rounded-xl border border-[var(--translucid)] cursor-pointer text-sm font-semibold transition ${comboDraft.discount_type === "fixed" ? "bg-brand-select text-white" : "hover:bg-[var(--translucid)]"}`}
                 >
                   Valor fixo ({getCurrencySymbol(menu?.currency)})
                 </button>
@@ -5004,7 +5005,7 @@ export default function MenuItems({
             <div className="grid gap-2 pt-3">
               <button
                 onClick={saveCombo}
-                className="cursor-pointer p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border-2 border-[var(--translucid)] transition"
+                className="cursor-pointer p-2 bg-verde text-white font-semibold rounded-full hover:opacity-90 transition"
               >
                 Salvar
               </button>
@@ -5013,7 +5014,7 @@ export default function MenuItems({
                   setComboFormOpen(false);
                   setComboDraft(null);
                 }}
-                className="cursor-pointer p-2 font-semibold rounded-lg hover:bg-[var(--translucid)] border-2 border-[var(--translucid)] transition"
+                className="cursor-pointer p-2 font-semibold rounded-full hover:bg-[var(--translucid)] border border-[var(--translucid)] transition"
               >
                 Cancelar
               </button>

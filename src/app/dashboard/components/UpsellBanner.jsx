@@ -123,7 +123,7 @@ export default function UpsellBanner({ selectedTab, collapsed }) {
       }}
       className={`fixed top-[92px] left-1/2 -translate-x-1/2 ${collapsed ? "lg:left-[96px] lg:w-[calc(70dvw-80px)]" : "lg:left-[272px] lg:w-[calc(70dvw-256px)]"} lg:translate-x-0 z-[151] w-[calc(100%-16px)] sm:w-[calc(100%-32px)] sm:max-w-sm lg:max-w-3xl touch-pan-y select-none cursor-grab active:cursor-grabbing flex items-center gap-3 px-3 py-2 bg-[var(--background)] border-2 border-[var(--high-translucid)] rounded-2xl shadow-[0_8px_32px_var(--shadow)]`}
     >
-      <FaBolt className="text-lg shrink-0 hidden xs:block text-[var(--red)]" />
+      <FaBolt className="text-lg shrink-0 hidden xs:block text-info" />
       <div className="flex-1 min-w-0 text-xs leading-snug">
         <strong className="block text-sm">{ad.title}</strong>
         {ad.text}

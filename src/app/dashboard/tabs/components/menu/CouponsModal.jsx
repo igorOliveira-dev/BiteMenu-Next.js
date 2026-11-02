@@ -256,7 +256,7 @@ export default function CouponsModal({ menuId, currency, canCreate, showUpgrade,
                 key={opt.value}
                 type="button"
                 onClick={() => setDraft((d) => ({ ...d, type: opt.value }))}
-                className={`p-2 rounded-xl border-2 border-[var(--translucid)] cursor-pointer text-xs sm:text-sm font-semibold transition ${draft.type === opt.value ? "bg-green-600/80 text-white" : "hover:bg-[var(--translucid)]"}`}
+                className={`p-2 rounded-xl border border-[var(--translucid)] cursor-pointer text-xs sm:text-sm font-semibold transition ${draft.type === opt.value ? "bg-brand-select text-white" : "hover:bg-[var(--translucid)]"}`}
               >
                 {opt.label}
               </button>
@@ -341,14 +341,14 @@ export default function CouponsModal({ menuId, currency, canCreate, showUpgrade,
             <button
               type="button"
               onClick={save}
-              className="cursor-pointer p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border border-[var(--translucid)] transition"
+              className="cursor-pointer p-2 bg-verde text-white font-semibold rounded-full hover:opacity-90 transition"
             >
               Salvar
             </button>
             <button
               type="button"
               onClick={() => setDraft(null)}
-              className="cursor-pointer p-2 font-semibold rounded-xl hover:bg-[var(--translucid)] border border-[var(--translucid)] transition"
+              className="cursor-pointer p-2 font-semibold rounded-full hover:bg-[var(--translucid)] border border-[var(--translucid)] transition"
             >
               Cancelar
             </button>
@@ -385,7 +385,7 @@ export default function CouponsModal({ menuId, currency, canCreate, showUpgrade,
                   <button onClick={() => openForm(c)} className="p-2 cursor-pointer">
                     <FaPen size={13} />
                   </button>
-                  <button onClick={() => remove(c.id)} className="p-2 cursor-pointer text-red-500">
+                  <button onClick={() => remove(c.id)} className="p-2 cursor-pointer color-gray hover:text-brand-red transition">
                     <FaTrash size={13} />
                   </button>
                 </div>
@@ -396,7 +396,7 @@ export default function CouponsModal({ menuId, currency, canCreate, showUpgrade,
           <button
             type="button"
             onClick={() => openForm()}
-            className="w-full mt-4 cursor-pointer p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border border-[var(--translucid)] transition"
+            className="w-full mt-4 cursor-pointer p-2 bg-azul text-white font-semibold rounded-full hover:opacity-90 transition"
           >
             + Novo cupom
           </button>

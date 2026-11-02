@@ -3,19 +3,19 @@
 import { useMemo } from "react";
 import { Doughnut, Bar } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from "chart.js";
+import useChartColors from "@/hooks/useChartColors";
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
-
-// Tons da marca ajustados para as fatias se distinguirem; a legenda com nome e valor também identifica cada uma
-const CHART_COLORS = ["#d42020", "#8c7566", "#e0762f", "#a8325a"];
-
 export default function SalesCharts({ sales = [] }) {
+  const colors = useChartColors();
+
+  // A ordem das chaves é a ordem fixa das cores (--chart-1..5): cada método mantém a cor mesmo se outro sumir do período
   const paymentLabels = {
+    pix: "Pix",
+    credit: "Crédito",
     cash: "Dinheiro",
     debit: "Débito",
-    credit: "Crédito",
-    pix: "PIX",
     stripe: "Stripe",
   };
 
@@ -45,34 +45,6 @@ export default function SalesCharts({ sales = [] }) {
 
   const filteredPayments = Object.entries(paymentCounts).filter(([_, count]) => count > 0);
   const filteredServices = Object.entries(serviceCounts).filter(([_, count]) => count > 0);
-
-  const paymentData = {
-    labels: filteredPayments.map(([key]) => paymentLabels[key]),
-    datasets: [
-      {
-        data: filteredPayments.map(([_, value]) => value),
-        backgroundColor: CHART_COLORS.slice(0, filteredPayments.length),
-        borderWidth: 0,
-      },
-    ],
-  };
-
-  const serviceData = {
-    labels: filteredServices.map(([key]) => serviceLabels[key]),
-    datasets: [
-      {
-        data: filteredServices.map(([_, value]) => value),
-        backgroundColor: CHART_COLORS.slice(0, filteredServices.length),
-        borderWidth: 0,
-      },
-    ],
-  };
-
-  const doughnutOptions = {
-    plugins: { legend: { display: false }, tooltip: { enabled: true } },
-    cutout: "62%",
-    maintainAspectRatio: false,
-  };
 
   /** -----------------------------------------
    * Top 5 Produtos — Barras horizontais (qty)
@@ -108,14 +80,50 @@ export default function SalesCharts({ sales = [] }) {
         {
           label: "Quantidade vendida",
           data: topProducts.map((p) => p.qty),
-          backgroundColor: "#d42020",
-          borderColor: "#d42020",
-          borderWidth: 1,
-          barThickness: 28,
+          backgroundColor: colors?.series[3], // azul: volume, sem conotação de dinheiro ou alerta
+          borderWidth: 0,
+          borderRadius: 2,
+          borderSkipped: "start",
+          barThickness: 18,
         },
       ],
     };
-  }, [topProducts]);
+  }, [topProducts, colors]);
+
+  if (!colors) return null;
+
+  const colorOf = (labelsMap, key) => colors.series[Object.keys(labelsMap).indexOf(key)];
+
+  const paymentData = {
+    labels: filteredPayments.map(([key]) => paymentLabels[key]),
+    datasets: [
+      {
+        data: filteredPayments.map(([_, value]) => value),
+        backgroundColor: filteredPayments.map(([key]) => colorOf(paymentLabels, key)),
+        borderColor: colors.surface,
+        borderWidth: 2,
+      },
+    ],
+  };
+
+  const serviceData = {
+    labels: filteredServices.map(([key]) => serviceLabels[key]),
+    datasets: [
+      {
+        data: filteredServices.map(([_, value]) => value),
+        backgroundColor: filteredServices.map(([key]) => colorOf(serviceLabels, key)),
+        borderColor: colors.surface,
+        borderWidth: 2,
+      },
+    ],
+  };
+
+  const doughnutOptions = {
+    plugins: { legend: { display: false }, tooltip: { enabled: true } },
+    cutout: "62%",
+    maintainAspectRatio: false,
+  };
+
 
   const topProductsBarOptions = {
     indexAxis: "y", // <- deixa horizontal
@@ -132,12 +140,16 @@ export default function SalesCharts({ sales = [] }) {
     scales: {
       x: {
         beginAtZero: true,
-        ticks: { precision: 0 },
-        grid: { color: "rgba(255,255,255,0.06)" },
+        ticks: { precision: 0, color: colors.ink },
+        grid: { color: colors.grid },
+        border: { display: false },
       },
       y: {
         grid: { display: false },
+        border: { display: false },
         ticks: {
+          color: colors.ink,
+          font: { size: 13 },
           // evita label gigante zoar layout
           callback: function (value) {
             const label = this.getLabelForValue(value);
@@ -154,7 +166,7 @@ export default function SalesCharts({ sales = [] }) {
   const ChartCard = ({ title, data, items, labelsMap }) => {
     return (
       <div className="bg-translucid border border-translucid rounded-xl p-4 sm:p-5">
-        <h3 className="font-semibold color-gray mb-4">{title}</h3>
+        <h3 className="text-base font-semibold mb-4">{title}</h3>
 
         <div className="grid grid-cols-1 xxs:grid-cols-[160px_1fr] gap-4 items-center">
           <div className="h-[160px] w-[160px] mx-auto sm:mx-0">
@@ -187,16 +199,16 @@ export default function SalesCharts({ sales = [] }) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       {filteredPayments.length > 0 && (
-        <ChartCard title="Métodos de Pagamento" data={paymentData} items={filteredPayments} labelsMap={paymentLabels} />
+        <ChartCard title="Métodos de pagamento" data={paymentData} items={filteredPayments} labelsMap={paymentLabels} />
       )}
 
       {filteredServices.length > 0 && (
-        <ChartCard title="Tipos de Serviço" data={serviceData} items={filteredServices} labelsMap={serviceLabels} />
+        <ChartCard title="Tipos de serviço" data={serviceData} items={filteredServices} labelsMap={serviceLabels} />
       )}
 
       {topProductsBarData && (
         <div className="bg-translucid border border-translucid rounded-xl p-4 sm:p-5 lg:col-span-2">
-          <h3 className="font-semibold color-gray mb-4">Top 5 produtos mais vendidos</h3>
+          <h3 className="text-base font-semibold mb-4">Produtos mais vendidos</h3>
 
           <div className="h-[320px] sm:h-[380px]">
             <Bar data={topProductsBarData} options={topProductsBarOptions} />

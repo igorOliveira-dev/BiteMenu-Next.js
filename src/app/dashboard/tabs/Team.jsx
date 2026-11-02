@@ -137,7 +137,7 @@ const Team = ({ setSelectedTab }) => {
         >
           <FaChevronLeft />
         </button>
-        <h2 className="ml-2 text-xl font-semibold">Equipe</h2>
+        <h2 className="ml-2 font-semibold">Equipe</h2>
       </div>
       <p className="text-sm color-gray mb-4">
         Crie logins para seus funcionários. O <strong>caixa</strong> vê e gerencia os pedidos; a <strong>cozinha</strong>{" "}
@@ -210,7 +210,7 @@ const Team = ({ setSelectedTab }) => {
         <button
           type="submit"
           disabled={saving}
-          className="sm:col-span-3 cursor-pointer px-4 py-2 bg-green-600 text-white rounded-lg transition hover:bg-green-700 disabled:opacity-50"
+          className="sm:col-span-3 cursor-pointer px-4 py-2 bg-verde text-white rounded-full transition hover:opacity-90 disabled:opacity-50"
         >
           {saving ? "Criando..." : "Criar login"}
         </button>
@@ -252,7 +252,7 @@ const Team = ({ setSelectedTab }) => {
                   onClick={() => remove(member)}
                   title="Remover"
                   aria-label="Remover"
-                  className="cursor-pointer p-2 rounded-xl text-red-500 hover:bg-[var(--translucid)] transition"
+                  className="cursor-pointer p-2 rounded-xl color-gray hover:text-brand-red hover:bg-bite/10 transition"
                 >
                   <FaTrash />
                 </button>

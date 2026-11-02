@@ -110,7 +110,7 @@ export default function WhatsappMessage({ setSelectedTab }) {
       className="cursor-pointer rounded-full border border-translucid bg-translucid px-3 py-1 text-xs transition hover:opacity-80"
     >
       {t.label}
-      {!t.optional && <span className="text-red-500"> *</span>}
+      {!t.optional && <span className="text-brand-red"> *</span>}
     </button>
   );
 
@@ -132,7 +132,7 @@ export default function WhatsappMessage({ setSelectedTab }) {
           <FaChevronLeft />
         </button>
         <div>
-          <h2 className="text-lg font-semibold leading-tight">
+          <h2 className="font-semibold leading-tight">
             Mensagem do WhatsApp
           </h2>
           <p className="text-xs color-gray">
@@ -195,13 +195,13 @@ export default function WhatsappMessage({ setSelectedTab }) {
             />
 
             <p className="text-xs color-gray">
-              <span className="text-red-500">*</span> Obrigatória: se ficar
+              <span className="text-brand-red">*</span> Obrigatória: se ficar
               fora do texto, entra no final da mensagem.
             </p>
 
             {missing.length > 0 && (
-              <div className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-3 text-xs">
-                <p className="mb-2 text-yellow-500">
+              <div className="rounded-xl border border-st-wait/40 bg-st-wait/10 p-3 text-xs">
+                <p className="mb-2 text-st-wait">
                   Faltando no texto (serão adicionadas ao final). Toque para
                   inserir:
                 </p>
@@ -243,7 +243,7 @@ export default function WhatsappMessage({ setSelectedTab }) {
             <button
               type="button"
               onClick={goBack}
-              className="cursor-pointer rounded-xl border border-translucid bg-[var(--translucid)] px-6 py-2 transition hover:opacity-80"
+              className="cursor-pointer rounded-full border border-translucid bg-[var(--translucid)] px-6 py-2 transition hover:opacity-80"
             >
               Cancelar
             </button>
@@ -251,7 +251,7 @@ export default function WhatsappMessage({ setSelectedTab }) {
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="cursor-pointer rounded-xl bg-green-600 px-6 py-2 text-white transition hover:bg-green-700 disabled:opacity-60"
+              className="cursor-pointer rounded-full bg-verde px-6 py-2 text-white transition hover:opacity-90 disabled:opacity-60"
             >
               {saving ? "Salvando..." : "Salvar"}
             </button>

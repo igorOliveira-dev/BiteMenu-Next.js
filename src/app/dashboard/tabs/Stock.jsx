@@ -15,7 +15,7 @@ import { FaBoxes, FaChevronLeft, FaSearch, FaSyncAlt } from "react-icons/fa";
 function StockInput({ stock, value, onChange }) {
   return (
     <div className="flex items-center gap-2 shrink-0">
-      {stock === 0 && <span className="text-xs font-semibold text-red-500">Esgotado</span>}
+      {stock === 0 && <span className="text-xs font-semibold text-brand-red">Esgotado</span>}
       <input
         type="number"
         min={0}
@@ -118,7 +118,7 @@ const Stock = ({ setSelectedTab }) => {
   }, [menu?.id, ownerRole]);
 
   const refresh = async () => {
-    if (changes.length && !(await confirm("Descartar as alterações não salvas e atualizar o estoque?"))) return;
+    if (changes.length && !(await confirm("Descartar as alterações não salvas e atualizar o estoque?", { tone: "confirm" }))) return;
     setDrafts({});
     load(true);
   };
@@ -205,7 +205,7 @@ const Stock = ({ setSelectedTab }) => {
         <FaChevronLeft />
       </button>
       <div>
-        <h2 className="text-lg font-semibold leading-tight">Estoque</h2>
+        <h2 className="font-semibold leading-tight">Estoque</h2>
         <p className="text-xs color-gray">Deixe vazio para não controlar. O que esgotar some do cardápio.</p>
       </div>
       {!loading && (
@@ -358,7 +358,7 @@ const Stock = ({ setSelectedTab }) => {
           type="button"
           disabled={saving || changes.length === 0}
           onClick={confirmStock}
-          className="cursor-pointer px-4 py-2 rounded-lg text-sm font-semibold bg-[var(--foreground)] text-[var(--background)] transition disabled:opacity-50"
+          className="cursor-pointer px-4 py-2 rounded-full text-sm font-semibold bg-verde text-white transition hover:opacity-90 disabled:opacity-50"
         >
           {saving ? "Salvando..." : changes.length ? `Confirmar estoque (${changes.length})` : "Confirmar estoque"}
         </button>

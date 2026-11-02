@@ -34,6 +34,57 @@ Aplicação no site e no painel do design definido no alinhamento visual da Duda
 | `--high-translucid` | `#2a222052` | `#fbf5ef52` |
 | `--shadow` | `#2a222026` | `#00000066` |
 
+### Papel de cada cor no painel
+
+| Cor | Papel | Exemplos |
+|---|---|---|
+| Vermelho `bite` | Assinar plano e o que pede atenção agora | Assinar/melhorar plano (`cta-button`), Fechar loja, badge de pedidos novos, erro |
+| Granada (`brand-select`, `brand-eyebrow`) | O que está escolhido e a estrutura | Seleções, filtros ativos, foco de campo, títulos de seção, tags de plano, links |
+| Brasa | Calor e IA (só ícone) | Ícone da varinha do Bite Menu IA |
+| Azul `info` (`#2C64A5` claro, `#8DB7F0` escuro) | Informação e andamento, onde vermelho/laranja pareceria alerta | Status em andamento, horário de pico, novidade, aviso de assinatura cancelada, barra de uso da IA |
+| Verde `verde` `#2F7D4E` | Confirmar e concluir | Salvar, Confirmar, Aplicar, Imprimir, Finalizar, Pronto, Entregue, Abrir loja |
+| Azul `azul` `#2C64A5` | Criar, compartilhar, avançar etapa e visualizar | Todo botão com "+" (cheio na tela, contorno azul dentro de modal), Opções de compartilhamento, Copiar link, Começar preparo, Saí para entrega, Novo pedido, Ver preview |
+| Mostarda `mostarda` `#E3A41F` (texto grafite) | Resolver algo pendente | Pagar |
+| Degradê | Só em faixas e destaques grandes | Item ativo da barra lateral (a pedido), faixa do Assistente de IA |
+| Grafite e creme | Base neutra | Texto, superfícies, botões secundários com contorno |
+
+- Um bloco tem no máximo um botão vermelho. Os demais ficam com contorno (`border-brand-line`).
+- Ação que se repete em cada cartão nunca é vermelha: numa lista de 20 pedidos, viraria um mar de vermelho. Ela usa a
+  cor do que faz (verde conclui, azul avança, mostarda resolve pendência).
+- Ações auxiliares dentro de um modal (+ Opção, + Grupo, + Adicionar item) ficam com contorno, ao lado do Salvar verde.
+- Verde, azul e mostarda são fixos nos dois temas porque são fundos de botão com texto; todos passam de 4,5:1.
+- Excluir é cinza e só fica vermelho no hover.
+- Botão de confirmar/salvar/enviar nunca é vermelho: verde. O modal `confirm()` é vermelho por padrão (remoções) e
+  verde com `confirm(msg, { tone: "confirm" })`, usado em finalizar pedido, salvar alterações, criar cardápio, trocar
+  forma de pagamento, ocultar/exibir opção, descartar alterações não salvas e desistir da exclusão. Vermelho só
+  em confirmação destrutiva (remover, excluir, cancelar assinatura ou boleto, sair).
+- Botão secundário é sempre contorno fino (`border-brand-line`, fundo transparente), em pílula. Nada de fundo bege
+  (`bg-low-gray`); `.custom-gray-button` segue esse padrão.
+- Botão sobre foto (câmera no banner e no logo) é vidro escuro: `bg-black/55 backdrop-blur-sm`, igual ao selo "Loja aberta".
+- Títulos de aba são `h2` sem classe de tamanho (26px). Títulos de cartão usam `h3` com `text-base`, que agora vale porque
+  o tamanho global de `h2`/`h3` está em `@layer base`.
+- Títulos de seção em texto normal com ícone em granada; caixa alta só em rótulos pequenos de dado (`text-xs`).
+- Controles do painel dentro da prévia levam `panel-font`, pra não herdar a Arial do cardápio.
+- `brand-select` é `#7b1730` no claro e `#a3243f` no escuro, onde o granada puro some. Em texto pequeno, use
+  `text-brand-eyebrow`.
+- Brasa entra em ícones e texto grande; em texto pequeno sobre creme o contraste fica abaixo de 4,5:1.
+
+### Cores de estado (fora da identidade, de propósito)
+
+A identidade veste a interface; a situação do pedido e do pagamento usa cores que o cliente já entende. Tokens
+`st-*` em `globals.css`, com tom próprio no claro e no escuro (texto acima de 4,5:1 nos dois). Status de pedido em
+`ORDER_STATUS_STYLE` e pago/pendente em `paidPillClass`, ambos em `src/lib/staff.js`.
+
+| Token | Significado | Uso |
+|---|---|---|
+| `info` (azul) | Em andamento | Preparando, Saiu para entrega |
+| `st-done` (verde) | Concluído, dinheiro entrou | Pronto, Pago, Total pago, botão Pagar |
+| `st-wait` (âmbar) | Aguardando | Recebido, Pendente, Não pago, avisos |
+| cinza | Finalizado | Entregue |
+
+Botões verdes cheios (Pronto, Entregue, Abrir loja) seguem em `green-600`, porque o verde claro do tema escuro não
+comporta texto branco.
+
 ## Fase 1: base e shell
 
 - Tokens globais com a nova paleta, nos temas claro e escuro.
@@ -93,3 +144,14 @@ pedido e os planos voltaram à grade.
 - O campo de telefone do cadastro fica mais cinza que os demais, por ter estilo próprio.
 - `LandingPageV1.jsx` continua no projeto, com classes antigas.
 - A apresentação ainda pedia feedback. A paleta e a fonte foram assumidas como aprovadas por já estarem na landing V2.
+
+### Gráficos
+
+- Paleta `--chart-1..5` em `globals.css`, em ordem fixa e com tons próprios no claro e no escuro, validada pelo
+  `validate_palette.js` da skill de dataviz (faixa de luminosidade, saturação, daltonismo e contraste): laranja,
+  verde-azulado, mostarda, azul, vinho. O hook `useChartColors` lê as variáveis e redesenha ao trocar de tema.
+- A cor segue a categoria, não a posição: Pix, Crédito, Dinheiro, Débito, Stripe; Entrega, Retirada, Comer no local,
+  Atendimento presencial.
+- Faturamento e produtos mais vendidos usam `--chart-4` (azul). Laranja e vermelho não entram em série única: leem como alerta. Um eixo só por gráfico; a quantidade de vendas
+  aparece no tooltip.
+- Números de cartões (total, quantidade, ticket) usam a cor de texto; a cor fica só na variação (↑ verde, ↓ vermelho).

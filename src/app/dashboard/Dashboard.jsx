@@ -23,10 +23,11 @@ import UpsellBanner from "./components/UpsellBanner";
 import GenericModal from "@/components/GenericModal";
 import QrCodeModal from "./tabs/components/menu/QrCodeModal";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
-import { FaUtensils, FaShoppingBag, FaChartLine, FaUser, FaLifeRing, FaShieldAlt, FaChair } from "react-icons/fa";
+import { FaChartLine, FaLifeRing, FaShieldAlt, FaChair } from "react-icons/fa";
 import { supabase } from "@/lib/supabaseClient";
 import { countVisibleOrders } from "@/lib/queries/orders";
 import { useSearchParams } from "next/navigation";
+import { IconPessoa, IconPrato, IconSino } from "@/components/BrandIcons";
 
 const Dashboard = ({
   menuState: externalMenuState,
@@ -195,8 +196,8 @@ const Dashboard = ({
   };
 
   const navItems = [
-    { tab: "menu", label: "Cardápio", Icon: FaUtensils },
-    { tab: "orders", label: "Pedidos", Icon: FaShoppingBag },
+    { tab: "menu", label: "Cardápio", Icon: IconPrato },
+    { tab: "orders", label: "Pedidos", Icon: IconSino },
     { tab: "sales", label: "Vendas", Icon: FaChartLine },
     { tab: "tables", label: "Mesas", Icon: FaChair },
   ];
@@ -305,7 +306,7 @@ const Dashboard = ({
               aria-label="Conta"
               className={navClass(selectedTab === "account")}
             >
-              <FaUser className="text-lg shrink-0" />
+              <IconPessoa className="text-lg shrink-0" />
               <span className={labelClass}>Conta</span>
             </button>
           </div>
@@ -431,7 +432,7 @@ const Dashboard = ({
           <div className="grid gap-2 mb-6">
             <button
               onClick={() => shareUrl && setShowQrCode(true)}
-              className="disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer mt-2 p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border border-[var(--translucid)] transition"
+              className="disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer mt-2 p-2 bg-azul text-white font-semibold rounded-full hover:opacity-90 transition"
             >
               Opções de compartilhamento
             </button>

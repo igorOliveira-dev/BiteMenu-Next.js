@@ -15,7 +15,7 @@ import {
 import { arrayMove } from "@dnd-kit/sortable";
 import { supabase } from "@/lib/supabaseClient";
 import { useAlert } from "@/providers/AlertProvider";
-import { ORDER_STATUS } from "@/lib/staff";
+import { ORDER_STATUS, ORDER_STATUS_STYLE } from "@/lib/staff";
 import { serviceLabels } from "@/app/dashboard/tabs/components/print/PrintDocumentButton";
 import Loading from "@/components/Loading";
 
@@ -24,12 +24,12 @@ const NEXT = {
   received: {
     status: "preparing",
     label: "Começar preparo",
-    className: "bg-bite hover:opacity-90",
+    className: "bg-azul hover:opacity-90",
   },
   preparing: {
     status: "ready",
     label: "Pronto",
-    className: "bg-green-600 hover:bg-green-700",
+    className: "bg-verde hover:opacity-90",
   },
 };
 
@@ -56,7 +56,7 @@ function OrderCard({ order, onAdvance, dragging = false }) {
     <div
       className={`rounded-2xl border bg-translucid p-4 shadow-sm flex flex-col gap-3 ${
         order.status === "preparing"
-          ? "border-brasa/60"
+          ? "border-info/50"
           : "border-translucid"
       } ${dragging ? "shadow-[0_10px_30px_var(--shadow)] backdrop-blur-xl" : ""}`}
     >
@@ -76,7 +76,9 @@ function OrderCard({ order, onAdvance, dragging = false }) {
               minute: "2-digit",
             })}
           </p>
-          <p className="text-xs color-gray">{ORDER_STATUS[order.status]}</p>
+          <span className={`mt-1 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${ORDER_STATUS_STYLE[order.status]?.pill ?? ""}`}>
+            {ORDER_STATUS[order.status]}
+          </span>
         </div>
       </div>
 
@@ -96,7 +98,7 @@ function OrderCard({ order, onAdvance, dragging = false }) {
               </p>
             )}
             {item.note && (
-              <p className="text-sm text-yellow-500">Obs: {item.note}</p>
+              <p className="text-sm text-st-wait">Obs: {item.note}</p>
             )}
           </li>
         ))}
@@ -135,7 +137,7 @@ function DraggableCard({ id, children }) {
       {...listeners}
       className={`select-none rounded-2xl transition ${isDragging ? "opacity-30" : ""} ${
         isOver && !isDragging
-          ? "ring-2 ring-bite ring-offset-2 ring-offset-transparent"
+          ? "ring-2 ring-brand-select ring-offset-2 ring-offset-transparent"
           : ""
       }`}
     >
@@ -285,7 +287,7 @@ export default function Kitchen({ menu, reloadTrigger, onBack }) {
               </button>
             )}
             <div>
-              <h2 className="text-xl font-semibold">Pedidos para preparar</h2>
+              <h2 className="font-semibold">Pedidos para preparar</h2>
               {orders.length > 1 && (
                 <p className="text-xs color-gray">
                   Segure e arraste um pedido para reorganizar a fila

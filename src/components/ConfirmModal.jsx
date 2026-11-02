@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import GenericModal from "./GenericModal";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 
-export default function ConfirmModal({ message, onConfirm, onCancel }) {
+export default function ConfirmModal({ message, tone, onConfirm, onCancel }) {
   // Fecha com ESC
   useEffect(() => {
     const handleEsc = (e) => e.key === "Escape" && onCancel();
@@ -28,7 +28,11 @@ export default function ConfirmModal({ message, onConfirm, onCancel }) {
             Cancelar
           </button>
           <button
-            className="cta-button"
+            className={
+              tone === "confirm"
+                ? "cursor-pointer rounded-full bg-verde px-[22px] py-3 font-bold text-white transition hover:opacity-90"
+                : "cta-button"
+            }
             onClick={onConfirm}
             type="button"
           >

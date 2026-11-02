@@ -26,8 +26,7 @@ import {
   FaMotorcycle,
   FaShoppingBag,
   FaChair,
-  FaUser,
-} from "react-icons/fa";
+  } from "react-icons/fa";
 import GenericModal from "@/components/GenericModal";
 import { useConfirm } from "@/providers/ConfirmProvider";
 import OrdersFilter from "./components/orders/OrdersFilter";
@@ -39,8 +38,9 @@ import PrintDocumentButton, {
   normalizeOrderForPrint,
 } from "./components/print/PrintDocumentButton";
 import PrintOrderModal from "./components/print/PrintOrderModal";
-import { ORDER_STATUS, STAFF_PLAN_ROLES } from "@/lib/staff";
+import { ORDER_STATUS, ORDER_STATUS_STYLE, STAFF_PLAN_ROLES, paidPillClass } from "@/lib/staff";
 import { staffApi } from "./Team";
+import { IconPessoa, IconPrato } from "@/components/BrandIcons";
 
 const PAGE_SIZE = 10;
 
@@ -64,8 +64,8 @@ const paymentLabels = {
 const serviceIcons = {
   delivery: FaMotorcycle,
   pickup: FaShoppingBag,
-  dinein: FaUtensils,
-  faceToFace: FaUser,
+  dinein: IconPrato,
+  faceToFace: IconPessoa,
 };
 
 const chipClass =
@@ -103,7 +103,7 @@ const SectionCard = ({
       type="button"
       onClick={onToggle}
       aria-expanded={open}
-      className="flex w-full items-center justify-between gap-3 p-4 text-left transition hover:bg-white/[0.02] cursor-pointer"
+      className="flex w-full items-center justify-between gap-3 p-4 text-left transition hover:bg-[var(--low-translucid)] cursor-pointer"
     >
       <div className="flex min-w-0 items-start gap-3">
         {icon ? <div className="mt-0.5 opacity-80">{icon}</div> : null}
@@ -480,7 +480,7 @@ const Orders = ({
   };
 
   const finalizeOrder = async (id) => {
-    const ok = await confirm("Quer mesmo finalizar esse pedido?");
+    const ok = await confirm("Quer mesmo finalizar esse pedido?", { tone: "confirm" });
     if (!ok) return;
 
     const { data: order, error: fetchError } = await supabase
@@ -637,7 +637,7 @@ const Orders = ({
     <div className="px-4 sm:px-2 lg:grid">
       <div className="md:m-auto lg:m-2 lg:w-[calc(100%-30dvw+16px)] min-h-[calc(100dvh-110px)] overflow-y-auto rounded-2xl">
         <div className="mb-4 flex items-center gap-3">
-          <h2 className="text-xl font-semibold">Pedidos recebidos</h2>
+          <h2 className="font-semibold">Pedidos recebidos</h2>
           <button
             type="button"
             className="cursor-pointer rounded-full p-2 opacity-80 transition hover:opacity-100"
@@ -652,7 +652,7 @@ const Orders = ({
               href={`/menu/${menu.slug}?balcao=1`}
               target="_blank"
               rel="noopener noreferrer"
-              className="ml-auto flex items-center gap-2 rounded-full bg-bite px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+              className="ml-auto flex items-center gap-2 rounded-full bg-azul px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90"
             >
               <FaPlus /> Novo pedido
             </a>
@@ -875,6 +875,7 @@ const Orders = ({
                   ];
                   const stepIndex = steps.indexOf(order.status);
                   const showSteps = steps.length > 1;
+                  const statusStyle = ORDER_STATUS_STYLE[order.status] ?? ORDER_STATUS_STYLE.received;
                   // etapa anterior/próxima entre as do card (cobre status fora da lista, ex.: "ready" com a cozinha desligada)
                   const nextStatus = steps.find(
                     (st) =>
@@ -909,6 +910,11 @@ const Orders = ({
                             <p className="text-xs color-gray">
                               #{order?.id?.slice(0, 6)}
                             </p>
+                            {showSteps && (
+                              <span className={`self-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusStyle.pill}`}>
+                                {ORDER_STATUS[order.status] ?? "—"}
+                              </span>
+                            )}
                           </div>
                           <p className="mt-1.5 truncate text-base font-semibold">
                             {order.costumer_name || "Cliente"}
@@ -922,13 +928,7 @@ const Orders = ({
                           <p className="text-xl font-bold leading-none">
                             {formatCurrency(total, menu?.currency)}
                           </p>
-                          <span
-                            className={`mt-2 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
-                              order.is_paid
-                                ? "bg-green-600/30 text-green-500"
-                                : "bg-yellow-500/30 text-yellow-500"
-                            }`}
-                          >
+                          <span className={`mt-2 ${paidPillClass(order.is_paid)}`}>
                             {order.is_paid ? "Pago" : "Pendente"}
                           </span>
                         </div>
@@ -980,23 +980,32 @@ const Orders = ({
                                     <Fragment key={step}>
                                       {i > 0 && (
                                         <span
-                                          className={`h-0.5 flex-1 ${
+                                          className={`h-1 flex-1 rounded-full ${
                                             i <= stepIndex
-                                              ? "bg-bite"
+                                              ? "bg-[var(--gray)]"
                                               : "bg-[var(--translucid)]"
                                           }`}
                                         />
                                       )}
-                                      <span
-                                        title={ORDER_STATUS[step]}
-                                        className={`h-3 w-3 shrink-0 rounded-full border ${
-                                          i < stepIndex
-                                            ? "border-bite bg-bite"
-                                            : i === stepIndex
-                                              ? "border-bite bg-bite ring-4 ring-bite/25"
-                                              : "border-[var(--gray)] opacity-40"
-                                        }`}
-                                      />
+                                      {i === stepIndex && step === "delivered" ? (
+                                        <span
+                                          title={ORDER_STATUS[step]}
+                                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] text-white ${statusStyle.dot}`}
+                                        >
+                                          <FaCheck />
+                                        </span>
+                                      ) : (
+                                        <span
+                                          title={ORDER_STATUS[step]}
+                                          className={`h-3 w-3 shrink-0 rounded-full border ${
+                                            i < stepIndex
+                                              ? "border-transparent bg-[var(--gray)]"
+                                              : i === stepIndex
+                                                ? `border-transparent ring-4 ${statusStyle.dot} ${statusStyle.ring}`
+                                                : "border-[var(--gray)] opacity-40"
+                                          }`}
+                                        />
+                                      )}
                                     </Fragment>
                                   ))}
                                 </div>
@@ -1038,7 +1047,7 @@ const Orders = ({
                                 className={`min-w-0 flex-1 cursor-pointer rounded-xl border bg-translucid p-1.5 ${
                                   order.assigned_to
                                     ? "border-[var(--translucid)]"
-                                    : "border-yellow-500/50"
+                                    : "border-st-wait/50"
                                 }`}
                               >
                                 <option value="">Sem entregador</option>
@@ -1090,7 +1099,7 @@ const Orders = ({
                               </span>
                             )}
                             {discount > 0 && (
-                              <span className="text-green-500">
+                              <span className="text-st-done">
                                 Desconto -
                                 {formatCurrency(discount, menu?.currency)}
                               </span>
@@ -1127,7 +1136,7 @@ const Orders = ({
                             onClick={() => deleteOrder(order.id)}
                             title="Excluir pedido"
                             aria-label="Excluir pedido"
-                            className="flex cursor-pointer items-center justify-center rounded-xl border border-red-500/20 bg-red-500/30 px-3 text-sm transition hover:bg-red-500/50"
+                            className="flex cursor-pointer items-center justify-center rounded-xl border border-translucid color-gray hover:text-brand-red hover:border-bite/30 hover:bg-bite/10 px-3 text-sm transition"
                           >
                             <FaTrash />
                           </button>
@@ -1136,10 +1145,10 @@ const Orders = ({
                         <div className="grid grid-cols-2 gap-2 sm:flex">
                           <button
                             onClick={() => togglePaid(order.id, order.is_paid)}
-                            className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                            className={`flex cursor-pointer items-center justify-center gap-2 rounded-full px-3 py-2 text-sm font-semibold transition ${
                               order.is_paid
                                 ? "border border-translucid bg-translucid hover:opacity-80"
-                                : "bg-yellow-500 text-black hover:bg-yellow-600"
+                                : "bg-mostarda text-grafite hover:opacity-90"
                             }`}
                           >
                             <FaMoneyBill />
@@ -1147,7 +1156,7 @@ const Orders = ({
                           </button>
                           <button
                             onClick={() => finalizeOrder(order.id)}
-                            className="flex cursor-pointer items-center justify-center gap-2 rounded-full bg-bite px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+                            className="flex cursor-pointer items-center justify-center gap-2 rounded-full bg-verde px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90"
                           >
                             <FaCheck /> Finalizar
                           </button>
@@ -1222,7 +1231,7 @@ const Orders = ({
                   </div>
                   <div className="h-2 w-full overflow-hidden rounded-xl bg-translucid">
                     <div
-                      className="h-full bg-green-600"
+                      className="h-full bg-st-done"
                       style={{ width: `${paidPct}%` }}
                     />
                   </div>
@@ -1231,14 +1240,14 @@ const Orders = ({
                 <div className="grid grid-cols-1 gap-2">
                   <div className="rounded-2xl border border-translucid bg-translucid p-3">
                     <p className="text-xs color-gray">Total pago</p>
-                    <p className="text-xl font-semibold text-green-500">
+                    <p className="text-xl font-semibold text-st-done">
                       {formatCurrency(summary.paidTotal, menu?.currency)}
                     </p>
                   </div>
 
                   <div className="rounded-2xl border border-translucid bg-translucid p-3">
                     <p className="text-xs color-gray">Total pendente</p>
-                    <p className="text-xl font-semibold text-yellow-400">
+                    <p className="text-xl font-semibold text-st-wait">
                       {formatCurrency(summary.pendingTotal, menu?.currency)}
                     </p>
                     <p className="mt-1 text-xs color-gray">
@@ -1503,7 +1512,7 @@ const Orders = ({
                           type="button"
                           onClick={() => toggleItemOpen(i)}
                           aria-expanded={isItemOpen}
-                          className="flex w-full items-center justify-between gap-3 p-4 text-left transition hover:bg-white/[0.02] cursor-pointer"
+                          className="flex w-full items-center justify-between gap-3 p-4 text-left transition hover:bg-[var(--low-translucid)] cursor-pointer"
                         >
                           <div className="flex min-w-0 flex-1 items-center gap-3">
                             {item.image_url ? (
@@ -1539,7 +1548,7 @@ const Orders = ({
                                 e.stopPropagation();
                                 deleteItem(i);
                               }}
-                              className="flex items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/40 h-8 w-8 text-sm font-semibold transition hover:opacity-90 cursor-pointer"
+                              className="flex items-center justify-center rounded-2xl border border-translucid color-gray hover:text-brand-red hover:border-bite/30 hover:bg-bite/10 h-8 w-8 text-sm font-semibold transition hover:opacity-90 cursor-pointer"
                             >
                               <FaTrash />
                             </span>
@@ -1702,7 +1711,7 @@ const Orders = ({
                                         items_list: updated,
                                       });
                                     }}
-                                    className="cursor-pointer rounded-full bg-bite px-3 py-2 text-sm text-white transition hover:opacity-90"
+                                    className="cursor-pointer rounded-full border border-info/40 text-info hover:bg-info/10 px-3 py-2 text-sm transition"
                                   >
                                     + Opção
                                   </button>
@@ -1808,7 +1817,7 @@ const Orders = ({
                                               "success",
                                             );
                                           }}
-                                          className="flex w-full h-full items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/40 text-sm font-semibold transition hover:opacity-90 cursor-pointer"
+                                          className="flex w-full h-full items-center justify-center rounded-2xl border border-translucid color-gray hover:text-brand-red hover:border-bite/30 hover:bg-bite/10 text-sm font-semibold transition hover:opacity-90 cursor-pointer"
                                         >
                                           <FaTrash />
                                         </button>
@@ -1840,7 +1849,7 @@ const Orders = ({
                       new Set(prev).add(updatedItems.length - 1),
                     );
                   }}
-                  className="mt-4 cursor-pointer rounded-full bg-bite px-4 py-3 text-white transition hover:opacity-90"
+                  className="mt-4 cursor-pointer rounded-full border border-info/40 text-info hover:bg-info/10 px-4 py-3 transition"
                 >
                   + Adicionar item
                 </button>
@@ -1859,7 +1868,7 @@ const Orders = ({
                       )}
                     </p>
                     {computeDiscount(selectedOrder) > 0 ? (
-                      <p className="text-xs text-green-500">
+                      <p className="text-xs text-st-done">
                         Desconto aplicado: -
                         {formatCurrency(
                           computeDiscount(selectedOrder),
@@ -1873,7 +1882,7 @@ const Orders = ({
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <button
                     type="submit"
-                    className="w-full cursor-pointer rounded-full bg-bite py-3 text-white transition hover:opacity-90"
+                    className="w-full cursor-pointer rounded-full bg-verde py-3 text-white transition hover:opacity-90"
                   >
                     Salvar alterações
                   </button>
@@ -1883,7 +1892,7 @@ const Orders = ({
                       resetAndFetch();
                       setOrderModalOpen(false);
                     }}
-                    className="w-full cursor-pointer rounded-xl bg-[var(--translucid)] border border-translucid py-3 transition hover:opacity-80 sm:w-40"
+                    className="w-full cursor-pointer rounded-full bg-[var(--translucid)] border border-translucid py-3 transition hover:opacity-80 sm:w-40"
                   >
                     Cancelar
                   </button>

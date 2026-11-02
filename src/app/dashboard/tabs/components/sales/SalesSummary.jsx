@@ -50,7 +50,7 @@ const SalesSummary = ({
             setSelectedTab("salesDashboard");
           }
         }}
-        className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-bite px-4 py-3 text-sm font-medium text-white transition hover:opacity-90"
+        className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-azul px-4 py-3 text-sm font-medium text-white transition hover:opacity-90"
       >
         Ver dashboard completo
       </button>

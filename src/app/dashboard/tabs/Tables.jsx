@@ -228,7 +228,7 @@ const Tables = () => {
     <div className="p-4 sm:p-6 flex flex-col gap-4 max-w-[1024px]">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold">Mesas</h2>
+          <h2 className="font-semibold">Mesas</h2>
           <p className="text-xs color-gray mt-1">
             Crie mesas e baixe o QR Code de cada uma. O cliente escaneia, faz o pedido e ele cai direto na aba Pedidos
             já identificado com a mesa.
@@ -237,7 +237,7 @@ const Tables = () => {
 
         <button
           onClick={openCreateModal}
-          className="cursor-pointer shrink-0 px-3 py-2 bg-bite hover:opacity-90 text-white font-semibold rounded-full transition flex items-center gap-2 text-sm"
+          className="cursor-pointer shrink-0 px-3 py-2 bg-azul hover:opacity-90 text-white font-semibold rounded-full transition flex items-center gap-2 text-sm"
         >
           <FaPlus /> Nova mesa
         </button>
@@ -269,7 +269,7 @@ const Tables = () => {
                       ? customAlert("Essa mesa está desabilitada.", "error")
                       : setQrTable(table)
                   }
-                  className="cursor-pointer p-2 bg-translucid hover:bg-white/[0.06] rounded-xl border border-translucid transition"
+                  className="cursor-pointer p-2 bg-translucid hover:bg-[var(--translucid)] rounded-xl border border-translucid transition"
                   aria-label="Ver QR Code"
                 >
                   <FaQrcode />
@@ -277,7 +277,7 @@ const Tables = () => {
 
                 <button
                   onClick={() => openRenameModal(table)}
-                  className="cursor-pointer p-2 bg-translucid hover:bg-white/[0.06] rounded-xl border border-translucid transition"
+                  className="cursor-pointer p-2 bg-translucid hover:bg-[var(--translucid)] rounded-xl border border-translucid transition"
                   aria-label="Renomear mesa"
                 >
                   <FaPen />
@@ -285,7 +285,7 @@ const Tables = () => {
 
                 <button
                   onClick={() => deleteTable(table)}
-                  className="cursor-pointer p-2 bg-translucid hover:bg-red-600/20 text-red-400 rounded-xl border border-translucid transition"
+                  className="cursor-pointer p-2 bg-translucid color-gray hover:text-brand-red hover:bg-bite/10 rounded-xl border border-translucid transition"
                   aria-label="Remover mesa"
                 >
                   <FaTrash />
@@ -329,7 +329,7 @@ const Tables = () => {
             <button
               onClick={createTables}
               disabled={saving}
-              className="cursor-pointer p-2 bg-bite hover:opacity-90 disabled:opacity-60 text-white font-semibold rounded-full transition"
+              className="cursor-pointer p-2 bg-verde hover:opacity-90 disabled:opacity-60 text-white font-semibold rounded-full transition"
             >
               {saving ? "Criando..." : "Criar"}
             </button>
@@ -354,7 +354,7 @@ const Tables = () => {
             <button
               onClick={renameTableSubmit}
               disabled={renaming}
-              className="cursor-pointer p-2 bg-bite hover:opacity-90 disabled:opacity-60 text-white font-semibold rounded-full transition"
+              className="cursor-pointer p-2 bg-verde hover:opacity-90 disabled:opacity-60 text-white font-semibold rounded-full transition"
             >
               {renaming ? "Salvando..." : "Salvar"}
             </button>

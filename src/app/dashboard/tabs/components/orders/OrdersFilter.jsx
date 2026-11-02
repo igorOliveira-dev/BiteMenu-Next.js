@@ -11,7 +11,7 @@ function FilterChip({ label, onRemove }) {
       <button
         type="button"
         onClick={onRemove}
-        className="cursor-pointer p-0.5 rounded-full hover:bg-white/10 transition"
+        className="cursor-pointer p-0.5 rounded-full hover:bg-[var(--translucid)] transition"
         aria-label={`Remover filtro: ${label}`}
       >
         <FaTimes size={9} />
@@ -117,7 +117,7 @@ export default function OrdersFilter({ onChange, initial = {}, statusOptions = n
   ].filter(Boolean).length;
 
   const fieldClass =
-    "w-full border border-translucid rounded-xl px-3 py-2 text-sm bg-translucid color-gray outline-none focus:ring-2 focus:ring-bite/40 transition";
+    "w-full border border-translucid rounded-xl px-3 py-2 text-sm bg-translucid color-gray outline-none focus:ring-2 focus:ring-brand-select/40 transition";
 
   return (
     <div className="my-4 rounded-2xl border border-translucid bg-[var(--low-translucid)] overflow-hidden">
@@ -125,13 +125,13 @@ export default function OrdersFilter({ onChange, initial = {}, statusOptions = n
         type="button"
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
-        className="cursor-pointer w-full flex items-center justify-between gap-2 p-4 text-left hover:bg-white/[0.02] transition"
+        className="cursor-pointer w-full flex items-center justify-between gap-2 p-4 text-left hover:bg-[var(--low-translucid)] transition"
       >
         <div className="flex items-center gap-2">
           <FaFilter />
           <strong>Filtros</strong>
           {activeCount > 0 && (
-            <span className="text-xs font-semibold rounded-full px-2 py-0.5 bg-bite/15">{activeCount}</span>
+            <span className="text-xs font-semibold rounded-full px-2 py-0.5 bg-brand-select/15">{activeCount}</span>
           )}
         </div>
 
@@ -173,7 +173,7 @@ export default function OrdersFilter({ onChange, initial = {}, statusOptions = n
                     placeholder="Nome, telefone ou nº do pedido..."
                     className={`${fieldClass} pr-9`}
                   />
-                  <FaSearch className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none" />
+                  <FaSearch className="absolute right-3 top-1/2 -translate-y-1/2 color-gray text-sm pointer-events-none" />
                 </div>
               </div>
 
@@ -245,7 +245,7 @@ export default function OrdersFilter({ onChange, initial = {}, statusOptions = n
                   onClick={() => setTableOnly((v) => !v)}
                   className={`cursor-pointer flex items-center gap-2 rounded-lg px-3 py-2 text-sm border transition ${
                     tableOnly
-                      ? "bg-bite border-bite text-white"
+                      ? "bg-brand-select border-brand-select text-white"
                       : "border-translucid bg-translucid color-gray hover:opacity-80"
                   }`}
                 >

@@ -39,11 +39,11 @@ function Unsubscribe() {
           <button
             onClick={confirm}
             disabled={status === "loading"}
-            className="text-white cursor-pointer bg-red-600/80 hover:bg-red-600 rounded-lg px-4 py-2 transition disabled:opacity-50 mb-4"
+            className="cursor-pointer rounded-full border border-bite/30 px-4 py-2 text-brand-red transition hover:bg-bite/10 disabled:opacity-50 mb-4"
           >
             {status === "loading" ? "Descadastrando..." : "Confirmar descadastro"}
           </button>
-          {status === "error" && <p className="text-sm text-red-500 mb-4">Link inválido ou expirado.</p>}
+          {status === "error" && <p className="text-sm text-brand-red mb-4">Link inválido ou expirado.</p>}
         </>
       )}
 

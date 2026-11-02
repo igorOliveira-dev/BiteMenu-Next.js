@@ -281,7 +281,7 @@ export default function GetStart() {
   };
 
   const handleSubmit = async () => {
-    const ok = await confirm("Quer mesmo criar o cardápio com essas informações?");
+    const ok = await confirm("Quer mesmo criar o cardápio com essas informações?", { tone: "confirm" });
     if (!ok) return;
 
     if (!user) {
@@ -562,7 +562,7 @@ export default function GetStart() {
               Logo <span className="font-normal opacity-60">(quadrada)</span>
             </p>
             <label
-              className="flex flex-col items-center justify-center h-28 w-28 border-2 border-dashed rounded-xl cursor-pointer hover:border-bite transition overflow-hidden"
+              className="flex flex-col items-center justify-center h-28 w-28 border border-dashed border-[var(--high-translucid)] rounded-2xl cursor-pointer hover:border-bite transition overflow-hidden"
               style={{ borderColor: logoPreview ? "#d42020" : "var(--low-gray)" }}
             >
               {logoPreview ? (
@@ -581,7 +581,7 @@ export default function GetStart() {
                   setLogoFile(null);
                   if (logoInputRef.current) logoInputRef.current.value = "";
                 }}
-                className="mt-1 text-xs text-red-500 hover:underline"
+                className="mt-1 text-xs text-brand-red hover:underline"
               >
                 Remover
               </button>
@@ -594,7 +594,7 @@ export default function GetStart() {
               Banner <span className="font-normal opacity-60">(retangular)</span>
             </p>
             <label
-              className="flex flex-col items-center justify-center h-28 w-[100%] border-2 border-dashed rounded-xl cursor-pointer hover:border-bite transition overflow-hidden"
+              className="flex flex-col items-center justify-center h-28 w-[100%] border border-dashed border-[var(--high-translucid)] rounded-2xl cursor-pointer hover:border-bite transition overflow-hidden"
               style={{ borderColor: bannerPreview ? "#d42020" : "var(--low-gray)" }}
             >
               {bannerPreview ? (
@@ -613,7 +613,7 @@ export default function GetStart() {
                   setBannerFile(null);
                   if (bannerInputRef.current) bannerInputRef.current.value = "";
                 }}
-                className="mt-1 text-xs text-red-500 hover:underline"
+                className="mt-1 text-xs text-brand-red hover:underline"
               >
                 Remover
               </button>
@@ -726,7 +726,7 @@ export default function GetStart() {
         <button
           type="button"
           onClick={handleSubmit}
-          className="cursor-pointer w-full py-4 bg-bite text-white font-bold text-lg rounded-full hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2"
+          className="cursor-pointer w-full py-4 bg-verde text-white font-bold text-lg rounded-full hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2"
         >
           <FaCheck /> Criar meu cardápio!
         </button>
@@ -786,7 +786,7 @@ export default function GetStart() {
               <button
                 type="button"
                 onClick={goNext}
-                className="cursor-pointer flex items-center gap-2 px-6 py-2 bg-bite text-white font-semibold rounded-full hover:opacity-90 active:scale-95 transition-all ml-auto"
+                className="cursor-pointer flex items-center gap-2 px-6 py-2 bg-azul text-white font-semibold rounded-full hover:opacity-90 active:scale-95 transition-all ml-auto"
               >
                 Continuar <FaArrowRight size={12} />
               </button>

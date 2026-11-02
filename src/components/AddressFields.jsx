@@ -90,7 +90,7 @@ export default function AddressFields({
         })}
         {cepStatus === "loading" && <p className="mt-1 text-xs opacity-60">Buscando CEP...</p>}
         {cepStatus === "error" && (
-          <p className="mt-1 text-xs text-red-500">CEP não encontrado, preencha os campos manualmente.</p>
+          <p className="mt-1 text-xs text-brand-red">CEP não encontrado, preencha os campos manualmente.</p>
         )}
       </div>
       <div className="col-span-6">{input("street", "Rua / Avenida", { maxLength: 100 })}</div>

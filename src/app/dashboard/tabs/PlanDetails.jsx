@@ -65,13 +65,13 @@ const CancelModal = ({ canceling, onClose, onConfirm }) => {
                   onClick={() => setReason(selected ? "" : r)}
                   className={`flex w-full cursor-pointer items-center gap-3 rounded-xl border p-3 text-left transition ${
                     selected
-                      ? "border-red-500/60 bg-red-500/15"
-                      : "border-[var(--translucid)] bg-translucid hover:border-red-500/30"
+                      ? "border-brand-select/60 bg-brand-select/10"
+                      : "border-[var(--translucid)] bg-translucid hover:border-brand-select/30"
                   }`}
                 >
                   <span
                     className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition ${
-                      selected ? "border-red-500 bg-red-500 text-white" : "border-[var(--high-translucid)] text-transparent"
+                      selected ? "border-brand-select bg-brand-select text-white" : "border-[var(--high-translucid)] text-transparent"
                     }`}
                   >
                     <FaCheck className="text-[9px]" />
@@ -91,7 +91,7 @@ const CancelModal = ({ canceling, onClose, onConfirm }) => {
             maxLength={1000}
             rows={3}
             placeholder="Conte o que poderíamos melhorar (opcional)"
-            className="w-full resize-none rounded-xl border border-[var(--translucid)] bg-translucid px-3 py-3 text-[15px] outline-none transition focus:border-red-500/70"
+            className="w-full resize-none rounded-xl border border-[var(--translucid)] bg-translucid px-3 py-3 text-[15px] outline-none transition focus:border-brand-select/70"
           />
         </div>
 
@@ -100,7 +100,7 @@ const CancelModal = ({ canceling, onClose, onConfirm }) => {
             type="button"
             onClick={onClose}
             disabled={canceling}
-            className="h-11 cursor-pointer rounded-xl border border-[var(--translucid)] bg-translucid px-4 text-sm font-semibold transition hover:border-red-500/40 disabled:opacity-50"
+            className="h-11 cursor-pointer rounded-xl border border-[var(--translucid)] bg-translucid px-4 text-sm font-semibold transition hover:border-brand-select/40 disabled:opacity-50"
           >
             Manter assinatura
           </button>
@@ -170,7 +170,7 @@ const BillingCard = ({ billing, canCancel, canceling, onCancel, changingMethod, 
       </div>
 
       {billing.scheduledChange && !billing.cancelAtPeriodEnd && (
-        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm bg-amber-500/10 border-b border-[var(--translucid)]">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm bg-st-wait/10 border-b border-[var(--translucid)]">
           <span>
             Troca agendada: a partir de <strong>{formatDate(billing.scheduledChange.effectiveAt)}</strong> você passa
             para o plano <strong className="capitalize">{billing.scheduledChange.plan}</strong>.
@@ -266,7 +266,7 @@ const BillingCard = ({ billing, canCancel, canceling, onCancel, changingMethod, 
                   {b.open && canCancel && (
                     <button
                       onClick={() => setPicking(true)}
-                      className="px-3 py-1.5 rounded-lg text-red-500 hover:bg-red-500/10 transition cursor-pointer"
+                      className="px-3 py-1.5 rounded-lg text-brand-red hover:bg-bite/10 transition cursor-pointer"
                       type="button"
                     >
                       Cancelar
@@ -293,7 +293,7 @@ const BillingCard = ({ billing, canCancel, canceling, onCancel, changingMethod, 
           <button
             onClick={onCancel}
             disabled={canceling}
-            className="text-sm px-3 py-1.5 rounded-lg text-red-500 hover:bg-red-500/10 transition cursor-pointer disabled:opacity-50"
+            className="text-sm px-3 py-1.5 rounded-lg text-brand-red hover:bg-bite/10 transition cursor-pointer disabled:opacity-50"
             type="button"
           >
             {canceling ? "Cancelando..." : "Cancelar assinatura"}
@@ -386,7 +386,7 @@ export default function PlanDetails({ setSelectedTab }) {
 
   // true quando trocou (o seletor fecha)
   const changePaymentMethod = async (method, label) => {
-    const ok = await confirm(`Trocar a forma de pagamento para ${label}?`);
+    const ok = await confirm(`Trocar a forma de pagamento para ${label}?`, { tone: "confirm" });
     if (!ok) return false;
 
     setChangingMethod(true);
@@ -438,14 +438,14 @@ export default function PlanDetails({ setSelectedTab }) {
         <div onClick={() => setSelectedTab("account")}>
           <FaChevronLeft className="cursor-pointer" />
         </div>
-        <h2 className="xs:font-semibold">Detalhes do Plano</h2>
+        <h2 className="font-semibold">Detalhes do plano</h2>
       </div>
 
       <BillingAlert setSelectedTab={setSelectedTab} className="mb-4 w-full max-w-[1024px]" />
       <LegacyPlanNotice info={legacyPlanInfo(p)} className="mb-4 max-w-[1024px]" />
 
       {p.validapay_subscription_id && p.cancel_at_period_end && (
-        <div className="flex flex-wrap items-center justify-between gap-3 p-4 mb-4 rounded-2xl border border-red-500/30 bg-red-500/10 max-w-[1024px]">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-4 mb-4 rounded-2xl border border-info/30 bg-info/10 max-w-[1024px]">
           <p>
             Assinatura cancelada. Você mantém acesso ao plano <span className="capitalize">{p.role}</span>
             {accessUntil ? ` até ${accessUntil}` : " até o fim do período já pago"}. Depois disso seu plano volta pra

@@ -78,7 +78,7 @@ export default function AcquisitionSourceModal({ onClose, onSubmit }) {
             onClick={handleSubmit}
             disabled={!canSubmit || saving}
             type="button"
-            className="cta-button disabled:opacity-50 disabled:cursor-not-allowed"
+            className="cursor-pointer rounded-full bg-verde px-[22px] py-3 font-bold text-white transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? "Enviando..." : "Enviar"}
           </button>

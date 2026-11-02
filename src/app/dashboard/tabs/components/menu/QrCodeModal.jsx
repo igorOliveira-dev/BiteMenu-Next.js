@@ -3,8 +3,9 @@
 import React, { useMemo, useRef } from "react";
 import QRCode from "react-qr-code";
 import GenericModal from "@/components/GenericModal";
-import { FaRegCopy, FaExternalLinkAlt, FaDownload, FaChevronLeft } from "react-icons/fa";
+import { FaRegCopy, FaDownload, FaChevronLeft } from "react-icons/fa";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
+import { IconAcessar } from "@/components/BrandIcons";
 
 export default function QrCodeModal({
   isOpen,
@@ -115,21 +116,21 @@ export default function QrCodeModal({
           <div className="grid grid-cols-1 xxs:grid-cols-3 gap-2 w-full mt-2">
             <button
               onClick={copy}
-              className="cursor-pointer p-2 bg-bite text-white font-semibold rounded-full hover:opacity-90 transition flex items-center justify-center gap-2"
+              className="cursor-pointer p-2 bg-azul text-white font-semibold rounded-full hover:opacity-90 transition flex items-center justify-center gap-2"
             >
               <FaRegCopy /> Copiar
             </button>
 
             <button
               onClick={open}
-              className="cursor-pointer p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border border-[var(--translucid)] transition flex items-center justify-center gap-2"
+              className="cursor-pointer p-2 border border-brand-line font-semibold rounded-full hover:bg-[var(--translucid)] transition flex items-center justify-center gap-2"
             >
-              <FaExternalLinkAlt /> Abrir
+              <IconAcessar className="text-lg" /> Abrir
             </button>
 
             <button
               onClick={downloadPng}
-              className="cursor-pointer p-2 bg-grafite text-white font-semibold rounded-lg hover:opacity-90 border border-[var(--translucid)] transition flex items-center justify-center gap-2"
+              className="cursor-pointer p-2 border border-brand-line font-semibold rounded-full hover:bg-[var(--translucid)] transition flex items-center justify-center gap-2"
             >
               <FaDownload /> Baixar
             </button>

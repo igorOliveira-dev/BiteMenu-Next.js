@@ -121,7 +121,7 @@ const ChangePlanModal = ({ plan, cycle, currentPlanName, onClose }) => {
           {!preview && !error && <div className="mt-4 h-24 rounded-xl bg-translucid animate-pulse" />}
 
           {preview?.kind === "charge_now" && (
-            <div className="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
+            <div className="mt-4 p-3 rounded-xl bg-st-wait/10 border border-st-wait/30">
               <p>
                 Você paga <strong>{formatBRL(preview.amountNow)} agora</strong>: só a diferença proporcional aos dias
                 que faltam no seu ciclo atual.
@@ -163,7 +163,7 @@ const ChangePlanModal = ({ plan, cycle, currentPlanName, onClose }) => {
             </div>
           )}
 
-          {error && <p className="mt-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30">{error}</p>}
+          {error && <p className="mt-4 p-3 rounded-xl bg-bite/10 border border-bite/30">{error}</p>}
 
           <div className="flex gap-2 justify-end mt-6">
             <button
@@ -177,7 +177,7 @@ const ChangePlanModal = ({ plan, cycle, currentPlanName, onClose }) => {
             <button
               onClick={confirmChange}
               disabled={!preview || confirming}
-              className="cta-button disabled:opacity-50 disabled:cursor-not-allowed"
+              className="cursor-pointer rounded-full bg-verde px-[22px] py-3 font-bold text-white transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
               type="button"
             >
               {confirming ? "Processando..." : "Confirmar troca"}
@@ -266,7 +266,7 @@ const PlansSection = ({ showFree = false }) => {
       <h2 className="font-bold scale-130 xxs:scale-150 mt-4 lg:mt-0 mb-8 text-center">Planos disponíveis:</h2>
 
       {maintenance && (
-        <div className="w-full max-w-[700px] mb-8 p-4 rounded-xl bg-amber-500/10 border border-amber-500/40 text-sm text-center">
+        <div className="w-full max-w-[700px] mb-8 p-4 rounded-xl bg-st-wait/10 border border-st-wait/40 text-sm text-center">
           <strong>Contratação temporariamente indisponível.</strong>
           <br />
           Estamos trocando nosso sistema de pagamentos. Em breve você poderá assinar normalmente.
@@ -288,7 +288,7 @@ const PlansSection = ({ showFree = false }) => {
             type="button"
             onClick={() => setCycle(value)}
             className={`px-4 py-1.5 rounded-full cursor-pointer transition ${
-              cycle === value ? "bg-[var(--red)] text-white font-semibold" : "opacity-70 hover:opacity-100"
+              cycle === value ? "bg-brand-select text-white font-semibold" : "opacity-70 hover:opacity-100"
             }`}
           >
             {label}
@@ -333,16 +333,16 @@ const PlansSection = ({ showFree = false }) => {
           <div
             key={plan.name}
             className={`relative p-4 px-6 bg-degraded-t-speckled border rounded-xl w-64 flex flex-col gap-6 justify-between transition ${
-              highlight === plan.id ? "border-[var(--red)]" : "border-[var(--translucid)]"
+              highlight === plan.id ? "border-brand-select" : "border-[var(--translucid)]"
             }`}
           >
             {plan.comingSoon && (
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-0.5 rounded-full bg-[var(--red)] text-white text-xs font-semibold">
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-0.5 rounded-full bg-granada text-white text-xs font-semibold">
                 Em breve
               </span>
             )}
             {highlight === plan.id && !plan.comingSoon && (
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-0.5 rounded-full bg-[var(--red)] text-white text-xs font-semibold">
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-0.5 rounded-full bg-granada text-white text-xs font-semibold">
                 Recomendado pra você
               </span>
             )}
@@ -357,7 +357,7 @@ const PlansSection = ({ showFree = false }) => {
                     {plan.yearlyPrice}
                     <span className="text-base color-gray">/ano</span>
                   </p>
-                  <p className="text-sm font-semibold text-[var(--red)] mt-1">
+                  <p className="text-sm font-semibold text-brand-eyebrow mt-1">
                     Economize {formatBRL(parseBRL(plan.yearlyAnchor) - parseBRL(plan.yearlyPrice))}
                   </p>
                 </div>
@@ -372,7 +372,7 @@ const PlansSection = ({ showFree = false }) => {
                 {plan.features.map((feature, index) => (
                   <div key={index}>
                     <li className="flex items-center gap-2 mt-1">
-                      <FaCheck className="shrink-0 text-[var(--red)]" />
+                      <FaCheck className="shrink-0 text-st-done" />
                       {feature}
                     </li>
                     <hr className="border border-translucid" />

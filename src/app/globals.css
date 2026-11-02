@@ -12,6 +12,10 @@
   --color-bite: #d42020;
   --color-granada: #7b1730;
   --color-brasa: #e35f25;
+  /* botões de estado: verde confirma, azul avança etapa e é novo/ver, mostarda é pendente */
+  --color-verde: #2f7d4e;
+  --color-azul: #2c64a5;
+  --color-mostarda: #e3a41f;
 
   --color-brand-bg: var(--brand-bg);
   --color-brand-surface: var(--brand-surface);
@@ -20,6 +24,11 @@
   --color-brand-line: var(--brand-line);
   --color-brand-red: var(--brand-red);
   --color-brand-eyebrow: var(--brand-eyebrow);
+  --color-brand-select: var(--brand-select);
+  /* cores de estado (fora da identidade): novo, em andamento, concluído/pago, aguardando */
+  --color-info: var(--info);
+  --color-st-done: var(--st-done);
+  --color-st-wait: var(--st-wait);
 
   --radius-card: 1.75rem;
 }
@@ -46,6 +55,16 @@
   --brand-line: #2a222026;
   --brand-red: #d42020;
   --brand-eyebrow: #7b1730;
+  --brand-select: #7b1730;
+  --info: #2c64a5;
+  --st-done: #256b42;
+  --st-wait: #a14a07;
+  /* gráficos: ordem fixa, validada (daltonismo e contraste) no claro e no escuro */
+  --chart-1: #c2470f;
+  --chart-2: #00897b;
+  --chart-3: #b8860b;
+  --chart-4: #3567c4;
+  --chart-5: #a3243f;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -70,6 +89,15 @@
     --brand-line: #fbf5ef26;
     --brand-red: #f0605a;
     --brand-eyebrow: #f0605a;
+  --brand-select: #a3243f;
+  --info: #8db7f0;
+  --st-done: #74c69d;
+  --st-wait: #f0b84a;
+  --chart-1: #d9581f;
+  --chart-2: #18a094;
+  --chart-3: #b8860b;
+  --chart-4: #5480d6;
+  --chart-5: #c94467;
   }
 }
 
@@ -95,6 +123,16 @@
   --brand-line: #2a222026;
   --brand-red: #d42020;
   --brand-eyebrow: #7b1730;
+  --brand-select: #7b1730;
+  --info: #2c64a5;
+  --st-done: #256b42;
+  --st-wait: #a14a07;
+  /* gráficos: ordem fixa, validada (daltonismo e contraste) no claro e no escuro */
+  --chart-1: #c2470f;
+  --chart-2: #00897b;
+  --chart-3: #b8860b;
+  --chart-4: #3567c4;
+  --chart-5: #a3243f;
 }
 
 [data-theme="dark"] {
@@ -118,6 +156,15 @@
   --brand-line: #fbf5ef26;
   --brand-red: #f0605a;
   --brand-eyebrow: #f0605a;
+  --brand-select: #a3243f;
+  --info: #8db7f0;
+  --st-done: #74c69d;
+  --st-wait: #f0b84a;
+  --chart-1: #d9581f;
+  --chart-2: #18a094;
+  --chart-3: #b8860b;
+  --chart-4: #5480d6;
+  --chart-5: #c94467;
 }
 
 html {
@@ -168,8 +215,9 @@ body:has(.public-menu),
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* modais de edição abertos de dentro da prévia são do painel */
-.menu-font .fixed {
+/* modais de edição e ferramentas dentro da prévia são do painel */
+.menu-font .fixed,
+.menu-font .panel-font {
   font-family: var(--font-jakarta), Arial, Helvetica, sans-serif;
 }
 
@@ -179,23 +227,29 @@ body:has(.public-menu),
   letter-spacing: -0.035em;
 }
 
-h2 {
-  font-size: 26px;
-}
+/* em @layer base pra que text-* do Tailwind consiga mudar o tamanho de um h2/h3 */
+@layer base {
+  h2 {
+    font-size: 26px;
+  }
 
-h3 {
-  font-size: 20px;
+  h3 {
+    font-size: 20px;
+  }
+
+  @media (width < 620px) {
+    h2 {
+      font-size: 22px;
+    }
+    h3 {
+      font-size: 18px;
+    }
+  }
 }
 
 @media (width < 620px) {
   .default-h1 {
     font-size: 26px;
-  }
-  h2 {
-    font-size: 22px;
-  }
-  h3 {
-    font-size: 18px;
   }
 }
 .color-gray {
@@ -335,15 +389,15 @@ body:has(.public-menu) .bg-translucid,
 }
 
 .custom-gray-button {
-  border: 1px solid var(--translucid);
+  border: 1px solid var(--brand-line);
   cursor: pointer;
   padding-inline: 16px;
   padding-block: 8px;
   border-radius: 999px;
-  background-color: var(--low-gray);
+  background-color: transparent;
   transition: 0.3s;
   &:hover {
-    opacity: 0.8;
+    background-color: var(--translucid);
   }
   &.has-icon {
     display: flex;
@@ -544,13 +598,13 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 
 @keyframes pulseAnim {
   0% {
-    box-shadow: 0 0 0 0 rgba(212, 32, 32, 0.8);
+    box-shadow: 0 0 0 0 rgba(44, 100, 165, 0.8);
   }
   70% {
-    box-shadow: 0 0 0 10px rgba(212, 32, 32, 0.3);
+    box-shadow: 0 0 0 10px rgba(44, 100, 165, 0.3);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(212, 32, 32, 0.8);
+    box-shadow: 0 0 0 0 rgba(44, 100, 165, 0.8);
   }
 }
 

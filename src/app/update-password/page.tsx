@@ -108,7 +108,7 @@ export default function UpdatePasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-bite text-white font-semibold rounded-full hover:opacity-90 transition"
+              className="w-full py-3 bg-verde text-white font-semibold rounded-full hover:opacity-90 transition"
             >
               {loading ? "Salvando..." : "Salvar nova senha"}
             </button>

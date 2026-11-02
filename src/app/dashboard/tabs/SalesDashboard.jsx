@@ -1,18 +1,19 @@
 "use client";
 
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { FaChevronLeft, FaSyncAlt, FaDownload } from "react-icons/fa";
+import { FaChevronLeft, FaSyncAlt, FaDownload, FaClock } from "react-icons/fa";
 import { Line } from "react-chartjs-2";
-import { Chart as ChartJS, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend } from "chart.js";
+import { Chart as ChartJS, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, Filler } from "chart.js";
 import useMenu from "@/hooks/useMenu";
 import useOwnerRole from "@/hooks/useOwnerRole";
+import useChartColors from "@/hooks/useChartColors";
 import { formatCurrency, getCurrencySymbol } from "@/lib/formatCurrency";
 import { supabase } from "@/lib/supabaseClient";
 import Loading from "@/components/Loading";
 import { useAlert } from "@/providers/AlertProvider";
 import SalesCharts from "./components/sales/SalesCharts";
 
-ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend);
+ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, Filler);
 
 /** -------------------------
  * Helpers (agregação dinâmica)
@@ -231,6 +232,7 @@ function fetchSalesPeriodData(menuId, start, end, prevStart, prevEnd, force) {
 const SalesDashboard = ({ setSelectedTab }) => {
   const { menu, loading } = useMenu();
   const customAlert = useAlert();
+  const colors = useChartColors();
 
   const ownerRole = useOwnerRole(menu?.owner_id);
 
@@ -480,58 +482,41 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
   const currencySymbol = getCurrencySymbol(menu?.currency);
 
+  // Um eixo só: faturamento na linha; a quantidade de vendas aparece no tooltip e no cartão acima
+  const lineColor = colors?.series[3]; // azul: o mesmo dos produtos mais vendidos
   const chartData = {
     labels: salesData.map((d) => d.label),
     datasets: [
       {
         label: `Vendas (${currencySymbol})`,
-        data: salesData.map((d) => d.total), // número (melhor)
-        borderColor: "#d42020",
-        backgroundColor: "rgba(212, 32, 32, 0.15)",
-        fill: true,
-        pointRadius: 2,
-        borderWidth: 1.4,
-        yAxisID: "y",
-      },
-      {
-        label: "Qtd. de vendas",
-        data: salesData.map((d) => d.count),
-        borderColor: "#8c7566",
-        backgroundColor: "rgba(140, 117, 102, 0.15)",
-
-        fill: false,
-        pointRadius: 2,
-        borderWidth: 1.2,
-        yAxisID: "y1",
+        data: salesData.map((d) => d.total),
+        borderColor: lineColor,
+        backgroundColor: lineColor ? `${lineColor}1f` : undefined,
+        fill: "origin",
+        tension: 0,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: lineColor,
+        pointHoverBorderColor: colors?.surface,
+        pointHoverBorderWidth: 2,
+        borderWidth: 2,
       },
     ],
   };
-
-  const maxCount = Math.max(0, ...salesData.map((d) => d.count));
 
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     interaction: { mode: "index", intersect: false },
     plugins: {
-      legend: {
-        display: true,
-        position: "top",
-        labels: {
-          usePointStyle: true,
-          pointStyle: "rectRounded",
-          boxWidth: 10,
-          boxHeight: 10,
-          padding: 16,
-        },
-      },
+      legend: { display: false },
       tooltip: {
+        displayColors: false,
         callbacks: {
-          label: (context) => {
-            if (context.datasetIndex === 0) {
-              return formatCurrency(context.parsed.y || 0, menu?.currency);
-            }
-            return `${context.parsed.y} vendas`;
+          label: (context) => formatCurrency(context.parsed.y || 0, menu?.currency),
+          afterLabel: (context) => {
+            const count = salesData[context.dataIndex]?.count ?? 0;
+            return `${count} ${count === 1 ? "venda" : "vendas"}`;
           },
         },
       },
@@ -539,24 +524,19 @@ const SalesDashboard = ({ setSelectedTab }) => {
     scales: {
       y: {
         beginAtZero: true,
-        position: "left",
-        ticks: { callback: (v) => `${currencySymbol} ${v}` },
-        grid: { color: "rgba(255,255,255,0.06)" },
-      },
-      y1: {
-        beginAtZero: true,
-        position: "right",
-        grid: { drawOnChartArea: false },
-        ticks: { callback: (v) => `${v}x` },
-        suggestedMax: maxCount ? maxCount * 2 : 5,
+        ticks: { callback: (v) => `${currencySymbol} ${v}`, color: colors?.ink },
+        grid: { color: colors?.grid },
+        border: { display: false },
       },
       x: {
         ticks: {
+          color: colors?.ink,
           maxRotation: 0,
           autoSkip: true,
           maxTicksLimit: granularity === "day" ? 10 : granularity === "week" ? 12 : 8,
         },
         grid: { display: false },
+        border: { display: false },
       },
     },
   };
@@ -580,7 +560,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
     if (pct === null) return <span className="text-xs color-gray mt-1">— vs período anterior</span>;
     const isPositive = pct > 0;
     const isZero = pct === 0;
-    const color = isZero ? "color-gray" : isPositive ? "text-green-500" : "text-red-500";
+    const color = isZero ? "color-gray" : isPositive ? "text-st-done" : "text-brand-red";
     const arrow = isZero ? "" : isPositive ? "↑" : "↓";
     return (
       <span className={`text-xs ${color} mt-1`}>
@@ -615,7 +595,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
             <button
               type="button"
-              className="p-2 rounded-lg hover:bg-white/5 transition opacity-90 hover:opacity-100"
+              className="p-2 rounded-lg hover:bg-[var(--translucid)] transition opacity-90 hover:opacity-100"
               onClick={() => fetchSalesInPeriod(true)}
               aria-label="Atualizar"
             >
@@ -625,7 +605,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
           <button
             type="button"
-            className="p-2 rounded-lg flex items-center gap-2 bg-[var(--low-gray)] border border-[var(--translucid)] hover:bg-white/5 transition opacity-90 hover:opacity-100 text-sm"
+            className="p-2 rounded-lg flex items-center gap-2 bg-translucid border border-[var(--translucid)] hover:bg-[var(--translucid)] transition opacity-90 hover:opacity-100 text-sm"
             onClick={handleExportCSV}
             aria-label="Exportar CSV"
             title="Exportar CSV"
@@ -693,7 +673,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
             </div>
 
             <button
-              className="cursor-pointer py-2 px-3 bg-bite hover:opacity-90 text-white rounded-full transition w-full"
+              className="cursor-pointer py-2 px-3 bg-verde hover:opacity-90 text-white rounded-full transition w-full"
               onClick={() => {
                 // validação de limite já acontece no fetch, mas aqui dá um “feedback” antes
                 setStartDate(pendingStartDate);
@@ -711,13 +691,13 @@ const SalesDashboard = ({ setSelectedTab }) => {
         <div className="grid gap-4 sm:grid-cols-3 mb-4">
           <div className="bg-translucid border border-translucid rounded-xl p-4 flex flex-col">
             <p className="text-sm color-gray">Total no período</p>
-            <p className="text-brand-red text-2xl font-bold mt-1">{formatCurrency(totalPeriod, menu?.currency)}</p>
+            <p className="text-2xl font-bold mt-1">{formatCurrency(totalPeriod, menu?.currency)}</p>
             {renderVariation(calcVariation(totalPeriod, prevTotalPeriod))}
           </div>
 
           <div className="bg-translucid border border-translucid rounded-xl p-4 flex flex-col">
             <p className="text-sm color-gray">Quantidade de vendas</p>
-            <p className="text-green-500 text-2xl font-bold mt-1">{totalSalesCount}</p>
+            <p className="text-2xl font-bold mt-1">{totalSalesCount}</p>
             {renderVariation(calcVariation(totalSalesCount, prevTotalSalesCount))}
           </div>
 
@@ -731,12 +711,14 @@ const SalesDashboard = ({ setSelectedTab }) => {
         {/* Horário de pico */}
         {peakHour && (
           <div className="bg-translucid border border-translucid rounded-xl p-4 mb-4 flex items-center gap-3">
-            <span className="text-xl">⏰</span>
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-info/10 text-info">
+              <FaClock />
+            </span>
             <div>
               <p className="text-sm color-gray">Horário de pico no período</p>
               <p className="font-semibold">
                 Entre {pad2(peakHour.hour)}h e {pad2(peakHour.hour + 1)}h —{" "}
-                <span className="text-brand-red">{peakHour.count} pedidos</span> nesse horário
+                {peakHour.count} pedidos nesse horário
               </p>
             </div>
           </div>
@@ -744,6 +726,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
         {/* Gráfico */}
         <div className="bg-translucid border border-translucid rounded-xl p-4 overflow-x-auto">
+          <h3 className="text-base font-semibold mb-3">Faturamento {granularityLabel}</h3>
           {salesData.length === 0 ? (
             <p className="text-center color-gray">Nenhuma venda nesse período.</p>
           ) : (

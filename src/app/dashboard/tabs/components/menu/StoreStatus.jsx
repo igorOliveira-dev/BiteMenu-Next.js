@@ -103,7 +103,7 @@ export default function StoreStatus({ setSelectedTab, hours, timezone }) {
         onClick={() => setModalOpen(true)}
         className="cursor-pointer absolute top-3 left-3 z-10 flex items-center gap-3 rounded-2xl bg-black/65 px-4 py-2 text-left text-white backdrop-blur-sm hover:bg-black/80 transition"
       >
-        <span className={`h-3 w-3 shrink-0 rounded-full ${open ? "bg-green-500" : "bg-red-500"}`} />
+        <span className={`h-3 w-3 shrink-0 rounded-full ${open ? "bg-green-500" : "bg-bite"}`} />
         <span className="leading-tight">
           <span className="block text-sm font-semibold">{open ? "Loja aberta" : "Loja fechada"}</span>
           <span className="block text-xs opacity-80">{detail}</span>
@@ -124,14 +124,14 @@ export default function StoreStatus({ setSelectedTab, hours, timezone }) {
                 <button
                   type="button"
                   onClick={() => handleToggleStoreOpen()}
-                  className="cursor-pointer p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border-2 border-[var(--translucid)] transition"
+                  className="cursor-pointer p-2 bg-verde text-white font-semibold rounded-full hover:opacity-90 transition"
                 >
                   Manter numeração
                 </button>
                 <button
                   type="button"
                   onClick={() => handleToggleStoreOpen(true)}
-                  className="cursor-pointer p-2 font-semibold rounded-lg hover:bg-[var(--translucid)] border-2 border-[var(--translucid)] transition"
+                  className="cursor-pointer p-2 font-semibold rounded-full hover:bg-[var(--translucid)] border border-[var(--translucid)] transition"
                 >
                   Resetar numeração
                 </button>
@@ -139,7 +139,7 @@ export default function StoreStatus({ setSelectedTab, hours, timezone }) {
             </>
           ) : (
             <>
-              <p className={`mb-4 text-sm font-semibold ${open ? "text-green-500" : "text-red-500"}`}>
+              <p className={`mb-4 text-sm font-semibold ${open ? "text-green-500" : "text-brand-red"}`}>
                 {open ? "Loja aberta" : "Loja fechada"}
                 <span className="font-normal color-gray"> · {manualControl ? "controle manual" : "pelo horário"}</span>
               </p>
@@ -165,7 +165,7 @@ export default function StoreStatus({ setSelectedTab, hours, timezone }) {
                 onClick={() => (storeOpen ? setAskReset(true) : handleToggleStoreOpen())}
                 disabled={!manualControl}
                 className={`w-full cursor-pointer rounded-xl px-3 py-2 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-40 ${
-                  storeOpen ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"
+                  storeOpen ? "bg-bite hover:opacity-90" : "bg-verde hover:opacity-90"
                 }`}
               >
                 {storeOpen ? "Fechar loja" : "Abrir loja"}
@@ -176,7 +176,7 @@ export default function StoreStatus({ setSelectedTab, hours, timezone }) {
               <button
                 type="button"
                 onClick={goToHours}
-                className="w-full cursor-pointer flex items-center justify-center gap-2 p-2 font-semibold rounded-lg hover:bg-[var(--translucid)] border-2 border-[var(--translucid)] transition"
+                className="w-full cursor-pointer flex items-center justify-center gap-2 p-2 font-semibold rounded-full hover:bg-[var(--translucid)] border border-[var(--translucid)] transition"
               >
                 <FaClock />
                 Configurar horários

@@ -11,7 +11,7 @@ export default function LegacyPlanNotice({ info, showPlansLink = true, className
   if (!info) return null;
 
   return (
-    <div className={`p-4 rounded-2xl border-2 border-amber-500/40 bg-amber-500/10 text-sm ${className}`}>
+    <div className={`p-4 rounded-2xl border border-st-wait/40 bg-st-wait/10 text-sm ${className}`}>
       <p className="font-semibold mb-1">Trocamos nosso sistema de pagamentos.</p>
       <p>
         Seu plano <span className="capitalize font-semibold">{info.plan}</span> continua funcionando normalmente, sem
@@ -42,14 +42,14 @@ export function LegacyPlanEndingBanner() {
   return (
     <a
       href="/dashboard/pricing"
-      className="max-w-[100%] flex flex-col xs:flex-row items-center gap-3 px-2 sm:px-4 py-2 my-2 max-w-3xl bg-amber-500/10 border-2 border-amber-500/40 rounded-2xl hover:opacity-90 transition"
+      className="max-w-[100%] flex flex-col xs:flex-row items-center gap-3 px-2 sm:px-4 py-2 my-2 max-w-3xl bg-st-wait/10 border border-st-wait/40 rounded-2xl hover:opacity-90 transition"
     >
-      <FaExclamationTriangle className="text-lg shrink-0 hidden xs:block text-amber-500" />
+      <FaExclamationTriangle className="text-lg shrink-0 hidden xs:block text-st-wait" />
       <span className="text-xs flex-1">
         Seu plano <span className="capitalize font-semibold">{info.plan}</span> vale até {info.lastDayLabel}
         {info.daysLeft === 1 ? " (hoje)" : ""}. Assine pelo novo sistema de pagamentos para não perder os recursos.
       </span>
-      <span className="w-full xs:w-auto text-center text-xs px-4 py-1.5 rounded-lg border-2 border-[var(--translucid)] bg-translucid hover:opacity-80 text-sm shrink-0">
+      <span className="w-full xs:w-auto text-center text-xs px-4 py-1.5 rounded-lg border border-[var(--translucid)] bg-translucid hover:opacity-80 text-sm shrink-0">
         Ver planos
       </span>
     </a>

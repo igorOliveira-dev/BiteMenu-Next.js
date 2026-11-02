@@ -94,10 +94,10 @@ export default function DownloadPage() {
         </div>
       </header>
 
-      <div className="max-w-md w-full text-center space-y-6 bg-low-gray p-8 rounded-lg">
+      <div className="max-w-md w-full text-center space-y-6 bg-brand-surface border border-brand-line p-8 rounded-2xl">
         <h1 className="default-h1 font-bold">Instale o Bite Menu</h1>
 
-        {status === "checking" && <p className="text-zinc-500 animate-pulse">Verificando compatibilidade...</p>}
+        {status === "checking" && <p className="color-gray animate-pulse">Verificando compatibilidade...</p>}
 
         {status === "ready" && (
           <>
@@ -120,8 +120,8 @@ export default function DownloadPage() {
 
         {status === "installed" && (
           <div className="space-y-3">
-            <p className="text-green-400 font-semibold">Instalação concluída.</p>
-            <p className="text-zinc-400 text-sm">Abra o Bite Menu pelo ícone na sua tela inicial para acessar o painel.</p>
+            <p className="text-st-done font-semibold">Instalação concluída.</p>
+            <p className="color-gray text-sm">Abra o Bite Menu pelo ícone na sua tela inicial para acessar o painel.</p>
           </div>
         )}
 

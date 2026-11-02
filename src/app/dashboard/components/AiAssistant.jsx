@@ -264,7 +264,7 @@ function UpsellMessage() {
       </p>
       <a
         href="/dashboard/pricing"
-        className="mt-1 flex items-center justify-center gap-2 rounded-full bg-bite px-4 py-2.5 font-semibold text-white no-underline transition hover:bg-red-700"
+        className="mt-1 flex items-center justify-center gap-2 rounded-full bg-bite px-4 py-2.5 font-semibold text-white no-underline transition hover:opacity-90"
       >
         <FaMagic /> Quero o plano Business
       </a>
@@ -656,9 +656,10 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Abrir Bite Menu IA"
-          className={`fixed right-4 z-100 ${position} flex h-12 items-center gap-2 rounded-full bg-bite px-4 font-semibold text-white shadow-lg cursor-pointer transition hover:bg-red-700`}
+          className={`fixed right-4 z-100 ${position} flex h-12 items-center gap-2 rounded-full border border-brand-line bg-brand-surface px-4 font-semibold shadow-[0_4px_16px_var(--shadow)] cursor-pointer transition hover:opacity-90`}
         >
-          <FaMagic /> <span className="hidden xs:inline">Bite Menu IA</span>
+          {/* mesmo desenho do botão do Bite Menu IA na aba Cardápio */}
+          <FaMagic className="text-lg text-brasa" /> <span className="hidden xs:inline">Bite Menu IA</span>
         </button>
       )}
 
@@ -673,11 +674,11 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
             style={{ animation: "ai-pop .25s ease-out" }}
           >
             {/* faixa vermelha fina no topo */}
-            <div className="h-1 bg-bite" />
+            <div className="h-1 bg-brand-gradient" />
             <div className="flex min-h-0 flex-1 flex-col">
               <div className="relative flex items-center justify-between px-5 pt-4 pb-4">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/10 text-red-500">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brasa/10 text-brasa">
                     <FaMagic />
                   </span>
                   <div>
@@ -702,7 +703,7 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
                   </div>
                   <div className="h-1.5 overflow-hidden rounded-full bg-translucid">
                     <div
-                      className={`h-full rounded-full transition-[width] duration-500 ${limitReached ? "bg-red-700" : "bg-red-500"}`}
+                      className={`h-full rounded-full transition-[width] duration-500 ${limitReached ? "bg-bite" : "bg-info"}`}
                       style={{ width: `${usage.percent}%` }}
                     />
                   </div>
@@ -718,14 +719,14 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
                 style={{ animation: "ai-rise .2s ease-out" }}
               >
                 {m.role === "assistant" && (
-                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-500/10 text-[11px] text-red-500">
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brasa/10 text-[11px] text-brasa">
                     <FaMagic />
                   </span>
                 )}
                 <div
                   className={`max-w-[85%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2.5 text-sm ${
                     m.role === "user"
-                      ? "max-h-60 overflow-y-auto rounded-br-md bg-bite text-white"
+                      ? "max-h-60 overflow-y-auto rounded-br-md bg-brand-select text-white"
                       : "rounded-tl-md bg-translucid"
                   }`}
                 >
@@ -739,7 +740,7 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
                         type="button"
                         onClick={() => setStatus(i, "canceled")}
                         disabled={applying}
-                        className="cursor-pointer rounded bg-[var(--translucid)] px-3 py-1.5 text-xs hover:opacity-80"
+                        className="cursor-pointer rounded-full bg-[var(--translucid)] px-3 py-1.5 text-xs hover:opacity-80"
                       >
                         Cancelar
                       </button>
@@ -747,7 +748,7 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
                         <button
                           type="button"
                           onClick={() => openPreview(i)}
-                          className="cursor-pointer flex items-center gap-1.5 rounded bg-green-600 px-3 py-1.5 text-xs text-white hover:opacity-80"
+                          className="cursor-pointer flex items-center gap-1.5 rounded-full bg-azul px-3 py-1.5 text-xs text-white hover:opacity-90"
                         >
                           <FaEye /> Ver preview
                         </button>
@@ -756,17 +757,17 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
                           type="button"
                           onClick={() => confirm(i)}
                           disabled={applying}
-                          className="cursor-pointer rounded bg-green-600 px-3 py-1.5 text-xs text-white hover:opacity-80"
+                          className="cursor-pointer rounded-full bg-verde px-3 py-1.5 text-xs text-white hover:opacity-90"
                         >
                           {applying ? "Salvando..." : "Confirmar"}
                         </button>
                       )}
                     </div>
                   )}
-                  {m.status === "applied" && <p className="mt-2 text-xs text-green-500">✓ Alterações salvas</p>}
+                  {m.status === "applied" && <p className="mt-2 text-xs text-st-done">✓ Alterações salvas</p>}
                   {m.status === "canceled" && <p className="mt-2 text-xs opacity-60">Cancelado</p>}
                   {m.status === "failed" && (
-                    <p className="mt-2 text-xs text-yellow-500">Não foi salvo por completo. Confira o cardápio e tente de novo.</p>
+                    <p className="mt-2 text-xs text-st-wait">Não foi salvo por completo. Confira o cardápio e tente de novo.</p>
                   )}
                 </div>
               </div>
@@ -780,7 +781,7 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
                     key={s}
                     type="button"
                     onClick={() => setInput(s)}
-                    className="cursor-pointer rounded-full border border-[var(--translucid)] px-3 py-1.5 text-xs transition hover:border-red-500/50 hover:text-red-500"
+                    className="cursor-pointer rounded-full border border-[var(--translucid)] px-3 py-1.5 text-xs transition hover:border-brand-select/50 hover:text-brand-eyebrow"
                   >
                     {s}
                   </button>
@@ -794,7 +795,7 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
                   {[0, 0.15, 0.3].map((d) => (
                     <span
                       key={d}
-                      className="h-2 w-2 rounded-full bg-red-500"
+                      className="h-2 w-2 rounded-full bg-brasa"
                       style={{ animation: `ai-dot 1s ${d}s ease-in-out infinite` }}
                     />
                   ))}
@@ -821,13 +822,13 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
                     : "Peça uma alteração ou cole seu cardápio..."
               }
               disabled={sending || hasPending || limitReached}
-              className="max-h-36 min-h-11 flex-1 resize-none rounded-2xl border border-[var(--translucid)] bg-translucid px-4 py-2.5 text-sm outline-none transition focus:border-red-500/60"
+              className="max-h-36 min-h-11 flex-1 resize-none rounded-2xl border border-[var(--translucid)] bg-translucid px-4 py-2.5 text-sm outline-none transition focus:border-brand-select/60"
             />
             <button
               type="submit"
               disabled={sending || hasPending || limitReached || !input.trim()}
               aria-label="Enviar"
-              className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl bg-bite text-white transition hover:bg-red-700 disabled:opacity-40"
+              className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl bg-bite text-white transition hover:opacity-90 disabled:opacity-40"
             >
               <FaPaperPlane />
             </button>
@@ -866,7 +867,7 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
               type="button"
               onClick={() => setPreviewIndex(null)}
               disabled={applying}
-              className="cursor-pointer rounded-lg bg-white/15 px-5 py-2 text-white hover:opacity-80"
+              className="cursor-pointer rounded-full bg-white/15 px-5 py-2 text-white hover:opacity-80"
             >
               Voltar
             </button>
@@ -874,7 +875,7 @@ export default function AiAssistant({ localState, onApply, raised = false, showB
               type="button"
               onClick={() => confirm(previewIndex)}
               disabled={applying}
-              className="cursor-pointer rounded-lg bg-green-600 px-5 py-2 font-semibold text-white hover:opacity-80"
+              className="cursor-pointer rounded-full bg-verde px-5 py-2 font-semibold text-white hover:opacity-90"
             >
               {applying ? "Salvando..." : "Confirmar e salvar"}
             </button>
