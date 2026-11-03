@@ -68,6 +68,8 @@ Aplicação no site e no painel do design definido no alinhamento visual da Duda
 - `brand-select` é `#7b1730` no claro e `#a3243f` no escuro, onde o granada puro some. Em texto pequeno, use
   `text-brand-eyebrow`.
 - Brasa entra em ícones e texto grande; em texto pequeno sobre creme o contraste fica abaixo de 4,5:1.
+- No `/admin`, a borda do cartão de cada cardápio mostra o plano do dono: plus `border-2 border-verde`, pro
+  `border-4 border-azul`, business `border-6 border-brasa`. Admin continua vermelho, free sem destaque.
 
 ### Cores de estado (fora da identidade, de propósito)
 

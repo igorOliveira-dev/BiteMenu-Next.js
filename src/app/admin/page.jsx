@@ -474,11 +474,11 @@ const Admin = () => {
                 menu.owner_role === "admin"
                   ? "border-red-500"
                   : menu.owner_role === "plus"
-                    ? "border-bite"
+                    ? "border-2 border-verde"
                     : menu.owner_role === "pro"
-                      ? "border-4 border-bite"
+                      ? "border-4 border-azul"
                       : menu.owner_role === "business"
-                        ? "border-4 border-amber-500"
+                        ? "border-6 border-brasa"
                         : "border-translucid"
               } rounded-lg flex flex-col gap-2`}
             >
