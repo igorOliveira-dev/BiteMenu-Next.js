@@ -17,10 +17,21 @@ create table if not exists nfse (
 
 alter table nfse enable row level security;
 
--- Agendamento diário (11h de Brasília). Só ative depois de testar em homologação.
+-- Agendamento diário: 10h30 de Brasília emite as notas; 11h a rodada seguinte vê as autorizadas
+-- e manda os e-mails (o refresh roda no começo de toda chamada "send"). Mesmo nome = atualiza o job.
 -- Troque <CRON_SECRET> pelo valor do Coolify antes de rodar.
 -- select cron.schedule(
 --   'nfse',
+--   '30 13 * * *',
+--   $$ select net.http_post(
+--        url := 'https://www.bitemenu.com.br/api/cron/nfse',
+--        headers := '{"Content-Type":"application/json","Authorization":"Bearer <CRON_SECRET>"}'::jsonb,
+--        body := '{"mode":"send"}'::jsonb,
+--        timeout_milliseconds := 300000
+--      ) $$
+-- );
+-- select cron.schedule(
+--   'nfse-email',
 --   '0 14 * * *',
 --   $$ select net.http_post(
 --        url := 'https://www.bitemenu.com.br/api/cron/nfse',

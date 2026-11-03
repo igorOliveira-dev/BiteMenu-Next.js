@@ -274,7 +274,7 @@ function UpsellMessage() {
 }
 
 export default function AiAssistant({ localState, onApply, raised = false, showButton = true, allowed = false }) {
-  const position = raised ? "bottom-52 lg:bottom-44" : "bottom-16 lg:bottom-6";
+  const position = raised ? "bottom-56 lg:bottom-44" : "bottom-20 lg:bottom-6";
   const { menu } = useMenu();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([WELCOME]);
