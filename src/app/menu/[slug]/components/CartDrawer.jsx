@@ -2,7 +2,14 @@
 "use client";
 import React, { Suspense, useEffect, useState, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { FaChevronLeft, FaCopy, FaTimes, FaWhatsapp, FaSpinner, FaReceipt } from "react-icons/fa";
+import {
+  FaChevronLeft,
+  FaCopy,
+  FaTimes,
+  FaWhatsapp,
+  FaSpinner,
+  FaReceipt,
+} from "react-icons/fa";
 import MyOrdersModal from "./MyOrdersModal";
 import { useCartContext } from "@/contexts/CartContext";
 import { useConfirm } from "@/providers/ConfirmProvider";
@@ -20,8 +27,16 @@ import { STOCK_ROLES, stockPayload } from "@/lib/stock";
 import { saveReceipt } from "@/lib/orderReceipts";
 import { renderWhatsappMessage } from "@/lib/whatsappMessage";
 import { getContrastTextColor } from "@/utils/color";
-import AddressFields, { EMPTY_ADDRESS, formatAddress } from "@/components/AddressFields";
-import { currentPosition, distanceKm, feeForDistance, geocodeAddress } from "@/lib/deliveryRadius";
+import AddressFields, {
+  EMPTY_ADDRESS,
+  formatAddress,
+} from "@/components/AddressFields";
+import {
+  currentPosition,
+  distanceKm,
+  feeForDistance,
+  geocodeAddress,
+} from "@/lib/deliveryRadius";
 
 // useSearchParams (mesa/balcão) exige Suspense na página cacheada por ISR;
 // sem isso o /menu/[slug] estático quebra com erro 500
@@ -132,11 +147,21 @@ function CartDrawerContent({
   }, [menu?.categories]);
 
   // mova esta linha para ANTES do useMemo do discountAmount
-  const hasPlusPermissions = ["plus", "pro", "business", "admin", "designer"].includes(ownerRole ?? "free");
+  const hasPlusPermissions = [
+    "plus",
+    "pro",
+    "business",
+    "admin",
+    "designer",
+  ].includes(ownerRole ?? "free");
 
   const { totalDiscount: comboDiscount } = useMemo(() => {
     if (!hasPlusPermissions) return { totalDiscount: 0 };
-    return calculateComboDiscount({ items: currentItems, combos, categoryByItemId });
+    return calculateComboDiscount({
+      items: currentItems,
+      combos,
+      categoryByItemId,
+    });
   }, [currentItems, combos, categoryByItemId, hasPlusPermissions]);
 
   const establishmentPhone = ownerPhone ?? null;
@@ -147,7 +172,9 @@ function CartDrawerContent({
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(() => (typeof window === "undefined" ? false : window.innerWidth >= 640));
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window === "undefined" ? false : window.innerWidth >= 640,
+  );
 
   const timeoutRef = useRef(null);
   const mountTimeoutRef = useRef(null);
@@ -163,7 +190,8 @@ function CartDrawerContent({
   const [selectedService, setSelectedService] = useState(null);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [costumerName, setCostumerName] = useState("");
-  const [costumerAddressParts, setCostumerAddressParts] = useState(EMPTY_ADDRESS);
+  const [costumerAddressParts, setCostumerAddressParts] =
+    useState(EMPTY_ADDRESS);
   const [costumerPhone, setCostumerPhone] = useState("");
 
   const [costumerNeighborhood, setCostumerNeighborhood] = useState("");
@@ -174,7 +202,9 @@ function CartDrawerContent({
   // do pedido usam os mesmos valores sem mudanças.
   // ponytail: valida só no navegador (o total do pedido já é calculado aqui);
   // se precisar de blindagem, recalcular o total no servidor.
-  const canUseCoupon = ["pro", "business", "admin", "designer"].includes(ownerRole ?? "free");
+  const canUseCoupon = ["pro", "business", "admin", "designer"].includes(
+    ownerRole ?? "free",
+  );
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState(null);
 
@@ -192,13 +222,18 @@ function CartDrawerContent({
   });
   const discountAmount = comboDiscount + couponResult.discount;
   const deliveryFeeValue = couponResult.freeShipping ? 0 : rawDeliveryFee;
-  const appliedCouponCode = couponResult.discount > 0 || couponResult.freeShipping ? coupon.code : null;
+  const appliedCouponCode =
+    couponResult.discount > 0 || couponResult.freeShipping ? coupon.code : null;
 
   const handleApplyCoupon = async () => {
     const code = couponInput.trim();
     if (!code) return;
-    const { data, error } = await supabase.rpc("get_coupon", { p_menu_id: menu.id, p_code: code });
-    if (error || !data?.[0]) return customAlert("Cupom inválido ou expirado.", "error");
+    const { data, error } = await supabase.rpc("get_coupon", {
+      p_menu_id: menu.id,
+      p_code: code,
+    });
+    if (error || !data?.[0])
+      return customAlert("Cupom inválido ou expirado.", "error");
     setCoupon(data[0]);
   };
 
@@ -207,7 +242,10 @@ function CartDrawerContent({
   // Erro de rede/RPC não bloqueia a venda.
   const consumeCoupon = async () => {
     if (!appliedCouponCode) return true;
-    const { data, error } = await supabase.rpc("use_coupon", { p_menu_id: menu.id, p_code: appliedCouponCode });
+    const { data, error } = await supabase.rpc("use_coupon", {
+      p_menu_id: menu.id,
+      p_code: appliedCouponCode,
+    });
     if (error) {
       console.error("use_coupon error:", error);
       return true;
@@ -215,7 +253,10 @@ function CartDrawerContent({
     if (data) return true;
     setCoupon(null);
     setCouponInput("");
-    customAlert("Este cupom atingiu o limite de usos ou expirou. Confira o novo total.", "error");
+    customAlert(
+      "Este cupom atingiu o limite de usos ou expirou. Confira o novo total.",
+      "error",
+    );
     return false;
   };
 
@@ -240,7 +281,8 @@ function CartDrawerContent({
   };
   // ────────────────────────────────────────────────────────────────────────
 
-  const [showWhatsappButtonOnPixStage, setShowWhatsappButtonOnPixStage] = useState(false);
+  const [showWhatsappButtonOnPixStage, setShowWhatsappButtonOnPixStage] =
+    useState(false);
 
   const [finalValue, setFinalValue] = useState(0);
 
@@ -252,9 +294,14 @@ function CartDrawerContent({
 
   // delivery_zones é lazy-loaded ao abrir o carrinho (não vem mais na query principal)
   const [deliveryZones, setDeliveryZones] = useState([]);
-  const filteredZones = deliveryZones.filter((zone) => zone.name.toLowerCase().includes(search.toLowerCase()));
+  const filteredZones = deliveryZones.filter((zone) =>
+    zone.name.toLowerCase().includes(search.toLowerCase()),
+  );
 
-  const canUseZones = menu?.delivery_fee_mode === "zones" && hasPlusPermissions && deliveryZones.length > 0;
+  const canUseZones =
+    menu?.delivery_fee_mode === "zones" &&
+    hasPlusPermissions &&
+    deliveryZones.length > 0;
 
   // taxa por raio: delivery_radius também é lazy-loaded; coordenadas do cliente vêm do endereço ou do GPS
   const [deliveryRadius, setDeliveryRadius] = useState(null);
@@ -267,34 +314,47 @@ function CartDrawerContent({
     deliveryRadius?.tiers?.length > 0;
   const customerDistance =
     canUseRadius && customerCoords
-      ? distanceKm({ lat: deliveryRadius.lat, lng: deliveryRadius.lng }, customerCoords)
+      ? distanceKm(
+          { lat: deliveryRadius.lat, lng: deliveryRadius.lng },
+          customerCoords,
+        )
       : null;
-  const radiusFee = customerDistance != null ? feeForDistance(deliveryRadius.tiers, customerDistance) : null;
+  const radiusFee =
+    customerDistance != null
+      ? feeForDistance(deliveryRadius.tiers, customerDistance)
+      : null;
 
   const locateCustomer = async (fromAddress) => {
     setRadiusStatus("loading");
-    const pos = fromAddress ? await geocodeAddress(costumerAddressParts) : await currentPosition();
+    const pos = fromAddress
+      ? await geocodeAddress(costumerAddressParts)
+      : await currentPosition();
     setRadiusStatus(pos ? "" : fromAddress ? "notFound" : "denied");
     setCustomerCoords(pos);
   };
   // com bairros de entrega, o bairro vem da zona escolhida
   const costumerAddress = formatAddress(
-    canUseZones ? { ...costumerAddressParts, neighborhood: costumerNeighborhood } : costumerAddressParts,
+    canUseZones
+      ? { ...costumerAddressParts, neighborhood: costumerNeighborhood }
+      : costumerAddressParts,
   );
 
   const serviceOptions = [
     {
       id: "delivery",
-      label: !canUseZones && !canUseRadius
-        ? `Entrega ${normalizeMoney(menu.delivery_fee) > 0 ? `(${formatCurrency(normalizeMoney(menu.delivery_fee), menu?.currency)})` : ""}`
-        : "Entrega",
+      label:
+        !canUseZones && !canUseRadius
+          ? `Entrega ${normalizeMoney(menu.delivery_fee) > 0 ? `(${formatCurrency(normalizeMoney(menu.delivery_fee), menu?.currency)})` : ""}`
+          : "Entrega",
     },
     { id: "pickup", label: "Retirada" },
     { id: "dinein", label: "Comer no local" },
     { id: "faceToFace", label: "Atendimento presencial" },
   ];
 
-  const availableServiceOptions = serviceOptions.filter((option) => (menu?.services || []).includes(option.id));
+  const availableServiceOptions = serviceOptions.filter((option) =>
+    (menu?.services || []).includes(option.id),
+  );
 
   const paymentOptions = [
     { id: "cash", label: "Dinheiro" },
@@ -303,7 +363,9 @@ function CartDrawerContent({
     { id: "pix", label: "PIX" },
   ];
 
-  const availablePaymentsOptions = paymentOptions.filter((option) => (menu?.payments || []).includes(option.id));
+  const availablePaymentsOptions = paymentOptions.filter((option) =>
+    (menu?.payments || []).includes(option.id),
+  );
 
   function normalizeMoney(value) {
     const num = Number(String(value ?? "").replace(",", "."));
@@ -330,14 +392,22 @@ function CartDrawerContent({
       .filter((zone) => zone.name.length > 0);
   }
 
-  function getSelectedDeliveryFee(menu, neighborhood, hasPlusPermissions, zones) {
+  function getSelectedDeliveryFee(
+    menu,
+    neighborhood,
+    hasPlusPermissions,
+    zones,
+  ) {
     if (!menu) return 0;
 
-    const canUseZones = menu.delivery_fee_mode === "zones" && hasPlusPermissions;
+    const canUseZones =
+      menu.delivery_fee_mode === "zones" && hasPlusPermissions;
 
     if (canUseZones) {
       const normalizedNeighborhood = normalizeText(neighborhood);
-      const matchedZone = (zones || []).find((zone) => normalizeText(zone.name) === normalizedNeighborhood);
+      const matchedZone = (zones || []).find(
+        (zone) => normalizeText(zone.name) === normalizedNeighborhood,
+      );
       return matchedZone ? normalizeMoney(matchedZone.shipping_fee) : 0;
     }
 
@@ -361,10 +431,22 @@ function CartDrawerContent({
           setDeliveryZones(normalizeDeliveryZones(data.delivery_zones));
         }
       });
-  }, [open, menu?.id, menu?.delivery_fee_mode, hasPlusPermissions, deliveryZones.length]);
+  }, [
+    open,
+    menu?.id,
+    menu?.delivery_fee_mode,
+    hasPlusPermissions,
+    deliveryZones.length,
+  ]);
 
   useEffect(() => {
-    if (!open || menu?.delivery_fee_mode !== "radius" || !hasPlusPermissions || deliveryRadius) return;
+    if (
+      !open ||
+      menu?.delivery_fee_mode !== "radius" ||
+      !hasPlusPermissions ||
+      deliveryRadius
+    )
+      return;
 
     supabase
       .from("menus")
@@ -374,7 +456,13 @@ function CartDrawerContent({
       .then(({ data }) => {
         if (data?.delivery_radius) setDeliveryRadius(data.delivery_radius);
       });
-  }, [open, menu?.id, menu?.delivery_fee_mode, hasPlusPermissions, deliveryRadius]);
+  }, [
+    open,
+    menu?.id,
+    menu?.delivery_fee_mode,
+    hasPlusPermissions,
+    deliveryRadius,
+  ]);
 
   // endereço mudou: a distância calculada não vale mais
   useEffect(() => {
@@ -401,7 +489,11 @@ function CartDrawerContent({
 
   // limpar bairro se o estabelecimento não receber mais bairro
   useEffect(() => {
-    if (!(menu?.delivery_fee_mode === "zones" && hasPlusPermissions && deliveryZones.length > 0)) {
+    if (!(
+      menu?.delivery_fee_mode === "zones" &&
+      hasPlusPermissions &&
+      deliveryZones.length > 0
+    )) {
       setCostumerNeighborhood("");
       setSearch("");
       setIsOpenDropdown(false);
@@ -423,7 +515,10 @@ function CartDrawerContent({
       setIsMounted(true);
       setIsVisible(false);
 
-      mountTimeoutRef.current = setTimeout(() => setIsVisible(true), MOUNT_DELAY);
+      mountTimeoutRef.current = setTimeout(
+        () => setIsVisible(true),
+        MOUNT_DELAY,
+      );
       return;
     }
 
@@ -487,11 +582,18 @@ function CartDrawerContent({
     try {
       const stored = localStorage.getItem("customerInfo");
       if (stored) {
-        const { name = "", phone = "", address = "", addressParts } = JSON.parse(stored);
+        const {
+          name = "",
+          phone = "",
+          address = "",
+          addressParts,
+        } = JSON.parse(stored);
         setCostumerName(name);
         setCostumerPhone(phone);
         // endereço salvo no formato antigo (texto livre) vira a rua, pro cliente completar
-        setCostumerAddressParts(addressParts ?? { ...EMPTY_ADDRESS, street: address });
+        setCostumerAddressParts(
+          addressParts ?? { ...EMPTY_ADDRESS, street: address },
+        );
         console.log("📥 LocalStorage carregado:", { name, phone, address });
       }
     } catch (error) {
@@ -508,13 +610,31 @@ function CartDrawerContent({
 
     const fee = canUseRadius
       ? (radiusFee ?? 0)
-      : getSelectedDeliveryFee(menu, costumerNeighborhood, hasPlusPermissions, deliveryZones);
+      : getSelectedDeliveryFee(
+          menu,
+          costumerNeighborhood,
+          hasPlusPermissions,
+          deliveryZones,
+        );
     setDeliveryFeeValue(fee);
-  }, [menu, selectedService, costumerNeighborhood, hasPlusPermissions, deliveryZones, canUseRadius, radiusFee]);
+  }, [
+    menu,
+    selectedService,
+    costumerNeighborhood,
+    hasPlusPermissions,
+    deliveryZones,
+    canUseRadius,
+    radiusFee,
+  ]);
 
   const drawerSubtotal = cart.totalPrice(menu?.id) || 0;
-  const drawerSubtotalAfterDiscount = Math.max(0, drawerSubtotal - discountAmount);
-  const drawerTotal = drawerSubtotalAfterDiscount + (selectedService === "delivery" ? deliveryFeeValue : 0);
+  const drawerSubtotalAfterDiscount = Math.max(
+    0,
+    drawerSubtotal - discountAmount,
+  );
+  const drawerTotal =
+    drawerSubtotalAfterDiscount +
+    (selectedService === "delivery" ? deliveryFeeValue : 0);
 
   // guardar no local storage
   const saveCustomerInfo = () => {
@@ -544,7 +664,8 @@ function CartDrawerContent({
     const currentY = e.touches[0].clientY;
     const deltaY = currentY - startYRef.current;
     if (deltaY > 0) {
-      const maxOffset = (panelRef.current?.clientHeight || window.innerHeight) * 0.9;
+      const maxOffset =
+        (panelRef.current?.clientHeight || window.innerHeight) * 0.9;
       setDragOffset(Math.min(deltaY, maxOffset));
     }
   };
@@ -574,7 +695,9 @@ function CartDrawerContent({
       : "translate-y-full";
 
   const backdropClasses = `absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
-    isVisible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+    isVisible
+      ? "opacity-100 pointer-events-auto"
+      : "opacity-0 pointer-events-none"
   }`;
 
   const panelStyle = {
@@ -584,7 +707,10 @@ function CartDrawerContent({
     ...(dragOffset > 0 && draggingRef.current
       ? { transform: `translateY(${dragOffset}px)`, transition: "none" }
       : dragOffset > 0
-        ? { transform: `translateY(0px)`, transition: `transform ${DURATION}ms ease-in-out` }
+        ? {
+            transform: `translateY(0px)`,
+            transition: `transform ${DURATION}ms ease-in-out`,
+          }
         : {}),
   };
 
@@ -628,7 +754,10 @@ function CartDrawerContent({
   }) {
     const itemsList = (items || [])
       .map((it) => {
-        const addons = it.additionals?.length > 0 ? `\n   + ${it.additionals.map((a) => a.name).join(", ")}` : "";
+        const addons =
+          it.additionals?.length > 0
+            ? `\n   + ${it.additionals.map((a) => a.name).join(", ")}`
+            : "";
         const note = it.note ? `\n   Obs: ${it.note}` : "";
         return `• ${it.qty}x ${it.name}${addons}${note}`;
       })
@@ -637,7 +766,9 @@ function CartDrawerContent({
     const isDelivery = selectedService === "delivery";
 
     // valor vazio = a linha da tag some da mensagem
-    const customTemplate = ["business", "admin", "designer"].includes(ownerRole) ? menu?.whatsapp_template : null;
+    const customTemplate = ["business", "admin", "designer"].includes(ownerRole)
+      ? menu?.whatsapp_template
+      : null;
     const message = renderWhatsappMessage(customTemplate, {
       estabelecimento: menu.title,
       itens: itemsList,
@@ -650,15 +781,20 @@ function CartDrawerContent({
       telefone: costumerPhone,
       bairro: isDelivery && canUseZones ? costumerNeighborhood : "",
       endereco: isDelivery ? costumerAddress : "",
-      pagamento: paymentLabel || paymentOptions.find((p) => p.id === selectedPayment)?.label || "-",
+      pagamento:
+        paymentLabel ||
+        paymentOptions.find((p) => p.id === selectedPayment)?.label ||
+        "-",
       troco:
         selectedPayment === "cash" && needsChange
           ? formatCurrency(normalizeMoney(changeForAmount), menu?.currency)
           : "",
-      servico: serviceOptions.find((s) => s.id === selectedService)?.label || "-",
+      servico:
+        serviceOptions.find((s) => s.id === selectedService)?.label || "-",
     });
 
-    const rawPhone = establishmentPhone || menu?.owner_phone || menu?.phone || null;
+    const rawPhone =
+      establishmentPhone || menu?.owner_phone || menu?.phone || null;
     if (!rawPhone) return null;
 
     const normalized = String(rawPhone).replace(/\D/g, "");
@@ -685,16 +821,23 @@ function CartDrawerContent({
       }
 
       const matchedZone = deliveryZones.find(
-        (zone) => normalizeText(zone.name) === normalizeText(costumerNeighborhood),
+        (zone) =>
+          normalizeText(zone.name) === normalizeText(costumerNeighborhood),
       );
 
       if (!matchedZone) {
-        customAlert("No momento, este bairro não está disponível para entrega.", "error");
+        customAlert(
+          "No momento, este bairro não está disponível para entrega.",
+          "error",
+        );
         return false;
       }
     }
 
-    if (selectedService === "delivery" && costumerAddressParts.street.trim().length < 3) {
+    if (
+      selectedService === "delivery" &&
+      costumerAddressParts.street.trim().length < 3
+    ) {
       customAlert("Informe a rua do endereço.", "error");
       return false;
     }
@@ -705,7 +848,10 @@ function CartDrawerContent({
         return false;
       }
       if (radiusFee === null) {
-        customAlert("No momento, seu endereço está fora da área de entrega.", "error");
+        customAlert(
+          "No momento, seu endereço está fora da área de entrega.",
+          "error",
+        );
         return false;
       }
     }
@@ -729,7 +875,10 @@ function CartDrawerContent({
     if (needsChange) {
       const amount = normalizeMoney(changeForAmount);
       if (amount <= drawerTotal) {
-        customAlert("O valor para troco deve ser maior que o total do pedido.", "error");
+        customAlert(
+          "O valor para troco deve ser maior que o total do pedido.",
+          "error",
+        );
         return;
       }
     }
@@ -782,10 +931,14 @@ function CartDrawerContent({
 
   // ── Pedido de mesa ou de balcão: sem WhatsApp, cai direto na aba Pedidos ─
   const finalizeTableOrder = async ({ goToStage = "tableSuccess" } = {}) => {
-    const deliveryFee = !tableInfo && selectedService === "delivery" ? deliveryFeeValue : 0;
+    const deliveryFee =
+      !tableInfo && selectedService === "delivery" ? deliveryFeeValue : 0;
     const subtotal = (currentItems || []).reduce((acc, item) => {
       const base = (Number(item.price) || 0) * (Number(item.qty) || 0);
-      const extrasPerItem = (item.additionals || []).reduce((s, a) => s + (Number(a.price) || 0), 0);
+      const extrasPerItem = (item.additionals || []).reduce(
+        (s, a) => s + (Number(a.price) || 0),
+        0,
+      );
       const extras = extrasPerItem * (Number(item.qty) || 0);
       return acc + base + extras;
     }, 0);
@@ -800,7 +953,10 @@ function CartDrawerContent({
       costumer_phone: costumerPhone || null,
       payment_method: selectedPayment || null,
       change_requested: selectedPayment === "cash" ? needsChange : null,
-      change_for_amount: selectedPayment === "cash" && needsChange ? normalizeMoney(changeForAmount) : null,
+      change_for_amount:
+        selectedPayment === "cash" && needsChange
+          ? normalizeMoney(changeForAmount)
+          : null,
       service: tableInfo ? "dinein" : selectedService,
       table_id: tableInfo?.id ?? null,
       table_label: tableInfo?.label ?? null,
@@ -812,8 +968,12 @@ function CartDrawerContent({
         additionals: it.additionals || [],
         note: it.note || "",
       })),
-      neighborhood: !tableInfo && selectedService === "delivery" && canUseZones ? costumerNeighborhood : null,
-      address: !tableInfo && selectedService === "delivery" ? costumerAddress : null,
+      neighborhood:
+        !tableInfo && selectedService === "delivery" && canUseZones
+          ? costumerNeighborhood
+          : null,
+      address:
+        !tableInfo && selectedService === "delivery" ? costumerAddress : null,
       delivery_fee: deliveryFee,
       discount: discountAmount,
       is_paid: false,
@@ -871,7 +1031,10 @@ function CartDrawerContent({
   const whatsappConfirmation = () => {
     const subtotal = (currentItems || []).reduce((acc, item) => {
       const base = (Number(item.price) || 0) * (Number(item.qty) || 0);
-      const extrasPerItem = (item.additionals || []).reduce((s, a) => s + (Number(a.price) || 0), 0);
+      const extrasPerItem = (item.additionals || []).reduce(
+        (s, a) => s + (Number(a.price) || 0),
+        0,
+      );
       const extras = extrasPerItem * (Number(item.qty) || 0);
       return acc + base + extras;
     }, 0);
@@ -930,7 +1093,10 @@ function CartDrawerContent({
             costumer_phone: costumerPhone || null,
             payment_method: selectedPayment || null,
             change_requested: selectedPayment === "cash" ? needsChange : null,
-            change_for_amount: selectedPayment === "cash" && needsChange ? normalizeMoney(changeForAmount) : null,
+            change_for_amount:
+              selectedPayment === "cash" && needsChange
+                ? normalizeMoney(changeForAmount)
+                : null,
             service: selectedService || null,
             items_list: (currentItems || []).map((it) => ({
               name: it.name,
@@ -940,7 +1106,10 @@ function CartDrawerContent({
               additionals: it.additionals || [],
               note: it.note || "",
             })),
-            neighborhood: selectedService === "delivery" && canUseZones ? costumerNeighborhood : null,
+            neighborhood:
+              selectedService === "delivery" && canUseZones
+                ? costumerNeighborhood
+                : null,
             address: selectedService === "delivery" ? costumerAddress : null,
             delivery_fee: deliveryFee,
             discount: discountAmount,
@@ -950,11 +1119,16 @@ function CartDrawerContent({
             updated_at: new Date().toISOString(),
           };
 
-          const { data, error } = await supabase.from("orders").insert([payload]);
+          const { data, error } = await supabase
+            .from("orders")
+            .insert([payload]);
 
           if (error) {
             console.error("❌ Erro ao salvar pedido no Supabase:", error);
-            customAlert("Erro ao salvar pedido no sistema. Tentamos avisar o estabelecimento via WhatsApp.", "error");
+            customAlert(
+              "Erro ao salvar pedido no sistema. Tentamos avisar o estabelecimento via WhatsApp.",
+              "error",
+            );
           } else {
             console.log("✅ Pedido salvo com sucesso no Supabase:", data);
           }
@@ -971,7 +1145,11 @@ function CartDrawerContent({
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex">
-      <div className={backdropClasses} onClick={() => onClose?.()} aria-hidden="true" />
+      <div
+        className={backdropClasses}
+        onClick={() => onClose?.()}
+        aria-hidden="true"
+      />
 
       <div
         ref={panelRef}
@@ -988,7 +1166,11 @@ function CartDrawerContent({
         {/* HEADER */}
         <div className="sticky top-0 bg-inherit z-10 flex items-center justify-between p-4">
           <h3 className="font-bold">
-            Seu carrinho ({typeof cart.totalItems === "function" ? cart.totalItems(menu?.id) : currentItems.length})
+            Seu carrinho (
+            {typeof cart.totalItems === "function"
+              ? cart.totalItems(menu?.id)
+              : currentItems.length}
+            )
           </h3>
           <div className="flex items-center gap-4">
             <button
@@ -1000,7 +1182,11 @@ function CartDrawerContent({
               <FaReceipt />
               <span className="hidden xs:inline">Meus pedidos</span>
             </button>
-            <button onClick={() => onClose?.()} className="cursor-pointer text-xl" aria-label="Fechar carrinho">
+            <button
+              onClick={() => onClose?.()}
+              className="cursor-pointer text-xl"
+              aria-label="Fechar carrinho"
+            >
               <FaTimes />
             </button>
           </div>
@@ -1014,30 +1200,48 @@ function CartDrawerContent({
             </div>
           ) : (
             currentItems.map((it, idx) => {
-              const addonsTotal = (it.additionals || []).reduce((s, a) => s + Number(a.price || 0), 0);
+              const addonsTotal = (it.additionals || []).reduce(
+                (s, a) => s + Number(a.price || 0),
+                0,
+              );
               return (
-                <div key={idx} className="p-3 rounded-xl flex flex-col" style={{ backgroundColor: translucidToUse }}>
+                <div
+                  key={idx}
+                  className="p-3 rounded-xl flex flex-col"
+                  style={{ backgroundColor: translucidToUse }}
+                >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline">
-                      <span className="truncate min-w-0 max-w-[280px]">{it.name}</span>
+                      <span className="truncate min-w-0 max-w-[280px]">
+                        {it.name}
+                      </span>
                       <span style={{ color: grayToUse }} className="ml-1">
                         {it.qty}x
                       </span>
                     </div>
                     {it.additionals?.length > 0 && (
-                      <div className="text-sm line-clamp-2" style={{ color: grayToUse }}>
+                      <div
+                        className="text-sm line-clamp-2"
+                        style={{ color: grayToUse }}
+                      >
                         + {it.additionals.map((a) => a.name).join(", ")}
                       </div>
                     )}
                     {it.note && (
-                      <div className="text-sm mt-1 line-clamp-2" style={{ color: grayToUse }}>
+                      <div
+                        className="text-sm mt-1 line-clamp-2"
+                        style={{ color: grayToUse }}
+                      >
                         Obs: {it.note}
                       </div>
                     )}
                   </div>
                   <div className="flex items-end justify-between mt-4 gap-2">
                     <p className="font-bold text-xl">
-                      {formatCurrency((it.price + addonsTotal) * it.qty, menu?.currency)}
+                      {formatCurrency(
+                        (it.price + addonsTotal) * it.qty,
+                        menu?.currency,
+                      )}
                     </p>
                     <button
                       onClick={() => cart.remove(menu.id, idx)}
@@ -1057,7 +1261,10 @@ function CartDrawerContent({
           <div className="fixed w-full bottom-0 bg-inherit z-10 p-4">
             {canUseCoupon &&
               (coupon ? (
-                <div className="flex items-center justify-between text-sm mb-2" style={{ color: grayToUse }}>
+                <div
+                  className="flex items-center justify-between text-sm mb-2"
+                  style={{ color: grayToUse }}
+                >
                   <span>
                     Cupom {coupon.code}
                     {couponResult.belowMin
@@ -1086,13 +1293,19 @@ function CartDrawerContent({
                     onChange={(e) => setCouponInput(e.target.value)}
                     placeholder="Cupom de desconto"
                     className="flex-1 min-w-0 rounded-lg bg-translucid px-3 py-2 text-sm uppercase"
-                    style={{ backgroundColor: translucidToUse, color: foregroundToUse }}
+                    style={{
+                      backgroundColor: translucidToUse,
+                      color: foregroundToUse,
+                    }}
                   />
                   <button
                     type="button"
                     onClick={handleApplyCoupon}
                     className="cursor-pointer rounded-lg px-3 py-2 text-sm font-semibold"
-                    style={{ backgroundColor: translucidToUse, color: foregroundToUse }}
+                    style={{
+                      backgroundColor: translucidToUse,
+                      color: foregroundToUse,
+                    }}
                   >
                     Aplicar
                   </button>
@@ -1100,11 +1313,17 @@ function CartDrawerContent({
               ))}
             {discountAmount > 0 && (
               <>
-                <div className="flex items-center justify-between text-sm mb-1" style={{ color: grayToUse }}>
+                <div
+                  className="flex items-center justify-between text-sm mb-1"
+                  style={{ color: grayToUse }}
+                >
                   <span>Subtotal</span>
                   <span>{formatCurrency(drawerSubtotal, menu?.currency)}</span>
                 </div>
-                <div className="flex items-center justify-between text-sm mb-1" style={{ color: menu.details_color }}>
+                <div
+                  className="flex items-center justify-between text-sm mb-1"
+                  style={{ color: menu.details_color }}
+                >
                   <span>Desconto</span>
                   <span>-{formatCurrency(discountAmount, menu?.currency)}</span>
                 </div>
@@ -1112,14 +1331,21 @@ function CartDrawerContent({
             )}
             <div className="flex items-center justify-between mb-2">
               <div className="font-semibold">Total</div>
-              <div className="text-xl font-bold">{formatCurrency(drawerTotal, menu?.currency)}</div>
+              <div className="text-xl font-bold">
+                {formatCurrency(drawerTotal, menu?.currency)}
+              </div>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={async () => {
                   // controle manual vale mais que o horário: confere o estado atual no banco
-                  const { data: store } = await getStoreState(supabase, menu.id);
-                  const openNow = store?.manual_control ? store.is_open : isOpen;
+                  const { data: store } = await getStoreState(
+                    supabase,
+                    menu.id,
+                  );
+                  const openNow = store?.manual_control
+                    ? store.is_open
+                    : isOpen;
 
                   if (!openNow) {
                     customAlert(`${menu.title} está fechado no momento!`);
@@ -1128,12 +1354,17 @@ function CartDrawerContent({
 
                   // Mínimo fixo do sistema (R$2,00)
                   if (drawerSubtotal < 2) {
-                    customAlert(`O valor mínimo para realizar um pedido é de ${formatCurrency(2, menu?.currency)}`);
+                    customAlert(
+                      `O valor mínimo para realizar um pedido é de ${formatCurrency(2, menu?.currency)}`,
+                    );
                     return;
                   }
 
                   if (hasPlusPermissions) {
-                    if (menu.minimum_order_value && drawerSubtotal < menu.minimum_order_value) {
+                    if (
+                      menu.minimum_order_value &&
+                      drawerSubtotal < menu.minimum_order_value
+                    ) {
                       customAlert(
                         `O valor mínimo para pedidos neste estabelecimento é de ${formatCurrency(
                           menu.minimum_order_value,
@@ -1147,13 +1378,18 @@ function CartDrawerContent({
                   setIsPurchaseModalOpen(true);
                 }}
                 className="cursor-pointer flex-1 py-2 rounded hover:opacity-90 text-white font-bold transition"
-                style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
+                style={{
+                  backgroundColor: menu.details_color,
+                  color: getContrastTextColor(menu.details_color),
+                }}
               >
                 Continuar compra
               </button>
               <button
                 onClick={async () => {
-                  const ok = await confirm("Quer mesmo limpar o carrinho deste estabelecimento?");
+                  const ok = await confirm(
+                    "Quer mesmo limpar o carrinho deste estabelecimento?",
+                  );
                   if (!ok) return;
                   cart.clear(menu.id);
                 }}
@@ -1168,7 +1404,10 @@ function CartDrawerContent({
 
       {/* MODAL DE COMPRA */}
       {isPurchaseModalOpen && (
-        <div className="fixed inset-0 z-65 flex items-center justify-center" style={{ color: foregroundToUse }}>
+        <div
+          className="fixed inset-0 z-65 flex items-center justify-center"
+          style={{ color: foregroundToUse }}
+        >
           <div className={backdropClasses} aria-hidden="true" />
           <div
             className="relative rounded-lg p-6 w-[90%] max-w-md z-70 max-h-[100dvh] overflow-y-auto overscroll-contain"
@@ -1199,7 +1438,10 @@ function CartDrawerContent({
 
             <div className="flex items-center gap-4 mb-4">
               {purchaseStage !== "confirmingTable" && (
-                <FaChevronLeft className="cursor-pointer" onClick={() => resetPurchase()} />
+                <FaChevronLeft
+                  className="cursor-pointer"
+                  onClick={() => resetPurchase()}
+                />
               )}
               <div>
                 <h3 className="font-bold">
@@ -1245,7 +1487,10 @@ function CartDrawerContent({
                   <button
                     key={option.id}
                     className="cursor-pointer p-2 hover:opacity-90 transition rounded-lg font-semibold"
-                    style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
+                    style={{
+                      backgroundColor: menu.details_color,
+                      color: getContrastTextColor(menu.details_color),
+                    }}
                     onClick={() => handleServiceSelect(option.id)}
                   >
                     {option.label}
@@ -1256,12 +1501,18 @@ function CartDrawerContent({
               <div className="flex flex-col gap-2">
                 <div>
                   {counterMode && (
-                    <p className="mb-2 rounded p-2 text-sm" style={{ backgroundColor: translucidToUse }}>
-                      Pedido de balcão: nome e telefone são opcionais e o pedido vai direto para Pedidos recebidos.
+                    <p
+                      className="mb-2 rounded p-2 text-sm"
+                      style={{ backgroundColor: translucidToUse }}
+                    >
+                      Pedido de balcão: nome e telefone são opcionais e o pedido
+                      vai direto para Pedidos recebidos.
                     </p>
                   )}
                   <label className="block text-sm font-medium">
-                    {counterMode ? "Nome do cliente (opcional):" : "Digite seu nome:"}
+                    {counterMode
+                      ? "Nome do cliente (opcional):"
+                      : "Digite seu nome:"}
                   </label>
                   <input
                     type="text"
@@ -1278,7 +1529,9 @@ function CartDrawerContent({
                 {!tableInfo && (
                   <div>
                     <label className="block text-sm font-medium">
-                      {counterMode ? "Telefone do cliente (opcional):" : "Digite seu número para contato:"}
+                      {counterMode
+                        ? "Telefone do cliente (opcional):"
+                        : "Digite seu número para contato:"}
                     </label>
                     <PhoneInput
                       country="br"
@@ -1298,7 +1551,9 @@ function CartDrawerContent({
                   <>
                     {canUseZones && (
                       <div>
-                        <label className="block text-sm font-medium">Digite seu bairro:</label>
+                        <label className="block text-sm font-medium">
+                          Digite seu bairro:
+                        </label>
                         <div ref={dropdownRef} className="relative mb-2">
                           <input
                             type="text"
@@ -1326,7 +1581,10 @@ function CartDrawerContent({
                               }}
                             >
                               {filteredZones.length === 0 ? (
-                                <div className="p-2 text-sm" style={{ color: grayToUse }}>
+                                <div
+                                  className="p-2 text-sm"
+                                  style={{ color: grayToUse }}
+                                >
                                   Nenhum bairro encontrado
                                 </div>
                               ) : (
@@ -1341,7 +1599,11 @@ function CartDrawerContent({
                                     className="p-2 cursor-pointer hover:opacity-80"
                                     style={{ color: foregroundToUse }}
                                   >
-                                    {zone.name} — {formatCurrency(zone.shipping_fee, menu?.currency)}
+                                    {zone.name} —{" "}
+                                    {formatCurrency(
+                                      zone.shipping_fee,
+                                      menu?.currency,
+                                    )}
                                   </div>
                                 ))
                               )}
@@ -1350,7 +1612,10 @@ function CartDrawerContent({
                         </div>
 
                         {costumerNeighborhood.trim() && (
-                          <p className="text-sm mb-2" style={{ color: grayToUse }}>
+                          <p
+                            className="text-sm mb-2"
+                            style={{ color: grayToUse }}
+                          >
                             Taxa de entrega:{" "}
                             <strong style={{ color: foregroundToUse }}>
                               {formatCurrency(deliveryFeeValue, menu?.currency)}
@@ -1361,7 +1626,9 @@ function CartDrawerContent({
                     )}
 
                     <div>
-                      <label className="block text-sm font-medium mb-1">Endereço de entrega:</label>
+                      <label className="block text-sm font-medium mb-1">
+                        Endereço de entrega:
+                      </label>
                       <div className="mb-2">
                         <AddressFields
                           value={costumerAddressParts}
@@ -1410,7 +1677,8 @@ function CartDrawerContent({
                         </p>
                         {customerDistance != null && radiusFee !== null && (
                           <p style={{ color: grayToUse }}>
-                            Distância: {customerDistance.toFixed(1)} km · Taxa de entrega:{" "}
+                            Distância: {customerDistance.toFixed(1)} km · Taxa
+                            de entrega:{" "}
                             <strong style={{ color: foregroundToUse }}>
                               {formatCurrency(deliveryFeeValue, menu?.currency)}
                             </strong>
@@ -1422,10 +1690,15 @@ function CartDrawerContent({
                 )}
                 <>
                   <div>
-                    <label className="block text-sm font-medium">Forma de pagamento:</label>
+                    <label className="block text-sm font-medium">
+                      Forma de pagamento:
+                    </label>
                     <div className="flex flex-wrap gap-4 mt-1 mb-2">
                       {availablePaymentsOptions.map((option) => (
-                        <label key={option.id} className="flex items-center space-x-2 cursor-pointer">
+                        <label
+                          key={option.id}
+                          className="flex items-center space-x-2 cursor-pointer"
+                        >
                           <input
                             type="radio"
                             name="payment"
@@ -1436,7 +1709,10 @@ function CartDrawerContent({
                             style={{
                               borderColor: grayToUse,
                               color: grayToUse,
-                              backgroundColor: selectedPayment === option.id ? menu.details_color : "transparent",
+                              backgroundColor:
+                                selectedPayment === option.id
+                                  ? menu.details_color
+                                  : "transparent",
                             }}
                           />
                           <span
@@ -1450,7 +1726,10 @@ function CartDrawerContent({
                     </div>
                   </div>
                   <p className="mt-2">
-                    Valor final: <strong>{formatCurrency(drawerTotal, menu?.currency)}</strong>
+                    Valor final:{" "}
+                    <strong>
+                      {formatCurrency(drawerTotal, menu?.currency)}
+                    </strong>
                   </p>
                   <button
                     onClick={() => {
@@ -1458,7 +1737,10 @@ function CartDrawerContent({
                         saveCustomerInfo();
                         if (!validateCustomerFields()) return;
                         if (!selectedPayment) {
-                          customAlert("Selecione a forma de pagamento", "error");
+                          customAlert(
+                            "Selecione a forma de pagamento",
+                            "error",
+                          );
                           return;
                         }
                         setPurchaseStage("cashChange");
@@ -1468,7 +1750,10 @@ function CartDrawerContent({
                       confirmPurchase();
                     }}
                     className="cursor-pointer hover:opacity-90 p-2 font-bold transition rounded disabled:opacity-50"
-                    style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
+                    style={{
+                      backgroundColor: menu.details_color,
+                      color: getContrastTextColor(menu.details_color),
+                    }}
                   >
                     Confirmar
                   </button>
@@ -1478,17 +1763,27 @@ function CartDrawerContent({
               <div className="flex flex-col gap-3">
                 <p style={{ color: grayToUse }} className="text-sm">
                   Total do pedido:{" "}
-                  <strong style={{ color: foregroundToUse }}>{formatCurrency(drawerTotal, menu?.currency)}</strong>
+                  <strong style={{ color: foregroundToUse }}>
+                    {formatCurrency(drawerTotal, menu?.currency)}
+                  </strong>
                 </p>
 
-                <label className="block text-sm font-medium">Precisa de troco?</label>
+                <label className="block text-sm font-medium">
+                  Precisa de troco?
+                </label>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setNeedsChange(true)}
                     className="flex-1 py-2 rounded font-semibold cursor-pointer transition"
                     style={{
-                      backgroundColor: needsChange === true ? menu.details_color : translucidToUse,
-                      color: needsChange === true ? getContrastTextColor(menu.details_color) : foregroundToUse,
+                      backgroundColor:
+                        needsChange === true
+                          ? menu.details_color
+                          : translucidToUse,
+                      color:
+                        needsChange === true
+                          ? getContrastTextColor(menu.details_color)
+                          : foregroundToUse,
                     }}
                   >
                     Sim
@@ -1500,8 +1795,14 @@ function CartDrawerContent({
                     }}
                     className="flex-1 py-2 rounded font-semibold cursor-pointer transition"
                     style={{
-                      backgroundColor: needsChange === false ? menu.details_color : translucidToUse,
-                      color: needsChange === false ? getContrastTextColor(menu.details_color) : foregroundToUse,
+                      backgroundColor:
+                        needsChange === false
+                          ? menu.details_color
+                          : translucidToUse,
+                      color:
+                        needsChange === false
+                          ? getContrastTextColor(menu.details_color)
+                          : foregroundToUse,
                     }}
                   >
                     Não
@@ -1510,7 +1811,9 @@ function CartDrawerContent({
 
                 {needsChange === true && (
                   <div>
-                    <label className="block text-sm font-medium">Troco para quanto?</label>
+                    <label className="block text-sm font-medium">
+                      Troco para quanto?
+                    </label>
                     <input
                       type="text"
                       inputMode="decimal"
@@ -1526,14 +1829,20 @@ function CartDrawerContent({
                 <button
                   onClick={confirmCashChange}
                   className="cursor-pointer hover:opacity-90 p-2 font-bold transition rounded mt-2"
-                  style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
+                  style={{
+                    backgroundColor: menu.details_color,
+                    color: getContrastTextColor(menu.details_color),
+                  }}
                 >
                   Confirmar
                 </button>
               </div>
             ) : purchaseStage === "confirmingTable" ? (
               <div className="flex flex-col items-center gap-3 py-6 text-center">
-                <FaSpinner className="animate-spin text-2xl" style={{ color: menu.details_color }} />
+                <FaSpinner
+                  className="animate-spin text-2xl"
+                  style={{ color: menu.details_color }}
+                />
                 <p style={{ color: grayToUse }} className="text-sm">
                   Enviando seu pedido para a {tableInfo?.label || "mesa"}...
                 </p>
@@ -1560,7 +1869,10 @@ function CartDrawerContent({
                   {menu.pix_key}
                 </div>
                 <p className="text-center mt-2">
-                  Valor final: <strong className="text-2xl">{formatCurrency(finalValue, menu?.currency)}</strong>
+                  Valor final:{" "}
+                  <strong className="text-2xl">
+                    {formatCurrency(finalValue, menu?.currency)}
+                  </strong>
                 </p>
                 <p className="text-center p-2" style={{ color: grayToUse }}>
                   {tableInfo
@@ -1578,15 +1890,18 @@ function CartDrawerContent({
                     </button>
                   )
                 ) : (
-                    <a href={whatsappURL || "#"} rel="noopener noreferrer">
-                      <span
-                        className="cursor-pointer py-2 px-4 rounded font-bold flex items-center justify-center gap-2 mt-2"
-                        style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
-                      >
-                        <FaWhatsapp />
-                        Enviar confirmação
-                      </span>
-                    </a>
+                  <a href={whatsappURL || "#"} rel="noopener noreferrer">
+                    <span
+                      className="cursor-pointer py-2 px-4 rounded font-bold flex items-center justify-center gap-2 mt-2"
+                      style={{
+                        backgroundColor: menu.details_color,
+                        color: getContrastTextColor(menu.details_color),
+                      }}
+                    >
+                      <FaWhatsapp />
+                      Enviar confirmação
+                    </span>
+                  </a>
                 )}
               </div>
             ) : purchaseStage === "tableSuccess" ? (
@@ -1601,7 +1916,10 @@ function CartDrawerContent({
                 </p>
                 {finalValue > 0 && (
                   <p className="mt-2 font-semibold">
-                    Total: <strong>{formatCurrency(finalValue, menu?.currency)}</strong>
+                    Total:{" "}
+                    <strong>
+                      {formatCurrency(finalValue, menu?.currency)}
+                    </strong>
                   </p>
                 )}
                 <button
@@ -1619,13 +1937,19 @@ function CartDrawerContent({
                 </p>
                 {finalValue > 0 && (
                   <p className="text-center mt-2 font-semibold">
-                    Total pago: <strong>{formatCurrency(finalValue, menu?.currency)}</strong>
+                    Total pago:{" "}
+                    <strong>
+                      {formatCurrency(finalValue, menu?.currency)}
+                    </strong>
                   </p>
                 )}
                 <a href={whatsappURL || "#"} rel="noopener noreferrer">
                   <span
                     className="cursor-pointer py-2 px-4 rounded font-bold flex items-center justify-center gap-2 mt-2"
-                    style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
+                    style={{
+                      backgroundColor: menu.details_color,
+                      color: getContrastTextColor(menu.details_color),
+                    }}
                   >
                     <FaWhatsapp />
                     Enviar confirmação
@@ -1637,7 +1961,13 @@ function CartDrawerContent({
         </div>
       )}
 
-      <MyOrdersModal menu={menu} isOpen={myOrdersOpen} onClose={() => setMyOrdersOpen(false)} />
+      <MyOrdersModal
+        menu={menu}
+        isOpen={myOrdersOpen}
+        onClose={() => setMyOrdersOpen(false)}
+        foregroundToUse={foregroundToUse}
+        translucidToUse={translucidToUse}
+      />
     </div>,
     document.body,
   );
