@@ -1,5 +1,6 @@
 "use client";
 
+import useDemoTheme from "./useDemoTheme";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { FaMapMarkerAlt, FaMinus, FaPlus, FaShoppingCart, FaWhatsapp } from "react-icons/fa";
 import Image from "next/image";
@@ -123,7 +124,8 @@ function isSafeImageUrl(url) {
   return typeof url === "string" && url.length > 8 && (url.startsWith("http://") || url.startsWith("https://"));
 }
 
-export default function ClientMenu({ menu, ownerPhone, ownerRole }) {
+export default function ClientMenu({ menu: rawMenu, ownerPhone, ownerRole, demoTheme = false }) {
+  const menu = useDemoTheme(rawMenu, demoTheme);
   const cart = useCartContext();
   const alert = useAlert();
 

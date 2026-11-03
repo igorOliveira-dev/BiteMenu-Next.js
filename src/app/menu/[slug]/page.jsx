@@ -6,6 +6,10 @@ import ClientMenu3 from "./ClientMenu3";
 import { getMenuBySlug, getOwnerInfo, getOptionStock } from "./getMenuData";
 import { applyStock, hideHiddenGroups, STOCK_ROLES } from "@/lib/stock";
 
+// cardápio de exemplo da landing: segue o tema claro/escuro do site (useDemoTheme).
+// Fica aqui e não no useDemoTheme: importar constante de módulo "use client" no servidor não traz o valor
+const DEMO_SLUG = "bite-menu";
+
 export const revalidate = 300; // 5 minutos — cardápios raramente mudam em alta frequência
 
 // Sem isto a rota é renderizada a cada visita e o revalidate acima não vale:
@@ -122,6 +126,7 @@ export default async function MenuPage({ params }) {
   const menu = applyStock(hideHiddenGroups(rawMenu), ownerRole, optionStock);
 
   const effectiveLayout = menu.layout;
+  const isDemo = slug === DEMO_SLUG;
 
   return (
     <CartProvider>
@@ -131,24 +136,28 @@ export default async function MenuPage({ params }) {
           menu={menu}
           ownerPhone={ownerPhone}
           ownerRole={ownerRole}
+          demoTheme={isDemo}
         />
       ) : effectiveLayout === "list" ? (
         <ClientMenu2
           menu={menu}
           ownerPhone={ownerPhone}
           ownerRole={ownerRole}
+          demoTheme={isDemo}
         />
       ) : effectiveLayout === "grid" ? (
         <ClientMenu3
           menu={menu}
           ownerPhone={ownerPhone}
           ownerRole={ownerRole}
+          demoTheme={isDemo}
         />
       ) : (
         <ClientMenu
           menu={menu}
           ownerPhone={ownerPhone}
           ownerRole={ownerRole}
+          demoTheme={isDemo}
         />
       )}
     </CartProvider>
