@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import GenericModal from "./GenericModal";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 
-export default function ConfirmModal({ message, onConfirm, onCancel }) {
+export default function ConfirmModal({ message, tone, onConfirm, onCancel }) {
   // Fecha com ESC
   useEffect(() => {
     const handleEsc = (e) => e.key === "Escape" && onCancel();
@@ -21,14 +21,18 @@ export default function ConfirmModal({ message, onConfirm, onCancel }) {
         <p>{message}</p>
         <div className="flex justify-start gap-3 mt-4">
           <button
-            className="cursor-pointer px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-all"
+            className="brand-line-button cursor-pointer"
             onClick={onCancel}
             type="button"
           >
             Cancelar
           </button>
           <button
-            className="cursor-pointer px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-all"
+            className={
+              tone === "confirm"
+                ? "cursor-pointer rounded-full bg-verde px-[22px] py-3 font-bold text-white transition hover:opacity-90"
+                : "cta-button"
+            }
             onClick={onConfirm}
             type="button"
           >

@@ -32,7 +32,7 @@ function QuestionCard({ question, rows }) {
   });
 
   return (
-    <div className="rounded-3xl border-2 bg-translucid border-[var(--translucid)] overflow-hidden">
+    <div className="rounded-3xl border bg-translucid border-[var(--translucid)] overflow-hidden">
       <div className="px-5 py-4 border-b border-[var(--translucid)]">
         <p className="font-semibold text-sm">{question.title}</p>
         {question.multi && (
@@ -123,7 +123,7 @@ export default function AdminPesquisaPage() {
           <button
             key={String(opt.value)}
             onClick={() => setOnlyPaid(opt.value)}
-            className="rounded-2xl border-2 px-4 py-2 text-sm transition cursor-pointer"
+            className="rounded-2xl border px-4 py-2 text-sm transition cursor-pointer"
             style={{ borderColor: onlyPaid === opt.value ? "rgb(239 68 68 / 0.7)" : "var(--translucid)" }}
           >
             {opt.label}
@@ -142,7 +142,7 @@ export default function AdminPesquisaPage() {
           ))}
 
           {/* Funcionalidade que sente falta */}
-          <div className="rounded-3xl border-2 bg-translucid border-[var(--translucid)] overflow-hidden">
+          <div className="rounded-3xl border bg-translucid border-[var(--translucid)] overflow-hidden">
             <div className="px-5 py-4 border-b border-[var(--translucid)]">
               <p className="font-semibold text-sm">Funcionalidade que sente falta</p>
               <p className="text-xs mt-0.5" style={{ color: "var(--gray)" }}>
@@ -167,7 +167,7 @@ export default function AdminPesquisaPage() {
 
           {/* Respostas "Outro" de cada pergunta com campo livre */}
           {SURVEY_QUESTIONS.filter((question) => question.otherKey).map((question) => (
-            <div key={question.otherKey} className="rounded-3xl border-2 bg-translucid border-[var(--translucid)] overflow-hidden">
+            <div key={question.otherKey} className="rounded-3xl border bg-translucid border-[var(--translucid)] overflow-hidden">
               <div className="px-5 py-4 border-b border-[var(--translucid)]">
                 <p className="font-semibold text-sm">{question.adminOtherTitle}</p>
                 <p className="text-xs mt-0.5" style={{ color: "var(--gray)" }}>

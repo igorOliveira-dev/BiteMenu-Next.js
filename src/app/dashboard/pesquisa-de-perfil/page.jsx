@@ -14,7 +14,7 @@ function RadioCard({ label, selected, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="w-full rounded-2xl border-2 px-4 py-3 text-left text-sm transition cursor-pointer"
+      className="w-full rounded-2xl border px-4 py-3 text-left text-sm transition cursor-pointer"
       style={{
         borderColor: selected ? "rgb(239 68 68 / 0.7)" : "var(--translucid)",
         backgroundColor: selected ? "rgb(239 68 68 / 0.1)" : "transparent",
@@ -30,7 +30,7 @@ function CheckCard({ label, selected, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="w-full rounded-2xl border-2 px-4 py-3 text-left text-sm transition cursor-pointer"
+      className="w-full rounded-2xl border px-4 py-3 text-left text-sm transition cursor-pointer"
       style={{
         borderColor: selected ? "rgb(239 68 68 / 0.7)" : "var(--translucid)",
         backgroundColor: selected ? "rgb(239 68 68 / 0.1)" : "transparent",
@@ -43,7 +43,7 @@ function CheckCard({ label, selected, onClick }) {
 
 function Question({ number, title, children }) {
   return (
-    <section className="rounded-3xl border-2 bg-translucid border-[var(--translucid)] px-6 py-5 space-y-3">
+    <section className="rounded-3xl border bg-translucid border-[var(--translucid)] px-6 py-5 space-y-3">
       <p className="font-semibold text-sm" style={{ color: "var(--gray)" }}>
         {number}. {title}
       </p>
@@ -172,7 +172,7 @@ export default function PesquisaDePerfilPage() {
         <p className="text-[var(--gray)]">
           Você já respondeu esta pesquisa. Suas respostas nos ajudam a melhorar o Bite Menu.
         </p>
-        <Link href="/dashboard" className="text-blue-500 hover:text-blue-700 underline">
+        <Link href="/dashboard" className="text-brand-eyebrow hover:opacity-80 underline">
           Voltar ao dashboard
         </Link>
       </div>
@@ -207,7 +207,7 @@ export default function PesquisaDePerfilPage() {
               maxLength={80}
               value={form.establishment_type_other}
               onChange={(e) => setForm((p) => ({ ...p, establishment_type_other: e.target.value }))}
-              className="h-12 w-full rounded-2xl border bg-translucid border-[var(--translucid)] px-4 text-sm outline-none transition focus:border-red-500/70"
+              className="h-12 w-full rounded-2xl border bg-translucid border-[var(--translucid)] px-4 text-sm outline-none transition focus:border-brand-select/70"
             />
           )}
         </Question>
@@ -295,7 +295,7 @@ export default function PesquisaDePerfilPage() {
               maxLength={80}
               value={form.referral_source_other}
               onChange={(e) => setForm((p) => ({ ...p, referral_source_other: e.target.value }))}
-              className="h-12 w-full rounded-2xl border bg-translucid border-[var(--translucid)] px-4 text-sm outline-none transition focus:border-red-500/70"
+              className="h-12 w-full rounded-2xl border bg-translucid border-[var(--translucid)] px-4 text-sm outline-none transition focus:border-brand-select/70"
             />
           )}
         </Question>
@@ -318,7 +318,7 @@ export default function PesquisaDePerfilPage() {
               maxLength={80}
               value={form.previous_tool_other}
               onChange={(e) => setForm((p) => ({ ...p, previous_tool_other: e.target.value }))}
-              className="h-12 w-full rounded-2xl border bg-translucid border-[var(--translucid)] px-4 text-sm outline-none transition focus:border-red-500/70"
+              className="h-12 w-full rounded-2xl border bg-translucid border-[var(--translucid)] px-4 text-sm outline-none transition focus:border-brand-select/70"
             />
           )}
         </Question>
@@ -341,7 +341,7 @@ export default function PesquisaDePerfilPage() {
               maxLength={80}
               value={form.decision_factor_other}
               onChange={(e) => setForm((p) => ({ ...p, decision_factor_other: e.target.value }))}
-              className="h-12 w-full rounded-2xl border bg-translucid border-[var(--translucid)] px-4 text-sm outline-none transition focus:border-red-500/70"
+              className="h-12 w-full rounded-2xl border bg-translucid border-[var(--translucid)] px-4 text-sm outline-none transition focus:border-brand-select/70"
             />
           )}
         </Question>
@@ -353,14 +353,14 @@ export default function PesquisaDePerfilPage() {
             maxLength={200}
             value={form.missing_feature}
             onChange={(e) => setForm((p) => ({ ...p, missing_feature: e.target.value }))}
-            className="h-12 w-full rounded-2xl border bg-translucid border-[var(--translucid)] px-4 text-sm outline-none transition focus:border-red-500/70"
+            className="h-12 w-full rounded-2xl border bg-translucid border-[var(--translucid)] px-4 text-sm outline-none transition focus:border-brand-select/70"
           />
         </Question>
 
         <button
           type="submit"
           disabled={!isValid() || submitting}
-          className="w-full rounded-2xl bg-green-600 py-3 text-white font-semibold transition hover:opacity-80 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full rounded-full bg-verde py-3 text-white font-semibold transition hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {submitting ? "Enviando..." : "Enviar pesquisa"}
         </button>

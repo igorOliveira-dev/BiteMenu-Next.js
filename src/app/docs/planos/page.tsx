@@ -51,7 +51,7 @@ const page = () => {
         </p>
         <p className="docs-paragraph">
           Para fazer a assinatura, você deve acessar a{" "}
-          <a href="https://www.bitemenu.com.br/pricing" className="underline text-blue-500 hover:text-blue-700">
+          <a href="https://www.bitemenu.com.br/pricing" className="underline text-brand-red hover:opacity-80">
             página de planos
           </a>{" "}
           e selecionar o plano desejado.
@@ -118,7 +118,7 @@ const page = () => {
         <ul className="docs-paragraph list-disc pl-6">
           <li>Sem limites de itens, categorias e mesas</li>
           <li>
-            <Link href="/docs/bite-menu-ia" className="underline text-blue-500 hover:text-blue-700">
+            <Link href="/docs/bite-menu-ia" className="underline text-brand-red hover:opacity-80">
               Bite Menu IA
             </Link>
             : assistente que altera o cardápio por você a partir de um pedido em texto
@@ -150,7 +150,7 @@ const page = () => {
         <p className="docs-paragraph">
           As telas de caixa, cozinha e entregas começam desativadas: ative cada uma em Conta → Equipe conforme a
           necessidade. Ao desativar uma tela, os logins daquela função perdem o acesso na hora. O funcionário entra em{" "}
-          <a href="https://www.bitemenu.com.br/login" className="underline text-blue-500 hover:text-blue-700">
+          <a href="https://www.bitemenu.com.br/login" className="underline text-brand-red hover:opacity-80">
             bitemenu.com.br/login
           </a>{" "}
           com o usuário e a senha definidos pelo dono; para trocar a senha, o dono gera uma nova na aba Equipe.
@@ -163,7 +163,7 @@ const page = () => {
         <p className="docs-paragraph">
           O passo a passo abaixo é referente à troca de plano, ou seja, para quem já é assinante de um plano e deseja alterar
           para outro. Se você ainda não é assinante, basta acessar a{" "}
-          <a href="https://www.bitemenu.com.br/pricing" className="underline text-blue-500 hover:text-blue-700">
+          <a href="https://www.bitemenu.com.br/pricing" className="underline text-brand-red hover:opacity-80">
             página de planos
           </a>{" "}
           e escolher o plano que melhor se encaixa no seu negócio.
@@ -175,7 +175,7 @@ const page = () => {
         <ol className="docs-paragraph list-decimal pl-6">
           <li>
             Acesse seu{" "}
-            <a href="https://www.bitemenu.com.br/dashboard" className="underline text-blue-500 hover:text-blue-700">
+            <a href="https://www.bitemenu.com.br/dashboard" className="underline text-brand-red hover:opacity-80">
               dashboard do Bite Menu
             </a>
           </li>
@@ -184,7 +184,7 @@ const page = () => {
           <li>Cancele o plano atual</li>
           <li>
             Acesse a{" "}
-            <a href="https://www.bitemenu.com.br/pricing" className="underline text-blue-500 hover:text-blue-700">
+            <a href="https://www.bitemenu.com.br/pricing" className="underline text-brand-red hover:opacity-80">
               página de planos
             </a>
           </li>
@@ -201,7 +201,7 @@ const page = () => {
         <ol className="docs-paragraph list-decimal pl-6">
           <li>
             Acesse seu{" "}
-            <a href="https://www.bitemenu.com.br/dashboard" className="underline text-blue-500 hover:text-blue-700">
+            <a href="https://www.bitemenu.com.br/dashboard" className="underline text-brand-red hover:opacity-80">
               dashboard do Bite Menu
             </a>
           </li>

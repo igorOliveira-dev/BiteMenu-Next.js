@@ -19,7 +19,7 @@ export default function PlanLockNotice({ plan, text }) {
       <FaLock className="text-xl opacity-60" />
       <p className="font-semibold">{planLine(plan)}</p>
       {text && <p className="text-sm opacity-80 max-w-[480px]">{text}</p>}
-      <button type="button" onClick={() => goToPlan(plan)} className="cta-button glow-red mt-2">
+      <button type="button" onClick={() => goToPlan(plan)} className="cta-button mt-2">
         Ver planos
       </button>
     </div>

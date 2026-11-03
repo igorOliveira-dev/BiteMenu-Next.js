@@ -116,11 +116,11 @@ export default function BillingAlert({ setSelectedTab, className = "" }) {
 
   return (
     <div
-      className={`${className} p-3 sm:p-4 rounded-2xl border-2 flex flex-wrap items-center gap-3 text-sm ${
-        alert.overdue ? "border-red-500/30 bg-red-500/10" : "border-amber-500/40 bg-amber-500/10"
+      className={`${className} p-3 sm:p-4 rounded-2xl border flex flex-wrap items-center gap-3 text-sm ${
+        alert.overdue ? "border-bite/30 bg-bite/10" : "border-st-wait/40 bg-st-wait/10"
       }`}
     >
-      <span className={`shrink-0 text-lg ${alert.overdue ? "text-red-500" : "text-amber-500"}`}>
+      <span className={`shrink-0 text-lg ${alert.overdue ? "text-brand-red" : "text-st-wait"}`}>
         {alert.overdue ? <FaExclamationTriangle /> : <FaBarcode />}
       </span>
       <p className="flex-1 min-w-[200px]">{message}</p>

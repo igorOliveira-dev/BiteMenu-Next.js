@@ -93,7 +93,7 @@ export default function PrintOrderModal({ canSave, onClose }) {
           <button
             type="button"
             onClick={handleSave}
-            className="w-full cursor-pointer rounded-xl bg-green-600 py-2 text-white transition hover:bg-green-700"
+            className="w-full cursor-pointer rounded-full bg-verde py-2 text-white transition hover:opacity-90"
           >
             Salvar
           </button>

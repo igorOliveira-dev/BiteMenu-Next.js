@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FaChevronLeft, FaMapMarkerAlt, FaPhoneAlt, FaSyncAlt } from "react-icons/fa";
+import { FaChevronLeft, FaClock, FaMapMarkerAlt, FaPhoneAlt, FaSyncAlt } from "react-icons/fa";
 import { supabase } from "@/lib/supabaseClient";
 import { useAlert } from "@/providers/AlertProvider";
 import { formatCurrency } from "@/lib/formatCurrency";
-import { ORDER_STATUS } from "@/lib/staff";
+import { ORDER_STATUS, ORDER_STATUS_STYLE, paidPillClass } from "@/lib/staff";
 import { mapsUrl } from "@/components/AddressFields";
 import { normalizeOrderForPrint, paymentLabels } from "@/app/dashboard/tabs/components/print/PrintDocumentButton";
 import Loading from "@/components/Loading";
@@ -68,14 +68,14 @@ export default function Delivery({ menu, reloadTrigger, onBack, courierId }) {
         {onBack && (
           <button
             type="button"
-            className="p-2 rounded-lg hover:bg-[var(--translucid)] transition cursor-pointer"
+            className="p-2 rounded-xl hover:bg-[var(--translucid)] transition cursor-pointer"
             onClick={onBack}
             aria-label="Voltar"
           >
             <FaChevronLeft />
           </button>
         )}
-        <h2 className="text-xl font-semibold">Entregas</h2>
+        <h2 className="font-semibold">Entregas</h2>
         <button
           type="button"
           className="cursor-pointer rounded-full p-2 opacity-80 transition hover:opacity-100"
@@ -97,11 +97,11 @@ export default function Delivery({ menu, reloadTrigger, onBack, courierId }) {
             return (
               <div
                 key={order.id}
-                className={`rounded-2xl border-2 bg-translucid p-4 shadow-sm flex flex-col gap-3 ${
-                  onTheWay ? "border-blue-500/60" : "border-translucid"
+                className={`rounded-2xl border bg-translucid p-4 shadow-sm flex flex-col gap-3 ${
+                  onTheWay ? "border-info/50" : "border-translucid"
                 }`}
               >
-                <div className="flex items-start justify-between gap-2 border-b-2 border-[var(--translucid)] pb-2">
+                <div className="flex items-start justify-between gap-2 border-b border-[var(--translucid)] pb-2">
                   <div className="min-w-0">
                     <p className="text-lg font-bold">Nº {order.order_number ?? "—"}</p>
                     <p className="text-xs color-gray">Pedido #{order.id.slice(0, 6)}</p>
@@ -110,7 +110,9 @@ export default function Delivery({ menu, reloadTrigger, onBack, courierId }) {
                     <p className="text-sm font-semibold">
                       {new Date(order.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                     </p>
-                    <p className="text-xs color-gray">{ORDER_STATUS[order.status]}</p>
+                    <span className={`mt-1 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${ORDER_STATUS_STYLE[order.status]?.pill ?? ""}`}>
+                      {ORDER_STATUS[order.status]}
+                    </span>
                   </div>
                 </div>
 
@@ -145,9 +147,9 @@ export default function Delivery({ menu, reloadTrigger, onBack, courierId }) {
                       <strong>{formatCurrency(total, menu.currency)}</strong> ·{" "}
                       {paymentLabels[order.payment_method] || "Pagamento não informado"}
                     </p>
-                    <p className={order.is_paid ? "text-green-500" : "text-yellow-500"}>
+                    <span className={`mt-1 ${paidPillClass(order.is_paid)}`}>
                       {order.is_paid ? "Já pago" : "Não pago"}
-                    </p>
+                    </span>
                     {order.change_requested && (
                       <p>Troco para {formatCurrency(order.change_for_amount, menu.currency)}</p>
                     )}
@@ -155,15 +157,15 @@ export default function Delivery({ menu, reloadTrigger, onBack, courierId }) {
                 </div>
 
                 {inKitchen ? (
-                  <p className="w-full py-3 rounded-lg bg-[var(--translucid)] text-center font-semibold color-gray">
-                    Em preparo na cozinha
+                  <p className="flex w-full items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-translucid text-sm color-gray">
+                    <FaClock /> Em preparo na cozinha
                   </p>
                 ) : (
                   <button
                     type="button"
                     onClick={() => setStatus(order, onTheWay ? "delivered" : "out_for_delivery")}
-                    className={`cursor-pointer w-full py-3 rounded-lg text-white font-semibold transition ${
-                      onTheWay ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700"
+                    className={`cursor-pointer w-full py-3 rounded-full text-white font-semibold transition ${
+                      onTheWay ? "bg-verde hover:opacity-90" : "bg-azul hover:opacity-90"
                     }`}
                   >
                     {onTheWay ? "Entregue" : "Saí para entrega"}

@@ -365,7 +365,7 @@ export default function PrintDocumentButton({
                     onDenied?.();
                   }
                 }}
-                className="w-full cursor-pointer rounded-xl bg-green-600 py-2 text-white transition hover:bg-green-700"
+                className="w-full cursor-pointer rounded-full bg-verde py-2 text-white transition hover:opacity-90"
               >
                 Imprimir
               </button>
@@ -373,7 +373,7 @@ export default function PrintDocumentButton({
               <button
                 type="button"
                 onClick={() => setModalOpen(false)}
-                className="w-full cursor-pointer rounded-xl border border-translucid bg-[var(--translucid)] py-2 transition hover:opacity-80"
+                className="w-full cursor-pointer rounded-full border border-translucid bg-[var(--translucid)] py-2 transition hover:opacity-80"
               >
                 Cancelar
               </button>

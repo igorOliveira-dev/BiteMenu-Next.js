@@ -40,7 +40,7 @@ const SectionCard = ({
       type="button"
       onClick={onToggle}
       aria-expanded={open}
-      className="flex w-full items-center justify-between gap-3 p-4 text-left transition hover:bg-white/[0.02] cursor-pointer"
+      className="flex w-full items-center justify-between gap-3 p-4 text-left transition hover:bg-[var(--low-translucid)] cursor-pointer"
     >
       <div className="flex min-w-0 items-start gap-3">
         {icon ? <div className="mt-0.5 opacity-80">{icon}</div> : null}
@@ -532,7 +532,7 @@ const Sales = ({ setSelectedTab }) => {
     <div className="px-4 sm:px-2 lg:grid">
       <div className="md:m-auto lg:m-2 max-w-[812px] lg:max-w-[1024px] min-h-[calc(100dvh-110px)] overflow-y-auto rounded-2xl">
         <div className="flex items-center gap-3 mb-4">
-          <h2 className="default-h2 font-semibold">Vendas</h2>
+          <h2 className="font-semibold">Vendas</h2>
           <button
             type="button"
             className="cursor-pointer rounded-full p-2 opacity-80 transition hover:opacity-100"
@@ -638,7 +638,7 @@ const Sales = ({ setSelectedTab }) => {
                               }))
                             }
                             className={`cursor-pointer flex items-center gap-2 text-sm px-3 py-1.5 rounded-xl transition-all border border-translucid
-                            ${isActive ? "bg-[#6060ff80] border-[#6060ff] shadow-md" : "bg-translucid hover:opacity-90"}`}
+                            ${isActive ? "bg-brand-select/15 border-brand-select font-semibold" : "bg-translucid hover:opacity-90"}`}
                           >
                             <span>Ordenar por {label}</span>
                             {isActive &&
@@ -786,7 +786,7 @@ const Sales = ({ setSelectedTab }) => {
                             />
                             <button
                               onClick={() => deleteSale(sale.id, key)}
-                              className="xs:flex-1 cursor-pointer px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm font-medium border border-red-500/20 bg-red-500/40 hover:opacity-90 transition"
+                              className="xs:flex-1 cursor-pointer px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm font-medium border border-translucid color-gray hover:text-brand-red hover:border-bite/30 hover:bg-bite/10 hover:opacity-90 transition"
                             >
                               <FaTrash />{" "}
                               <span className="hidden xs:block">Excluir</span>
@@ -1024,7 +1024,7 @@ const Sales = ({ setSelectedTab }) => {
                           type="button"
                           onClick={() => toggleItemOpen(i)}
                           aria-expanded={isItemOpen}
-                          className="flex w-full items-center justify-between gap-3 p-4 text-left transition hover:bg-white/[0.02] cursor-pointer"
+                          className="flex w-full items-center justify-between gap-3 p-4 text-left transition hover:bg-[var(--low-translucid)] cursor-pointer"
                         >
                           <div className="flex min-w-0 flex-1 items-center gap-3">
                             {item.image_url ? (
@@ -1060,7 +1060,7 @@ const Sales = ({ setSelectedTab }) => {
                                 e.stopPropagation();
                                 deleteSaleItem(i);
                               }}
-                              className="flex items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/40 h-8 w-8 text-sm font-semibold transition hover:opacity-90 cursor-pointer"
+                              className="flex items-center justify-center rounded-2xl border border-translucid color-gray hover:text-brand-red hover:border-bite/30 hover:bg-bite/10 h-8 w-8 text-sm font-semibold transition hover:opacity-90 cursor-pointer"
                             >
                               <FaTrash />
                             </span>
@@ -1223,7 +1223,7 @@ const Sales = ({ setSelectedTab }) => {
                                         items_list: updated,
                                       });
                                     }}
-                                    className="cursor-pointer rounded-xl bg-blue-600 px-3 py-2 text-sm text-white transition hover:bg-blue-700"
+                                    className="cursor-pointer rounded-full border border-info/40 text-info hover:bg-info/10 px-3 py-2 text-sm transition"
                                   >
                                     + Opção
                                   </button>
@@ -1329,7 +1329,7 @@ const Sales = ({ setSelectedTab }) => {
                                               "success",
                                             );
                                           }}
-                                          className="flex w-full h-full items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/40 text-sm font-semibold transition hover:opacity-90 cursor-pointer"
+                                          className="flex w-full h-full items-center justify-center rounded-2xl border border-translucid color-gray hover:text-brand-red hover:border-bite/30 hover:bg-bite/10 text-sm font-semibold transition hover:opacity-90 cursor-pointer"
                                         >
                                           <FaTrash />
                                         </button>
@@ -1361,7 +1361,7 @@ const Sales = ({ setSelectedTab }) => {
                       new Set(prev).add(updatedItems.length - 1),
                     );
                   }}
-                  className="mt-4 cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-white transition hover:bg-blue-700"
+                  className="mt-4 cursor-pointer rounded-full border border-info/40 text-info hover:bg-info/10 px-4 py-3 transition"
                 >
                   + Adicionar item
                 </button>
@@ -1382,14 +1382,14 @@ const Sales = ({ setSelectedTab }) => {
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <button
                     type="submit"
-                    className="w-full cursor-pointer rounded-xl bg-blue-600 py-3 text-white transition hover:bg-blue-700"
+                    className="w-full cursor-pointer rounded-full bg-verde py-3 text-white transition hover:opacity-90"
                   >
                     Salvar alterações
                   </button>
                   <button
                     type="button"
                     onClick={() => setSaleModalOpen(false)}
-                    className="w-full cursor-pointer rounded-xl bg-[var(--translucid)] border border-translucid py-3 transition hover:opacity-80 sm:w-40"
+                    className="w-full cursor-pointer rounded-full bg-[var(--translucid)] border border-translucid py-3 transition hover:opacity-80 sm:w-40"
                   >
                     Cancelar
                   </button>

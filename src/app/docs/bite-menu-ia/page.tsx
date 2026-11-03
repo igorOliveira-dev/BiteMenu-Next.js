@@ -27,7 +27,7 @@ const page = () => {
         <h2 className="docs-title">O que é o Bite Menu IA?</h2>
         <p className="docs-paragraph">
           O <strong>Bite Menu IA</strong> é o assistente de inteligência artificial do Bite Menu, incluso no{" "}
-          <Link href="/docs/planos#business" className="underline text-blue-500 hover:text-blue-700">
+          <Link href="/docs/planos#business" className="underline text-brand-red hover:opacity-80">
             Plano Business
           </Link>
           . Você escreve o que quer mudar e ele prepara a alteração para você, sem precisar procurar a opção em nenhuma

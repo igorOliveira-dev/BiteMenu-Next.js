@@ -1,8 +1,6 @@
 "use client";
 
-import Image from "next/image";
 import React from "react";
-import logoTip from "../../../public/LogoTipo-sem-fundo.png";
 import { FaWhatsapp } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
 
@@ -15,13 +13,12 @@ const page = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center absolute top-[50%] left-[50%] transform-[translate(-50%,-50%)] bg-translucid backdrop-blur-2xl border-2 border-translucid p-6 rounded-xl text-center min-w-[90dvw] sm:min-w-[460px] max-w-[520px]">
-      <Image src={logoTip} alt="Bite Menu" className="absolute opacity-10 -z-[1]" />
+    <div className="flex flex-col items-center justify-center absolute top-[50%] left-[50%] transform-[translate(-50%,-50%)] bg-translucid backdrop-blur-2xl border border-translucid p-6 rounded-xl text-center min-w-[90dvw] sm:min-w-[460px] max-w-[520px]">
       <h1 className="default-h1">Fale conosco!</h1>
       <p>Para suporte, dúvidas ou sugestões relacionadas ao Bite Menu, entre em contato pelo e-mail abaixo.</p>
       <a
         href="mailto:contato@bitemenu.com.br"
-        className="cursor-pointer text-white flex items-center justify-center gap-2 rounded-lg mt-2 w-full p-2 sm:px-4 bg-blue-500 hover:bg-blue-600 transition font-bold"
+        className="cursor-pointer text-white flex items-center justify-center gap-2 rounded-full mt-2 w-full p-2 sm:px-4 bg-bite hover:opacity-90 transition font-bold"
       >
         <MdEmail fontSize={22} />
         contato@bitemenu.com.br

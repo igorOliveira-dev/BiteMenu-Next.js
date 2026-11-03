@@ -9,7 +9,7 @@ function RadioCard({ label, selected, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="w-full rounded-2xl border-2 px-4 py-3 text-left text-sm transition cursor-pointer"
+      className="w-full rounded-2xl border px-4 py-3 text-left text-sm transition cursor-pointer"
       style={{
         borderColor: selected ? "rgb(239 68 68 / 0.7)" : "var(--translucid)",
         backgroundColor: selected ? "rgb(239 68 68 / 0.1)" : "transparent",
@@ -70,7 +70,7 @@ export default function AcquisitionSourceModal({ onClose, onSubmit }) {
           <button
             onClick={onClose}
             type="button"
-            className="cursor-pointer px-4 py-2 bg-translucid border-2 border-[var(--translucid)] hover:opacity-80 rounded"
+            className="cursor-pointer px-4 py-2 bg-translucid border border-[var(--translucid)] hover:opacity-80 rounded-full"
           >
             Agora não
           </button>
@@ -78,7 +78,7 @@ export default function AcquisitionSourceModal({ onClose, onSubmit }) {
             onClick={handleSubmit}
             disabled={!canSubmit || saving}
             type="button"
-            className="cta-button glow-red disabled:opacity-50 disabled:cursor-not-allowed"
+            className="cursor-pointer rounded-full bg-verde px-[22px] py-3 font-bold text-white transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? "Enviando..." : "Enviar"}
           </button>

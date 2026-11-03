@@ -146,7 +146,7 @@ const Menu = (props) => {
         color={item.value}
         onChange={item.setter}
         aria-label={`Hexadecimal: ${item.label}`}
-        className="w-full p-2 rounded-lg border border-translucid bg-translucid text-sm uppercase"
+        className="w-full p-2 rounded-xl border border-translucid bg-translucid text-sm uppercase"
       />
     </>
   );
@@ -448,20 +448,14 @@ const Menu = (props) => {
         >
           <button
             onClick={openAiAssistant}
-            className="flex cursor-pointer p-2 bg-low-gray font-semibold rounded-lg hover:opacity-80 transition items-center justify-center"
-            style={{
-              border: `2px solid ${getContrastTextColor(backgroundColor) === "white" ? "#ffffff50" : "#00000050"}`,
-            }}
+            className="flex cursor-pointer px-4 py-2 bg-brand-surface border border-brand-line shadow-[0_4px_16px_var(--shadow)] font-semibold rounded-full hover:opacity-90 transition items-center justify-center"
           >
-            <FaMagic className="text-lg mr-2 text-red-500" />
+            <FaMagic className="text-lg mr-2 text-brasa" />
             Bite Menu IA
           </button>
           <button
             onClick={() => setSelectedTab("configMenu")}
-            className="flex cursor-pointer p-2 bg-low-gray font-semibold rounded-lg hover:opacity-80 transition items-center justify-center"
-            style={{
-              border: `2px solid ${getContrastTextColor(backgroundColor) === "white" ? "#ffffff50" : "#00000050"}`,
-            }}
+            className="flex cursor-pointer px-4 py-2 bg-brand-surface border border-brand-line shadow-[0_4px_16px_var(--shadow)] font-semibold rounded-full hover:opacity-90 transition items-center justify-center"
           >
             <FiSettings className="text-xl mr-2" />
             Configurar cardápio
@@ -474,14 +468,14 @@ const Menu = (props) => {
           <BillingAlert setSelectedTab={setSelectedTab} className="my-2" />
           <LegacyPlanEndingBanner />
           <SurveyBanner />
-          <div className="min-h-[calc(100dvh-110px)] pb-2" style={{ backgroundColor }}>
+          <div className="menu-font min-h-[calc(100dvh-110px)] pb-2" style={{ backgroundColor }}>
             {/* Banner */}
             <div className={`relative w-full max-w-full ${BANNER_ASPECT_CLASS}`}>
               {bannerPreview ? (
                 <BannerImage desktop={bannerPreview} mobile={bannerMobileFile} alt="Preview do banner" />
               ) : (
                 <div
-                  className="bg-translucid relative w-full h-full rounded-lg flex items-center justify-center"
+                  className="bg-translucid relative w-full h-full rounded-xl flex items-center justify-center"
                   style={{
                     backgroundColor: getContrastTextColor(backgroundColor) === "white" ? "#ffffff30" : "#00000030",
                     color: getContrastTextColor(backgroundColor) === "white" ? "#ccc" : "#555",
@@ -499,8 +493,8 @@ const Menu = (props) => {
                 }}
                 className="cursor-pointer absolute inset-0 flex items-end justify-end opacity-75 hover:opacity-100 transition"
               >
-                <div className="border border-2 border-gray-500 m-2 p-1.5 rounded-xl bg-translucid-50 transition">
-                  <FaCamera className="text-2xl text-white" />
+                <div className="m-3 p-2.5 rounded-full bg-black/55 backdrop-blur-sm transition">
+                  <FaCamera className="text-lg text-white" />
                 </div>
               </button>
               <StoreStatus
@@ -521,7 +515,7 @@ const Menu = (props) => {
                   />
                 ) : (
                   <div
-                    className="bg-translucid relative w-full max-w-[80px] aspect-[1/1] rounded-lg flex items-center justify-center"
+                    className="bg-translucid relative w-full max-w-[80px] aspect-[1/1] rounded-xl flex items-center justify-center"
                     style={{
                       backgroundColor: getContrastTextColor(backgroundColor) === "white" ? "#ffffff30" : "#00000030",
                       color: getContrastTextColor(backgroundColor) === "white" ? "#ccc" : "#555",
@@ -537,8 +531,8 @@ const Menu = (props) => {
                   }}
                   className="cursor-pointer absolute inset-0 flex items-end justify-end opacity-75 hover:opacity-100 transition"
                 >
-                  <div className="border border-2 border-gray-500 m-1 p-1.5 rounded-xl bg-translucid-50 transition">
-                    <FaCamera className="text-sm text-white" />
+                  <div className="m-1 p-1.5 rounded-full bg-black/55 backdrop-blur-sm transition">
+                    <FaCamera className="text-xs text-white" />
                   </div>
                 </button>
               </div>
@@ -602,7 +596,7 @@ const Menu = (props) => {
             aria-expanded={!collapsed}
             aria-label={collapsed ? "Expandir painel" : "Recolher painel"}
             title={collapsed ? "Expandir painel" : "Recolher painel"}
-            className={`flex shrink-0 cursor-pointer items-center h-10 rounded-lg hover-bg-translucid transition-colors color-gray ${collapsed ? "justify-center" : "justify-start px-3"}`}
+            className={`flex shrink-0 cursor-pointer items-center h-10 rounded-xl hover-bg-translucid transition-colors color-gray ${collapsed ? "justify-center" : "justify-start px-3"}`}
           >
             <FaChevronLeft className={`text-sm transition-transform duration-200 ${collapsed ? "" : "rotate-180"}`} />
           </button>
@@ -613,7 +607,7 @@ const Menu = (props) => {
                 onClick={() => shareUrl && setShowQrCode(true)}
                 title="Opções de compartilhamento"
                 aria-label="Opções de compartilhamento"
-                className="cursor-pointer flex shrink-0 items-center justify-center h-10 bg-green-600/80 text-white rounded-lg hover:bg-green-700/80 border border-translucid transition"
+                className="cursor-pointer flex shrink-0 items-center justify-center h-10 bg-azul text-white rounded-full hover:opacity-90 transition"
               >
                 <FaShareAlt className="text-lg" />
               </button>
@@ -645,15 +639,15 @@ const Menu = (props) => {
                   onClick={openAiAssistant}
                   title="Bite Menu IA"
                   aria-label="Bite Menu IA"
-                  className="cursor-pointer flex shrink-0 items-center justify-center h-10 bg-low-gray border border-translucid rounded-lg hover:opacity-80 transition"
+                  className="cursor-pointer flex shrink-0 items-center justify-center h-10 border border-brand-line hover:bg-[var(--translucid)] rounded-full transition"
                 >
-                  <FaMagic className="text-lg text-red-500" />
+                  <FaMagic className="text-lg text-brasa" />
                 </button>
                 <button
                   onClick={() => setSelectedTab("configMenu")}
                   title="Configurar cardápio"
                   aria-label="Configurar cardápio"
-                  className="cursor-pointer flex shrink-0 items-center justify-center h-10 bg-low-gray border border-translucid rounded-lg hover:opacity-80 transition"
+                  className="cursor-pointer flex shrink-0 items-center justify-center h-10 border border-brand-line hover:bg-[var(--translucid)] rounded-full transition"
                 >
                   <FiSettings className="text-xl" />
                 </button>
@@ -663,13 +657,13 @@ const Menu = (props) => {
             <>
               {/* Compartilhar */}
               <section className="rounded-xl border border-translucid bg-translucid p-3">
-                <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide color-gray">
-                  <FaShareAlt /> Compartilhe seu cardápio
-                </h3>
+                <p className="flex items-center gap-2 font-semibold">
+                  <FaShareAlt className="color-gray" /> Compartilhe seu cardápio
+                </p>
                 <p className="mt-1 text-xs color-gray">Gere o QR Code ou copie o link para enviar aos seus clientes.</p>
                 <button
                   onClick={() => shareUrl && setShowQrCode(true)}
-                  className="cursor-pointer w-full mt-3 p-2 bg-green-600/80 text-white font-semibold rounded-lg hover:bg-green-700/80 border border-translucid transition flex items-center justify-center gap-2"
+                  className="cursor-pointer w-full mt-3 p-2 bg-azul text-white font-semibold rounded-full hover:opacity-90 transition flex items-center justify-center gap-2"
                 >
                   <FaQrcode /> Opções de compartilhamento
                 </button>
@@ -677,9 +671,9 @@ const Menu = (props) => {
     
               {/* Cores */}
               <section className="rounded-xl border border-translucid bg-translucid p-3">
-                <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide color-gray">
-                  <FaPalette /> Cores do cardápio
-                </h3>
+                <p className="flex items-center gap-2 font-semibold">
+                  <FaPalette className="color-gray" /> Cores do cardápio
+                </p>
     
                 <div ref={colorListRef} className="mt-3 flex flex-col gap-1">
                   {colorFields.map((item, idx) => (
@@ -687,7 +681,7 @@ const Menu = (props) => {
                       <button
                         type="button"
                         onClick={() => setOpenColorIdx(openColorIdx === idx ? null : idx)}
-                        className="flex w-full items-center gap-3 rounded-lg p-2 cursor-pointer hover-bg-translucid transition text-left"
+                        className="flex w-full items-center gap-3 rounded-xl p-2 cursor-pointer hover-bg-translucid transition text-left"
                         aria-label={item.label}
                         aria-expanded={openColorIdx === idx}
                       >
@@ -716,14 +710,14 @@ const Menu = (props) => {
               <div className="mt-auto flex flex-col gap-2">
                 <button
                   onClick={openAiAssistant}
-                  className="cursor-pointer w-full p-3 bg-low-gray border border-translucid font-semibold rounded-xl hover:opacity-80 transition flex items-center justify-center gap-2"
+                  className="cursor-pointer w-full p-3 border border-brand-line hover:bg-[var(--translucid)] font-semibold rounded-full transition flex items-center justify-center gap-2"
                 >
-                  <FaMagic className="text-lg text-red-500" />
+                  <FaMagic className="text-lg text-brasa" />
                   Bite Menu IA
                 </button>
                 <button
                   onClick={() => setSelectedTab("configMenu")}
-                  className="cursor-pointer w-full p-3 bg-low-gray border border-translucid font-semibold rounded-xl hover:opacity-80 transition flex items-center justify-center gap-2"
+                  className="cursor-pointer w-full p-3 border border-brand-line hover:bg-[var(--translucid)] font-semibold rounded-full transition flex items-center justify-center gap-2"
                 >
                   <FiSettings className="text-xl" />
                   Configurar cardápio
@@ -746,7 +740,7 @@ const Menu = (props) => {
               setTempTitle(v);
             }}
             maxLength={30}
-            className="w-full p-2 rounded-lg border bg-translucid mb-4"
+            className="w-full p-2 rounded-xl border bg-translucid mb-4"
           />
 
           <div className="flex items-center justify-between mt-2">
@@ -758,7 +752,7 @@ const Menu = (props) => {
                 setTempTitle(propTitle);
                 closeAllModals();
               }}
-              className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded-lg"
+              className="cursor-pointer px-4 py-2 border border-brand-line hover:bg-[var(--translucid)] rounded-full transition"
             >
               Cancelar
             </button>
@@ -767,7 +761,7 @@ const Menu = (props) => {
                 setTitle(tempTitle);
                 closeAllModals();
               }}
-              className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded-lg"
+              className="cursor-pointer px-4 py-2 bg-verde text-white rounded-full transition hover:opacity-90"
             >
               Salvar
             </button>
@@ -780,7 +774,7 @@ const Menu = (props) => {
           <p className="text-[var(--gray)] mb-8">
             Utilize qualquer plano pago para remover a marca d'água do seu menu!
           </p>
-          <a href="/dashboard/pricing" className="block text-center cursor-pointer cta-button glow-red w-full">
+          <a href="/dashboard/pricing" className="block text-center cursor-pointer cta-button w-full">
             Ver planos
           </a>
         </GenericModal>
@@ -801,19 +795,19 @@ const Menu = (props) => {
               }}
             />
           ) : (
-            <label className="text-center flex flex-col items-center justify-center w-full h-30 border-2 border-dashed border-[var(--gray)] rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
+            <label className="text-center flex flex-col items-center justify-center w-full h-30 border border-dashed border-[var(--high-translucid)] rounded-2xl cursor-pointer hover:bg-[var(--low-translucid)] transition-all overflow-hidden">
               <span className="color-gray">Clique aqui para inserir seu banner (recomendado 1640px de largura ou mais)</span>
               <input type="file" accept="image/*" className="hidden" onChange={handleTempBannerChange} />
             </label>
           )}
           <div className="flex justify-end gap-2 mt-4">
-            <button onClick={closeAllModals} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded-lg">
+            <button onClick={closeAllModals} className="cursor-pointer px-4 py-2 border border-brand-line hover:bg-[var(--translucid)] rounded-full transition">
               Cancelar
             </button>
             <button
               onClick={applyTempBanner}
               disabled={uploadingBanner}
-              className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded-lg disabled:opacity-60"
+              className="cursor-pointer px-4 py-2 bg-verde text-white rounded-full transition hover:opacity-90 disabled:opacity-60"
             >
               {uploadingBanner ? "Enviando..." : "Salvar"}
             </button>
@@ -823,7 +817,7 @@ const Menu = (props) => {
 
       {logoModalOpen && (
         <GenericModal title="Alterar logo" onClose={closeAllModals} wfull size="md">
-          <label className="text-center flex flex-col items-center justify-center w-30 h-30 border-2 border-dashed border-[var(--gray)] rounded-lg cursor-pointer hover:scale-[1.01] transition-all overflow-hidden">
+          <label className="text-center flex flex-col items-center justify-center w-30 h-30 border border-dashed border-[var(--high-translucid)] rounded-2xl cursor-pointer hover:bg-[var(--low-translucid)] transition-all overflow-hidden">
             {tempLogoPreview ? (
               <img src={tempLogoPreview} alt="Preview temporário" className="object-cover w-full h-full" />
             ) : (
@@ -832,18 +826,18 @@ const Menu = (props) => {
             <input type="file" accept="image/*" className="hidden" onChange={handleTempLogoChange} />
           </label>
           {tempLogoFile && (
-            <button onClick={() => setTempLogoFile(null)} className="mt-1 text-sm text-red-500 hover:underline">
+            <button onClick={() => setTempLogoFile(null)} className="mt-1 text-sm text-brand-red hover:underline">
               Remover logo
             </button>
           )}
           <div className="flex justify-end gap-2 mt-4">
-            <button onClick={closeAllModals} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded-lg">
+            <button onClick={closeAllModals} className="cursor-pointer px-4 py-2 border border-brand-line hover:bg-[var(--translucid)] rounded-full transition">
               Cancelar
             </button>
             <button
               onClick={applyTempLogo}
               disabled={uploadingLogo}
-              className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded-lg disabled:opacity-60"
+              className="cursor-pointer px-4 py-2 bg-verde text-white rounded-full transition hover:opacity-90 disabled:opacity-60"
             >
               {uploadingLogo ? "Enviando..." : "Salvar"}
             </button>

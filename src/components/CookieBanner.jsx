@@ -47,8 +47,8 @@ export default function CookieBanner() {
 
   if (consent !== null) return null;
 
-  const bg = colors?.background || "#171717";
-  const accent = colors?.details || "#ffffff";
+  const bg = colors?.background || "#2a2220";
+  const accent = colors?.details || "#d42020";
   const textColor = getContrastTextColor(bg);
   const accentTextColor = getContrastTextColor(accent);
 

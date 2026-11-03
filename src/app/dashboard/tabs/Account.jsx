@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import useUser from "@/hooks/useUser";
 import { STAFF_PLAN_ROLES } from "@/lib/staff";
-import { FaChevronLeft, FaPen, FaChevronRight, FaLock } from "react-icons/fa";
+import { FaChevronLeft, FaPen, FaChevronRight, FaLock, FaSignOutAlt } from "react-icons/fa";
 import Loading from "@/components/Loading";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
@@ -162,6 +162,7 @@ const Account = ({ setSelectedTab }) => {
       cancel
         ? "Cancelar o pedido de exclusão? Seu cardápio volta a ficar no ar."
         : "Quer mesmo excluir sua conta? Seu cardápio sai do ar na hora e todos os seus dados (cardápio, produtos, pedidos e imagens) serão apagados em até 15 dias. Isso não pode ser desfeito depois da exclusão.",
+      cancel ? { tone: "confirm" } : undefined,
     );
     if (!ok) return;
 
@@ -202,16 +203,16 @@ const Account = ({ setSelectedTab }) => {
         <div className="flex items-center mb-4">
           <button
             type="button"
-            className="p-2 rounded-lg hover:bg-[var(--translucid)] transition cursor-pointer"
+            className="p-2 rounded-xl hover:bg-[var(--translucid)] transition cursor-pointer"
             onClick={() => setSelectedTab("menu")}
             aria-label="Voltar"
           >
             <FaChevronLeft />
           </button>
-          <h2 className="ml-2 text-xl font-semibold">Conta</h2>
+          <h2 className="ml-2 font-semibold">Conta</h2>
         </div>
 
-        <div className="bg-translucid border-2 border-[var(--translucid)] rounded-2xl divide-y divide-[var(--translucid)]">
+        <div className="bg-translucid border border-[var(--translucid)] rounded-2xl divide-y divide-[var(--translucid)]">
           {/* Perfil */}
           <div className="flex items-center justify-between gap-3 p-4">
             <div className="min-w-0">
@@ -283,7 +284,7 @@ const Account = ({ setSelectedTab }) => {
                   value={phone}
                   onChange={(value) => setPhone(value)}
                   inputProps={{ required: true }}
-                  inputClass="!w-[220px] !px-3 !py-2 !bg-[var(--translucid)] !border !border-[var(--low-gray)] !rounded-lg !focus:outline-none !focus:ring-2 !focus:ring-blue-400 !pl-14"
+                  inputClass="!w-[220px] !px-3 !py-2 !bg-[var(--translucid)] !border !border-[var(--low-gray)] !rounded-xl !focus:outline-none !focus:ring-2 !focus:ring-brand-select !pl-14"
                   buttonClass="!border-r !border-[var(--low-gray)] !bg-[transparent] !rounded-l !hover:bg-[var(--low-gray)]"
                   containerClass="!flex !items-center"
                 />
@@ -292,7 +293,7 @@ const Account = ({ setSelectedTab }) => {
                 <button
                   onClick={handleSavePhone}
                   disabled={saving}
-                  className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded-lg transition hover:bg-green-700 disabled:opacity-50"
+                  className="cursor-pointer px-4 py-2 bg-verde text-white rounded-full transition hover:opacity-90 disabled:opacity-50"
                 >
                   {saving ? "Salvando..." : "Salvar"}
                 </button>
@@ -303,10 +304,10 @@ const Account = ({ setSelectedTab }) => {
           {/* Sair */}
           <div className="flex items-center gap-3 p-4">
             <button
-              className="text-white cursor-pointer bg-red-600/70 hover:bg-red-600/90 border-2 border-[var(--translucid)] rounded-lg px-4 py-2 transition"
+              className="flex items-center gap-2 cursor-pointer rounded-full border border-bite/30 px-4 py-2 text-brand-red transition hover:bg-bite/10"
               onClick={handleLogout}
             >
-              Sair da conta
+              <FaSignOutAlt /> Sair da conta
             </button>
             {["admin", "designer"].includes(profile?.role) && (
               <a href="/admin" className="underline color-gray">
@@ -334,7 +335,7 @@ const Account = ({ setSelectedTab }) => {
             <button
               onClick={() => handleDeletionRequest()}
               disabled={deletionSaving}
-              className="cursor-pointer underline hover:text-red-500 transition disabled:opacity-50"
+              className="cursor-pointer underline hover:text-brand-eyebrow transition disabled:opacity-50"
             >
               {deletionSaving ? "Enviando..." : "Excluir minha conta"}
             </button>
@@ -350,7 +351,7 @@ const Account = ({ setSelectedTab }) => {
             value={tempName ?? ""}
             maxLength={40}
             onChange={(e) => setTempName(e.target.value)}
-            className="w-full p-3 rounded-lg border border-[var(--translucid)] bg-translucid mb-4 outline-none transition focus:border-red-500/70"
+            className="w-full p-3 rounded-xl border border-[var(--translucid)] bg-translucid mb-4 outline-none transition focus:border-brand-select/70"
           />
           <div className="flex justify-end gap-2">
             <button
@@ -358,13 +359,13 @@ const Account = ({ setSelectedTab }) => {
                 setTempName(name);
                 setNameModalOpen(false);
               }}
-              className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded-lg transition hover:opacity-80"
+              className="cursor-pointer px-4 py-2 border border-brand-line hover:bg-[var(--translucid)] rounded-full transition"
             >
               Cancelar
             </button>
             <button
               onClick={handleSaveName}
-              className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded-lg transition hover:bg-green-700"
+              className="cursor-pointer px-4 py-2 bg-verde text-white rounded-full transition hover:opacity-90"
             >
               {saving ? "Salvando..." : "Salvar"}
             </button>
@@ -378,7 +379,7 @@ const Account = ({ setSelectedTab }) => {
             placeholder="Novo email"
             value={tempEmail ?? ""}
             onChange={(e) => setTempEmail(e.target.value)}
-            className="w-full p-3 rounded-lg border border-[var(--translucid)] bg-translucid mb-2 outline-none transition focus:border-red-500/70"
+            className="w-full p-3 rounded-xl border border-[var(--translucid)] bg-translucid mb-2 outline-none transition focus:border-brand-select/70"
           />
           <p className="text-xs color-gray mb-4">Você precisará confirmar a alteração pelo link enviado ao novo email.</p>
           <div className="flex justify-end gap-2">
@@ -387,14 +388,14 @@ const Account = ({ setSelectedTab }) => {
                 setTempEmail(profile.email);
                 setEmailModalOpen(false);
               }}
-              className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded-lg transition hover:opacity-80"
+              className="cursor-pointer px-4 py-2 border border-brand-line hover:bg-[var(--translucid)] rounded-full transition"
             >
               Cancelar
             </button>
             <button
               onClick={handleSaveEmail}
               disabled={saving}
-              className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded-lg transition hover:bg-green-700 disabled:opacity-50"
+              className="cursor-pointer px-4 py-2 bg-verde text-white rounded-full transition hover:opacity-90 disabled:opacity-50"
             >
               {saving ? "Salvando..." : "Salvar"}
             </button>

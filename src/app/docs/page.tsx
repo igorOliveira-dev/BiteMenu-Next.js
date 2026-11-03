@@ -91,7 +91,7 @@ const page = () => {
         <h3 className="docs-title">Dúvidas ou sugestões</h3>
         <p className="docs-paragraph">
           Se surgir qualquer dúvida ou se você tiver alguma sugestão para melhorar o Bite Menu,{" "}
-          <Link href="/support" className="underline text-blue-500 hover:text-blue-700">
+          <Link href="/support" className="underline text-brand-red hover:opacity-80">
             entre em contato com o suporte
           </Link>
           .

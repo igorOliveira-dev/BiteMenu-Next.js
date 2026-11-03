@@ -23,7 +23,7 @@ const UpdatePlanModal = ({
         <div className="flex gap-2 items-end justify-end">
           <button
             onClick={onClose}
-            className="cursor-pointer px-4 py-2 bg-translucid border-2 border-[var(--translucid)] hover:opacity-80 rounded-lg"
+            className="cursor-pointer px-4 py-2 bg-translucid border border-[var(--translucid)] hover:opacity-80 rounded-xl"
             type="button"
           >
             Agora não
@@ -36,7 +36,7 @@ const UpdatePlanModal = ({
               else if (plan) goToPlan(plan);
               else onClose?.();
             }}
-            className="cta-button glow-red"
+            className="cta-button"
             type="button"
           >
             {ctaText}

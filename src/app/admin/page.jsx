@@ -274,19 +274,19 @@ const Admin = () => {
       {isAdmin && (
         <>
           <p className="text-center mb-2 text-sm">
-            <a href="/admin/motivos-cancelamento" className="underline text-blue-500">
+            <a href="/admin/motivos-cancelamento" className="underline text-brand-red">
               Motivos de cancelamento
             </a>
           </p>
 
           <p className="text-center mb-2 text-sm">
-            <a href="/admin/pagamentos" className="underline text-blue-500">
+            <a href="/admin/pagamentos" className="underline text-brand-red">
               Pagamentos ValidaPay
             </a>
           </p>
 
           <p className="text-center mb-2 text-sm">
-            <a href="/admin/remarketing" className="underline text-blue-500">
+            <a href="/admin/remarketing" className="underline text-brand-red">
               Remarketing por e-mail
             </a>
           </p>
@@ -294,7 +294,7 @@ const Admin = () => {
       )}
 
       <p className="text-center mb-2 text-sm">
-        <a href="/admin/pesquisa-de-perfil" className="underline text-blue-500">
+        <a href="/admin/pesquisa-de-perfil" className="underline text-brand-red">
           Pesquisa de perfil
         </a>
       </p>
@@ -323,7 +323,7 @@ const Admin = () => {
                     key={n}
                     onClick={() => setDailyRange(n)}
                     className={`px-3 py-1 rounded text-xs border ${
-                      dailyRange === n ? "bg-blue-600 border-blue-600 text-white" : "bg-translucid border-translucid"
+                      dailyRange === n ? "bg-bite border-bite text-white" : "bg-translucid border-translucid"
                     }`}
                   >
                     {label}
@@ -346,7 +346,7 @@ const Admin = () => {
                         <XAxis dataKey="day" stroke="#999" fontSize={12} />
                         <YAxis stroke="#999" fontSize={12} allowDecimals={false} />
                         <Tooltip
-                          contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #333" }}
+                          contentStyle={{ backgroundColor: "#2a2220", border: "1px solid #fbf5ef26" }}
                           labelStyle={{ color: "#fff" }}
                         />
                         <Legend wrapperStyle={{ fontSize: 12 }} />
@@ -354,15 +354,15 @@ const Admin = () => {
                           type="monotone"
                           dataKey="clientes"
                           name="Novos clientes (menus)"
-                          stroke="#3b82f6"
-                          fill="#3b82f6"
+                          stroke="#d42020"
+                          fill="#d42020"
                           fillOpacity={0.2}
                           strokeWidth={2}
                         />
                         <Bar
                           dataKey="pagantes"
                           name="Novos pagantes"
-                          fill="#22c55e"
+                          fill="#8c7566"
                           barSize={dailyData.length > 30 ? undefined : 12}
                         />
                       </ComposedChart>
@@ -382,15 +382,15 @@ const Admin = () => {
                   <XAxis dataKey="month" stroke="#999" fontSize={12} />
                   <YAxis stroke="#999" fontSize={12} allowDecimals={false} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #333" }}
+                    contentStyle={{ backgroundColor: "#2a2220", border: "1px solid #fbf5ef26" }}
                     labelStyle={{ color: "#fff" }}
                   />
                   <Area
                     type="monotone"
                     dataKey="total"
                     name="Total de clientes"
-                    stroke="#3b82f6"
-                    fill="#3b82f6"
+                    stroke="#d42020"
+                    fill="#d42020"
                     fillOpacity={0.2}
                     strokeWidth={2}
                   />
@@ -470,15 +470,15 @@ const Admin = () => {
           {paginatedMenus.map((menu) => (
             <li
               key={menu.id}
-              className={`p-4 bg-translucid border-2 ${
+              className={`p-4 bg-translucid border ${
                 menu.owner_role === "admin"
                   ? "border-red-500"
                   : menu.owner_role === "plus"
-                    ? "border-blue-500"
+                    ? "border-2 border-verde"
                     : menu.owner_role === "pro"
-                      ? "border-4 border-blue-900"
+                      ? "border-4 border-azul"
                       : menu.owner_role === "business"
-                        ? "border-4 border-amber-500"
+                        ? "border-6 border-brasa"
                         : "border-translucid"
               } rounded-lg flex flex-col gap-2`}
             >
@@ -522,11 +522,11 @@ const Admin = () => {
                 email: <span className="font-semibold text-white">{menu.owner_email}</span>
               </p>
 
-              <a href={`${window.location.origin}/menu/${menu.slug}`} target="_blank" className="underline text-blue-500">
+              <a href={`${window.location.origin}/menu/${menu.slug}`} target="_blank" className="underline text-brand-red">
                 acessar
               </a>
 
-              <a href={`https://wa.me/${menu.owner_phone}`} target="_blank" className="underline text-blue-500">
+              <a href={`https://wa.me/${menu.owner_phone}`} target="_blank" className="underline text-brand-red">
                 whatsapp
               </a>
             </li>

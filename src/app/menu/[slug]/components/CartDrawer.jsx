@@ -987,7 +987,7 @@ function CartDrawerContent({
       >
         {/* HEADER */}
         <div className="sticky top-0 bg-inherit z-10 flex items-center justify-between p-4">
-          <h3 className="text-lg font-bold">
+          <h3 className="font-bold">
             Seu carrinho ({typeof cart.totalItems === "function" ? cart.totalItems(menu?.id) : currentItems.length})
           </h3>
           <div className="flex items-center gap-4">

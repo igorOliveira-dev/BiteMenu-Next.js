@@ -27,3 +27,18 @@ export const ORDER_STATUS = {
   out_for_delivery: "Saiu para entrega",
   delivered: "Entregue",
 };
+
+// Cor de cada etapa: âmbar aguardando, azul em andamento, verde pronto e cinza já finalizado.
+// Classes escritas por extenso pro Tailwind encontrar.
+const PROGRESS = { pill: "bg-info/12 text-info", dot: "bg-info", ring: "ring-info/25", border: "border-info/50" };
+export const ORDER_STATUS_STYLE = {
+  received: { pill: "bg-st-wait/12 text-st-wait", dot: "bg-st-wait", ring: "ring-st-wait/25", border: "border-st-wait/50" },
+  preparing: PROGRESS,
+  ready: { pill: "bg-st-done/12 text-st-done", dot: "bg-st-done", ring: "ring-st-done/25", border: "border-st-done/50" },
+  out_for_delivery: PROGRESS,
+  delivered: { pill: "bg-[var(--translucid)] color-gray", dot: "bg-st-done", ring: "ring-st-done/25", border: "border-translucid" },
+};
+
+// Pago / pendente, o mesmo nos cards de pedidos e de entregas
+export const paidPillClass = (isPaid) =>
+  `inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${isPaid ? "bg-st-done/12 text-st-done" : "bg-st-wait/12 text-st-wait"}`;

@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import ThemeToggle from "@/components/ThemeToggle";
-import logoMark from "../../../public/LogoMarca-sem-fundo.png";
-import logoTip from "../../../public/LogoTipo-sem-fundo.png";
+import BrandLogo from "@/components/BrandLogo";
 import Link from "next/link";
 
 type InstallStatus = "checking" | "ready" | "installing" | "installed" | "unsupported";
@@ -84,32 +82,22 @@ export default function DownloadPage() {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-4">
-      <header className="fixed top-0 inset-x-0 flex items-center justify-between p-2 m-2 my-3 bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)] z-50 backdrop-blur-2xl">
-        <Image
-          src={logoMark}
-          height={50}
-          width={180}
-          alt="Bite Menu"
-          onClick={() => (window.location.href = "/")}
-          className="hidden xs:block"
-        />
-        <Image
-          src={logoTip}
-          height={50}
-          width={50}
-          alt="Bite Menu"
-          onClick={() => (window.location.href = "/")}
-          className="block xs:hidden"
-        />
+      <header className="fixed top-0 inset-x-0 flex items-center justify-between m-2 my-3 bg-brand-surface/85 border border-brand-line rounded-full pl-4 pr-1.5 py-1.5 z-50 backdrop-blur-2xl">
+        <div className="hidden xs:block">
+          <BrandLogo />
+        </div>
+        <div className="block xs:hidden">
+          <BrandLogo showName={false} />
+        </div>
         <div className="flex">
           <ThemeToggle />
         </div>
       </header>
 
-      <div className="max-w-md w-full text-center space-y-6 bg-low-gray p-8 rounded-lg">
+      <div className="max-w-md w-full text-center space-y-6 bg-brand-surface border border-brand-line p-8 rounded-2xl">
         <h1 className="default-h1 font-bold">Instale o Bite Menu</h1>
 
-        {status === "checking" && <p className="text-zinc-500 animate-pulse">Verificando compatibilidade...</p>}
+        {status === "checking" && <p className="color-gray animate-pulse">Verificando compatibilidade...</p>}
 
         {status === "ready" && (
           <>
@@ -132,8 +120,8 @@ export default function DownloadPage() {
 
         {status === "installed" && (
           <div className="space-y-3">
-            <p className="text-green-400 font-semibold">Instalação concluída.</p>
-            <p className="text-zinc-400 text-sm">Abra o Bite Menu pelo ícone na sua tela inicial para acessar o painel.</p>
+            <p className="text-st-done font-semibold">Instalação concluída.</p>
+            <p className="color-gray text-sm">Abra o Bite Menu pelo ícone na sua tela inicial para acessar o painel.</p>
           </div>
         )}
 
@@ -145,7 +133,7 @@ export default function DownloadPage() {
       </div>
       <p className="text-sm color-gray pt-2 text-center">
         Em qualquer caso de problemas com o download, entre em contato com o{" "}
-        <Link href="/support" className="underline text-blue-500 hover:text-blue-700">
+        <Link href="/support" className="underline text-brand-red hover:opacity-80">
           suporte
         </Link>
         .

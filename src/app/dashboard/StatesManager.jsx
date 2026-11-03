@@ -327,7 +327,7 @@ export default function StatesManager({
 
   const revertAll = async () => {
     if (!serverState) return;
-    const ok = await confirm("Quer mesmo descartar todas as alterações?");
+    const ok = await confirm("Quer mesmo descartar todas as alterações?", { tone: "confirm" });
     if (!ok) {
       console.log("[submit] usuário cancelou");
       return;
@@ -418,7 +418,7 @@ export default function StatesManager({
 
     // pelo assistente o dono já confirmou no chat
     if (!fromAi) {
-      const ok = await confirm("Quer mesmo salvar todas as alterações?");
+      const ok = await confirm("Quer mesmo salvar todas as alterações?", { tone: "confirm" });
       if (!ok) {
         console.log("[submit] usuário cancelou");
         return false;
@@ -661,7 +661,7 @@ export default function StatesManager({
         ${selectedTab === "menu" || selectedTab === "configMenu" ? "" : "hidden"}
         `}
       >
-        <div className="bg-[var(--low-gray)] border-2 border-translucid text-[var(--foreground)] p-4 rounded-lg shadow-lg xs:w-[340px]">
+        <div className="bg-brand-surface border border-translucid text-[var(--foreground)] p-4 rounded-2xl shadow-lg xs:w-[340px]">
           <div className="flex justify-between items-center">
             <strong>Alterações não salvas</strong>
             <span className="text-sm">{changedFields.length}</span>
@@ -672,12 +672,12 @@ export default function StatesManager({
           </button>
 
           <div className="flex justify-end gap-2">
-            <button onClick={revertAll} className="cursor-pointer px-4 py-2 bg-[var(--translucid)] hover:opacity-80 rounded">
+            <button onClick={revertAll} className="cursor-pointer px-4 py-2 bg-[var(--translucid)] hover:opacity-80 rounded-full">
               Descartar tudo
             </button>
             <button
               onClick={saveAll}
-              className="cursor-pointer px-4 py-2 bg-green-600 hover:opacity-80 text-white rounded"
+              className="cursor-pointer px-4 py-2 bg-verde hover:opacity-90 text-white rounded-full"
               disabled={saving}
             >
               {saving ? "Salvando..." : "Salvar tudo"}
@@ -782,12 +782,12 @@ export default function StatesManager({
 
             {/* Botões fixos */}
             <div className="mt-2 flex justify-center gap-2 pt-2">
-              <button onClick={revertAll} className="cursor-pointer px-4 py-2 bg-gray-600 text-white rounded">
+              <button onClick={revertAll} className="cursor-pointer px-4 py-2 border border-brand-line hover:bg-[var(--translucid)] rounded-full transition">
                 Descartar tudo
               </button>
               <button
                 onClick={saveAll}
-                className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded"
+                className="cursor-pointer px-4 py-2 bg-verde text-white rounded-full transition hover:opacity-90"
                 disabled={saving}
               >
                 {saving ? "Salvando..." : "Salvar tudo"}

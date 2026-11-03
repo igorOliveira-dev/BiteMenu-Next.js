@@ -58,7 +58,7 @@ export default function AdminMotivosCancelamentoPage() {
         </p>
       ) : (
         <>
-          <div className="rounded-3xl border-2 bg-translucid border-[var(--translucid)] px-5 py-4 space-y-3">
+          <div className="rounded-3xl border bg-translucid border-[var(--translucid)] px-5 py-4 space-y-3">
             {ranked.map(([reason, count]) => (
               <div key={reason} className="space-y-1">
                 <div className="flex items-center justify-between text-sm gap-3">
@@ -79,7 +79,7 @@ export default function AdminMotivosCancelamentoPage() {
 
           <ul className="space-y-2">
             {rows.map((r) => (
-              <li key={r.id} className="p-4 rounded-2xl bg-translucid border-2 border-[var(--translucid)] text-sm">
+              <li key={r.id} className="p-4 rounded-2xl bg-translucid border border-[var(--translucid)] text-sm">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-semibold">{r.name}</span>
                   {r.plan && <span className="text-xs font-mono">({r.plan})</span>}

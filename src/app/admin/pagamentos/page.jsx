@@ -80,7 +80,7 @@ export default function AdminPagamentosPage() {
             {visible.map((p, i) => (
               <li
                 key={`${p.subscriptionId}-${p.paidAt}-${i}`}
-                className="p-4 rounded-2xl bg-translucid border-2 border-[var(--translucid)] text-sm"
+                className="p-4 rounded-2xl bg-translucid border border-[var(--translucid)] text-sm"
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-semibold">{p.name || p.email || "Cliente não encontrado"}</span>

@@ -2,11 +2,9 @@
 import Loading from "@/components/Loading";
 import ThemeToggle from "@/components/ThemeToggle";
 import useUser from "@/hooks/useUser";
-import Image from "next/image";
 import Link from "next/link";
 import React, { useEffect, useRef, useState } from "react";
-import logoMark from "../../../public/LogoMarca-sem-fundo.png";
-import logoTip from "../../../public/LogoTipo-sem-fundo.png";
+import BrandLogo from "@/components/BrandLogo";
 import { FaMoon, FaSun } from "react-icons/fa";
 
 const docsNavigation = [
@@ -143,16 +141,13 @@ export default function Layout({ children }) {
 
   return (
     <div>
-      <header className="fixed inset-x-0 flex items-center justify-between p-2 m-2 my-3 bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)] z-10 backdrop-blur-2xl">
-        <Link
-          href="/docs"
-          onClick={() => {
-            (setIsOpen(false), setExpension(""));
-          }}
-        >
-          <Image src={logoMark} height={50} width={180} alt="Bite Menu" className="hidden xs:block" />
-          <Image src={logoTip} height={50} width={50} alt="Bite Menu" className="block xs:hidden" />
-        </Link>
+      <header className="fixed inset-x-0 flex items-center justify-between m-2 my-3 bg-brand-surface/85 border border-brand-line rounded-full pl-4 pr-1.5 py-1.5 z-10 backdrop-blur-2xl">
+        <div className="hidden xs:block">
+          <BrandLogo href="/docs" onClick={() => (setIsOpen(false), setExpension(""))} />
+        </div>
+        <div className="block xs:hidden">
+          <BrandLogo href="/docs" showName={false} onClick={() => (setIsOpen(false), setExpension(""))} />
+        </div>
         <div className="flex">
           <Link className="cta-button small" href="https://www.bitemenu.com.br">
             Criar cardápio!
@@ -189,7 +184,7 @@ export default function Layout({ children }) {
         <div className="relative w-full h-full">
           <nav
             ref={navRef}
-            className="flex flex-col w-full h-full bg-translucid rounded-lg shadow-[0_0_10px_var(--shadow)] z-10 backdrop-blur-2xl overflow-y-auto overflow-x-hidden scrollbar-none"
+            className="flex flex-col w-full h-full bg-translucid rounded-2xl border border-brand-line z-10 backdrop-blur-2xl overflow-y-auto overflow-x-hidden scrollbar-none"
           >
             <button
               className="flex gap-2 w-full justify-center cursor-pointer p-3 transition-colors hover-bg-translucid lg:hidden color-gray border-b-2 border-translucid"

@@ -31,7 +31,7 @@ const page = () => {
             href="https://www.bitemenu.com.br/register"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline text-blue-500 hover:text-blue-700"
+            className="underline text-brand-red hover:opacity-80"
           >
             clique aqui para criar uma conta
           </a>
@@ -121,7 +121,7 @@ const page = () => {
           <a
             href="https://www.bitemenu.com.br/dashboard"
             target="_blank"
-            className="underline text-blue-500 hover:text-blue-700"
+            className="underline text-brand-red hover:opacity-80"
           >
             dashboard do Bite Menu
           </a>{" "}
@@ -139,7 +139,7 @@ const page = () => {
           <a
             href="https://www.bitemenu.com.br/pricing"
             target="_blank"
-            className="underline text-blue-500 hover:text-blue-700"
+            className="underline text-brand-red hover:opacity-80"
           >
             upgrade para um plano superior
           </a>{" "}
@@ -155,7 +155,7 @@ const page = () => {
           <a
             href="https://bitemenu.com.br/dashboard"
             target="_blank"
-            className="underline text-blue-500 hover:text-blue-700"
+            className="underline text-brand-red hover:opacity-80"
           >
             dashboard do Bite Menu
           </a>{" "}

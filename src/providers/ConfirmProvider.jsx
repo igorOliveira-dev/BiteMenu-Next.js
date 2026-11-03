@@ -8,10 +8,11 @@ const ConfirmContext = createContext(null);
 export function ConfirmProvider({ children }) {
   const [options, setOptions] = useState(null);
 
-  // Função global que será usada para abrir o modal
-  const confirm = (message) => {
+  // Função global que será usada para abrir o modal.
+  // Padrão é vermelho (remover, excluir, descartar); { tone: "confirm" } deixa verde pra confirmação positiva.
+  const confirm = (message, { tone } = {}) => {
     return new Promise((resolve) => {
-      setOptions({ message, resolve });
+      setOptions({ message, tone, resolve });
     });
   };
 
@@ -28,7 +29,7 @@ export function ConfirmProvider({ children }) {
   return (
     <ConfirmContext.Provider value={confirm}>
       {children}
-      {options && <ConfirmModal message={options.message} onConfirm={handleConfirm} onCancel={handleCancel} />}
+      {options && <ConfirmModal message={options.message} tone={options.tone} onConfirm={handleConfirm} onCancel={handleCancel} />}
     </ConfirmContext.Provider>
   );
 }

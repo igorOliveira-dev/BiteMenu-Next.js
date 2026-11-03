@@ -15,7 +15,7 @@ import { FaBoxes, FaChevronLeft, FaSearch, FaSyncAlt } from "react-icons/fa";
 function StockInput({ stock, value, onChange }) {
   return (
     <div className="flex items-center gap-2 shrink-0">
-      {stock === 0 && <span className="text-xs font-semibold text-red-500">Esgotado</span>}
+      {stock === 0 && <span className="text-xs font-semibold text-brand-red">Esgotado</span>}
       <input
         type="number"
         min={0}
@@ -23,7 +23,7 @@ function StockInput({ stock, value, onChange }) {
         value={value}
         placeholder="Sem controle"
         onChange={(e) => onChange(e.target.value)}
-        className="w-28 xs:w-32 p-2 rounded-lg bg-translucid border-2 border-[var(--translucid)] text-sm"
+        className="w-28 xs:w-32 p-2 rounded-xl bg-translucid border border-[var(--translucid)] text-sm"
       />
     </div>
   );
@@ -41,7 +41,7 @@ const STATUS = {
 
 const rowClass =
   "rounded-xl border border-translucid bg-[var(--low-translucid)] p-3 flex items-center justify-between gap-3";
-const fieldClass = "p-2 rounded-lg bg-translucid border-2 border-[var(--translucid)] text-sm";
+const fieldClass = "p-2 rounded-xl bg-translucid border border-[var(--translucid)] text-sm";
 
 const Stock = ({ setSelectedTab }) => {
   const { menu, loading: menuLoading } = useMenu();
@@ -118,7 +118,7 @@ const Stock = ({ setSelectedTab }) => {
   }, [menu?.id, ownerRole]);
 
   const refresh = async () => {
-    if (changes.length && !(await confirm("Descartar as alterações não salvas e atualizar o estoque?"))) return;
+    if (changes.length && !(await confirm("Descartar as alterações não salvas e atualizar o estoque?", { tone: "confirm" }))) return;
     setDrafts({});
     load(true);
   };
@@ -198,14 +198,14 @@ const Stock = ({ setSelectedTab }) => {
     <div className="flex items-center gap-2">
       <button
         type="button"
-        className="p-2 rounded-lg hover:bg-[var(--translucid)] transition cursor-pointer"
+        className="p-2 rounded-xl hover:bg-[var(--translucid)] transition cursor-pointer"
         onClick={() => setSelectedTab("menu")}
         aria-label="Voltar ao cardápio"
       >
         <FaChevronLeft />
       </button>
       <div>
-        <h2 className="text-lg font-semibold leading-tight">Estoque</h2>
+        <h2 className="font-semibold leading-tight">Estoque</h2>
         <p className="text-xs color-gray">Deixe vazio para não controlar. O que esgotar some do cardápio.</p>
       </div>
       {!loading && (
@@ -213,7 +213,7 @@ const Stock = ({ setSelectedTab }) => {
           type="button"
           disabled={refreshing || saving}
           onClick={refresh}
-          className="ml-auto shrink-0 cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-[var(--translucid)] transition disabled:opacity-50"
+          className="ml-auto shrink-0 cursor-pointer flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-[var(--translucid)] transition disabled:opacity-50"
         >
           <FaSyncAlt className={refreshing ? "animate-spin" : ""} />
           <span className="hidden xs:inline">Atualizar</span>
@@ -255,7 +255,7 @@ const Stock = ({ setSelectedTab }) => {
 
       {/* filtros fixos no topo enquanto rola a lista */}
       <div className="sticky top-0 z-[1] -mx-1 px-1 py-2 backdrop-blur-2xl flex flex-col gap-2">
-        <div className="flex gap-1 p-1 rounded-lg bg-translucid w-fit">
+        <div className="flex gap-1 p-1 rounded-xl bg-translucid w-fit">
           {[
             ["items", `Itens (${items.length})`],
             ["options", `Opções (${options.length})`],
@@ -350,7 +350,7 @@ const Stock = ({ setSelectedTab }) => {
           type="button"
           disabled={saving || changes.length === 0}
           onClick={() => setDrafts({})}
-          className="cursor-pointer px-4 py-2 rounded-lg text-sm hover:bg-[var(--translucid)] transition disabled:opacity-50"
+          className="cursor-pointer px-4 py-2 rounded-xl text-sm hover:bg-[var(--translucid)] transition disabled:opacity-50"
         >
           Descartar
         </button>
@@ -358,7 +358,7 @@ const Stock = ({ setSelectedTab }) => {
           type="button"
           disabled={saving || changes.length === 0}
           onClick={confirmStock}
-          className="cursor-pointer px-4 py-2 rounded-lg text-sm font-semibold bg-[var(--foreground)] text-[var(--background)] transition disabled:opacity-50"
+          className="cursor-pointer px-4 py-2 rounded-full text-sm font-semibold bg-verde text-white transition hover:opacity-90 disabled:opacity-50"
         >
           {saving ? "Salvando..." : changes.length ? `Confirmar estoque (${changes.length})` : "Confirmar estoque"}
         </button>

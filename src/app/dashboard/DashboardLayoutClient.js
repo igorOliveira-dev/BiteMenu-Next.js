@@ -7,9 +7,7 @@ import { hasMenu } from "@/lib/queries/menus";
 import { getStaff } from "@/lib/staff";
 import Loading from "@/components/Loading";
 import useUser from "@/hooks/useUser";
-import Image from "next/image";
-import LogoMark from "../../../public/LogoMarca-sem-fundo.png";
-import LogoTip from "../../../public/LogoTipo-sem-fundo.png";
+import BrandLogo from "@/components/BrandLogo";
 import ThemeToggle from "@/components/ThemeToggle";
 import { FaBolt } from "react-icons/fa";
 import PrivacyAcceptModal from "@/components/PrivacyAcceptModal";
@@ -108,26 +106,13 @@ export default function DashboardLayoutClient({ children }) {
 
   return (
     <>
-      <header className="z-10 backdrop-blur-2xl flex items-center fixed top-0 w-[calc(100%-20px)] justify-between p-2 m-2 my-3 bg-translucid border-2 border-translucid rounded-lg shadow-[0_0_10px_var(--shadow)]">
-        {/* logo marca - telas grandes */}
-        <Image
-          src={LogoMark}
-          height={50}
-          width={180}
-          alt="Bite Menu"
-          onClick={() => (window.location.href = "/dashboard")}
-          className="hidden xs:block cursor-pointer"
-        />
-
-        {/* logo tipo - telas pequenas */}
-        <Image
-          src={LogoTip}
-          height={50}
-          width={50}
-          alt="Bite Menu"
-          onClick={() => (window.location.href = "/dashboard")}
-          className="block xs:hidden cursor-pointer"
-        />
+      <header className="z-10 backdrop-blur-xl flex items-center fixed top-0 w-[calc(100%-20px)] justify-between py-1.5 pl-4 pr-1.5 m-2 my-3 bg-brand-surface/85 border border-brand-line rounded-full">
+        <div className="hidden xs:block">
+          <BrandLogo as="a" href="/dashboard" />
+        </div>
+        <div className="block xs:hidden">
+          <BrandLogo as="a" href="/dashboard" showName={false} />
+        </div>
 
         <div className="flex items-center gap-2">
           {/* botao de melhorar plano */}

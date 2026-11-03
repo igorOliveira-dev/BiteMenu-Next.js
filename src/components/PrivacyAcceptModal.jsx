@@ -55,7 +55,7 @@ export default function PrivacyAcceptModal({ userId, onAccepted, onClose }) {
             href="/politica-de-privacidade#coleta-de-dados"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline text-blue-500 hover:text-blue-700"
+            className="underline text-brand-red hover:opacity-80"
           >
             Ler Política de Privacidade
           </a>
@@ -64,13 +64,13 @@ export default function PrivacyAcceptModal({ userId, onAccepted, onClose }) {
             href="/termos-de-uso"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline text-blue-500 hover:text-blue-700"
+            className="underline text-brand-red hover:opacity-80"
           >
             Ler Termos de Uso
           </a>
         </p>
         <button
-          className="cursor-pointer px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-all disabled:opacity-50 mt-2"
+          className="cursor-pointer px-4 py-2 bg-bite text-white rounded-full hover:opacity-90 transition-all disabled:opacity-50 mt-2"
           onClick={handleAccept}
           disabled={submitting}
           type="button"

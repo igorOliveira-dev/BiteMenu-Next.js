@@ -161,7 +161,7 @@ const ActionsMenu = ({ options, buttonClassName = "" }) => {
                 setOpen(false);
               }}
               className={`w-full flex items-center gap-2 px-3 py-3 text-sm text-left cursor-pointer transition hover:bg-[var(--translucid)] ${
-                opt.danger ? "text-red-500" : ""
+                opt.danger ? "text-brand-red" : ""
               }`}
             >
               {opt.icon}
