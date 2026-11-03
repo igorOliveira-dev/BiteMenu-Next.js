@@ -309,14 +309,15 @@ export default function LandingPageV2() {
           </div>
           <div className="flex h-[360px] justify-center overflow-hidden md:mt-10 md:h-[420px]">
             {/* cardápio de exemplo ao vivo, cortado embaixo pela borda do card; segue o tema claro/escuro
-                do site (useDemoTheme). Renderizado com 400px e reduzido a 65%: texto menor e mais fotos */}
-            <div className="h-[580px] w-[280px] shrink-0 self-start overflow-hidden rounded-[2.6rem] border-[10px] border-grafite bg-grafite shadow-[0_20px_50px_var(--shadow)]">
-              <div className="h-full w-full overflow-hidden rounded-[1.9rem] bg-brand-bg">
+                do site (useDemoTheme). Renderizado ~470px de largura e reduzido a 58%: texto menor e mais fotos */}
+            <div className="h-[580px] w-[280px] shrink-0 self-start overflow-hidden rounded-[2.6rem] border-[4px] border-[var(--foreground)]/80 bg-[var(--foreground)]/80 shadow-[0_20px_50px_var(--shadow)]">
+              <div className="h-full w-full overflow-hidden rounded-[2.35rem] bg-brand-bg">
                 <iframe
                   src="/menu/bite-menu"
                   title="Cardápio de exemplo do Bite Menu"
                   loading="lazy"
-                  className="h-[862px] w-[400px] max-w-none origin-top-left scale-[0.65]"
+                  // tamanho = área interna ÷ 0.58, então preenche o celular com qualquer espessura de borda
+                  className="h-[calc(100%/0.58)] w-[calc(100%/0.58)] max-w-none origin-top-left scale-[0.58]"
                 />
               </div>
             </div>
