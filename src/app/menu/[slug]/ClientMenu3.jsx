@@ -551,14 +551,14 @@ export default function ClientMenu3({ menu: rawMenu, ownerPhone, ownerRole, demo
               {isSafeImageUrl(menu.logo_url) && (
                 <Image
                   alt="Logo do estabelecimento"
-                  src={supabaseImg(menu.logo_url, { width: 120, height: 120, quality: 80 })}
-                  width={70}
-                  height={70}
-                  className="w-[52px] h-[52px] sm:w-[70px] sm:h-[70px] object-cover rounded-xl border-2 shrink-0"
+                  src={supabaseImg(menu.logo_url, { width: 200, height: 200, quality: 80 })}
+                  width={88}
+                  height={88}
+                  className="w-[64px] h-[64px] sm:w-[88px] sm:h-[88px] object-cover rounded-xl border shrink-0"
                   loading="lazy"
                 />
               )}
-              <h1 className="text-xl sm:text-2xl font-bold" style={{ color: menu.title_color || foregroundToUse }}>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight" style={{ color: menu.title_color || foregroundToUse }}>
                 {menu.title}
               </h1>
             </div>
@@ -620,7 +620,7 @@ export default function ClientMenu3({ menu: rawMenu, ownerPhone, ownerRole, demo
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Buscar item..."
-            className="w-full py-2 px-4 rounded-lg outline-none text-sm"
+            className="w-full py-2 px-4 rounded-full outline-none text-sm"
             style={{
               backgroundColor: translucidToUse,
               color: foregroundToUse,
@@ -631,17 +631,19 @@ export default function ClientMenu3({ menu: rawMenu, ownerPhone, ownerRole, demo
         {/* Nav de categorias — pills coloridas no dark */}
         {navCategories.length > 0 && (
           <div
-            className="flex sticky -top-1 border-y-2 overflow-x-auto whitespace-nowrap scrollbar-none z-10 lg:mx-20 xl:mx-32"
+            className="flex gap-1 px-2 py-2 sticky -top-1 border-y overflow-x-auto whitespace-nowrap scrollbar-none z-10 lg:mx-20 xl:mx-32"
             style={{
               backgroundColor: menu.background_color,
               borderColor: translucidToUse,
               color: foregroundToUse,
+              "--nav-hover": translucidToUse, // hover dos itens no tom do dono, como a barra lateral do painel
+              "--nav-glass": `${translucidToUse.slice(0, 7)}0d`, // vidro leve: mesmo tom com ~5% de opacidade
             }}
           >
             <>
               {hasStarred && hasPlusPermissions && (
                 <button
-                  className="cursor-pointer p-4 font-semibold"
+                  className="cursor-pointer rounded-xl border border-[var(--nav-hover)] bg-[var(--nav-glass)] backdrop-blur-sm px-4 py-2.5 transition-colors hover:bg-[var(--nav-hover)] font-semibold"
                   onClick={(e) => {
                     e.preventDefault();
                     scrollToCategoryId("starred-section", 40);
@@ -654,7 +656,7 @@ export default function ClientMenu3({ menu: rawMenu, ownerPhone, ownerRole, demo
               {navCategories.map((cat) => (
                 <div key={cat.id}>
                   <button
-                    className="cursor-pointer p-4"
+                    className="cursor-pointer rounded-xl border border-[var(--nav-hover)] bg-[var(--nav-glass)] backdrop-blur-sm px-4 py-2.5 transition-colors hover:bg-[var(--nav-hover)]"
                     onClick={(e) => {
                       e.preventDefault();
                       scrollToCategoryId(cat.id.slice(0, 5), 40);
@@ -685,7 +687,7 @@ export default function ClientMenu3({ menu: rawMenu, ownerPhone, ownerRole, demo
                 {starredItems.map((it) => (
                   <div
                     key={it.id}
-                    className="shrink-0 basis-[65%] xs:basis-[45%] sm:basis-[34%] md:basis-[27%] xl:basis-[22.5%] snap-start cursor-pointer rounded-xl overflow-hidden relative"
+                    className="shrink-0 basis-[65%] xs:basis-[45%] sm:basis-[34%] md:basis-[27%] xl:basis-[22.5%] snap-start cursor-pointer rounded-2xl overflow-hidden relative"
                     style={{ backgroundColor: translucidToUse }}
                     onClick={() => handleItemClick(it)}
                   >
@@ -751,7 +753,7 @@ export default function ClientMenu3({ menu: rawMenu, ownerPhone, ownerRole, demo
               return (
                 <div key={cat.id} id={cat.id.slice(0, 5)}>
                   <div className="flex items-center gap-3 flex-wrap pt-6 mb-2">
-                    <strong style={{ color: foregroundToUse }}>{cat.name}</strong>
+                    <strong className="text-lg font-extrabold tracking-tight" style={{ color: foregroundToUse }}>{cat.name}</strong>
                     {categoryCombos[cat.id]?.length > 0 && (
                       <span
                         className="text-xs font-semibold flex flex-wrap gap-x-2"
@@ -768,7 +770,7 @@ export default function ClientMenu3({ menu: rawMenu, ownerPhone, ownerRole, demo
                     {visibleItems.map((it) => (
                       <div
                         key={it.id}
-                        className="rounded-xl overflow-hidden cursor-pointer flex flex-col"
+                        className="rounded-2xl overflow-hidden cursor-pointer flex flex-col"
                         style={{ backgroundColor: translucidToUse, border: "1px solid rgba(255,255,255,0.07)" }}
                         onClick={() => handleItemClick(it)}
                       >
@@ -841,7 +843,7 @@ export default function ClientMenu3({ menu: rawMenu, ownerPhone, ownerRole, demo
                               )}
                             </div>
                             <div
-                              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                              className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
                               style={{ backgroundColor: accentColor }}
                             >
                               <FaPlus size={11} style={{ color: accentContrast }} />
@@ -872,7 +874,7 @@ export default function ClientMenu3({ menu: rawMenu, ownerPhone, ownerRole, demo
         >
           <button
             onClick={openCart}
-            className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg shadow-[0_0_20px_var(--shadow)] font-bold transition-transform duration-200 hover:opacity-90 hover:scale-110 ${
+            className={`cursor-pointer flex items-center gap-2 px-5 py-2.5 rounded-full font-bold transition-transform duration-200 hover:opacity-90 ${
               animateCart ? "scale-110" : "scale-100"
             }`}
             style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
@@ -906,7 +908,7 @@ export default function ClientMenu3({ menu: rawMenu, ownerPhone, ownerRole, demo
               return (
                 <div
                   key={day}
-                  className="flex justify-between gap-3 px-2 py-1 rounded"
+                  className="flex justify-between gap-3 px-3 py-1 rounded-lg"
                   style={{ backgroundColor: isToday ? translucidToUse : "transparent" }}
                 >
                   <span>{day}:</span>
@@ -942,7 +944,7 @@ export default function ClientMenu3({ menu: rawMenu, ownerPhone, ownerRole, demo
                 <button
                   type="button"
                   onClick={openImagePreview}
-                  className="h-26 w-26 sm:h-30 sm:w-30 overflow-hidden rounded-lg cursor-zoom-in hover:opacity-95 transition"
+                  className="h-26 w-26 sm:h-30 sm:w-30 overflow-hidden rounded-xl cursor-zoom-in hover:opacity-95 transition"
                   style={{ flexShrink: 0 }}
                   aria-label="Ampliar imagem do produto"
                 >
@@ -1018,7 +1020,7 @@ export default function ClientMenu3({ menu: rawMenu, ownerPhone, ownerRole, demo
                 <textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  className="w-[100%] h-full p-2 border"
+                  className="w-[100%] h-full p-3 border rounded-xl outline-none"
                   style={{ backgroundColor: translucidToUse, color: foregroundToUse, borderColor: grayToUse }}
                   placeholder="Comentário (opicional)"
                 />
@@ -1098,7 +1100,7 @@ export default function ClientMenu3({ menu: rawMenu, ownerPhone, ownerRole, demo
                                     key={c.id}
                                     type="button"
                                     onClick={() => toggleOptionChoice(g, c)}
-                                    className="flex flex-col items-center justify-center rounded-lg cursor-pointer p-2 min-w-[120px] text-center"
+                                    className="flex flex-col items-center justify-center rounded-full cursor-pointer px-4 py-2 min-w-[120px] text-center"
                                     style={{
                                       backgroundColor: boxBg,
                                       color: foregroundToUse,
@@ -1130,7 +1132,8 @@ export default function ClientMenu3({ menu: rawMenu, ownerPhone, ownerRole, demo
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="cursor-pointer p-2 rounded bg-red-500 hover:bg-red-600 transition"
+                  className="cursor-pointer p-2 rounded-full border transition hover:opacity-70"
+                  style={{ color: foregroundToUse, borderColor: grayToUse }}
                 >
                   <FaMinus />
                 </button>
@@ -1139,7 +1142,8 @@ export default function ClientMenu3({ menu: rawMenu, ownerPhone, ownerRole, demo
                 </span>
                 <button
                   onClick={() => setQuantity((q) => q + 1)}
-                  className="cursor-pointer p-2 rounded bg-green-500 hover:bg-green-600 transition"
+                  className="cursor-pointer p-2 rounded-full border transition hover:opacity-70"
+                  style={{ color: foregroundToUse, borderColor: grayToUse }}
                 >
                   <FaPlus />
                 </button>
@@ -1148,7 +1152,7 @@ export default function ClientMenu3({ menu: rawMenu, ownerPhone, ownerRole, demo
 
               <button
                 onClick={handleAddToCart}
-                className="cursor-pointer p-2 gap-2 font-bold flex items-center justify-center rounded w-full xs:w-auto hover:opacity-90 transition"
+                className="cursor-pointer py-2 px-5 gap-2 font-bold flex items-center justify-center rounded-full w-full xs:w-auto hover:opacity-90 transition"
                 style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
               >
                 <span>Adicionar {quantity} ao carrinho</span>
@@ -1191,7 +1195,7 @@ export default function ClientMenu3({ menu: rawMenu, ownerPhone, ownerRole, demo
             <button
               type="button"
               onClick={closeImagePreview}
-              className="w-full h-full block rounded-2xl overflow-hidden shadow-2xl cursor-zoom-out"
+              className="w-full h-full block rounded-2xl overflow-hidden cursor-zoom-out"
             >
               <Image
                 src={supabaseImg(selectedItem.image_url, { width: 900, height: 900, quality: 85 })}

@@ -21,7 +21,8 @@ Aplicação no site e no painel do design definido no alinhamento visual da Duda
   `.brand-scope`. Assim a mudança também alcança modais em portal e providers do root.
 - **Cores mantidas:** verde (WhatsApp e sucesso), âmbar (aviso), vermelho de erro e status, cores escolhidas pelo dono e
   CSS de impressão.
-- **Cardápio público:** mantém fonte e cores atuais. Só o logo do rodapé mudou.
+- **Cardápio público:** mantém as cores e a organização de layout escolhidas pelo dono; os elementos (fonte, formas,
+  linhas, botões) seguem a marca. Ver `tasks/cardapio-visual/`.
 
 ### Valores sem definição no PDF
 
@@ -64,7 +65,6 @@ Aplicação no site e no painel do design definido no alinhamento visual da Duda
 - Títulos de aba são `h2` sem classe de tamanho (26px). Títulos de cartão usam `h3` com `text-base`, que agora vale porque
   o tamanho global de `h2`/`h3` está em `@layer base`.
 - Títulos de seção em texto normal com ícone em granada; caixa alta só em rótulos pequenos de dado (`text-xs`).
-- Controles do painel dentro da prévia levam `panel-font`, pra não herdar a Arial do cardápio.
 - `brand-select` é `#7b1730` no claro e `#a3243f` no escuro, onde o granada puro some. Em texto pequeno, use
   `text-brand-eyebrow`.
 - Brasa entra em ícones e texto grande; em texto pequeno sobre creme o contraste fica abaixo de 4,5:1.
@@ -90,8 +90,7 @@ comporta texto branco.
 ## Fase 1: base e shell
 
 - Tokens globais com a nova paleta, nos temas claro e escuro.
-- Plus Jakarta Sans no `body`. O cardápio público mantém Arial com `body:has(.public-menu)`, e a prévia no painel com
-  `.menu-font`. Modais abertos dentro da prévia usam a fonte do painel.
+- Plus Jakarta Sans no `body`. O cardápio público também passou a usar Jakarta depois (`tasks/cardapio-visual/`).
 - `.bg-translucid` passou a usar a superfície da marca, exceto no cardápio público e na prévia.
 - `.cta-button` em pílula, sem `scale` no hover. `.glow-red` removido.
 - Switch e `.pulse-btn` no vermelho da marca. Modais, alertas e banner de cookies no novo padrão.
@@ -121,6 +120,21 @@ comporta texto branco.
 - Manifest do PWA com fundo `#fbf5ef` e tema `#d42020`.
 - Removido o logo apagado atrás do card em `/support` e corrigida a sobreposição de "Bem vindo ao" no cadastro.
 
+## Depois das fases
+
+- A home usa a `LandingPageV2` (commit `fcba95f`).
+- No navbar da landing, o visitante vê "Entrar" (pílula `bg-verde`, vai para `/login`) no lugar de "Criar cardápio
+  grátis", que continua no hero e no CTA final. Verde é a cor de entrar e registrar. Dono logado segue com "Acessar
+  cardápio". Plano em `tasks/landing-login/`.
+- Campo de telefone do carrinho: o foco azul virou `focus:ring-current`, que segue a cor de texto escolhida pelo dono.
+
+- Cardápio público (3 layouts, carrinho e modais): Jakarta, cards `rounded-2xl`, botões em pílula, inputs
+  `rounded-xl`, linhas finas e sem brilho ou zoom em botão. Os botões − e + usam contorno na cor do texto do dono, no lugar de vermelho e verde fixos, e o
+  botão Remover só fica vermelho no hover. A barra de categorias segue a barra lateral do painel: itens
+  `rounded-xl` com espaçamento, vidro leve (`--nav-glass`, borda fina e `backdrop-blur-sm`) e hover no tom translúcido
+  do dono (`--nav-hover`). Tamanho de texto igual ao de antes. Logo e nome do estabelecimento ficaram um degrau maiores.
+  Detalhes em `tasks/cardapio-visual/cardapio-visual-resumo.md`. Cores e organização dos layouts não mudaram.
+
 ## Mudança desfeita
 
 Foi feito um carrossel de planos na landing, com o plano central em destaque, setas e clique no card. Ele foi desfeito a
@@ -128,7 +142,6 @@ pedido e os planos voltaram à grade.
 
 ## Pendências
 
-- **Sem commit:** a troca para `LandingPageV2` em `src/app/page.jsx`. Sem ela, a home continua na `LandingPageV1`.
 - **Telas não abertas nos testes:** onboarding (`/getstart`), admin e `/downloads`.
 - **Telas sem dados nos testes:** Pedidos com status, cozinha, entrega, badge de pedidos e gráficos preenchidos.
 - **Fluxos não testados:** até o checkout e impressão de pedido.
@@ -142,7 +155,6 @@ pedido e os planos voltaram à grade.
   laranja fica claro demais e o vermelho e o vinho têm contraste abaixo de 3:1. As fatias continuam distinguíveis e os
   gráficos de pizza têm legenda.
 - O gráfico de vendas já usava dois eixos, e isso não foi alterado.
-- Ainda há azul em `CartDrawer.jsx`, no cardápio público, que ficou fora do escopo.
 - O campo de telefone do cadastro fica mais cinza que os demais, por ter estilo próprio.
 - `LandingPageV1.jsx` continua no projeto, com classes antigas.
 - A apresentação ainda pedia feedback. A paleta e a fonte foram assumidas como aprovadas por já estarem na landing V2.

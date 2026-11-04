@@ -60,7 +60,7 @@ export default function MyOrdersModal({
             {receipts.map((receipt) => (
               <div
                 key={receipt.id}
-                className="rounded-xl p-3"
+                className="rounded-2xl p-3"
                 style={{ backgroundColor: translucidToUse }}
               >
                 <div className="flex items-center justify-between gap-2 mb-1">

@@ -1351,7 +1351,7 @@ function CartDrawerContent({
               return (
                 <div
                   key={idx}
-                  className="p-3 rounded-xl flex flex-col"
+                  className="p-3 rounded-2xl flex flex-col"
                   style={{ backgroundColor: translucidToUse }}
                 >
                   <div className="flex-1 min-w-0">
@@ -1389,7 +1389,7 @@ function CartDrawerContent({
                     </p>
                     <button
                       onClick={() => cart.remove(menu.id, idx)}
-                      className="cursor-pointer text-white bg-red-600 opacity-75 hover:opacity-100 py-1 px-2 text-sm flex items-center gap-2 rounded-lg"
+                      className="cursor-pointer border opacity-75 hover:opacity-100 hover:bg-red-600 hover:border-red-600 hover:text-white py-1 px-3 text-sm flex items-center gap-2 rounded-full transition"
                     >
                       Remover
                     </button>
@@ -1436,7 +1436,7 @@ function CartDrawerContent({
                     value={couponInput}
                     onChange={(e) => setCouponInput(e.target.value)}
                     placeholder="Cupom de desconto"
-                    className="flex-1 min-w-0 rounded-lg bg-translucid px-3 py-2 text-sm uppercase"
+                    className="flex-1 min-w-0 rounded-xl bg-translucid px-3 py-2 text-sm uppercase"
                     style={{
                       backgroundColor: translucidToUse,
                       color: foregroundToUse,
@@ -1445,7 +1445,7 @@ function CartDrawerContent({
                   <button
                     type="button"
                     onClick={handleApplyCoupon}
-                    className="cursor-pointer rounded-lg px-3 py-2 text-sm font-semibold"
+                    className="cursor-pointer rounded-full px-3 py-2 text-sm font-semibold"
                     style={{
                       backgroundColor: translucidToUse,
                       color: foregroundToUse,
@@ -1521,7 +1521,7 @@ function CartDrawerContent({
 
                   setIsPurchaseModalOpen(true);
                 }}
-                className="cursor-pointer flex-1 py-2 rounded hover:opacity-90 text-white font-bold transition"
+                className="cursor-pointer flex-1 py-2 rounded-full hover:opacity-90 text-white font-bold transition"
                 style={{
                   backgroundColor: menu.details_color,
                   color: getContrastTextColor(menu.details_color),
@@ -1537,7 +1537,7 @@ function CartDrawerContent({
                   if (!ok) return;
                   cart.clear(menu.id);
                 }}
-                className="cursor-pointer py-2 px-4 rounded border opacity-75 hover:opacity-100 transition"
+                className="cursor-pointer py-2 px-4 rounded-full border opacity-75 hover:opacity-100 transition"
               >
                 Limpar
               </button>
@@ -1554,7 +1554,7 @@ function CartDrawerContent({
         >
           <div className={backdropClasses} aria-hidden="true" />
           <div
-            className="relative rounded-lg p-6 w-[90%] max-w-md z-70 max-h-[100dvh] overflow-y-auto overscroll-contain"
+            className="relative rounded-2xl p-6 w-[90%] max-w-md z-70 max-h-[100dvh] overflow-y-auto overscroll-contain"
             style={{ backgroundColor: bgColor }}
           >
             {purchaseStage === "confirmingTable" && (
@@ -1634,7 +1634,7 @@ function CartDrawerContent({
                 {availableServiceOptions.map((option) => (
                   <button
                     key={option.id}
-                    className="cursor-pointer p-2 hover:opacity-90 transition rounded-lg font-semibold"
+                    className="cursor-pointer p-2 hover:opacity-90 transition rounded-full font-semibold"
                     style={{
                       backgroundColor: menu.details_color,
                       color: getContrastTextColor(menu.details_color),
@@ -1650,7 +1650,7 @@ function CartDrawerContent({
                 <div>
                   {counterMode && (
                     <p
-                      className="mb-2 rounded p-2 text-sm"
+                      className="mb-2 rounded-xl p-3 text-sm"
                       style={{ backgroundColor: translucidToUse }}
                     >
                       Pedido de balcão: nome e telefone são opcionais e o pedido
@@ -1670,7 +1670,7 @@ function CartDrawerContent({
                       setCostumerName(e.target.value);
                     }}
                     maxLength={40}
-                    className="w-full p-2 rounded mb-2"
+                    className="w-full px-3 py-2 rounded-xl mb-2"
                     style={{ backgroundColor: translucidToUse }}
                   />
                 </div>
@@ -1686,7 +1686,7 @@ function CartDrawerContent({
                       value={costumerPhone}
                       onChange={(value) => setCostumerPhone(value)}
                       inputProps={{ required: !counterMode }}
-                      inputClass="!w-full !px-3 !py-2 !border !rounded !focus:outline-none !focus:ring-2 !focus:ring-blue-400 !pl-14"
+                      inputClass="!w-full !px-3 !py-2 !border !rounded-xl !focus:outline-none !focus:ring-2 !focus:ring-current !pl-14"
                       buttonClass="!border-r !bg-transparent !rounded-l"
                       containerClass="!flex !items-center !mb-2"
                       inputStyle={{
@@ -1712,7 +1712,7 @@ function CartDrawerContent({
                               setIsOpenDropdown(true);
                             }}
                             onFocus={() => setIsOpenDropdown(true)}
-                            className="w-full p-2 rounded"
+                            className="w-full px-3 py-2 rounded-xl"
                             style={{
                               backgroundColor: translucidToUse,
                               color: foregroundToUse,
@@ -1722,7 +1722,7 @@ function CartDrawerContent({
                           {/* DROPDOWN */}
                           {isOpenDropdown && (
                             <div
-                              className="absolute w-full mt-1 max-h-60 overflow-y-auto rounded-lg shadow-lg z-50"
+                              className="absolute w-full mt-1 max-h-60 overflow-y-auto rounded-xl z-50"
                               style={{
                                 backgroundColor: bgColor,
                                 border: `1px solid ${translucidToUse}`,
@@ -1782,7 +1782,7 @@ function CartDrawerContent({
                           value={costumerAddressParts}
                           onChange={setCostumerAddressParts}
                           hideNeighborhood={canUseZones}
-                          inputClassName="w-full p-2 rounded"
+                          inputClassName="w-full px-3 py-2 rounded-xl"
                           inputStyle={{ backgroundColor: translucidToUse }}
                         />
                       </div>
@@ -1795,7 +1795,7 @@ function CartDrawerContent({
                             type="button"
                             onClick={() => locateCustomer(true)}
                             disabled={radiusStatus === "loading"}
-                            className="cursor-pointer rounded p-2 font-semibold disabled:opacity-50"
+                            className="cursor-pointer rounded-full px-4 py-2 font-semibold disabled:opacity-50"
                             style={{ backgroundColor: translucidToUse }}
                           >
                             Calcular taxa de entrega
@@ -1804,7 +1804,7 @@ function CartDrawerContent({
                             type="button"
                             onClick={() => locateCustomer(false)}
                             disabled={radiusStatus === "loading"}
-                            className="cursor-pointer rounded p-2 disabled:opacity-50"
+                            className="cursor-pointer rounded-full px-4 py-2 disabled:opacity-50"
                             style={{ backgroundColor: translucidToUse }}
                           >
                             Usar minha localização
@@ -1897,7 +1897,7 @@ function CartDrawerContent({
 
                       confirmPurchase();
                     }}
-                    className="cursor-pointer hover:opacity-90 p-2 font-bold transition rounded disabled:opacity-50"
+                    className="cursor-pointer hover:opacity-90 py-2 px-4 font-bold transition rounded-full disabled:opacity-50"
                     style={{
                       backgroundColor: menu.details_color,
                       color: getContrastTextColor(menu.details_color),
@@ -1922,7 +1922,7 @@ function CartDrawerContent({
                 <div className="flex gap-2">
                   <button
                     onClick={() => setNeedsChange(true)}
-                    className="flex-1 py-2 rounded font-semibold cursor-pointer transition"
+                    className="flex-1 py-2 rounded-full font-semibold cursor-pointer transition"
                     style={{
                       backgroundColor:
                         needsChange === true
@@ -1941,7 +1941,7 @@ function CartDrawerContent({
                       setNeedsChange(false);
                       setChangeForAmount("");
                     }}
-                    className="flex-1 py-2 rounded font-semibold cursor-pointer transition"
+                    className="flex-1 py-2 rounded-full font-semibold cursor-pointer transition"
                     style={{
                       backgroundColor:
                         needsChange === false
@@ -1968,7 +1968,7 @@ function CartDrawerContent({
                       placeholder="Ex: 50,00"
                       value={changeForAmount}
                       onChange={(e) => setChangeForAmount(e.target.value)}
-                      className="w-full p-2 rounded"
+                      className="w-full px-3 py-2 rounded-xl"
                       style={{ backgroundColor: translucidToUse }}
                     />
                   </div>
@@ -1976,7 +1976,7 @@ function CartDrawerContent({
 
                 <button
                   onClick={confirmCashChange}
-                  className="cursor-pointer hover:opacity-90 p-2 font-bold transition rounded mt-2"
+                  className="cursor-pointer hover:opacity-90 py-2 px-4 font-bold transition rounded-full mt-2"
                   style={{
                     backgroundColor: menu.details_color,
                     color: getContrastTextColor(menu.details_color),
@@ -2001,7 +2001,7 @@ function CartDrawerContent({
                   Chave PIX:
                 </p>
                 <div
-                  className="cursor-pointer rounded-lg text-sm p-2 flex items-center justify-center gap-2 text-center hover:opacity-80 transition mt-1"
+                  className="cursor-pointer rounded-full text-sm p-2 flex items-center justify-center gap-2 text-center hover:opacity-80 transition mt-1"
                   style={{ backgroundColor: translucidToUse }}
                   onClick={() =>
                     navigator.clipboard
@@ -2031,7 +2031,7 @@ function CartDrawerContent({
                   showWhatsappButtonOnPixStage && (
                     <button
                       onClick={() => setPurchaseStage("tableSuccess")}
-                      className="cursor-pointer w-full py-2 px-4 rounded font-bold text-white flex items-center justify-center gap-2 mt-2"
+                      className="cursor-pointer w-full py-2 px-4 rounded-full font-bold text-white flex items-center justify-center gap-2 mt-2"
                       style={{ backgroundColor: menu.details_color }}
                     >
                       Concluir pedido
@@ -2040,7 +2040,7 @@ function CartDrawerContent({
                 ) : (
                   <a href={whatsappURL || "#"} rel="noopener noreferrer">
                     <span
-                      className="cursor-pointer py-2 px-4 rounded font-bold flex items-center justify-center gap-2 mt-2"
+                      className="cursor-pointer py-2 px-4 rounded-full font-bold flex items-center justify-center gap-2 mt-2"
                       style={{
                         backgroundColor: menu.details_color,
                         color: getContrastTextColor(menu.details_color),
@@ -2074,7 +2074,7 @@ function CartDrawerContent({
                     {whatsappURL && (
                       <a href={whatsappURL} rel="noopener noreferrer" className="w-full">
                         <span
-                          className="cursor-pointer py-2 px-4 rounded font-bold flex items-center justify-center gap-2"
+                          className="cursor-pointer py-2 px-4 rounded-full font-bold flex items-center justify-center gap-2"
                           style={{
                             backgroundColor: menu.details_color,
                             color: getContrastTextColor(menu.details_color),
@@ -2087,7 +2087,7 @@ function CartDrawerContent({
                     )}
                     <button
                       onClick={() => resetPurchase()}
-                      className="cursor-pointer w-full py-2 px-4 rounded font-bold border"
+                      className="cursor-pointer w-full py-2 px-4 rounded-full font-bold border"
                     >
                       Fechar
                     </button>
@@ -2099,7 +2099,7 @@ function CartDrawerContent({
                     </p>
                     <button
                       onClick={() => startPixOnline()}
-                      className="cursor-pointer w-full py-2 px-4 rounded font-bold"
+                      className="cursor-pointer w-full py-2 px-4 rounded-full font-bold"
                       style={{
                         backgroundColor: menu.details_color,
                         color: getContrastTextColor(menu.details_color),
@@ -2114,7 +2114,7 @@ function CartDrawerContent({
                       <img
                         src={pixOnline.qrCode}
                         alt="QR Code do Pix"
-                        className="w-52 h-52 rounded-lg bg-white p-2"
+                        className="w-52 h-52 rounded-xl bg-white p-2"
                       />
                     )}
                     <p>
@@ -2130,7 +2130,7 @@ function CartDrawerContent({
                           .then(() => customAlert("Código Pix copiado!"))
                           .catch(() => customAlert("Erro ao copiar código", "error"))
                       }
-                      className="cursor-pointer w-full py-2 px-4 rounded font-bold flex items-center justify-center gap-2"
+                      className="cursor-pointer w-full py-2 px-4 rounded-full font-bold flex items-center justify-center gap-2"
                       style={{
                         backgroundColor: menu.details_color,
                         color: getContrastTextColor(menu.details_color),
@@ -2166,7 +2166,7 @@ function CartDrawerContent({
                 )}
                 <button
                   onClick={() => resetPurchase()}
-                  className="cursor-pointer w-full py-2 px-4 rounded font-bold text-white flex items-center justify-center gap-2 mt-2"
+                  className="cursor-pointer w-full py-2 px-4 rounded-full font-bold text-white flex items-center justify-center gap-2 mt-2"
                   style={{ backgroundColor: menu.details_color }}
                 >
                   Fechar
@@ -2187,7 +2187,7 @@ function CartDrawerContent({
                 )}
                 <a href={whatsappURL || "#"} rel="noopener noreferrer">
                   <span
-                    className="cursor-pointer py-2 px-4 rounded font-bold flex items-center justify-center gap-2 mt-2"
+                    className="cursor-pointer py-2 px-4 rounded-full font-bold flex items-center justify-center gap-2 mt-2"
                     style={{
                       backgroundColor: menu.details_color,
                       color: getContrastTextColor(menu.details_color),

@@ -209,18 +209,6 @@ body {
   transition: 0.4s;
 }
 
-/* o cardápio público (e a prévia dele no painel) mantém a fonte de antes; :has cobre os portais, como o carrinho */
-body:has(.public-menu),
-.menu-font {
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-/* modais de edição e ferramentas dentro da prévia são do painel */
-.menu-font .fixed,
-.menu-font .panel-font {
-  font-family: var(--font-jakarta), Arial, Helvetica, sans-serif;
-}
-
 .default-h1 {
   font-size: 32px;
   font-weight: 800;
