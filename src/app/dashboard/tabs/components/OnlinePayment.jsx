@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { useAlert } from "@/providers/AlertProvider";
+import { useConfirm } from "@/providers/ConfirmProvider";
 
 // Pagamento online (Pix com split de 5% para o Bite Menu) via subconta ValidaPay.
 // Planos Pro e Business. Estados: none (formulário) → pending (análise/documentos) → active.
@@ -293,6 +294,7 @@ function AccountDetails({ details, busy, onWithdraw }) {
 
 export default function OnlinePayment({ role }) {
   const customAlert = useAlert();
+  const confirm = useConfirm();
   const [status, setStatus] = useState(null);
   const [busy, setBusy] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -369,10 +371,16 @@ export default function OnlinePayment({ role }) {
   if (status.stage === "pending") {
     return wrap(
       <div className="space-y-2 text-sm">
-        <p>
-          Cadastro em análise pela ValidaPay (proposta: {status.proposal ?? "-"}, documentos: {status.documents ?? "-"}
-          ).
-        </p>
+        {status.proposalError ? (
+          <p className="text-xs text-red-500">
+            Cadastro enviado, mas a ValidaPay não deixou consultar o status: {status.proposalError}
+          </p>
+        ) : (
+          <p>
+            Cadastro em análise pela ValidaPay (proposta: {status.proposal ?? "-"}, documentos:{" "}
+            {status.documents ?? "-"}).
+          </p>
+        )}
         {status.documentsUrl && (
           <a href={status.documentsUrl} target="_blank" rel="noopener noreferrer" className={BUTTON}>
             Enviar documentos
@@ -380,6 +388,18 @@ export default function OnlinePayment({ role }) {
         )}
         <button type="button" onClick={() => run(async () => {})} disabled={busy} className="block text-xs underline">
           Atualizar status
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          className="block text-xs underline opacity-70"
+          onClick={async () => {
+            if (await confirm("Refazer o cadastro do pagamento online? O cadastro atual será descartado.")) {
+              run(() => api("DELETE"));
+            }
+          }}
+        >
+          Refazer cadastro
         </button>
       </div>,
     );
