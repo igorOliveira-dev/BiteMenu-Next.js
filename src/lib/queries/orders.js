@@ -9,7 +9,7 @@ export async function countVisibleOrders(supabase, menuId) {
     .or("payment_method.neq.stripe,is_paid.eq.true");
 }
 
-// Totais da aba Pedidos calculados no banco (função em tasks/orders-summary.sql)
+// Totais da aba Pedidos calculados no banco (função em tasks/sql/orders-summary.sql)
 export async function getOrdersSummary(supabase, menuId, filters = {}) {
   const all = (v) => (v && v !== "all" ? v : null);
   const search = filters.search?.trim().replace(/[,()]/g, "") || null;

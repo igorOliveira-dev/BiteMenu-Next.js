@@ -4,7 +4,7 @@ import { getUserFromRequest } from "@/lib/validapay";
 import { resend, RESEND_FROM_EMAIL } from "@/lib/resend";
 
 // Pedido de exclusão de conta: só registra e tira o cardápio do ar.
-// A exclusão em si é manual (roteiro em tasks/account-deletion.sql).
+// A exclusão em si é manual (roteiro em tasks/sql/account-deletion.sql).
 const NOTIFY_EMAIL = process.env.ACCOUNT_DELETION_NOTIFY_EMAIL || "contato@bitemenu.com.br";
 
 const unauthorized = () => Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -45,7 +45,7 @@ async function notify(user, requestedAt) {
           <li><strong>Cardápio:</strong> ${menu?.slug ?? "-"}</li>
           <li><strong>Pedido em:</strong> ${requestedAt}</li>
         </ul>
-        <p>Roteiro em tasks/account-deletion.sql.</p>`,
+        <p>Roteiro em tasks/sql/account-deletion.sql.</p>`,
     });
     if (error) console.error("[Resend] Falha ao avisar pedido de exclusão:", error);
   } catch (err) {

@@ -33,7 +33,7 @@ Só desktop (`lg+`); no mobile a barra direita já não aparece. Fora do escopo:
 - Nenhuma cor nova; só classes já usadas no projeto.
 
 ## Tarefas
-Ver `tasks/todo.md`.
+Ver `tasks/archive/rightbar-todo.md`.
 
 ## Riscos
 | Risco | Impacto | Mitigação |

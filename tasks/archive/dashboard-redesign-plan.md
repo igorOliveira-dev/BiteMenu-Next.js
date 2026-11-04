@@ -35,7 +35,7 @@ Supabase/pagamento.
   primeiro (muda tudo de uma vez), depois troca pontual nas abas. Sem componente novo genérico.
 
 ## Tarefas
-Veja `tasks/todo.md`. Ordem: sidebar (o pedido explícito, maior risco de layout) → base global →
+Veja `tasks/archive/dashboard-redesign-todo.md`. Ordem: sidebar (o pedido explícito, maior risco de layout) → base global →
 header → abas, uma ou duas por tarefa.
 
 ## Riscos

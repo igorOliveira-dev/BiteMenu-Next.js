@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { addDays, brToday } from "@/lib/brDate";
 import { sendSubscriptionEmail } from "@/lib/emails/subscriptionEmails";
 
-// Lembrete 1 dia antes do vencimento do boleto, chamado pelo pg_cron uma vez por dia (tasks/boleto-reminder.sql).
+// Lembrete 1 dia antes do vencimento do boleto, chamado pelo pg_cron uma vez por dia (tasks/sql/boleto-reminder.sql).
 // POST { mode: "dry-run" | "send" }  ·  Authorization: Bearer CRON_SECRET
 // Só assinatura atual do profile (mesma regra do e-mail "boleto" no webhook); idempotencyKey = fatura,
 // então rodar de novo no mesmo dia não duplica.

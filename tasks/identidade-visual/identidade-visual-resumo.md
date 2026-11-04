@@ -1,7 +1,7 @@
 # Nova identidade visual: o que foi feito
 
 Aplicação no site e no painel do design definido no alinhamento visual da Duda Herber (novembro de 2026), usando a
-`LandingPageV2` como referência. O plano original está em `tasks/plan.md` e o acompanhamento em `tasks/todo.md`.
+`LandingPageV2` como referência. O plano original está em `tasks/identidade-visual/plan.md` e o acompanhamento em `tasks/identidade-visual/todo.md`.
 
 ## Commits (branch `dev`)
 

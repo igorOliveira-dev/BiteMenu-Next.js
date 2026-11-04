@@ -29,7 +29,7 @@ Nada de Supabase, banco ou dashboard.
   Cada ClientMenu guarda o fuso do cliente num `useState` + `useEffect` de 3 linhas.
 
 ## Tarefas
-Veja `tasks/todo.md`.
+Veja `tasks/archive/fuso-cliente-todo.md`.
 
 ## Riscos
 | Risco | Impacto | Mitigação |

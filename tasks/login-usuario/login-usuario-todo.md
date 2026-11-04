@@ -1,10 +1,10 @@
 # Tarefas: registro e login de usuário comum
 
-Plano em `tasks/login-usuario-plan.md`.
+Plano em `tasks/login-usuario/login-usuario-plan.md`.
 
 ## Tarefa 1: SQL da coluna `account_type` (manual)
 
-**Descrição:** Criar `tasks/account-type.sql` com a coluna nova em `profiles`. O usuário roda no Supabase.
+**Descrição:** Criar `tasks/login-usuario/account-type.sql` com a coluna nova em `profiles`. O usuário roda no Supabase.
 
 ```sql
 alter table profiles add column if not exists account_type text not null default 'owner'
@@ -20,7 +20,7 @@ alter table profiles add column if not exists account_type text not null default
 - [ ] Manual: `select account_type, count(*) from profiles group by 1;`
 
 **Depende de:** nada
-**Arquivos:** `tasks/account-type.sql`
+**Arquivos:** `tasks/login-usuario/account-type.sql`
 **Tamanho:** XS
 
 ## Tarefa 2: Abas no registro
@@ -91,7 +91,7 @@ aprovação antes de aplicar (CLAUDE.md).
 ## Tarefa 5: Banco recusa cardápio de conta cliente (manual)
 
 **Descrição:** O redirecionamento do `/getstart` é só na tela; o navegador ainda consegue inserir em `menus`. O trigger em
-`tasks/account-type-menu-guard.sql` recusa insert (ou troca de `owner_id`) quando o dono tem `account_type = 'customer'`.
+`tasks/login-usuario/account-type-menu-guard.sql` recusa insert (ou troca de `owner_id`) quando o dono tem `account_type = 'customer'`.
 
 **Critérios de aceite:**
 - [ ] Insert em `menus` com `owner_id` de cliente falha com "Conta de cliente não pode criar cardápio"
@@ -101,7 +101,7 @@ aprovação antes de aplicar (CLAUDE.md).
 - [ ] Manual: rodar o teste comentado no fim do SQL e criar um cardápio com conta de dono
 
 **Depende de:** 1
-**Arquivos:** `tasks/account-type-menu-guard.sql`
+**Arquivos:** `tasks/login-usuario/account-type-menu-guard.sql`
 **Tamanho:** XS
 
 ## Fase 2: área do cliente (feito)
@@ -119,7 +119,7 @@ aprovação antes de aplicar (CLAUDE.md).
 ## Tarefa 8: CEP no cadastro de cliente
 - [x] Campo CEP (formato `00000-000`, obrigatório) só na aba Cliente; grava `profiles.cep`
 - [x] Já preenche o CEP nos dados de entrega do aparelho (`customerInfo`)
-- [ ] Rodar `tasks/profile-cep.sql` no Supabase antes de publicar
+- [ ] Rodar `tasks/login-usuario/profile-cep.sql` no Supabase antes de publicar
 
 ## Tarefa 9: Dados pessoais preenchidos
 - [x] `PersonalInfo.jsx`: completa com nome, telefone e CEP do cadastro; o endereço vem do ViaCEP

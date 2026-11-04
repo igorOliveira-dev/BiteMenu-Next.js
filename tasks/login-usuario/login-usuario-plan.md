@@ -4,7 +4,7 @@
 Separar o cadastro e o login do usuário comum (cliente) do cadastro e login do dono de estabelecimento. Primeiro passo:
 abas dentro do container de registro que já existe, para alternar entre "Estabelecimento" e "Cliente".
 
-Tarefas em `tasks/login-usuario-todo.md`.
+Tarefas em `tasks/login-usuario/login-usuario-todo.md`.
 
 ## Como está hoje (lido no código)
 - `src/app/register/page.jsx`: um formulário só. Cria o usuário no auth e a linha em `profiles` (nome, telefone,
@@ -15,7 +15,7 @@ Tarefas em `tasks/login-usuario-todo.md`.
 
 ## Decisões
 - **Coluna nova `profiles.account_type`** (`'owner'` | `'customer'`), com padrão `'owner'`. As contas existentes
-  continuam donas, sem migrar nada. Mudança no Supabase: **SQL manual**, o arquivo fica em `tasks/account-type.sql`.
+  continuam donas, sem migrar nada. Mudança no Supabase: **SQL manual**, o arquivo fica em `tasks/login-usuario/account-type.sql`.
 - **Abas no container que já existe** em `/register`: `useState("owner" | "customer")` e dois botões no topo. O
   formulário de estabelecimento continua igual.
 - **O formulário de cliente reaproveita o `handleSignUp`**, com dois ramos: grava `account_type: 'customer'` e, no fim,
@@ -29,21 +29,21 @@ Tarefas em `tasks/login-usuario-todo.md`.
 - [ ] Checkpoint 1
 - [x] Tarefa 4: Login respeita o tipo de conta (toca autenticação: diff aprovado antes)
 - [ ] Checkpoint 2
-- [x] Tarefa 5: Banco recusa cardápio de conta cliente (SQL escrito; rodar manualmente: `tasks/account-type-menu-guard.sql`)
+- [x] Tarefa 5: Banco recusa cardápio de conta cliente (SQL escrito; rodar manualmente: `tasks/login-usuario/account-type-menu-guard.sql`)
 
 ### Fase 2: área do cliente
 - [x] Tarefa 6: Círculo da conta na navbar (Perfil, Histórico de pedidos, Sair)
 - [x] Tarefa 7: Página `/conta` com barra lateral (Perfil, Dados pessoais, Histórico de pedidos)
-- [x] Tarefa 8: CEP no cadastro de cliente (SQL manual: `tasks/profile-cep.sql`)
+- [x] Tarefa 8: CEP no cadastro de cliente (SQL manual: `tasks/login-usuario/profile-cep.sql`)
 - [x] Tarefa 9: Dados pessoais já preenchidos com os dados do cadastro
 - [x] Tarefa 10: Botão de conta nos cardápios públicos (`/menu/[slug]`)
 - [x] Tarefa 11: Link para o estabelecimento no histórico (abre em nova guia)
 - [x] Tarefa 12: Conteúdo centralizado em telas grandes (`/conta` e dashboard)
 
 ### SQL pendente (rodar no Supabase, nesta ordem, antes de publicar)
-- [ ] `tasks/account-type.sql`: coluna `profiles.account_type` + grant de insert
-- [ ] `tasks/account-type-menu-guard.sql`: trigger que impede cliente de criar cardápio
-- [ ] `tasks/profile-cep.sql`: coluna `profiles.cep` + grants (sem ela, o cadastro de cliente falha)
+- [ ] `tasks/login-usuario/account-type.sql`: coluna `profiles.account_type` + grant de insert
+- [ ] `tasks/login-usuario/account-type-menu-guard.sql`: trigger que impede cliente de criar cardápio
+- [ ] `tasks/login-usuario/profile-cep.sql`: coluna `profiles.cep` + grants (sem ela, o cadastro de cliente falha)
 
 ## Decisões da fase 2
 - **Navbar:** `CustomerMenu` reaproveita o `ActionMenu` (ganhou `children` para trocar os 3 pontinhos por um avatar).

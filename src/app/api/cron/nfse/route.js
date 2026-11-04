@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { focus, nfsePayload, brNow, ref, DESDE } from "@/lib/nfse";
 import { sendSubscriptionEmail } from "@/lib/emails/subscriptionEmails";
 
-// NFS-e das faturas pagas na ValidaPay, chamado pelo pg_cron uma vez por dia (tasks/nfse.sql).
+// NFS-e das faturas pagas na ValidaPay, chamado pelo pg_cron uma vez por dia (tasks/sql/nfse.sql).
 // POST { mode: "dry-run" | "send" }  ·  Authorization: Bearer CRON_SECRET
 // Não depende do webhook: lê as faturas direto da ValidaPay e a tabela nfse impede nota repetida.
 // A Focus autoriza de forma assíncrona, então cada rodada primeiro atualiza as notas da anterior.
