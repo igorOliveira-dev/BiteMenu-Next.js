@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { useAlert } from "@/providers/AlertProvider";
 
@@ -13,7 +14,13 @@ const BUTTON =
   "inline-flex h-11 cursor-pointer items-center justify-center rounded-xl bg-bite px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50";
 const ALLOWED = ["pro", "business", "admin"];
 
-const INCOME = ["Até R$ 5.000", "R$ 5.001 a R$ 10.000", "R$ 10.001 a R$ 30.000", "R$ 30.001 a R$ 100.000", "Acima de R$ 100.000"];
+const INCOME = [
+  "Até R$ 5.000",
+  "R$ 5.001 a R$ 10.000",
+  "R$ 10.001 a R$ 30.000",
+  "R$ 30.001 a R$ 100.000",
+  "Acima de R$ 100.000",
+];
 const REVENUE = [
   "Até R$ 81.000 (MEI)",
   "R$ 81.001 a R$ 360.000 (Microempresa)",
@@ -22,7 +29,11 @@ const REVENUE = [
   "Acima de R$ 78 mi (Grande)",
 ];
 const band = (i) => String(i + 1).padStart(2, "0");
-const formatBRL = (v) => Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const formatBRL = (v) =>
+  Number(v || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
 
 async function api(method, body) {
   const {
@@ -30,7 +41,10 @@ async function api(method, body) {
   } = await supabase.auth.getSession();
   const res = await fetch("/api/validapay/subaccount", {
     method,
-    headers: { Authorization: `Bearer ${session?.access_token}`, "Content-Type": "application/json" },
+    headers: {
+      Authorization: `Bearer ${session?.access_token}`,
+      "Content-Type": "application/json",
+    },
     body: body ? JSON.stringify(body) : undefined,
   });
   const data = await res.json().catch(() => ({}));
@@ -88,6 +102,7 @@ export default function OnlinePayment({ role }) {
   const { customAlert } = useAlert();
   const [status, setStatus] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const allowed = ALLOWED.includes(role);
 
   const load = () =>
@@ -138,7 +153,8 @@ export default function OnlinePayment({ role }) {
     return wrap(
       <div className="space-y-2 text-sm">
         <p>
-          Cadastro em análise pela ValidaPay (proposta: {status.proposal ?? "-"}, documentos: {status.documents ?? "-"}).
+          Cadastro em análise pela ValidaPay (proposta: {status.proposal ?? "-"}, documentos: {status.documents ?? "-"}
+          ).
         </p>
         {status.documentsUrl && (
           <a href={status.documentsUrl} target="_blank" rel="noopener noreferrer" className={BUTTON}>
@@ -198,62 +214,87 @@ export default function OnlinePayment({ role }) {
     );
   }
 
-  // stage "none": cadastro da subconta (só CNPJ: PJ, MEI ou ME)
-  return wrap(
-    <form
-      className="space-y-4"
-      onSubmit={(e) => {
-        e.preventDefault();
-        const data = formToObject(e.currentTarget);
-        data.owner.isPoliticallyExposedPerson = data.owner.isPoliticallyExposedPerson === "true";
-        run(() => api("POST", data), "Cadastro enviado! Agora envie os documentos.");
-      }}
-    >
-      <p className="text-xs opacity-60">Precisa de CNPJ (MEI, ME ou empresa). O valor das vendas fica na sua conta e você saca por Pix.</p>
+  // stage "none": botão; o formulário (grande) abre em tela cheia por cima do painel
+  if (!showForm) {
+    return wrap(
+      <button type="button" onClick={() => setShowForm(true)} className={BUTTON}>
+        Cadastrar pagamento online
+      </button>,
+    );
+  }
 
-      <div className="text-xs font-semibold uppercase opacity-60">Empresa</div>
-      <div className="grid gap-2 sm:grid-cols-2">
-        <Input label="CNPJ" name="documentNumber" inputMode="numeric" />
-        <Select
-          label="Tipo"
-          name="companyType"
-          options={[
-            ["MEI", "MEI"],
-            ["ME", "ME"],
-            ["PJ", "Outra (LTDA, EPP...)"],
-          ]}
-        />
-        <Input label="Razão social" name="businessName" />
-        <Input label="Nome fantasia" name="tradingName" />
-        <Input label="E-mail da empresa" name="businessEmail" type="email" />
-        <Input label="Telefone da empresa" name="contactNumber" type="tel" />
-        <Select label="Faturamento anual" name="revenueBand" options={REVENUE.map((t, i) => [band(i), t])} />
+  return createPortal(
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-[var(--background)]">
+      <div className="mx-auto max-w-2xl px-4 py-6">
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <h2 className="text-lg font-bold">Cadastro do pagamento online</h2>
+          <button
+            type="button"
+            onClick={() => setShowForm(false)}
+            className="cursor-pointer rounded-xl border border-[var(--translucid)] px-3 py-2 text-sm font-semibold"
+          >
+            Voltar
+          </button>
+        </div>
+        <form
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const data = formToObject(e.currentTarget);
+            data.owner.isPoliticallyExposedPerson = data.owner.isPoliticallyExposedPerson === "true";
+            run(() => api("POST", data), "Cadastro enviado! Agora envie os documentos.");
+          }}
+        >
+          <p className="text-xs opacity-60">
+            Precisa de CNPJ (MEI, ME ou empresa). O valor das vendas fica na sua conta e você saca por Pix.
+          </p>
+
+          <div className="text-xs font-semibold uppercase opacity-60">Empresa</div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Input label="CNPJ" name="documentNumber" inputMode="numeric" />
+            <Select
+              label="Tipo"
+              name="companyType"
+              options={[
+                ["MEI", "MEI"],
+                ["ME", "ME"],
+                ["PJ", "Outra (LTDA, EPP...)"],
+              ]}
+            />
+            <Input label="Razão social" name="businessName" />
+            <Input label="Nome fantasia" name="tradingName" />
+            <Input label="E-mail da empresa" name="businessEmail" type="email" />
+            <Input label="Telefone da empresa" name="contactNumber" type="tel" />
+            <Select label="Faturamento anual" name="revenueBand" options={REVENUE.map((t, i) => [band(i), t])} />
+          </div>
+          <AddressInputs prefix="businessAddress" />
+
+          <div className="text-xs font-semibold uppercase opacity-60">Sócio responsável</div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Input label="Nome completo" name="owner.fullName" />
+            <Input label="CPF" name="owner.documentNumber" inputMode="numeric" />
+            <Input label="Nome da mãe" name="owner.motherName" />
+            <Input label="Data de nascimento" name="owner.birthDate" type="date" />
+            <Input label="Celular" name="owner.phoneNumber" type="tel" />
+            <Input label="E-mail" name="owner.email" type="email" />
+            <Select label="Renda do sócio" name="owner.incomeBand" options={INCOME.map((t, i) => [band(i), t])} />
+            <Select
+              label="Pessoa politicamente exposta?"
+              name="owner.isPoliticallyExposedPerson"
+              options={[
+                ["false", "Não"],
+                ["true", "Sim"],
+              ]}
+            />
+          </div>
+          <AddressInputs prefix="owner.address" />
+
+          <button type="submit" disabled={busy} className={BUTTON}>
+            {busy ? "Enviando..." : "Ativar pagamento online"}
+          </button>
+        </form>
       </div>
-      <AddressInputs prefix="businessAddress" />
-
-      <div className="text-xs font-semibold uppercase opacity-60">Sócio responsável</div>
-      <div className="grid gap-2 sm:grid-cols-2">
-        <Input label="Nome completo" name="owner.fullName" />
-        <Input label="CPF" name="owner.documentNumber" inputMode="numeric" />
-        <Input label="Nome da mãe" name="owner.motherName" />
-        <Input label="Data de nascimento" name="owner.birthDate" type="date" />
-        <Input label="Celular" name="owner.phoneNumber" type="tel" />
-        <Input label="E-mail" name="owner.email" type="email" />
-        <Select label="Renda do sócio" name="owner.incomeBand" options={INCOME.map((t, i) => [band(i), t])} />
-        <Select
-          label="Pessoa politicamente exposta?"
-          name="owner.isPoliticallyExposedPerson"
-          options={[
-            ["false", "Não"],
-            ["true", "Sim"],
-          ]}
-        />
-      </div>
-      <AddressInputs prefix="owner.address" />
-
-      <button type="submit" disabled={busy} className={BUTTON}>
-        {busy ? "Enviando..." : "Ativar pagamento online"}
-      </button>
-    </form>,
+    </div>,
+    document.body,
   );
 }
