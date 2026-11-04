@@ -443,7 +443,7 @@ const Menu = (props) => {
       <div className="px-2 lg:grid">
         <div
           className={`flex lg:hidden flex-col items-end gap-2 ${
-            changedFields.length > 0 ? "bottom-50" : "bottom-16"
+            changedFields.length > 0 ? "bottom-54" : "bottom-20"
           } right-4 fixed z-90`}
         >
           <button

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCookieConsent } from "@/providers/CookieConsentProvider";
 import { useThemeColor } from "@/providers/ThemeColorProvider";
 import { getContrastTextColor as contrastText } from "@/utils/color";
@@ -11,9 +11,12 @@ export default function CookieBanner() {
   const { consent, setConsent, setBannerHeight } = useCookieConsent();
   const { colors } = useThemeColor();
   const bannerRef = useRef(null);
+  // dentro de iframe (mockup da landing) quem pergunta é a página de fora
+  const [inFrame, setInFrame] = useState(false);
+  useEffect(() => setInFrame(window.self !== window.top), []);
 
   useEffect(() => {
-    if (consent !== null) {
+    if (consent !== null || inFrame) {
       setBannerHeight(0);
       document.body.style.paddingBottom = "";
       return;
@@ -36,7 +39,7 @@ export default function CookieBanner() {
     return () => {
       observer.disconnect();
     };
-  }, [consent, setBannerHeight]);
+  }, [consent, inFrame, setBannerHeight]);
 
   // garante que o padding some se o componente for desmontado com banner visível
   useEffect(() => {
@@ -45,7 +48,7 @@ export default function CookieBanner() {
     };
   }, []);
 
-  if (consent !== null) return null;
+  if (consent !== null || inFrame) return null;
 
   const bg = colors?.background || "#2a2220";
   const accent = colors?.details || "#d42020";

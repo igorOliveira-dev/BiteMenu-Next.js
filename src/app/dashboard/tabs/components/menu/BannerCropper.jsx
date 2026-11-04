@@ -68,7 +68,9 @@ export default function BannerCropper({ sources, saved, onAreaChange, onPick, on
               crop={view.crop}
               zoom={view.zoom}
               maxZoom={5}
-              objectFit="cover"
+              // contain: a imagem cabe na caixa, então o zoom 1 mostra ela inteira (cover cortava
+              // as laterais em telas estreitas e não dava pra diminuir)
+              objectFit="contain"
               // o preflight do Tailwind põe max-width:100% em <img>, o que encolhe a imagem e deixa
               // o recorte "sair" dela; sem isso o restrictPosition (padrão) segura o recorte dentro
               classes={{ mediaClassName: "max-w-none" }}

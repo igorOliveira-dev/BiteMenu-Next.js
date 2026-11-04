@@ -205,7 +205,7 @@ const Dashboard = ({
   const navClass = (active) =>
     `cursor-pointer w-full px-1 xxs:px-4 py-5 lg:py-3 lg:rounded-xl hover-bg-translucid transition-colors text-sm xs:text-base flex items-center gap-3 justify-center whitespace-nowrap ${
       collapsed ? "lg:px-0" : "lg:justify-start lg:px-3"
-    } ${active ? "bg-brand-gradient text-white font-semibold" : ""}`;
+    } ${active ? "bg-brand-gradient bg-brand-gradient-soft text-white font-semibold" : ""}`;
 
   const labelClass = collapsed ? "hidden" : "hidden lg:block";
 
@@ -237,7 +237,7 @@ const Dashboard = ({
     <div className="flex w-[100dvw] pt-[85px] items-center lg:items-start lg:h-[calc(100dvh-110px)] lg:flex-row flex-col-reverse items-center">
       <div className="flex items-center">
         <aside
-          className={`lg:m-2 lg:rounded-2xl bg-brand-surface border-t lg:border border-brand-line h-full max-w-[812px] w-[calc(100dvw)] ${collapsed ? "lg:w-16" : "lg:w-60"} lg:transition-[width] lg:duration-200 flex flex-col justify-between items-stretch overflow-hidden lg:h-[calc(100dvh-110px)]`}
+          className={`max-lg:fixed max-lg:z-[60] max-lg:bottom-2 max-lg:inset-x-2 max-lg:mx-auto max-lg:w-auto max-lg:h-auto max-lg:rounded-2xl max-lg:bg-brand-surface/70 max-lg:backdrop-blur-md lg:m-2 lg:rounded-2xl lg:bg-brand-surface border border-brand-line h-full max-w-[812px] ${collapsed ? "lg:w-16" : "lg:w-60"} lg:transition-[width] lg:duration-200 flex flex-col justify-between items-stretch overflow-hidden lg:h-[calc(100dvh-110px)]`}
         >
           {/* Top section */}
           <div className="w-full flex lg:flex-col lg:gap-1 lg:p-2">
@@ -316,7 +316,7 @@ const Dashboard = ({
       {/* Main content */}
       <main
         ref={mainRef}
-        className="w-[100dvw] lg:w-auto lg:flex-1 lg:min-w-0 h-[calc(100dvh-143px)] lg:h-[calc(100dvh-100px)] overflow-auto scrollbar-none"
+        className="w-[100dvw] lg:w-auto lg:flex-1 lg:min-w-0 h-[calc(100dvh-85px)] pb-[80px] lg:pb-0 lg:h-[calc(100dvh-100px)] overflow-auto scrollbar-none"
       >
         <UpsellBanner selectedTab={selectedTab} collapsed={collapsed} />
         <div className={selectedTab === "menu" ? "block" : "hidden"}>

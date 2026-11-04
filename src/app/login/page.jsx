@@ -100,7 +100,7 @@ export default function SignIn() {
           </div>
 
           <button
-            className="w-full py-2 rounded-full bg-bite text-white font-medium hover:opacity-90 disabled:opacity-50 flex justify-center items-center max-h-[40px]"
+            className="w-full py-2 rounded-full bg-verde text-white font-medium hover:opacity-90 disabled:opacity-50 flex justify-center items-center max-h-[40px]"
             type="submit"
             disabled={loading}
           >

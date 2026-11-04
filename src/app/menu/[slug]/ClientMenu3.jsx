@@ -1,5 +1,6 @@
 "use client";
 
+import useDemoTheme from "./useDemoTheme";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { FaMapMarkerAlt, FaMinus, FaPlus, FaShoppingCart, FaWhatsapp } from "react-icons/fa";
 import Image from "next/image";
@@ -120,7 +121,8 @@ function darkenColor(hex, amount = 0.85) {
   return `rgb(${r},${g},${b})`;
 }
 
-export default function ClientMenu3({ menu, ownerPhone, ownerRole }) {
+export default function ClientMenu3({ menu: rawMenu, ownerPhone, ownerRole, demoTheme = false }) {
+  const menu = useDemoTheme(rawMenu, demoTheme);
   const cart = useCartContext();
   const alert = useAlert();
 

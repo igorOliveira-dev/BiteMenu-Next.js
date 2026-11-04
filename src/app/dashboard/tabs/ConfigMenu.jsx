@@ -1593,7 +1593,7 @@ const ConfigMenu = (props) => {
 
       {layoutPreview !== null && (
         <div
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center"
+          className="fixed inset-0 z-[70] flex flex-col items-center justify-center"
           style={{ backgroundColor: "rgba(0,0,0,0.75)", backdropFilter: "blur(12px)" }}
           onClick={() => setLayoutPreview(null)}
         >

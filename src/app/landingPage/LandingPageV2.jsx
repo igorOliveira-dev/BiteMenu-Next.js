@@ -18,7 +18,6 @@ import {
 } from "react-icons/lu";
 
 import menuExemplo from "../../../public/LandingPageImgs/cardapio-exemplo.webp";
-import menuCelularFrontal from "../../../public/LandingPageImgs/bitemenuCelular-frontal.png";
 
 import BrandLogo from "@/components/BrandLogo";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -200,12 +199,12 @@ export default function LandingPageV2() {
               ))}
             </ul>
 
-            <div className="mt-8 flex flex-col items-start gap-3 xs:flex-row xs:items-center">
-              <Link href={ctaHref} className="cta-button has-icon">
+            <div className="mt-8 flex flex-col flex-wrap items-start gap-3 xs:flex-row xs:items-center">
+              <Link href={ctaHref} className="cta-button has-icon whitespace-nowrap">
                 {isLogged ? "Ir para meu cardápio" : "Criar cardápio grátis"}
                 <LuArrowRight />
               </Link>
-              <a href={DEMO_URL} target="_blank" rel="noopener noreferrer" className="brand-line-button">
+              <a href={DEMO_URL} target="_blank" rel="noopener noreferrer" className="brand-line-button whitespace-nowrap">
                 Ver cardápio de exemplo
               </a>
             </div>
@@ -309,12 +308,19 @@ export default function LandingPageV2() {
             </a>
           </div>
           <div className="flex h-[360px] justify-center overflow-hidden md:mt-10 md:h-[420px]">
-            <Image
-              src={menuCelularFrontal}
-              alt="Cardápio do Bite Menu visto pelo cliente"
-              sizes="280px"
-              className="h-auto w-[240px] self-start sm:w-[280px]"
-            />
+            {/* cardápio de exemplo ao vivo, cortado embaixo pela borda do card; segue o tema claro/escuro
+                do site (useDemoTheme). Renderizado ~470px de largura e reduzido a 58%: texto menor e mais fotos */}
+            <div className="h-[580px] w-[280px] shrink-0 self-start overflow-hidden rounded-[2.6rem] border-[4px] border-[var(--foreground)]/80 bg-[var(--foreground)]/80 shadow-[0_20px_50px_var(--shadow)]">
+              <div className="h-full w-full overflow-hidden rounded-[2.35rem] bg-brand-bg">
+                <iframe
+                  src="/menu/bite-menu"
+                  title="Cardápio de exemplo do Bite Menu"
+                  loading="lazy"
+                  // tamanho = área interna ÷ 0.58, então preenche o celular com qualquer espessura de borda
+                  className="h-[calc(100%/0.58)] w-[calc(100%/0.58)] max-w-none origin-top-left scale-[0.58]"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>
