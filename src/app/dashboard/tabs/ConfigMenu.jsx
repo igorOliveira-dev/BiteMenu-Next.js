@@ -1395,7 +1395,7 @@ const ConfigMenu = (props) => {
               </Field>
             )}
 
-            {!usingExternal && <OnlinePayment role={userRole} />}
+            <OnlinePayment role={userRole} />
           </div>
         </SectionCard>
 
