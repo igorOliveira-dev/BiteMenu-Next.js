@@ -3,9 +3,14 @@
 import { useEffect, useState } from "react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
-import AddressFields, { EMPTY_ADDRESS, formatAddress } from "@/components/AddressFields";
+import AddressFields, {
+  EMPTY_ADDRESS,
+  formatAddress,
+} from "@/components/AddressFields";
 import { useAlert } from "@/providers/AlertProvider";
-import useUser from "@/hooks/useUser";
+import useUser, { updateCachedProfile } from "@/hooks/useUser";
+import { supabase } from "@/lib/supabaseClient";
+import { saveProfileAddress } from "@/lib/queries/profiles";
 
 const KEY = "customerInfo"; // mesma chave que o carrinho (CartDrawer) usa para preencher o pedido
 
@@ -13,7 +18,11 @@ const KEY = "customerInfo"; // mesma chave que o carrinho (CartDrawer) usa para 
 export default function PersonalInfo() {
   const customAlert = useAlert();
   const { profile } = useUser();
-  const [info, setInfo] = useState({ name: "", phone: "", addressParts: EMPTY_ADDRESS });
+  const [info, setInfo] = useState({
+    name: "",
+    phone: "",
+    addressParts: EMPTY_ADDRESS,
+  });
 
   // Aparelho primeiro; o que faltar vem do cadastro (nome, telefone, CEP)
   useEffect(() => {
@@ -22,7 +31,13 @@ export default function PersonalInfo() {
       saved = JSON.parse(localStorage.getItem(KEY) || "{}");
     } catch {}
     // endereço antigo em texto livre vira a rua, igual ao carrinho
-    const addressParts = { ...EMPTY_ADDRESS, ...(saved.addressParts ?? { street: saved.address || "" }) };
+    // aparelho → endereço salvo na conta → texto antigo
+    const addressParts = {
+      ...EMPTY_ADDRESS,
+      ...(saved.addressParts?.street
+        ? saved.addressParts
+        : (profile?.address_details ?? { street: saved.address || "" })),
+    };
     if (!addressParts.cep && profile?.cep) addressParts.cep = profile.cep;
     setInfo({
       name: saved.name || profile?.display_name || "",
@@ -32,7 +47,9 @@ export default function PersonalInfo() {
 
     // Só com o CEP do cadastro: completa rua, bairro e cidade pelo ViaCEP
     if (addressParts.cep.length === 9 && !addressParts.street) {
-      fetch(`https://viacep.com.br/ws/${addressParts.cep.replace("-", "")}/json/`)
+      fetch(
+        `https://viacep.com.br/ws/${addressParts.cep.replace("-", "")}/json/`,
+      )
         .then((res) => res.json())
         .then((data) => {
           if (data.erro) return;
@@ -51,13 +68,31 @@ export default function PersonalInfo() {
     }
   }, [profile]);
 
-  const save = () => {
+  const save = async () => {
     try {
-      localStorage.setItem(KEY, JSON.stringify({ ...info, address: formatAddress(info.addressParts) }));
-      customAlert("Informações salvas!", "success");
-    } catch {
-      customAlert("Não foi possível salvar neste navegador.", "error");
+      localStorage.setItem(
+        KEY,
+        JSON.stringify({ ...info, address: formatAddress(info.addressParts) }),
+      );
+    } catch {}
+    // na conta também: o aparelho perde o endereço ao limpar o cache
+    if (profile?.id) {
+      const { error } = await saveProfileAddress(
+        supabase,
+        profile.id,
+        info.addressParts,
+      );
+      if (error)
+        return customAlert(
+          "Não foi possível salvar o endereço na sua conta.",
+          "error",
+        );
+      updateCachedProfile({
+        address_details: info.addressParts,
+        cep: info.addressParts.cep || null,
+      });
     }
+    customAlert("Informações salvas!", "success");
   };
 
   const inputClass =
@@ -65,7 +100,9 @@ export default function PersonalInfo() {
 
   return (
     <div className="space-y-4 rounded-2xl border border-brand-line bg-translucid p-4">
-      <p className="text-sm color-gray">Usadas para preencher seus pedidos automaticamente neste aparelho.</p>
+      <p className="text-sm color-gray">
+        Usadas para preencher seus pedidos automaticamente neste aparelho.
+      </p>
       <div>
         <label className="mb-1 block text-sm font-medium">Nome</label>
         <input
@@ -88,7 +125,9 @@ export default function PersonalInfo() {
         />
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium">Endereço de entrega</label>
+        <label className="mb-1 block text-sm font-medium">
+          Endereço de entrega
+        </label>
         <AddressFields
           value={info.addressParts}
           onChange={(addressParts) => setInfo({ ...info, addressParts })}
