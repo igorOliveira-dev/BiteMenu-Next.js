@@ -132,6 +132,9 @@ const PRINT_STYLE_KEY = "bitemenu-print-style";
 const PAPER_SIZE_KEY = "bitemenu-print-paper";
 const paperSizes = ["paper-80mm", "paper-58mm", "paper-a4"];
 const PRINT_ORDER_KEY = "bitemenu-print-order";
+// impressão automática de pedidos novos: opção por aparelho (só o PC da impressora)
+export const AUTO_PRINT_KEY = "bitemenu-auto-print-orders";
+export const PRINT_PLAN_ROLES = ["pro", "business", "admin", "designer"];
 
 // blocos reordenáveis da impressão (estilo com cabeçalho). Cabeçalho e
 // destaque continuam sempre no topo.
@@ -189,13 +192,30 @@ export default function PrintDocumentButton({
   fileNamePrefix = "documento",
   receiptTitle = "PEDIDO", // cabeçalho impresso no modo "full"
   modeDescriptions = defaultModeDescriptions,
+  autoPrint = false, // imprime direto no mount, sem botão/modal (impressão automática)
+  onAutoPrinted,
 }) {
+  // autoPrint só monta no cliente: lê as preferências já no primeiro render
+  const saved = (key) => {
+    try {
+      return autoPrint ? window.localStorage.getItem(key) : null;
+    } catch {
+      return null;
+    }
+  };
   const [modalOpen, setModalOpen] = useState(false);
   const [printMode, setPrintMode] = useState("full");
-  const [paperSize, setPaperSize] = useState("paper-80mm");
+  const [paperSize, setPaperSize] = useState(() => {
+    const p = saved(PAPER_SIZE_KEY);
+    return paperSizes.includes(p) ? p : "paper-80mm";
+  });
   // estilo antigo (sem cabeçalho), lembrado neste navegador
-  const [classicStyle, setClassicStyle] = useState(false);
-  const [printOrder, setPrintOrder] = useState(defaultPrintOrder);
+  const [classicStyle, setClassicStyle] = useState(
+    () => saved(PRINT_STYLE_KEY) === "classic",
+  );
+  const [printOrder, setPrintOrder] = useState(() =>
+    autoPrint && canCustomizeOrder ? loadPrintOrder() : defaultPrintOrder,
+  );
   const printRef = useRef(null);
 
   useEffect(() => {
@@ -217,7 +237,14 @@ export default function PrintDocumentButton({
   margin: 5mm;
 }
 `,
+    onAfterPrint: onAutoPrinted,
+    onPrintError: onAutoPrinted,
   });
+
+  useEffect(() => {
+    if (autoPrint) handlePrint();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!document) return null;
 
@@ -258,23 +285,27 @@ export default function PrintDocumentButton({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => {
-          setPrintOrder(canCustomizeOrder ? loadPrintOrder() : defaultPrintOrder);
-          setModalOpen(true);
-        }}
-        title="Imprimir"
-        className={
-          triggerClassName ||
-          "flex cursor-pointer items-center justify-center gap-2 rounded-xl border bg-[var(--translucid)] border-translucid px-3 py-2 text-sm font-medium transition hover:opacity-80"
-        }
-      >
-        <FaPrint />
-        {triggerLabel ? (
-          <span className="hidden xs:block">{triggerLabel}</span>
-        ) : null}
-      </button>
+      {!autoPrint && (
+        <button
+          type="button"
+          onClick={() => {
+            setPrintOrder(
+              canCustomizeOrder ? loadPrintOrder() : defaultPrintOrder,
+            );
+            setModalOpen(true);
+          }}
+          title="Imprimir"
+          className={
+            triggerClassName ||
+            "flex cursor-pointer items-center justify-center gap-2 rounded-xl border bg-[var(--translucid)] border-translucid px-3 py-2 text-sm font-medium transition hover:opacity-80"
+          }
+        >
+          <FaPrint />
+          {triggerLabel ? (
+            <span className="hidden xs:block">{triggerLabel}</span>
+          ) : null}
+        </button>
+      )}
 
       {modalOpen ? (
         <GenericModal

@@ -9,6 +9,17 @@ export async function countVisibleOrders(supabase, menuId) {
     .or("payment_method.neq.stripe,is_paid.eq.true");
 }
 
+// últimos pedidos visíveis (impressão automática compara com os já vistos)
+export async function listRecentVisibleOrders(supabase, menuId, limit = 10) {
+  return supabase
+    .from("orders")
+    .select("*")
+    .eq("menu_id", menuId)
+    .or("payment_method.neq.stripe,is_paid.eq.true")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+}
+
 // Totais da aba Pedidos calculados no banco (função em tasks/orders-summary.sql)
 export async function getOrdersSummary(supabase, menuId, filters = {}) {
   const all = (v) => (v && v !== "all" ? v : null);
