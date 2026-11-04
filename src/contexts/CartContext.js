@@ -7,8 +7,9 @@ const STORAGE_KEY = "bite_menu_cart_v1_multi";
 
 function cartReducer(state, action) {
   switch (action.type) {
+    // hydrated: o carrinho salvo já foi lido; antes disso não se grava nada (gravaria o vazio inicial por cima)
     case "SET":
-      return action.payload || { carts: {} };
+      return { carts: action.payload?.carts || {}, hydrated: true };
 
     case "ADD_ITEM": {
       const { establishmentId, item } = action.payload;
@@ -75,7 +76,7 @@ function cartReducer(state, action) {
       // payload: { establishmentId }  // if no establishmentId -> clears all
       const { establishmentId } = action.payload || {};
       if (!establishmentId) {
-        return { carts: {} };
+        return { ...state, carts: {} };
       }
       const nextCarts = { ...state.carts };
       delete nextCarts[establishmentId];
@@ -88,17 +89,16 @@ function cartReducer(state, action) {
 }
 
 export function CartProvider({ children }) {
-  const [state, dispatch] = useReducer(cartReducer, { carts: {} });
+  const [state, dispatch] = useReducer(cartReducer, { carts: {}, hydrated: false });
 
   useEffect(() => {
+    let saved = null;
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        dispatch({ type: "SET", payload: JSON.parse(raw) });
-      }
+      saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
     } catch (e) {
       console.warn("Cart load fail", e);
     }
+    dispatch({ type: "SET", payload: saved }); // sempre, mesmo vazio: libera o salvamento
   }, []);
 
   // Outra aba mexeu no carrinho: puxa a versão dela (senão uma aba sobrescreve a outra)
@@ -114,8 +114,9 @@ export function CartProvider({ children }) {
   }, []);
 
   useEffect(() => {
+    if (!state.hydrated) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ carts: state.carts }));
     } catch (e) {
       console.warn("Cart save fail", e);
     }
