@@ -2,14 +2,17 @@ import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 // VALIDAPAY_API_URL / VALIDAPAY_OAUTH_URL: sandbox ou produção (ver .env)
-const SCOPES = "checkouts/write checkouts/read subscriptions/write subscriptions/read customers/read charges/write";
-// Pagamento online (subcontas): token separado, assim um escopo faltando na credencial não derruba as assinaturas
-const ONLINE_SCOPES = "charges/write charges/read proposals/write subaccounts/read wallet/read wallet/write";
+// Um token só com todos os escopos: a ValidaPay reaproveita o token já emitido para a credencial,
+// então um segundo token "com outros escopos" volta igual ao primeiro (401 TOKEN EXPIRADO OU INVALIDO).
+// A credencial (sandbox e produção) precisa ter todos estes escopos liberados no painel.
+const SCOPES = [
+  "checkouts/write checkouts/read subscriptions/write subscriptions/read customers/read charges/write",
+  "charges/read proposals/write subaccounts/read wallet/read wallet/write", // pagamento online (subcontas)
+].join(" ");
 
-const cachedTokens = {}; // { [scopes]: { value, expiresAt } }
+let cachedToken = null; // { value, expiresAt }
 
-async function getToken(scopes = SCOPES) {
-  const cachedToken = cachedTokens[scopes];
+async function getToken() {
   if (cachedToken && Date.now() < cachedToken.expiresAt) return cachedToken.value;
 
   const res = await fetch(process.env.VALIDAPAY_OAUTH_URL, {
@@ -19,7 +22,7 @@ async function getToken(scopes = SCOPES) {
       grant_type: "client_credentials",
       client_id: process.env.VALIDAPAY_CLIENT_ID,
       client_secret: process.env.VALIDAPAY_CLIENT_SECRET,
-      scope: scopes,
+      scope: SCOPES,
     }),
     cache: "no-store",
   });
@@ -27,16 +30,16 @@ async function getToken(scopes = SCOPES) {
   if (!res.ok) throw new Error(`ValidaPay OAuth: ${data?.error || res.status}`);
 
   // expires_in não é fixo (o servidor reaproveita tokens); margem de 60s
-  cachedTokens[scopes] = { value: data.access_token, expiresAt: Date.now() + (data.expires_in - 60) * 1000 };
-  return data.access_token;
+  cachedToken = { value: data.access_token, expiresAt: Date.now() + (data.expires_in - 60) * 1000 };
+  return cachedToken.value;
 }
 
 // subAccount: número da subconta do estabelecimento (header X-Sub-Account) — pagamento online
-export async function validapay(path, { method = "GET", body, subAccount, scopes = SCOPES } = {}) {
+export async function validapay(path, { method = "GET", body, subAccount } = {}) {
   const res = await fetch(`${process.env.VALIDAPAY_API_URL}${path}`, {
     method,
     headers: {
-      Authorization: `Bearer ${await getToken(scopes)}`,
+      Authorization: `Bearer ${await getToken()}`,
       ...(body ? { "Content-Type": "application/json" } : {}),
       ...(subAccount ? { "X-Sub-Account": String(subAccount) } : {}),
     },
@@ -46,9 +49,10 @@ export async function validapay(path, { method = "GET", body, subAccount, scopes
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    if (res.status === 401) delete cachedTokens[scopes];
+    if (res.status === 401) cachedToken = null;
     const err = new Error(data?.error?.message || data?.message || `ValidaPay ${res.status}`);
     err.code = data?.error?.code || data?.code;
+    err.details = data?.error?.details;
     throw err;
   }
   return data;
@@ -70,7 +74,6 @@ export const PRICE_IDS = {
 
 // Pagamento online dos pedidos: % do total que vai pra conta master (split no Pix da subconta)
 export const PLATFORM_FEE_PERCENT = 5;
-export const validapayOnline = (path, opts = {}) => validapay(path, { ...opts, scopes: ONLINE_SCOPES });
 export const ONLINE_PAYMENT_ROLES = ["pro", "business", "admin"];
 
 export const TIER = { plus: 1, pro: 2, business: 3 };

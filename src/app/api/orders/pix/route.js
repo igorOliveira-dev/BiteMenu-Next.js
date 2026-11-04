@@ -1,4 +1,4 @@
-import { validapayOnline as validapay, PLATFORM_FEE_PERCENT, ONLINE_PAYMENT_ROLES } from "@/lib/validapay";
+import { validapay, PLATFORM_FEE_PERCENT, ONLINE_PAYMENT_ROLES } from "@/lib/validapay";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { finalizeOnlineOrder } from "@/lib/onlineOrders";
 

@@ -1,5 +1,5 @@
 import { revalidatePath } from "next/cache";
-import { validapayOnline as validapay, getUserFromRequest, ONLINE_PAYMENT_ROLES } from "@/lib/validapay";
+import { validapay, getUserFromRequest, ONLINE_PAYMENT_ROLES } from "@/lib/validapay";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 // Subconta ValidaPay do estabelecimento (pagamento online por Pix).
@@ -35,8 +35,10 @@ const handle = (fn) => async (req) => {
     if (error) return error;
     return await fn(req, menu);
   } catch (err) {
-    console.error("[ValidaPay Subconta] Erro:", err);
-    return json({ error: err.message || "Erro interno" }, err.code ? 400 : 500);
+    console.error("[ValidaPay Subconta] Erro:", err, err.details);
+    // erros de validação da ValidaPay trazem os campos em details
+    const details = err.details ? ` (${typeof err.details === "string" ? err.details : JSON.stringify(err.details)})` : "";
+    return json({ error: `${err.message || "Erro interno"}${details}` }, err.code ? 400 : 500);
   }
 };
 
@@ -119,10 +121,48 @@ export const GET = handle(async (req, menu) => {
   }
 
   const { balances = [] } = await validapay(`/v1/wallet/balance?accountId=${account}`);
-  return json({
+  const active = {
     stage: "active",
     enabled: menu.online_payment_enabled,
     balance: balances.find((b) => String(b.accountNumber) === String(account))?.balance ?? 0,
+  };
+  if (!new URL(req.url).searchParams.has("details")) return json(active);
+
+  // tela "Minha conta de recebimentos": dados da subconta, extrato e saques
+  const [{ subAccounts = [] }, { transactions = [] }, { items: withdrawals = [] }] = await Promise.all([
+    validapay("/v1/accounts/subaccounts?perPage=100"),
+    validapay(`/v1/wallet/transactions?accountId=${account}&limit=50`),
+    validapay(`/v1/wallet/withdrawals?accountId=${account}&limit=20`),
+  ]);
+  const info = subAccounts.find((s) => String(s.accountNumber) === String(account));
+
+  return json({
+    ...active,
+    account: {
+      number: account,
+      name: info?.name ?? null,
+      documentNumber: info?.documentNumber ?? null,
+      status: info?.status ?? null,
+      createdAt: info?.createdAt ?? null,
+      dailyWithdrawalLimit: info?.dailyWithdrawalLimit ?? null,
+    },
+    transactions: transactions.map((t) => ({
+      id: t.transactionId,
+      type: t.type,
+      category: t.category,
+      title: t.title || t.description,
+      amount: t.amount,
+      balanceAfter: t.balanceAfter,
+      createdAt: t.createdAt,
+    })),
+    withdrawals: withdrawals.map((w) => ({
+      id: w.withdrawalId,
+      amount: w.amount,
+      fee: w.feeAmount,
+      status: w.status,
+      pixKey: w.pixKey,
+      createdAt: w.createdAt,
+    })),
   });
 });
 
