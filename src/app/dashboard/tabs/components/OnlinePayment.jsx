@@ -12,7 +12,7 @@ const INPUT =
   "h-11 w-full rounded-xl border border-[var(--translucid)] bg-translucid px-3 text-[15px] outline-none transition focus:border-brand-select/70";
 const BUTTON =
   "inline-flex h-11 cursor-pointer items-center justify-center rounded-xl bg-bite px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50";
-const ALLOWED = ["pro", "business", "admin"];
+const ALLOWED = ["admin"]; // em teste: só admin (ver ONLINE_PAYMENT_ROLES)
 
 const INCOME = [
   "Até R$ 5.000",
@@ -345,13 +345,7 @@ export default function OnlinePayment({ role }) {
     </div>
   );
 
-  if (!allowed) {
-    return wrap(
-      <a href="/dashboard/pricing?plan=pro" className="text-sm font-semibold text-brand-red underline">
-        Disponível nos planos Pro e Business
-      </a>,
-    );
-  }
+  if (!allowed) return null; // fora do admin não aparece nada enquanto está em teste
   if (!status) return wrap(<p className="text-xs opacity-60">Carregando...</p>);
 
   if (status.stage === "error") {

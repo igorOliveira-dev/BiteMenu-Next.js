@@ -370,7 +370,7 @@ function CartDrawerContent({
   // Pix online (subconta ValidaPay): só Pro/Business, fora de mesa e balcão
   if (
     menu?.online_payment_enabled &&
-    ["pro", "business", "admin"].includes(ownerRole) &&
+    ownerRole === "admin" && // em teste: só admin (ver ONLINE_PAYMENT_ROLES)
     !tableInfo &&
     !counterMode
   ) {

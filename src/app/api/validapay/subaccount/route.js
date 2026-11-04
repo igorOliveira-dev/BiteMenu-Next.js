@@ -24,7 +24,7 @@ async function ownerMenu(req) {
   if (error) throw error;
   if (!menu) return { error: json({ error: "Cardápio não encontrado" }, 404) };
   if (!ONLINE_PAYMENT_ROLES.includes(profile?.role)) {
-    return { error: json({ error: "Pagamento online está disponível nos planos Pro e Business." }, 403) };
+    return { error: json({ error: "Pagamento online indisponível." }, 403) };
   }
   return { menu };
 }
