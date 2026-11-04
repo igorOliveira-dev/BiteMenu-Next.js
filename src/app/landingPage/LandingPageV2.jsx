@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FaStar, FaWhatsapp } from "react-icons/fa";
+import { FaStar, FaUser, FaWhatsapp } from "react-icons/fa";
 import {
   LuArrowRight,
   LuChartLine,
@@ -194,9 +194,16 @@ export default function LandingPageV2() {
             )}
             {isCustomer ? (
               <CustomerMenu profile={profile} />
+            ) : isLogged ? (
+              <Link className="cta-button small" href="/dashboard">
+                Acessar cardápio
+              </Link>
             ) : (
-              <Link className="cta-button small" href={ctaHref}>
-                {isLogged ? "Acessar cardápio" : "Criar cardápio grátis"}
+              <Link
+                href="/login"
+                className="flex items-center gap-2 whitespace-nowrap rounded-full bg-verde px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+              >
+                <FaUser size={12} /> Entrar
               </Link>
             )}
             <ThemeToggle />
