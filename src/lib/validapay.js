@@ -3,10 +3,13 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 // VALIDAPAY_API_URL / VALIDAPAY_OAUTH_URL: sandbox ou produção (ver .env)
 const SCOPES = "checkouts/write checkouts/read subscriptions/write subscriptions/read customers/read charges/write";
+// Pagamento online (subcontas): token separado, assim um escopo faltando na credencial não derruba as assinaturas
+const ONLINE_SCOPES = "charges/write charges/read proposals/write subaccounts/read wallet/read wallet/write";
 
-let cachedToken = null; // { value, expiresAt }
+const cachedTokens = {}; // { [scopes]: { value, expiresAt } }
 
-async function getToken() {
+async function getToken(scopes = SCOPES) {
+  const cachedToken = cachedTokens[scopes];
   if (cachedToken && Date.now() < cachedToken.expiresAt) return cachedToken.value;
 
   const res = await fetch(process.env.VALIDAPAY_OAUTH_URL, {
@@ -16,7 +19,7 @@ async function getToken() {
       grant_type: "client_credentials",
       client_id: process.env.VALIDAPAY_CLIENT_ID,
       client_secret: process.env.VALIDAPAY_CLIENT_SECRET,
-      scope: SCOPES,
+      scope: scopes,
     }),
     cache: "no-store",
   });
@@ -24,16 +27,18 @@ async function getToken() {
   if (!res.ok) throw new Error(`ValidaPay OAuth: ${data?.error || res.status}`);
 
   // expires_in não é fixo (o servidor reaproveita tokens); margem de 60s
-  cachedToken = { value: data.access_token, expiresAt: Date.now() + (data.expires_in - 60) * 1000 };
-  return cachedToken.value;
+  cachedTokens[scopes] = { value: data.access_token, expiresAt: Date.now() + (data.expires_in - 60) * 1000 };
+  return data.access_token;
 }
 
-export async function validapay(path, { method = "GET", body } = {}) {
+// subAccount: número da subconta do estabelecimento (header X-Sub-Account) — pagamento online
+export async function validapay(path, { method = "GET", body, subAccount, scopes = SCOPES } = {}) {
   const res = await fetch(`${process.env.VALIDAPAY_API_URL}${path}`, {
     method,
     headers: {
-      Authorization: `Bearer ${await getToken()}`,
+      Authorization: `Bearer ${await getToken(scopes)}`,
       ...(body ? { "Content-Type": "application/json" } : {}),
+      ...(subAccount ? { "X-Sub-Account": String(subAccount) } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
     cache: "no-store",
@@ -41,7 +46,7 @@ export async function validapay(path, { method = "GET", body } = {}) {
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    if (res.status === 401) cachedToken = null;
+    if (res.status === 401) delete cachedTokens[scopes];
     const err = new Error(data?.error?.message || data?.message || `ValidaPay ${res.status}`);
     err.code = data?.error?.code || data?.code;
     throw err;
@@ -62,6 +67,11 @@ export const PRICE_IDS = {
     yearly: process.env.VALIDAPAY_PRICE_BUSINESS_YEARLY,
   },
 };
+
+// Pagamento online dos pedidos: % do total que vai pra conta master (split no Pix da subconta)
+export const PLATFORM_FEE_PERCENT = 5;
+export const validapayOnline = (path, opts = {}) => validapay(path, { ...opts, scopes: ONLINE_SCOPES });
+export const ONLINE_PAYMENT_ROLES = ["pro", "business", "admin"];
 
 export const TIER = { plus: 1, pro: 2, business: 3 };
 

@@ -13,6 +13,7 @@ export default function SalesCharts({ sales = [] }) {
   // A ordem das chaves é a ordem fixa das cores (--chart-1..5): cada método mantém a cor mesmo se outro sumir do período
   const paymentLabels = {
     pix: "Pix",
+    pix_online: "Pix online (pago)",
     credit: "Crédito",
     cash: "Dinheiro",
     debit: "Débito",
