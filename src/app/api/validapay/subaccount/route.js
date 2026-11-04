@@ -38,7 +38,7 @@ const handle = (fn) => async (req) => {
     console.error("[ValidaPay Subconta] Erro:", err, err.details);
     // erros de validação da ValidaPay trazem os campos em details
     const details = err.details ? ` (${typeof err.details === "string" ? err.details : JSON.stringify(err.details)})` : "";
-    return json({ error: `${err.message || "Erro interno"}${details}` }, err.code ? 400 : 500);
+    return json({ error: `${err.message || "Erro interno"}${details}` }, err.status || (err.code ? 400 : 500));
   }
 };
 
