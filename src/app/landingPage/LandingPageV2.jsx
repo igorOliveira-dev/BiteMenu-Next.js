@@ -199,12 +199,12 @@ export default function LandingPageV2() {
               ))}
             </ul>
 
-            <div className="mt-8 flex flex-col items-start gap-3 xs:flex-row xs:items-center">
-              <Link href={ctaHref} className="cta-button has-icon">
+            <div className="mt-8 flex flex-col flex-wrap items-start gap-3 xs:flex-row xs:items-center">
+              <Link href={ctaHref} className="cta-button has-icon whitespace-nowrap">
                 {isLogged ? "Ir para meu cardápio" : "Criar cardápio grátis"}
                 <LuArrowRight />
               </Link>
-              <a href={DEMO_URL} target="_blank" rel="noopener noreferrer" className="brand-line-button">
+              <a href={DEMO_URL} target="_blank" rel="noopener noreferrer" className="brand-line-button whitespace-nowrap">
                 Ver cardápio de exemplo
               </a>
             </div>
