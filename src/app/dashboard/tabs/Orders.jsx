@@ -57,6 +57,7 @@ const STATUS_FLOW = Object.keys(ORDER_STATUS);
 
 const paymentLabels = {
   pix: "Pix",
+  pix_online: "Pix online (pago)",
   debit: "Débito",
   credit: "Crédito",
   cash: "Dinheiro",

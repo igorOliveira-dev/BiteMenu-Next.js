@@ -34,7 +34,7 @@ export const AI_FIELD_LABELS = {
 export const AI_FIELDS = Object.keys(AI_FIELD_LABELS);
 
 const SERVICE_LABELS = { delivery: "Entrega", pickup: "Retirada", dinein: "Comer no local", faceToFace: "Atendimento presencial" };
-const PAYMENT_LABELS = { cash: "Dinheiro", debit: "Débito", credit: "Crédito", pix: "PIX" };
+const PAYMENT_LABELS = { cash: "Dinheiro", debit: "Débito", credit: "Crédito", pix: "PIX", pix_online: "Pix online (pago)" };
 const DAY_LABELS = { mon: "Seg", tue: "Ter", wed: "Qua", thu: "Qui", fri: "Sex", sat: "Sáb", sun: "Dom" };
 
 // Texto curto do valor, para mostrar o "antes → depois" no chat

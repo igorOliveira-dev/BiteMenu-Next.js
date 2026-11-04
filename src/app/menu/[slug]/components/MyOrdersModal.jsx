@@ -9,6 +9,7 @@ import { getContrastTextColor } from "@/utils/color";
 
 const paymentLabels = {
   pix: "Pix",
+  pix_online: "Pix online (pago)",
   debit: "Débito",
   credit: "Crédito",
   cash: "Dinheiro",

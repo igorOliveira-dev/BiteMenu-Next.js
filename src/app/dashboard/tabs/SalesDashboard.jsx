@@ -128,6 +128,7 @@ const PAYMENT_LABELS_PT = {
   debit: "Cartão de débito",
   credit: "Cartão de crédito",
   pix: "Pix",
+  pix_online: "Pix online (pago)",
   stripe: "Stripe",
 };
 

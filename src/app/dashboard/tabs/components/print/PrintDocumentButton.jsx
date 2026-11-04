@@ -8,6 +8,7 @@ import { formatCurrency } from "@/lib/formatCurrency";
 
 export const paymentLabels = {
   pix: "Pix",
+  pix_online: "Pix online (pago)",
   debit: "Débito",
   credit: "Crédito",
   cash: "Dinheiro",
