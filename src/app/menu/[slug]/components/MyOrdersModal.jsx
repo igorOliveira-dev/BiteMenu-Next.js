@@ -7,7 +7,7 @@ import { getReceipts } from "@/lib/orderReceipts";
 import { FaReceipt } from "react-icons/fa";
 import { getContrastTextColor } from "@/utils/color";
 
-const paymentLabels = {
+export const paymentLabels = {
   pix: "Pix",
   debit: "Débito",
   credit: "Crédito",
@@ -15,7 +15,7 @@ const paymentLabels = {
   stripe: "Cartão (online)",
 };
 
-const serviceLabels = {
+export const serviceLabels = {
   delivery: "Entrega",
   pickup: "Retirada",
   dinein: "No local",

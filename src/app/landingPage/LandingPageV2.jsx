@@ -23,6 +23,7 @@ import BrandLogo from "@/components/BrandLogo";
 import ThemeToggle from "@/components/ThemeToggle";
 import PlansSection from "@/components/PlansSection";
 import useUser from "@/hooks/useUser";
+import CustomerMenu from "@/components/CustomerMenu";
 
 const DEMO_URL = "https://www.bitemenu.com.br/menu/bite-menu";
 
@@ -154,8 +155,9 @@ const PhoneMock = () => (
 );
 
 export default function LandingPageV2() {
-  const { user, loading } = useUser();
+  const { user, profile, loading } = useUser();
   const isLogged = !loading && !!user;
+  const isCustomer = isLogged && profile?.account_type === "customer";
   const ctaHref = isLogged ? "/dashboard" : "/register";
 
   return (
@@ -170,9 +172,13 @@ export default function LandingPageV2() {
             <BrandLogo showName={false} />
           </div>
           <div className="flex items-center gap-1">
-            <Link className="cta-button small" href={ctaHref}>
-              {isLogged ? "Acessar cardápio" : "Criar cardápio grátis"}
-            </Link>
+            {isCustomer ? (
+              <CustomerMenu profile={profile} />
+            ) : (
+              <Link className="cta-button small" href={ctaHref}>
+                {isLogged ? "Acessar cardápio" : "Criar cardápio grátis"}
+              </Link>
+            )}
             <ThemeToggle />
           </div>
         </div>

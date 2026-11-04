@@ -1001,6 +1001,7 @@ function CartDrawerContent({
       saveReceipt(menu?.id, {
         id: `local-${Date.now()}`,
         menuTitle: menu?.title,
+        menuSlug: menu?.slug,
         createdAt: payload.created_at,
         costumerName: payload.costumer_name,
         paymentMethod: payload.payment_method,
@@ -1071,6 +1072,7 @@ function CartDrawerContent({
     saveReceipt(menu?.id, {
       id: `local-${Date.now()}`,
       menuTitle: menu?.title,
+      menuSlug: menu?.slug,
       createdAt: new Date().toISOString(),
       costumerName,
       paymentMethod: selectedPayment,

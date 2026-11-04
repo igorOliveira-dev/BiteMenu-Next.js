@@ -25,3 +25,18 @@ export function getReceipts(menuId) {
     return [];
   }
 }
+
+// Todos os comprovantes deste aparelho, de todos os cardápios, do mais novo pro mais antigo
+export function getAllReceipts() {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return Object.entries(raw ? JSON.parse(raw) : {})
+      .flatMap(([menuId, list]) => list.map((r) => ({ ...r, menuId })))
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  } catch (e) {
+    console.warn("Erro ao ler comprovantes", e);
+    return [];
+  }
+}

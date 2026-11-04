@@ -3,6 +3,7 @@ import ClientMenu from "./ClientMenu";
 import { CartProvider } from "@/contexts/CartContext";
 import ClientMenu2 from "./ClientMenu2";
 import ClientMenu3 from "./ClientMenu3";
+import MenuAccountButton from "./components/MenuAccountButton";
 import { getMenuBySlug, getOwnerInfo, getOptionStock } from "./getMenuData";
 import { applyStock, hideHiddenGroups, STOCK_ROLES } from "@/lib/stock";
 
@@ -131,6 +132,10 @@ export default async function MenuPage({ params }) {
   return (
     <CartProvider>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: buildMenuJsonLd(menu, slug) }} />
+      {/* absoluto no topo da página (não fixo): sai de cena ao rolar e não cobre a barra de categorias */}
+      <div className="absolute top-3 right-3 z-20">
+        <MenuAccountButton slug={slug} />
+      </div>
       {effectiveLayout === "default" ? (
         <ClientMenu
           menu={menu}

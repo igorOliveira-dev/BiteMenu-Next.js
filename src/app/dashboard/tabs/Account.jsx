@@ -19,6 +19,8 @@ const Account = ({ setSelectedTab }) => {
   const { profile, loading } = useUser();
   const customAlert = useAlert();
   const confirm = useConfirm();
+  // Cliente usa esta tela em /conta: sem plano, equipe ou cardápio
+  const isCustomer = profile?.account_type === "customer";
 
   const [nameModalOpen, setNameModalOpen] = useState(false);
   const [name, setName] = useState(profile?.display_name);
@@ -160,8 +162,12 @@ const Account = ({ setSelectedTab }) => {
   const handleDeletionRequest = async (cancel = false) => {
     const ok = await confirm(
       cancel
-        ? "Cancelar o pedido de exclusão? Seu cardápio volta a ficar no ar."
-        : "Quer mesmo excluir sua conta? Seu cardápio sai do ar na hora e todos os seus dados (cardápio, produtos, pedidos e imagens) serão apagados em até 15 dias. Isso não pode ser desfeito depois da exclusão.",
+        ? isCustomer
+          ? "Cancelar o pedido de exclusão?"
+          : "Cancelar o pedido de exclusão? Seu cardápio volta a ficar no ar."
+        : isCustomer
+          ? "Quer mesmo excluir sua conta? Seus dados serão apagados em até 15 dias. Isso não pode ser desfeito depois da exclusão."
+          : "Quer mesmo excluir sua conta? Seu cardápio sai do ar na hora e todos os seus dados (cardápio, produtos, pedidos e imagens) serão apagados em até 15 dias. Isso não pode ser desfeito depois da exclusão.",
       cancel ? { tone: "confirm" } : undefined,
     );
     if (!ok) return;
@@ -235,6 +241,7 @@ const Account = ({ setSelectedTab }) => {
             />
           </div>
 
+          {!isCustomer && (<>
           {/* Plano */}
           <button
             type="button"
@@ -273,6 +280,7 @@ const Account = ({ setSelectedTab }) => {
               Gerenciar <FaChevronRight />
             </span>
           </button>
+          </>)}
 
           {/* Telefone */}
           <div className="p-4">
@@ -321,8 +329,8 @@ const Account = ({ setSelectedTab }) => {
         <div className="px-4 pt-3 pb-6 text-sm color-gray">
           {deletionRequestedAt ? (
             <p>
-              Exclusão de conta solicitada em {new Date(deletionRequestedAt).toLocaleDateString("pt-BR")}. Seu cardápio
-              está fora do ar e seus dados serão apagados em até 15 dias.{" "}
+              Exclusão de conta solicitada em {new Date(deletionRequestedAt).toLocaleDateString("pt-BR")}.{" "}
+              {!isCustomer && "Seu cardápio está fora do ar e "}seus dados serão apagados em até 15 dias.{" "}
               <button
                 onClick={() => handleDeletionRequest(true)}
                 disabled={deletionSaving}

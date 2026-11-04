@@ -201,8 +201,13 @@ export default function GetStart() {
 
   const [creatingMenu, setCreatingMenu] = useState(false);
   const [previewCurrency, setPreviewCurrency] = useState("BRL");
-  const { user, loading } = useUser();
+  const { user, profile, loading } = useUser();
   const router = useRouter();
+
+  // Cliente não cria cardápio; o dashboard sem cardápio também cai aqui, então isto barra os dois
+  useEffect(() => {
+    if (profile?.account_type === "customer") router.replace("/");
+  }, [profile, router]);
   const confirm = useConfirm();
   const alert = useAlert();
 

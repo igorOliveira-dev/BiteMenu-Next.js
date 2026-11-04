@@ -15,6 +15,9 @@ export default function SignIn() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const customAlert = useAlert();
+  // repassa ?tipo= e ?next= pro cadastro, pra quem veio de um cardápio voltar pra ele
+  const [query, setQuery] = useState("");
+  useEffect(() => setQuery(window.location.search), []);
 
   useEffect(() => {
     if (error != null) {
@@ -52,6 +55,18 @@ export default function SignIn() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ event: "SIGNED_IN", session: data.session }),
       });
+
+      // Cliente volta para o cardápio de origem (só caminho interno); dono e equipe seguem para getstart
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("account_type")
+        .eq("id", data.user.id)
+        .maybeSingle();
+      if (profile?.account_type === "customer") {
+        const next = new URLSearchParams(window.location.search).get("next") || "";
+        router.push(next.startsWith("/") && !next.startsWith("//") ? next : "/");
+        return;
+      }
 
       // Redireciona para getstart (middleware depois decide se vai pro dashboard)
       router.push("/getstart");
@@ -117,7 +132,7 @@ export default function SignIn() {
         <div>
           <p className="text-center">
             Ainda não tem uma conta?{" "}
-            <Link href="/register" className="underline text-brand-red hover:opacity-80">
+            <Link href={`/register${query}`} className="underline text-brand-red hover:opacity-80">
               Registre-se
             </Link>
           </p>

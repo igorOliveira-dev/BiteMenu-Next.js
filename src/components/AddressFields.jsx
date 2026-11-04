@@ -12,7 +12,7 @@ export const EMPTY_ADDRESS = {
   state: "",
 };
 
-const formatCep = (v) => {
+export const formatCep = (v) => {
   const d = v.replace(/\D/g, "").slice(0, 8);
   return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d;
 };
