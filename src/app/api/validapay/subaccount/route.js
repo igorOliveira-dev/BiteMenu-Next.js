@@ -37,8 +37,10 @@ const handle = (fn) => async (req) => {
   } catch (err) {
     console.error("[ValidaPay Subconta] Erro:", err, err.details);
     // erros de validação da ValidaPay trazem os campos em details
-    const details = err.details ? ` (${typeof err.details === "string" ? err.details : JSON.stringify(err.details)})` : "";
-    return json({ error: `${err.message || "Erro interno"}${details}` }, err.code ? 400 : 500);
+    const details = err.details
+      ? ` (${typeof err.details === "string" ? err.details : JSON.stringify(err.details)})`
+      : "";
+    return json({ error: `${err.message || "Erro interno"}${details}` }, err.status || (err.code ? 400 : 500));
   }
 };
 
@@ -102,7 +104,16 @@ export const GET = handle(async (req, menu) => {
 
   let account = menu.online_payment_account;
   if (!account) {
-    const proposal = await validapay(`/v1/proposals/${menu.online_payment_form_id}`);
+    let proposal;
+    try {
+      proposal = await validapay(`/v1/proposals/${menu.online_payment_form_id}`);
+    } catch (err) {
+      // proposta inacessível (outra credencial/ambiente ou falha da ValidaPay): não trava a tela,
+      // o dono pode atualizar ou refazer o cadastro
+      if (!err.status || err.status >= 500) throw err;
+      console.error("[ValidaPay Subconta] Proposta inacessível:", err.message);
+      return json({ stage: "pending", proposalError: err.message });
+    }
     const cnpj = proposal.documentNumber;
     // ponytail: só a 1ª página (100 mais recentes); paginar quando houver mais subcontas que isso
     const { subAccounts = [] } = await validapay("/v1/accounts/subaccounts?perPage=100");
@@ -170,10 +181,7 @@ export const PATCH = handle(async (req, menu) => {
   if (!menu.online_payment_account) return json({ error: "Subconta ainda não aprovada." }, 400);
   const { enabled } = await req.json();
 
-  const { error } = await supabaseAdmin
-    .from("menus")
-    .update({ online_payment_enabled: !!enabled })
-    .eq("id", menu.id);
+  const { error } = await supabaseAdmin.from("menus").update({ online_payment_enabled: !!enabled }).eq("id", menu.id);
   if (error) throw error;
 
   revalidatePath(`/menu/${menu.slug}`);
@@ -191,4 +199,12 @@ export const PUT = handle(async (req, menu) => {
     body: { amount: value, pixKey, pixKeyType, accountId: menu.online_payment_account },
   });
   return json({ ok: true, status: withdrawal.status });
+});
+
+// Refazer cadastro: só antes da subconta existir (proposta perdida, recusada ou de outro ambiente)
+export const DELETE = handle(async (req, menu) => {
+  if (menu.online_payment_account) return json({ error: "A subconta já está ativa." }, 400);
+  const { error } = await supabaseAdmin.from("menus").update({ online_payment_form_id: null }).eq("id", menu.id);
+  if (error) throw error;
+  return json({ ok: true });
 });
