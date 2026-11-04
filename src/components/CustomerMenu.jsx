@@ -1,13 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FaUser, FaReceipt, FaSignOutAlt } from "react-icons/fa";
+import { FaUser, FaReceipt, FaSignOutAlt, FaCompass } from "react-icons/fa";
 import ActionsMenu from "@/components/ActionMenu";
 import { supabase } from "@/lib/supabaseClient";
 import { useAlert } from "@/providers/AlertProvider";
 import { useConfirm } from "@/providers/ConfirmProvider";
 
-// Círculo da conta do cliente na navbar: Perfil, Histórico de pedidos e Sair
+// Círculo da conta do cliente na navbar: Descobrir, Perfil, Histórico de pedidos e Sair
 export default function CustomerMenu({ profile }) {
   const router = useRouter();
   const customAlert = useAlert();
@@ -26,6 +26,7 @@ export default function CustomerMenu({ profile }) {
       ariaLabel="Abrir opções da conta"
       buttonClassName="flex h-9 w-9 items-center justify-center rounded-full bg-brand-red font-semibold text-white transition hover:opacity-90"
       options={[
+        { label: "Descobrir estabelecimentos", icon: <FaCompass size={13} />, onClick: () => router.push("/descobrir") },
         { label: "Perfil", icon: <FaUser size={13} />, onClick: () => router.push("/conta") },
         { label: "Histórico de pedidos", icon: <FaReceipt size={13} />, onClick: () => router.push("/conta?aba=pedidos") },
         { label: "Sair", icon: <FaSignOutAlt size={13} />, onClick: handleLogout, danger: true },

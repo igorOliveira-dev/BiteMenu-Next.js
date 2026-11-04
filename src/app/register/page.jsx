@@ -35,6 +35,11 @@ export default function SignUp() {
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("tipo") === "cliente") setAccountType("customer");
     setQuery(window.location.search); // repassado ao link de login
+    // CEP que o visitante já informou neste aparelho (ex.: em /descobrir); o resto do endereço já está salvo aqui
+    try {
+      const savedCep = JSON.parse(localStorage.getItem("customerInfo") || "{}").addressParts?.cep;
+      if (savedCep) setCep(formatCep(savedCep));
+    } catch {}
   }, []);
 
   useEffect(() => {

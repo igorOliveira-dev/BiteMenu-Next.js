@@ -1210,6 +1210,29 @@ const ConfigMenu = (props) => {
               )}
             </Field>
 
+            {usingExternal && (
+              <label className="flex cursor-pointer items-start gap-3">
+                <span className="switch mt-0.5 shrink-0">
+                  <input
+                    type="checkbox"
+                    className="hidden"
+                    checked={externalState.discoverable ?? true}
+                    onChange={(e) => {
+                      const discoverable = e.target.checked;
+                      externalSetState((p) => ({ ...p, discoverable }));
+                    }}
+                  />
+                  <span className="slider"></span>
+                </span>
+                <span>
+                  <span className="block text-sm font-medium">Aparecer em Descobrir</span>
+                  <span className="block text-xs opacity-60">
+                    Clientes do Bite Menu encontram seu estabelecimento na busca por restaurantes perto deles.
+                  </span>
+                </span>
+              </label>
+            )}
+
             <Field label="Link do cardápio">
               <div className="flex h-11 items-center overflow-hidden rounded-xl border border-[var(--translucid)] bg-translucid">
                 <span className="hidden h-full shrink-0 items-center border-r border-[var(--translucid)] px-3 text-sm opacity-60 xs:flex">
