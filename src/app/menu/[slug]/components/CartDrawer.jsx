@@ -25,6 +25,7 @@ import { calculateComboDiscount } from "@/lib/comboDiscount";
 import { applyCoupon } from "@/lib/couponDiscount";
 import { STOCK_ROLES, stockPayload } from "@/lib/stock";
 import { saveReceipt } from "@/lib/orderReceipts";
+import useUser from "@/hooks/useUser";
 import { renderWhatsappMessage } from "@/lib/whatsappMessage";
 import { getContrastTextColor } from "@/utils/color";
 import AddressFields, {
@@ -37,6 +38,20 @@ import {
   feeForDistance,
   geocodeAddress,
 } from "@/lib/deliveryRadius";
+
+// Pedido com o id do cliente logado (histórico em /conta). Se o banco recusar só por causa dele (coluna ou policy de
+// tasks/descobrir/orders-customer.sql ainda não aplicadas), grava sem ele: o pedido nunca se perde por causa do histórico.
+async function insertOrder(payload, customerId) {
+  if (customerId) {
+    const res = await supabase
+      .from("orders")
+      .insert([{ ...payload, customer_id: customerId }]);
+    if (!res.error || !["PGRST204", "42703", "42501"].includes(res.error.code))
+      return res;
+    console.warn("[pedido] gravando sem customer_id:", res.error.message);
+  }
+  return supabase.from("orders").insert([payload]);
+}
 
 // useSearchParams (mesa/balcão) exige Suspense na página cacheada por ISR;
 // sem isso o /menu/[slug] estático quebra com erro 500
@@ -65,6 +80,7 @@ function CartDrawerContent({
   const cart = useCartContext();
   const confirm = useConfirm();
   const customAlert = useAlert();
+  const { profile } = useUser();
   const searchParams = useSearchParams(); // ← novo
   const router = useRouter(); // ← novo
 
@@ -103,6 +119,9 @@ function CartDrawerContent({
   // nome/telefone opcionais e o pedido é gravado direto, sem WhatsApp
   const counterRequested = searchParams.get("balcao") === "1";
   const [counterMode, setCounterMode] = useState(false);
+  // no balcão quem está logado é o dono/equipe: o pedido não é dele
+  const customerId =
+    !counterMode && profile?.account_type === "customer" ? profile.id : null;
 
   useEffect(() => {
     if (!counterRequested || !menu?.id) {
@@ -581,25 +600,36 @@ function CartDrawerContent({
 
     try {
       const stored = localStorage.getItem("customerInfo");
-      if (stored) {
-        const {
-          name = "",
-          phone = "",
-          address = "",
-          addressParts,
-        } = JSON.parse(stored);
-        setCostumerName(name);
-        setCostumerPhone(phone);
-        // endereço salvo no formato antigo (texto livre) vira a rua, pro cliente completar
-        setCostumerAddressParts(
-          addressParts ?? { ...EMPTY_ADDRESS, street: address },
-        );
-        console.log("📥 LocalStorage carregado:", { name, phone, address });
-      }
+      const {
+        name = "",
+        phone = "",
+        address = "",
+        addressParts,
+      } = stored ? JSON.parse(stored) : {};
+      // aparelho primeiro; o que faltar vem da conta do cliente logado (igual ao /conta > Dados pessoais)
+      const account = profile?.account_type === "customer" ? profile : null;
+      setCostumerName(name || account?.display_name || "");
+      setCostumerPhone(phone || (account?.phone ? String(account.phone) : ""));
+      // endereço salvo no formato antigo (texto livre) vira a rua, pro cliente completar
+      setCostumerAddressParts(
+        addressParts?.street
+          ? addressParts
+          : account?.address_details?.street
+            ? { ...EMPTY_ADDRESS, ...account.address_details }
+            : address
+              ? { ...EMPTY_ADDRESS, street: address }
+              : {
+                  ...EMPTY_ADDRESS,
+                  ...addressParts,
+                  cep: addressParts?.cep || account?.cep || "",
+                },
+      );
     } catch (error) {
       console.warn("⚠ Erro ao ler customerInfo do localStorage", error);
     }
-  }, [open, counterRequested]);
+    // só quando a conta muda: rodar a cada render do perfil apagaria o que o cliente está digitando
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, counterRequested, profile?.id]);
 
   // calcular taxa de entrega
   useEffect(() => {
@@ -985,7 +1015,7 @@ function CartDrawerContent({
     const ANIM_MS = 1100;
 
     const [{ error }] = await Promise.all([
-      supabase.from("orders").insert([payload]),
+      insertOrder(payload, customerId),
       new Promise((resolve) => setTimeout(resolve, ANIM_MS)),
     ]);
 
@@ -1069,11 +1099,13 @@ function CartDrawerContent({
 
     setWhatsappURL(url);
 
+    // mesma data no comprovante e no pedido: /conta junta os dois sem repetir o pedido
+    const orderCreatedAt = new Date().toISOString();
     saveReceipt(menu?.id, {
       id: `local-${Date.now()}`,
       menuTitle: menu?.title,
       menuSlug: menu?.slug,
-      createdAt: new Date().toISOString(),
+      createdAt: orderCreatedAt,
       costumerName,
       paymentMethod: selectedPayment,
       service: selectedService,
@@ -1117,13 +1149,11 @@ function CartDrawerContent({
             discount: discountAmount,
             is_paid: false,
             total,
-            created_at: new Date().toISOString(),
+            created_at: orderCreatedAt,
             updated_at: new Date().toISOString(),
           };
 
-          const { data, error } = await supabase
-            .from("orders")
-            .insert([payload]);
+          const { data, error } = await insertOrder(payload, customerId);
 
           if (error) {
             console.error("❌ Erro ao salvar pedido no Supabase:", error);
