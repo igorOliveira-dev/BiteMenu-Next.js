@@ -35,6 +35,8 @@ import useUser from "@/hooks/useUser";
 import UpdatePlanModal from "./components/UpdatePlanModal";
 import { mapsUrl } from "@/components/AddressFields";
 import PrintDocumentButton, {
+  AUTO_PRINT_KEY,
+  PRINT_PLAN_ROLES,
   normalizeOrderForPrint,
 } from "./components/print/PrintDocumentButton";
 import PrintOrderModal from "./components/print/PrintOrderModal";
@@ -55,6 +57,7 @@ const STATUS_FLOW = Object.keys(ORDER_STATUS);
 
 const paymentLabels = {
   pix: "Pix",
+  pix_online: "Pix online (pago)",
   debit: "Débito",
   credit: "Crédito",
   cash: "Dinheiro",
@@ -182,6 +185,7 @@ const Orders = ({
   const [enabledOrders, setEnabledOrders] = useState(false);
 
   const [soundNewOrder, setSoundNewOrder] = useState(true);
+  const [autoPrint, setAutoPrint] = useState(false);
 
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [summary, setSummary] = useState({
@@ -464,6 +468,20 @@ const Orders = ({
     } else {
       customAlert("Configuração de taxa de entrega atualizada!", "success");
     }
+  };
+
+  useEffect(() => {
+    try {
+      setAutoPrint(localStorage.getItem(AUTO_PRINT_KEY) === "1");
+    } catch {}
+  }, []);
+
+  const handleToggleAutoPrint = (value) => {
+    if (value && !PRINT_PLAN_ROLES.includes(planRole)) return setPrintUpsell(true);
+    setAutoPrint(value);
+    try {
+      localStorage.setItem(AUTO_PRINT_KEY, value ? "1" : "0");
+    } catch {}
   };
 
   const handleToggleSoundNewOrder = async (value) => {
@@ -828,6 +846,29 @@ const Orders = ({
           <p className="mt-2 text-xs color-gray">
             Quando ativado, o sistema tocará um som ao chegar um novo pedido.
           </p>
+
+          <hr className="my-3 border-translucid" />
+
+          <p className="mb-2 text-sm font-medium">Impressão automática</p>
+
+          <label className="flex items-center gap-2">
+            <span className="switch">
+              <input
+                type="checkbox"
+                checked={autoPrint}
+                onChange={(e) => handleToggleAutoPrint(e.target.checked)}
+              />
+              <span className="slider"></span>
+            </span>
+
+            <span>Imprimir pedidos automaticamente</span>
+          </label>
+
+          <p className="mt-2 text-xs color-gray">
+            Vale só neste aparelho: ative no computador ligado à impressora e deixe o painel aberto. A impressão
+            abre sozinha ao chegar um pedido, com o papel e o estilo da última impressão. Para imprimir sem
+            confirmar, abra o Chrome com a opção --kiosk-printing.
+          </p>
         </div>
           </>
         )}
@@ -1123,9 +1164,7 @@ const Orders = ({
                             })}
                             currency={menu?.currency}
                             menuName={menu?.title}
-                            canPrint={
-                              ["pro", "business", "admin", "designer"].includes(planRole)
-                            }
+                            canPrint={PRINT_PLAN_ROLES.includes(planRole)}
                             canCustomizeOrder={["business", "admin", "designer"].includes(planRole)}
                             onDenied={() => setPrintUpsell(true)}
                             fileNamePrefix="pedido"

@@ -29,6 +29,7 @@ import { useConfirm } from "@/providers/ConfirmProvider";
 import useUser from "@/hooks/useUser";
 import { supabase } from "@/lib/supabaseClient";
 import { updateMenuById } from "@/lib/queries/menus";
+import OnlinePayment from "./components/OnlinePayment";
 import AddressFields, { formatAddress, mapsUrl } from "@/components/AddressFields";
 import { currentPosition, geocodeAddress } from "@/lib/deliveryRadius";
 import { shiftTime, splitRanges } from "@/utils/storeHours";
@@ -1416,6 +1417,8 @@ const ConfigMenu = (props) => {
                 />
               </Field>
             )}
+
+            <OnlinePayment role={userRole} />
           </div>
         </SectionCard>
 

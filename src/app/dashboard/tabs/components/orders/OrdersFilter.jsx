@@ -97,6 +97,7 @@ export default function OrdersFilter({ onChange, initial = {}, statusOptions = n
     debit: "Débito",
     credit: "Crédito",
     pix: "PIX",
+    pix_online: "Pix online (pago)",
     stripe: "Stripe",
   };
 

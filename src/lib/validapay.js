@@ -2,7 +2,13 @@ import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 // VALIDAPAY_API_URL / VALIDAPAY_OAUTH_URL: sandbox ou produção (ver .env)
-const SCOPES = "checkouts/write checkouts/read subscriptions/write subscriptions/read customers/read charges/write";
+// Um token só com todos os escopos: a ValidaPay reaproveita o token já emitido para a credencial,
+// então um segundo token "com outros escopos" volta igual ao primeiro (401 TOKEN EXPIRADO OU INVALIDO).
+// A credencial (sandbox e produção) precisa ter todos estes escopos liberados no painel.
+const SCOPES = [
+  "checkouts/write checkouts/read subscriptions/write subscriptions/read customers/read charges/write",
+  "charges/read proposals/write subaccounts/read wallet/read wallet/write", // pagamento online (subcontas)
+].join(" ");
 
 let cachedToken = null; // { value, expiresAt }
 
@@ -28,12 +34,14 @@ async function getToken() {
   return cachedToken.value;
 }
 
-export async function validapay(path, { method = "GET", body } = {}) {
+// subAccount: número da subconta do estabelecimento (header X-Sub-Account) — pagamento online
+export async function validapay(path, { method = "GET", body, subAccount } = {}) {
   const res = await fetch(`${process.env.VALIDAPAY_API_URL}${path}`, {
     method,
     headers: {
       Authorization: `Bearer ${await getToken()}`,
       ...(body ? { "Content-Type": "application/json" } : {}),
+      ...(subAccount ? { "X-Sub-Account": String(subAccount) } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
     cache: "no-store",
@@ -44,6 +52,7 @@ export async function validapay(path, { method = "GET", body } = {}) {
     if (res.status === 401) cachedToken = null;
     const err = new Error(data?.error?.message || data?.message || `ValidaPay ${res.status}`);
     err.code = data?.error?.code || data?.code;
+    err.details = data?.error?.details;
     throw err;
   }
   return data;
@@ -62,6 +71,11 @@ export const PRICE_IDS = {
     yearly: process.env.VALIDAPAY_PRICE_BUSINESS_YEARLY,
   },
 };
+
+// Pagamento online dos pedidos: % do total que vai pra conta master (split no Pix da subconta)
+export const PLATFORM_FEE_PERCENT = 5;
+// ponytail: só admin enquanto o pagamento online está em teste; liberar ["pro", "business", "admin"] no lançamento
+export const ONLINE_PAYMENT_ROLES = ["admin"];
 
 export const TIER = { plus: 1, pro: 2, business: 3 };
 

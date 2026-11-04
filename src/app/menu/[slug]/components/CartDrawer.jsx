@@ -85,6 +85,7 @@ function CartDrawerContent({
   const router = useRouter(); // ← novo
 
   const [whatsappURL, setWhatsappURL] = useState(null);
+  const [pixOnline, setPixOnline] = useState(null); // { chargeId, emv, qrCode, paid, expired }
   const [myOrdersOpen, setMyOrdersOpen] = useState(false);
 
   // ── Pedido de mesa (QR code) ──────────────────────────────────────────────
@@ -385,6 +386,15 @@ function CartDrawerContent({
   const availablePaymentsOptions = paymentOptions.filter((option) =>
     (menu?.payments || []).includes(option.id),
   );
+  // Pix online (subconta ValidaPay): só Pro/Business, fora de mesa e balcão
+  if (
+    menu?.online_payment_enabled &&
+    ownerRole === "admin" && // em teste: só admin (ver ONLINE_PAYMENT_ROLES)
+    !tableInfo &&
+    !counterMode
+  ) {
+    availablePaymentsOptions.push({ id: "pix_online", label: "Pix online (pagar agora)" });
+  }
 
   function normalizeMoney(value) {
     const num = Number(String(value ?? "").replace(",", "."));
@@ -950,6 +960,11 @@ function CartDrawerContent({
       return;
     }
 
+    if (selectedPayment === "pix_online") {
+      startPixOnline();
+      return;
+    }
+
     whatsappConfirmation();
 
     if (selectedPayment === "pix" && menu.pix_key !== null) {
@@ -1172,6 +1187,103 @@ function CartDrawerContent({
       cart.clear(menu.id);
     })();
   };
+
+  // ── Pix online: cobrança na subconta do estabelecimento; o pedido só entra em orders depois de pago
+  // ponytail: cupom e estoque já foram consumidos antes do Pix; Pix abandonado não devolve
+  const startPixOnline = async () => {
+    const deliveryFee = selectedService === "delivery" ? deliveryFeeValue : 0;
+    const total = drawerTotal;
+    setFinalValue(total);
+    setPixOnline(null);
+    setPurchaseStage("pixOnline");
+
+    setWhatsappURL(
+      buildWhatsappURL({
+        items: currentItems,
+        subtotal: drawerSubtotal,
+        discount: discountAmount,
+        deliveryFee,
+        total,
+        costumerName,
+        costumerPhone,
+        costumerAddress,
+        costumerNeighborhood,
+        selectedService,
+        selectedPayment,
+        paymentLabel: "Pix online (pago)",
+      }),
+    );
+
+    const payload = {
+      costumer_name: costumerName || null,
+      costumer_phone: costumerPhone || null,
+      service: selectedService || null,
+      items_list: (currentItems || []).map((it) => ({
+        name: it.name,
+        qty: it.qty,
+        price: it.price,
+        image_url: it.image_url || null,
+        additionals: it.additionals || [],
+        note: it.note || "",
+      })),
+      neighborhood:
+        selectedService === "delivery" && canUseZones ? costumerNeighborhood : null,
+      address: selectedService === "delivery" ? costumerAddress : null,
+      delivery_fee: deliveryFee,
+      discount: discountAmount,
+      total,
+    };
+
+    try {
+      const res = await fetch("/api/orders/pix", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ menuId: menu.id, payload }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setPixOnline({ ...data, receipt: { payload, subtotal: drawerSubtotal } });
+    } catch (err) {
+      customAlert(err.message || "Não foi possível gerar o Pix.", "error");
+      setPurchaseStage("costumerInfos");
+    }
+  };
+
+  const pixChargeId = purchaseStage === "pixOnline" && !pixOnline?.paid ? pixOnline?.chargeId : null;
+  useEffect(() => {
+    if (!pixChargeId) return;
+    const timer = setInterval(async () => {
+      const res = await fetch(`/api/orders/pix?chargeId=${pixChargeId}`).catch(() => null);
+      const { status } = (await res?.json().catch(() => null)) ?? {};
+      if (status === "PAID") {
+        clearInterval(timer);
+        const { payload, subtotal } = pixOnline.receipt;
+        saveReceipt(menu?.id, {
+          id: `local-${Date.now()}`,
+          menuTitle: menu?.title,
+          createdAt: new Date().toISOString(),
+          costumerName: payload.costumer_name,
+          paymentMethod: "pix_online",
+          service: payload.service,
+          tableLabel: null,
+          itemsList: payload.items_list,
+          subtotal,
+          deliveryFee: payload.delivery_fee,
+          discount: payload.discount,
+          total: payload.total,
+          isPaid: true,
+        });
+        cart.clear(menu?.id);
+        setPixOnline((p) => ({ ...p, paid: true }));
+      } else if (["EXPIRED", "CANCELED", "FAILED"].includes(status)) {
+        clearInterval(timer);
+        setPixOnline((p) => ({ ...p, expired: true }));
+      }
+    }, 3000);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pixChargeId]);
+  // ────────────────────────────────────────────────────────────────────────
 
   if (!isMounted) return null;
 
@@ -1487,6 +1599,10 @@ function CartDrawerContent({
                           ? "Enviando pedido..."
                           : purchaseStage === "sendPix"
                             ? "Envio do PIX"
+                            : purchaseStage === "pixOnline"
+                            ? pixOnline?.paid
+                              ? "Pagamento confirmado!"
+                              : "Pague com Pix"
                             : purchaseStage === "whatsapp"
                               ? "Confirmação no WhatsApp"
                               : purchaseStage === "tableSuccess"
@@ -1934,6 +2050,100 @@ function CartDrawerContent({
                       Enviar confirmação
                     </span>
                   </a>
+                )}
+              </div>
+            ) : purchaseStage === "pixOnline" ? (
+              <div
+                className="flex flex-col items-center gap-2 text-center"
+                style={{ animation: "popInAnim 0.35s ease-out" }}
+              >
+                {!pixOnline ? (
+                  <FaSpinner
+                    className="animate-spin text-2xl my-6"
+                    style={{ color: menu.details_color }}
+                  />
+                ) : pixOnline.paid ? (
+                  <>
+                    <p className="text-sm" style={{ color: grayToUse }}>
+                      {`Seu pedido foi pago e enviado para ${menu.title}.`}
+                    </p>
+                    <p className="font-semibold">
+                      Total pago:{" "}
+                      <strong>{formatCurrency(finalValue, menu?.currency)}</strong>
+                    </p>
+                    {whatsappURL && (
+                      <a href={whatsappURL} rel="noopener noreferrer" className="w-full">
+                        <span
+                          className="cursor-pointer py-2 px-4 rounded font-bold flex items-center justify-center gap-2"
+                          style={{
+                            backgroundColor: menu.details_color,
+                            color: getContrastTextColor(menu.details_color),
+                          }}
+                        >
+                          <FaWhatsapp />
+                          Avisar no WhatsApp (opcional)
+                        </span>
+                      </a>
+                    )}
+                    <button
+                      onClick={() => resetPurchase()}
+                      className="cursor-pointer w-full py-2 px-4 rounded font-bold border"
+                    >
+                      Fechar
+                    </button>
+                  </>
+                ) : pixOnline.expired ? (
+                  <>
+                    <p className="text-sm" style={{ color: grayToUse }}>
+                      Este Pix expirou. Gere um novo para concluir o pedido.
+                    </p>
+                    <button
+                      onClick={() => startPixOnline()}
+                      className="cursor-pointer w-full py-2 px-4 rounded font-bold"
+                      style={{
+                        backgroundColor: menu.details_color,
+                        color: getContrastTextColor(menu.details_color),
+                      }}
+                    >
+                      Gerar novo Pix
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {pixOnline.qrCode && (
+                      <img
+                        src={pixOnline.qrCode}
+                        alt="QR Code do Pix"
+                        className="w-52 h-52 rounded-lg bg-white p-2"
+                      />
+                    )}
+                    <p>
+                      Valor:{" "}
+                      <strong className="text-2xl">
+                        {formatCurrency(finalValue, menu?.currency)}
+                      </strong>
+                    </p>
+                    <button
+                      onClick={() =>
+                        navigator.clipboard
+                          .writeText(pixOnline.emv)
+                          .then(() => customAlert("Código Pix copiado!"))
+                          .catch(() => customAlert("Erro ao copiar código", "error"))
+                      }
+                      className="cursor-pointer w-full py-2 px-4 rounded font-bold flex items-center justify-center gap-2"
+                      style={{
+                        backgroundColor: menu.details_color,
+                        color: getContrastTextColor(menu.details_color),
+                      }}
+                    >
+                      <FaCopy />
+                      Copiar código Pix
+                    </button>
+                    <p className="text-xs flex items-center gap-2" style={{ color: grayToUse }}>
+                      <FaSpinner className="animate-spin" />
+                      Aguardando pagamento. Não feche esta tela.
+                    </p>
+                  </>
                 )}
               </div>
             ) : purchaseStage === "tableSuccess" ? (

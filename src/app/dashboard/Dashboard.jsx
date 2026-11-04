@@ -25,7 +25,13 @@ import QrCodeModal from "./tabs/components/menu/QrCodeModal";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import { FaChartLine, FaLifeRing, FaShieldAlt, FaChair } from "react-icons/fa";
 import { supabase } from "@/lib/supabaseClient";
-import { countVisibleOrders } from "@/lib/queries/orders";
+import { countVisibleOrders, listRecentVisibleOrders } from "@/lib/queries/orders";
+import useUser from "@/hooks/useUser";
+import PrintDocumentButton, {
+  AUTO_PRINT_KEY,
+  PRINT_PLAN_ROLES,
+  normalizeOrderForPrint,
+} from "./tabs/components/print/PrintDocumentButton";
 import { useSearchParams } from "next/navigation";
 import { IconPessoa, IconPrato, IconSino } from "@/components/BrandIcons";
 
@@ -99,6 +105,10 @@ const Dashboard = ({
   const [orderQuantityChangeTrigger, setOrderQuantityChangeTrigger] = useState(0);
 
   const audioRef = useRef(null);
+  const { profile } = useUser();
+  // impressão automática: ids já vistos (null até a 1ª checagem) e fila de impressão
+  const printedIdsRef = useRef(null);
+  const [printQueue, setPrintQueue] = useState([]);
   const mainRef = useRef(null);
 
   // unlocker de audio para som de pedido novo
@@ -146,10 +156,30 @@ const Dashboard = ({
   useEffect(() => {
     if (!menu?.id) return;
 
+    // na 1ª checagem só marca o histórico como visto; depois enfileira os novos
+    const autoPrintNew = async () => {
+      const first = printedIdsRef.current === null;
+      let on = false;
+      try {
+        on = localStorage.getItem(AUTO_PRINT_KEY) === "1";
+      } catch {}
+      on = on && PRINT_PLAN_ROLES.includes(profile?.role);
+      if (!first && !on) return;
+
+      const { data } = await listRecentVisibleOrders(supabase, menu.id);
+      if (!data) return;
+      if (first) printedIdsRef.current = new Set();
+      const fresh = data.filter((o) => !printedIdsRef.current.has(o.id));
+      fresh.forEach((o) => printedIdsRef.current.add(o.id));
+      if (!first && fresh.length) setPrintQueue((q) => [...q, ...fresh.reverse()]);
+    };
+
     const checkOrders = async () => {
       const { count, error } = await countVisibleOrders(supabase, menu.id);
 
       if (error || typeof count !== "number") return;
+
+      if (printedIdsRef.current === null || count > previousCountRef.current) autoPrintNew();
 
       if (previousCountRef.current > 0 && count > previousCountRef.current) {
         customAlert("Novo pedido recebido!", "success");
@@ -168,7 +198,7 @@ const Dashboard = ({
     const interval = setInterval(checkOrders, 30000);
 
     return () => clearInterval(interval);
-  }, [menu?.id, orderQuantityChangeTrigger]);
+  }, [menu?.id, orderQuantityChangeTrigger, profile?.role]);
 
   // Modal de compartilhamento (hamburger) fecha com botão "Voltar"
   useModalBackHandler(isOpen, () => setIsOpen(false));
@@ -420,6 +450,24 @@ const Dashboard = ({
           </div>
         )}
       </main>
+
+      {/* impressão automática: um pedido por vez, o próximo entra ao terminar */}
+      {printQueue[0] && (
+        <PrintDocumentButton
+          key={printQueue[0].id}
+          autoPrint
+          onAutoPrinted={() => setPrintQueue((q) => q.slice(1))}
+          document={normalizeOrderForPrint(printQueue[0], {
+            deliveryFeeOnSales: menu?.delivery_fee_on_sales,
+          })}
+          currency={menu?.currency}
+          menuName={menu?.title}
+          canPrint
+          canCustomizeOrder={["business", "admin", "designer"].includes(profile?.role)}
+          fileNamePrefix="pedido"
+          receiptTitle="PEDIDO"
+        />
+      )}
 
       {/* Modal central ao clicar no hamburger */}
       {isOpen && (
