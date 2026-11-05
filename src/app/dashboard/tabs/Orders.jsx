@@ -55,6 +55,10 @@ const ADVANCE_LABEL = {
 };
 const STATUS_FLOW = Object.keys(ORDER_STATUS);
 
+// Taxa do Pix online (mesmo valor de PLATFORM_FEE_PERCENT em src/lib/validapay.js, que é só do servidor).
+// A tarifa da ValidaPay sai à parte e aparece no extrato da subconta.
+const PLATFORM_FEE = 0.05;
+
 const paymentLabels = {
   pix: "Pix",
   pix_online: "Pix online (pago)",
@@ -1128,7 +1132,7 @@ const Orders = ({
                           </ul>
                         )}
 
-                        {(order.service === "delivery" || discount > 0) && (
+                        {(order.service === "delivery" || discount > 0 || order.payment_method === "pix_online") && (
                           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 border-t border-translucid pt-2 text-xs color-gray">
                             <span>
                               Subtotal {formatCurrency(subtotal, menu?.currency)}
@@ -1143,6 +1147,13 @@ const Orders = ({
                               <span className="text-st-done">
                                 Desconto -
                                 {formatCurrency(discount, menu?.currency)}
+                              </span>
+                            )}
+                            {order.payment_method === "pix_online" && (
+                              <span className="font-semibold">
+                                Você recebe{" "}
+                                {formatCurrency(total * (1 - PLATFORM_FEE), menu?.currency)}{" "}
+                                (taxa 5%: {formatCurrency(total * PLATFORM_FEE, menu?.currency)})
                               </span>
                             )}
                           </div>

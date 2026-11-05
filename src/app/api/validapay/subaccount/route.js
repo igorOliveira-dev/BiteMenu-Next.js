@@ -138,18 +138,46 @@ export const GET = handle(async (req, menu) => {
     enabled: menu.online_payment_enabled,
     balance: balances.find((b) => String(b.accountNumber) === String(account))?.balance ?? 0,
   };
-  if (!new URL(req.url).searchParams.has("details")) return json(active);
+  const params = new URL(req.url).searchParams;
+  if (!params.has("details")) return json(active);
 
-  // tela "Minha conta de recebimentos": dados da subconta, extrato e saques
-  const [{ subAccounts = [] }, { transactions = [] }, { items: withdrawals = [] }] = await Promise.all([
+  // Período do extrato (YYYY-MM-DD, horário de Brasília): padrão últimos 30 dias, máximo 31 dias
+  const today = new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10);
+  const to = params.get("to") || today;
+  const from = params.get("from") || new Date(new Date(`${to}T12:00:00Z`) - 29 * DAY).toISOString().slice(0, 10);
+  const fromDate = new Date(`${from}T00:00:00.000-03:00`);
+  const toDate = new Date(`${to}T23:59:59.999-03:00`);
+  if (isNaN(fromDate) || isNaN(toDate) || fromDate > toDate) return json({ error: "Período inválido." }, 400);
+  if (toDate - fromDate > 31 * DAY) return json({ error: "O período pode ter no máximo 1 mês." }, 400);
+  const range = `dateFrom=${fromDate.toISOString()}&dateTo=${toDate.toISOString()}`;
+
+  // tela "Minha conta de recebimentos": dados da subconta, extrato do período e saques
+  const [{ subAccounts = [] }, statementItems, { items: withdrawals = [] }] = await Promise.all([
     validapay("/v1/accounts/subaccounts?perPage=100"),
-    validapay(`/v1/wallet/transactions?accountId=${account}&limit=50`),
+    allStatementItems(account, range),
     validapay(`/v1/wallet/withdrawals?accountId=${account}&limit=20`),
   ]);
   const info = subAccounts.find((s) => String(s.accountNumber) === String(account));
+  // itens sem valor (ex.: "Débito" vazio que acompanha o saque) não são movimentação
+  const transactions = statementItems.filter((t) => t.amount != null);
+
+  // liga cada entrada do extrato ao pedido pago por ela (orders.online_charge_id = chargeId)
+  const chargeIds = [...new Set(transactions.map((t) => t.chargeId).filter(Boolean))];
+  const { data: paidOrders, error: ordersError } = chargeIds.length
+    ? await supabaseAdmin
+        .from("orders")
+        .select("online_charge_id, costumer_name, created_at")
+        .eq("menu_id", menu.id)
+        .in("online_charge_id", chargeIds)
+    : { data: [] };
+  if (ordersError) throw ordersError;
+  const orderByCharge = Object.fromEntries(
+    (paidOrders ?? []).map((o) => [o.online_charge_id, { customer: o.costumer_name, createdAt: o.created_at }]),
+  );
 
   return json({
     ...active,
+    period: { from, to },
     account: {
       number: account,
       name: info?.name ?? null,
@@ -163,7 +191,10 @@ export const GET = handle(async (req, menu) => {
       type: t.type,
       category: t.category,
       title: t.title || t.description,
-      amount: t.amount,
+      order: (t.chargeId && orderByCharge[t.chargeId]) || null,
+      amount: t.amount, // líquido (já sem a taxa da plataforma e a tarifa da ValidaPay)
+      gross: t.grossAmount,
+      fee: t.feeAmount,
       balanceAfter: t.balanceAfter,
       createdAt: t.createdAt,
     })),
@@ -177,6 +208,24 @@ export const GET = handle(async (req, menu) => {
     })),
   });
 });
+
+const DAY = 86400000;
+
+// Extrato completo do período (paginado). A API real devolve a lista em "items" (a doc diz "transactions").
+// ponytail: teto de 20 páginas (2000 movimentações por mês); aumentar se algum estabelecimento passar disso
+async function allStatementItems(account, range) {
+  const items = [];
+  let token = "";
+  for (let page = 0; page < 20; page++) {
+    const res = await validapay(
+      `/v1/wallet/transactions?accountId=${account}&${range}&limit=100${token && `&nextPageToken=${encodeURIComponent(token)}`}`,
+    );
+    items.push(...(res.items ?? res.transactions ?? []));
+    token = res.nextPageToken;
+    if (!res.hasMore || !token) break;
+  }
+  return items;
+}
 
 export const PATCH = handle(async (req, menu) => {
   if (!menu.online_payment_account) return json({ error: "Subconta ainda não aprovada." }, 400);

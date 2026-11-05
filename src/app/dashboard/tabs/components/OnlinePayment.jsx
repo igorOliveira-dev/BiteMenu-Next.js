@@ -214,7 +214,35 @@ const Row = ({ left, sub, right, rightSub, rightClass = "" }) => (
   </div>
 );
 
-function AccountDetails({ details, busy, onWithdraw }) {
+const platformFee = (t) => (t.gross != null ? t.gross - t.amount - (t.fee ?? 0) : null);
+
+// Relatório do extrato em CSV (";" e vírgula decimal: abre direto no Excel em português)
+function downloadStatement({ transactions, period }) {
+  const num = (v) => (v == null ? "" : Number(v).toFixed(2).replace(".", ","));
+  const cell = (v) => `"${String(v ?? "").replaceAll('"', '""')}"`;
+  const rows = [
+    ["Data", "Descrição", "Cliente", "Pedido", "Tipo", "Valor pago", "Taxa 5%", "Tarifa", "Líquido"],
+    ...transactions.map((t) => [
+      formatDate(t.createdAt),
+      t.title,
+      t.order?.customer ?? "",
+      t.order ? formatDate(t.order.createdAt) : "",
+      t.type === "DEBIT" ? "Saída" : "Entrada",
+      num(t.gross),
+      num(platformFee(t)),
+      num(t.fee),
+      num(t.type === "DEBIT" ? -t.amount : t.amount),
+    ]),
+  ];
+  const csv = "\uFEFF" + rows.map((r) => r.map(cell).join(";")).join("\n");
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  link.download = `extrato-${period.from}-a-${period.to}.csv`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+function AccountDetails({ details, busy, onWithdraw, onFilter }) {
   if (!details.account) return <p className="text-sm opacity-60">Carregando...</p>;
   const { account } = details;
 
@@ -272,18 +300,47 @@ function AccountDetails({ details, busy, onWithdraw }) {
       </section>
 
       <section className="space-y-2">
-        <div className="text-xs font-semibold uppercase opacity-60">Extrato (últimas 50 movimentações)</div>
+        <div className="text-xs font-semibold uppercase opacity-60">Extrato</div>
+        <form
+          className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:items-end"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const { from, to } = formToObject(e.currentTarget);
+            onFilter(from, to);
+          }}
+        >
+          <Input label="De" name="from" type="date" defaultValue={details.period?.from} />
+          <Input label="Até" name="to" type="date" defaultValue={details.period?.to} />
+          <button type="submit" disabled={busy} className={BUTTON}>
+            Filtrar
+          </button>
+          <button
+            type="button"
+            disabled={!details.transactions.length}
+            onClick={() => downloadStatement(details)}
+            className={`${BUTTON} bg-transparent border border-[var(--translucid)] text-[var(--foreground)]`}
+          >
+            Baixar relatório
+          </button>
+        </form>
+        <p className="text-xs opacity-60">Período de até 1 mês.</p>
         {details.transactions.length === 0 ? (
-          <p className="opacity-60">Nenhuma movimentação ainda.</p>
+          <p className="opacity-60">Nenhuma movimentação no período.</p>
         ) : (
           details.transactions.map((t) => (
             <Row
               key={t.id}
-              left={t.title}
-              sub={formatDate(t.createdAt)}
+              left={t.order ? `${t.order.customer || "Cliente"} · pedido de ${formatDate(t.order.createdAt)}` : t.title}
+              sub={t.order ? `${t.title} · ${formatDate(t.createdAt)}` : formatDate(t.createdAt)}
               right={`${t.type === "DEBIT" ? "-" : "+"}${formatBRL(t.amount)}`}
               rightClass={t.type === "DEBIT" ? "text-red-500" : "text-green-600"}
-              rightSub={t.balanceAfter != null ? `saldo ${formatBRL(t.balanceAfter)}` : null}
+              rightSub={
+                t.gross != null
+                  ? `pago ${formatBRL(t.gross)} · taxa 5% ${formatBRL(platformFee(t))} · tarifa ${formatBRL(t.fee)}`
+                  : t.balanceAfter != null
+                    ? `saldo ${formatBRL(t.balanceAfter)}`
+                    : null
+              }
             />
           ))
         )}
@@ -306,14 +363,23 @@ export default function OnlinePayment({ role }) {
       .then(setStatus)
       .catch((err) => setStatus({ stage: "error", error: err.message }));
 
-  const openDetails = () => {
+  // period: { from, to } em YYYY-MM-DD; sem ele o servidor usa os últimos 30 dias
+  const openDetails = (period = details?.period) => {
     setDetails((d) => d ?? {});
-    return api("GET", undefined, "?details=1")
+    const query = period ? `?details=1&from=${period.from}&to=${period.to}` : "?details=1";
+    return api("GET", undefined, query)
       .then(setDetails)
       .catch((err) => {
-        setDetails(null);
+        setDetails((d) => (d?.account ? d : null)); // erro no filtro mantém a tela aberta
         customAlert(err.message, "error");
       });
+  };
+
+  const filterStatement = (from, to) => {
+    const days = (new Date(to) - new Date(from)) / 86400000;
+    if (!(days >= 0)) return customAlert("A data inicial precisa ser antes da final.", "error");
+    if (days > 31) return customAlert("Escolha um período de no máximo 1 mês.", "error");
+    openDetails({ from, to });
   };
 
   useEffect(() => {
@@ -417,12 +483,16 @@ export default function OnlinePayment({ role }) {
           />
           Aceitar Pix online no cardápio
         </label>
+        <p className="text-xs opacity-60">
+          Ligado, o PIX do cardápio (entrega e retirada) passa a ser o Pix online: o cliente paga na hora e o pedido
+          chega pago. A chave PIX continua valendo só para mesa e balcão.
+        </p>
 
         <div className="text-sm">
           Saldo disponível: <strong>{formatBRL(status.balance)}</strong>
         </div>
 
-        <button type="button" onClick={openDetails} className={BUTTON}>
+        <button type="button" onClick={() => openDetails()} className={BUTTON}>
           Minha conta de recebimentos
         </button>
 
@@ -431,6 +501,7 @@ export default function OnlinePayment({ role }) {
             <AccountDetails
               details={details}
               busy={busy}
+              onFilter={filterStatement}
               onWithdraw={(data) => run(() => api("PUT", data), "Saque solicitado! Ele cai na sua conta em instantes.")}
             />
           </FullScreen>
