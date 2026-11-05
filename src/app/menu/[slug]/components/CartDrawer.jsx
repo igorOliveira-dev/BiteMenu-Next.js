@@ -388,7 +388,7 @@ function CartDrawerContent({
   // Só delivery e retirada; em mesa e balcão não é oferecido.
   const pixOnlineAvailable =
     (menu?.payments || []).includes("pix_online") &&
-    ["admin"].includes(ownerRole) && // ONLINE_PAYMENT_ROLES (TEMPORÁRIO: só admin)
+    ["pro", "business", "admin"].includes(ownerRole) && // ONLINE_PAYMENT_ROLES
     !tableInfo &&
     !counterMode;
 
