@@ -466,15 +466,6 @@ export default function OnlinePayment({ role }) {
         <div className="text-xs font-semibold uppercase opacity-60">Empresa</div>
         <div className="grid gap-2 sm:grid-cols-2">
           <Input label="CNPJ" name="documentNumber" mask="cnpj" />
-          <Select
-            label="Tipo"
-            name="companyType"
-            options={[
-              ["MEI", "MEI"],
-              ["ME", "ME"],
-              ["PJ", "Outra (LTDA, EPP...)"],
-            ]}
-          />
           <Input label="Razão social" name="businessName" />
           <Input label="Nome fantasia" name="tradingName" />
           <Input label="E-mail da empresa" name="businessEmail" type="email" />

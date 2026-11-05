@@ -69,7 +69,8 @@ export const POST = handle(async (req, menu) => {
       businessEmail: f.businessEmail,
       businessName: f.businessName,
       tradingName: f.tradingName,
-      companyType: f.companyType,
+      // tipo da conta (não o porte): MEI e ME também são PJ; o porte vai no faturamento declarado
+      companyType: "PJ",
       businessAddress: address(f.businessAddress),
       // mesma faixa de faturamento (01-05) nos dois códigos
       financialCompanyDetails: { declaredCompanyRevenue: `DCRB${f.revenueBand}` },
