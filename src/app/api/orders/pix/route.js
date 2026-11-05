@@ -20,14 +20,48 @@ const ORDER_FIELDS = [
 async function onlineAccount(menuId) {
   const { data: menu, error } = await supabaseAdmin
     .from("menus")
-    .select("id, owner_id, online_payment_enabled, online_payment_account")
+    .select("id, owner_id, payments, online_payment_account")
     .eq("id", menuId)
     .maybeSingle();
   if (error) throw error;
-  if (!menu?.online_payment_enabled || !menu.online_payment_account) return null;
+  if (!menu?.payments?.includes("pix_online") || !menu.online_payment_account) return null;
 
   const { data: profile } = await supabaseAdmin.from("profiles").select("role").eq("id", menu.owner_id).maybeSingle();
   return ONLINE_PAYMENT_ROLES.includes(profile?.role) ? menu.online_payment_account : null;
+}
+
+// Pix anterior do mesmo cliente (gerado de novo com outro carrinho): cancela na ValidaPay para não
+// existirem dois códigos pagáveis. Retorna "paid" se ele já tinha sido pago, "processing" se está em processamento.
+async function cancelPreviousCharge(chargeId, menuId, account) {
+  const { data: pending, error } = await supabaseAdmin
+    .from("online_payments")
+    .select("charge_id")
+    .eq("charge_id", chargeId)
+    .eq("menu_id", menuId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!pending) {
+    // já saiu de online_payments: ou virou pedido (pago) ou foi cancelado antes
+    const { data: order } = await supabaseAdmin
+      .from("orders")
+      .select("id")
+      .eq("online_charge_id", chargeId)
+      .maybeSingle();
+    return order ? "paid" : null;
+  }
+
+  const { status } = await validapay(`/v1/charges/${chargeId}/status`, { subAccount: account });
+  if (status === "PAID") {
+    await finalizeOnlineOrder(chargeId);
+    return "paid";
+  }
+  if (status === "PROCESSING") return "processing";
+  // em aberto: cancela; falhando, não gera outro (melhor o cliente tentar de novo que pagar dois)
+  if (["PENDING", "AWAITING_PAYMENT"].includes(status)) {
+    await validapay(`/v1/charges/${chargeId}`, { method: "DELETE", subAccount: account });
+  }
+  await supabaseAdmin.from("online_payments").delete().eq("charge_id", chargeId);
+  return null;
 }
 
 // Cria o Pix na subconta do estabelecimento com split de PLATFORM_FEE_PERCENT para a master.
@@ -36,13 +70,26 @@ async function onlineAccount(menuId) {
 // ponytail: sem rate limit; adicionar se aparecer spam de cobranças.
 export async function POST(req) {
   try {
-    const { menuId, payload } = await req.json();
+    const { menuId, payload, previousChargeId } = await req.json();
     const account = menuId && (await onlineAccount(menuId));
     if (!account) return json({ error: "Pagamento online indisponível neste cardápio." }, 400);
 
     const total = Math.round(Number(payload?.total) * 100) / 100;
     if (!Number.isFinite(total) || total < 1) return json({ error: "Valor mínimo para Pix online: R$ 1,00." }, 400);
     if (!Array.isArray(payload.items_list) || !payload.items_list.length) return json({ error: "Pedido vazio." }, 400);
+
+    if (previousChargeId) {
+      const previous = await cancelPreviousCharge(String(previousChargeId), menuId, account);
+      if (previous === "paid") {
+        return json(
+          { error: "Seu Pix anterior já foi pago e o pedido foi enviado. Confira em Meus pedidos.", previousPaid: true },
+          409,
+        );
+      }
+      if (previous === "processing") {
+        return json({ error: "Seu Pix anterior está sendo processado. Aguarde alguns segundos e tente de novo." }, 409);
+      }
+    }
 
     const order = { menu_id: menuId, change_requested: null, change_for_amount: null };
     for (const key of ORDER_FIELDS) order[key] = payload[key] ?? null;

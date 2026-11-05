@@ -12,7 +12,7 @@ import { useConfirm } from "@/providers/ConfirmProvider";
 const INPUT =
   "h-11 w-full rounded-xl border border-[var(--translucid)] bg-translucid px-3 text-[15px] outline-none transition focus:border-brand-select/70";
 const BUTTON =
-  "inline-flex h-11 cursor-pointer items-center justify-center rounded-xl bg-bite px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50";
+  "inline-flex h-11 cursor-pointer items-center justify-center rounded-full bg-bite px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50";
 const ALLOWED = ["admin"]; // em teste: só admin (ver ONLINE_PAYMENT_ROLES)
 
 const INCOME = [
@@ -189,7 +189,7 @@ function FullScreen({ title, onClose, children }) {
           <button
             type="button"
             onClick={onClose}
-            className="cursor-pointer rounded-xl border border-[var(--translucid)] px-3 py-2 text-sm font-semibold"
+            className="cursor-pointer rounded-full border border-[var(--translucid)] px-4 py-2 text-sm font-semibold"
           >
             Voltar
           </button>
@@ -248,7 +248,7 @@ function AccountDetails({ details, busy, onWithdraw, onFilter }) {
 
   return (
     <div className="space-y-6 text-sm">
-      <section className="grid gap-1 rounded-xl border border-[var(--translucid)] p-4">
+      <section className="grid gap-1 rounded-2xl border border-[var(--translucid)] p-4">
         <div className="text-xs font-semibold uppercase opacity-60">Conta</div>
         <strong>{account.name ?? "-"}</strong>
         <div>CNPJ: {formatDoc(account.documentNumber ?? "")}</div>
@@ -402,7 +402,7 @@ export default function OnlinePayment({ role }) {
   };
 
   const wrap = (children) => (
-    <div className="space-y-3 rounded-xl border border-[var(--translucid)] p-4">
+    <div className="space-y-3 rounded-2xl border border-[var(--translucid)] p-4">
       <div>
         <div className="text-sm font-semibold">Pix online</div>
         <p className="mt-0.5 text-xs opacity-60">
@@ -474,18 +474,10 @@ export default function OnlinePayment({ role }) {
   if (status.stage === "active") {
     return wrap(
       <div className="space-y-3">
-        <label className="flex cursor-pointer items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={!!status.enabled}
-            disabled={busy}
-            onChange={(e) => run(() => api("PATCH", { enabled: e.target.checked }))}
-          />
-          Aceitar Pix online no cardápio
-        </label>
         <p className="text-xs opacity-60">
-          Ligado, o PIX do cardápio (entrega e retirada) passa a ser o Pix online: o cliente paga na hora e o pedido
-          chega pago. A chave PIX continua valendo só para mesa e balcão.
+          {status.enabled
+            ? "Pix online ativo no cardápio (entrega e retirada)."
+            : 'Conta aprovada! Para ativar, marque "Pix online" nas formas de pagamento acima e salve.'}
         </p>
 
         <div className="text-sm">
