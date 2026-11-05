@@ -96,7 +96,8 @@ export const PRICE_IDS = {
 // Pagamento online dos pedidos: % do total que vai pra conta master (split no Pix da subconta)
 export const PLATFORM_FEE_PERCENT = 5;
 // Planos que podem ativar o Pix online (mesma lista em OnlinePayment.jsx, ConfigMenu.jsx e CartDrawer.jsx)
-export const ONLINE_PAYMENT_ROLES = ["pro", "business", "admin"];
+// TEMPORÁRIO: só admin enquanto em teste; no lançamento voltar para ["pro", "business", "admin"] nos 4 lugares
+export const ONLINE_PAYMENT_ROLES = ["admin"];
 
 export const TIER = { plus: 1, pro: 2, business: 3 };
 

@@ -1410,10 +1410,11 @@ const ConfigMenu = (props) => {
                   onClick={() => togglePayment(opt.id)}
                 />
               ))}
-              {/* Pix online: visível para todos; só Pro/Business/admin com subconta aprovada conseguem marcar */}
-              {(() => {
+              {/* Pix online: só Pro/Business/admin com subconta aprovada conseguem marcar.
+                  TEMPORÁRIO: só aparece para admin enquanto está em teste (tirar o `userRole === "admin" &&` no lançamento) */}
+              {userRole === "admin" && (() => {
                 const selected = selectedPayments?.includes("pix_online");
-                const planOk = ["pro", "business", "admin"].includes(userRole); // ONLINE_PAYMENT_ROLES
+                const planOk = ["admin"].includes(userRole); // ONLINE_PAYMENT_ROLES (TEMPORÁRIO: só admin)
                 const ready = planOk && !!menu?.online_payment_account;
                 return (
                   <OptionCard

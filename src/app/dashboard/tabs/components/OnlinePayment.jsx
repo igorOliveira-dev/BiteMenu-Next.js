@@ -13,7 +13,7 @@ const INPUT =
   "h-11 w-full rounded-xl border border-[var(--translucid)] bg-translucid px-3 text-[15px] outline-none transition focus:border-brand-select/70";
 const BUTTON =
   "inline-flex h-11 cursor-pointer items-center justify-center rounded-full bg-bite px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50";
-const ALLOWED = ["pro", "business", "admin"]; // ONLINE_PAYMENT_ROLES em src/lib/validapay.js
+const ALLOWED = ["admin"]; // TEMPORÁRIO: só admin (ONLINE_PAYMENT_ROLES em src/lib/validapay.js)
 
 const INCOME = [
   "Até R$ 5.000",
@@ -384,7 +384,7 @@ export default function OnlinePayment({ role }) {
 
   // carrega para todos os planos: quem mudou de plano e já tem subconta continua vendo o saldo e sacando
   useEffect(() => {
-    if (role) load();
+    if (allowed) load(); // TEMPORÁRIO: no lançamento voltar para `if (role)` (mudou de plano continua sacando)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role]);
 
@@ -420,6 +420,7 @@ export default function OnlinePayment({ role }) {
     </a>
   );
 
+  if (!allowed) return null; // TEMPORÁRIO: fora do admin não aparece nada enquanto está em teste
   if (!status) return wrap(<p className="text-xs opacity-60">Carregando...</p>);
   // fora do Pro/Business: aparece, mas não dá para cadastrar
   if (!allowed && status.stage === "none") return wrap(upgrade);
