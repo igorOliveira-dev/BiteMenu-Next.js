@@ -1420,10 +1420,6 @@ const ConfigMenu = (props) => {
               )}
             </div>
 
-            00020126580014br.gov.bcb.pix0136sandbox-e5e9df17-b390-422a-b432-b405f2cb4be2520400005303986540480.005802BR6009SAO PAULO62070503***6304FAKE
-
-            00020126580014br.gov.bcb.pix0136sandbox-e5e9df17-b390-422a-b432-b405f2cb4be2520400005303986540480.005802BR6009SAO PAULO62070503***6304FAKE
-
             {selectedPayments?.includes("pix") && (
               <Field label="Chave PIX">
                 <TextInput
