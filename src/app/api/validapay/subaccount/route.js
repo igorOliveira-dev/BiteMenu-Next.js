@@ -1,9 +1,9 @@
-import { revalidatePath } from "next/cache";
 import { validapay, getUserFromRequest, ONLINE_PAYMENT_ROLES } from "@/lib/validapay";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 // Subconta ValidaPay do estabelecimento (pagamento online por Pix).
-// POST envia a proposta · GET status/saldo · PATCH liga/desliga · PUT saque.
+// POST envia a proposta · GET status/saldo · PUT saque · DELETE refaz o cadastro.
+// Ligar/desligar: "pix_online" em menus.payments (Configurar cardápio → Pagamentos).
 
 const json = (body, status = 200) => Response.json(body, { status });
 const digits = (v) => String(v ?? "").replace(/\D/g, "");
@@ -17,7 +17,7 @@ async function ownerMenu(req) {
     supabaseAdmin.from("profiles").select("role").eq("id", user.id).maybeSingle(),
     supabaseAdmin
       .from("menus")
-      .select("id, slug, online_payment_form_id, online_payment_account, online_payment_enabled")
+      .select("id, slug, payments, online_payment_form_id, online_payment_account")
       .eq("owner_id", user.id)
       .maybeSingle(),
   ]);
@@ -135,7 +135,7 @@ export const GET = handle(async (req, menu) => {
   const { balances = [] } = await validapay(`/v1/wallet/balance?accountId=${account}`);
   const active = {
     stage: "active",
-    enabled: menu.online_payment_enabled,
+    enabled: (menu.payments ?? []).includes("pix_online"),
     balance: balances.find((b) => String(b.accountNumber) === String(account))?.balance ?? 0,
   };
   const params = new URL(req.url).searchParams;
@@ -226,17 +226,6 @@ async function allStatementItems(account, range) {
   }
   return items;
 }
-
-export const PATCH = handle(async (req, menu) => {
-  if (!menu.online_payment_account) return json({ error: "Subconta ainda não aprovada." }, 400);
-  const { enabled } = await req.json();
-
-  const { error } = await supabaseAdmin.from("menus").update({ online_payment_enabled: !!enabled }).eq("id", menu.id);
-  if (error) throw error;
-
-  revalidatePath(`/menu/${menu.slug}`);
-  return json({ ok: true, enabled: !!enabled });
-});
 
 export const PUT = handle(async (req, menu) => {
   if (!menu.online_payment_account) return json({ error: "Subconta ainda não aprovada." }, 400);

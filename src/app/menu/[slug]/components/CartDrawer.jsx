@@ -383,18 +383,16 @@ function CartDrawerContent({
     { id: "pix", label: "PIX" },
   ];
 
-  // Pix online (subconta ValidaPay) substitui o PIX manual onde está disponível (delivery e retirada);
-  // em mesa e balcão continua o PIX com chave
+  // Pix online (subconta ValidaPay): "pix_online" em menu.payments, exclusivo com o PIX com chave.
+  // Só delivery e retirada; em mesa e balcão não é oferecido.
   const pixOnlineAvailable =
-    menu?.online_payment_enabled &&
+    (menu?.payments || []).includes("pix_online") &&
     ownerRole === "admin" && // em teste: só admin (ver ONLINE_PAYMENT_ROLES)
     !tableInfo &&
     !counterMode;
 
-  const availablePaymentsOptions = paymentOptions.filter(
-    (option) =>
-      (menu?.payments || []).includes(option.id) &&
-      !(pixOnlineAvailable && option.id === "pix"),
+  const availablePaymentsOptions = paymentOptions.filter((option) =>
+    (menu?.payments || []).includes(option.id),
   );
   if (pixOnlineAvailable) {
     availablePaymentsOptions.push({ id: "pix_online", label: "PIX" });
@@ -942,7 +940,19 @@ function CartDrawerContent({
     setPurchaseStage("whatsapp");
   };
 
+  // trava de clique duplo: um segundo clique durante a confirmação não repete cupom, estoque nem Pix
+  const submittingRef = useRef(false);
   const confirmPurchase = async () => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    try {
+      await confirmPurchaseOnce();
+    } finally {
+      submittingRef.current = false;
+    }
+  };
+
+  const confirmPurchaseOnce = async () => {
     saveCustomerInfo();
 
     if (!validateCustomerFields()) return;
@@ -951,6 +961,9 @@ function CartDrawerContent({
       customAlert("Selecione a forma de pagamento", "error");
       return;
     }
+
+    // mesmo carrinho com Pix em aberto: mostra o mesmo QR (sem gerar outro nem consumir cupom/estoque de novo)
+    if (selectedPayment === "pix_online" && resumePixOnline()) return;
 
     if (!(await consumeCoupon()) || !(await consumeStock())) return;
 
@@ -1194,29 +1207,71 @@ function CartDrawerContent({
 
   // ── Pix online: cobrança na subconta do estabelecimento; o pedido só entra em orders depois de pago
   // ponytail: cupom e estoque já foram consumidos antes do Pix; Pix abandonado não devolve
+  // Pix em aberto fica salvo por cardápio: retoma o mesmo QR e, se o carrinho mudar, o servidor cancela o anterior
+  const pixStorageKey = `pixOnline:${menu?.id}`;
+  const readPendingPix = () => {
+    try {
+      return JSON.parse(localStorage.getItem(pixStorageKey));
+    } catch {
+      return null;
+    }
+  };
+  const savePendingPix = (value) => {
+    try {
+      if (value) localStorage.setItem(pixStorageKey, JSON.stringify(value));
+      else localStorage.removeItem(pixStorageKey);
+    } catch {}
+  };
+  const pixSignature = () =>
+    JSON.stringify([
+      drawerTotal,
+      selectedService,
+      (currentItems || []).map((it) => [it.name, it.qty, it.price, it.additionals, it.note]),
+    ]);
+
+  const resumePixOnline = () => {
+    const pending = readPendingPix();
+    if (!pending || pending.signature !== pixSignature()) return false;
+    setFinalValue(pending.total);
+    setWhatsappURL(pending.whatsappURL);
+    setPixOnline(pending);
+    setPurchaseStage("pixOnline");
+    return true;
+  };
+
+  const pixStartingRef = useRef(false);
   const startPixOnline = async () => {
+    if (pixStartingRef.current) return;
+    pixStartingRef.current = true;
+    try {
+      await createPixOnline();
+    } finally {
+      pixStartingRef.current = false;
+    }
+  };
+
+  const createPixOnline = async () => {
     const deliveryFee = selectedService === "delivery" ? deliveryFeeValue : 0;
     const total = drawerTotal;
     setFinalValue(total);
     setPixOnline(null);
     setPurchaseStage("pixOnline");
 
-    setWhatsappURL(
-      buildWhatsappURL({
-        items: currentItems,
-        subtotal: drawerSubtotal,
-        discount: discountAmount,
-        deliveryFee,
-        total,
-        costumerName,
-        costumerPhone,
-        costumerAddress,
-        costumerNeighborhood,
-        selectedService,
-        selectedPayment,
-        paymentLabel: "Pix online (pago)",
-      }),
-    );
+    const whatsappLink = buildWhatsappURL({
+      items: currentItems,
+      subtotal: drawerSubtotal,
+      discount: discountAmount,
+      deliveryFee,
+      total,
+      costumerName,
+      costumerPhone,
+      costumerAddress,
+      costumerNeighborhood,
+      selectedService,
+      selectedPayment,
+      paymentLabel: "Pix online (pago)",
+    });
+    setWhatsappURL(whatsappLink);
 
     const payload = {
       costumer_name: costumerName || null,
@@ -1242,11 +1297,22 @@ function CartDrawerContent({
       const res = await fetch("/api/orders/pix", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ menuId: menu.id, payload }),
+        // o anterior é cancelado no servidor antes de gerar o novo (evita pagar os dois)
+        body: JSON.stringify({ menuId: menu.id, payload, previousChargeId: readPendingPix()?.chargeId }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      setPixOnline({ ...data, receipt: { payload, subtotal: drawerSubtotal } });
+      if (!res.ok) {
+        if (data.previousPaid) savePendingPix(null); // o anterior já foi pago: não tenta mais cancelar
+        throw new Error(data.error);
+      }
+      const pix = {
+        ...data,
+        receipt: { payload, subtotal: drawerSubtotal },
+        signature: pixSignature(),
+        whatsappURL: whatsappLink,
+      };
+      savePendingPix(pix);
+      setPixOnline(pix);
     } catch (err) {
       customAlert(err.message || "Não foi possível gerar o Pix.", "error");
       setPurchaseStage("costumerInfos");
@@ -1278,9 +1344,11 @@ function CartDrawerContent({
           isPaid: true,
         });
         cart.clear(menu?.id);
+        savePendingPix(null);
         setPixOnline((p) => ({ ...p, paid: true }));
-      } else if (["EXPIRED", "CANCELED", "FAILED"].includes(status)) {
+      } else if (["EXPIRED", "CANCELED", "FAILED", "UNKNOWN"].includes(status)) {
         clearInterval(timer);
+        savePendingPix(null);
         setPixOnline((p) => ({ ...p, expired: true }));
       }
     }, 3000);

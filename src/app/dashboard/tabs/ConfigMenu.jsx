@@ -979,7 +979,10 @@ const ConfigMenu = (props) => {
 
   const togglePayment = (id) => {
     const prev = selectedPayments || [];
-    const next = prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id];
+    let next = prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id];
+    // PIX com chave e Pix online são exclusivos: marcar um desmarca o outro
+    const otherPix = { pix: "pix_online", pix_online: "pix" }[id];
+    if (otherPix && next.includes(id)) next = next.filter((p) => p !== otherPix);
 
     if (next.length === 0) {
       customAlert("Mantenha ao menos 1 forma de pagamento.");
@@ -1406,7 +1409,20 @@ const ConfigMenu = (props) => {
                   onClick={() => togglePayment(opt.id)}
                 />
               ))}
+              {/* Pix online: só com a subconta aprovada (em teste: só admin, ver ONLINE_PAYMENT_ROLES) */}
+              {userRole === "admin" && (menu?.online_payment_account || selectedPayments?.includes("pix_online")) && (
+                <OptionCard
+                  multi
+                  selected={selectedPayments?.includes("pix_online")}
+                  title="Pix online"
+                  onClick={() => togglePayment("pix_online")}
+                />
+              )}
             </div>
+
+            00020126580014br.gov.bcb.pix0136sandbox-e5e9df17-b390-422a-b432-b405f2cb4be2520400005303986540480.005802BR6009SAO PAULO62070503***6304FAKE
+
+            00020126580014br.gov.bcb.pix0136sandbox-e5e9df17-b390-422a-b432-b405f2cb4be2520400005303986540480.005802BR6009SAO PAULO62070503***6304FAKE
 
             {selectedPayments?.includes("pix") && (
               <Field label="Chave PIX">
