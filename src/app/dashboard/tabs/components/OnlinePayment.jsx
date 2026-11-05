@@ -511,7 +511,24 @@ export default function OnlinePayment({ role }) {
               details={details}
               busy={busy}
               onFilter={filterStatement}
-              onWithdraw={(data) => run(() => api("PUT", data), "Saque solicitado! Ele cai na sua conta em instantes.")}
+              onWithdraw={async (data) => {
+                // confirma valor e chave antes de enviar: saque para a chave errada não tem volta
+                const keyType = PIX_KEY_TYPES.find(([value]) => value === data.pixKeyType)?.[1] ?? data.pixKeyType;
+                const ok = await confirm(
+                  <>
+                    Confirme o saque:
+                    <br />
+                    Valor: <strong>{formatBRL(data.amount)}</strong>
+                    <br />
+                    Chave Pix ({keyType}): <strong className="break-all">{data.pixKey}</strong>
+                    <br />
+                    <br />
+                    Confira se a chave está correta. A chave precisa ser do mesmo CNPJ da conta de recebimentos.
+                  </>,
+                  { tone: "confirm" },
+                );
+                if (ok) run(() => api("PUT", data), "Saque solicitado! Ele cai na sua conta em instantes.");
+              }}
             />
           </FullScreen>
         )}
