@@ -26,6 +26,7 @@ import { applyCoupon } from "@/lib/couponDiscount";
 import { STOCK_ROLES, stockPayload } from "@/lib/stock";
 import { saveReceipt } from "@/lib/orderReceipts";
 import useUser from "@/hooks/useUser";
+import SignUpCta from "@/components/SignUpCta";
 import { renderWhatsappMessage } from "@/lib/whatsappMessage";
 import { getContrastTextColor } from "@/utils/color";
 import AddressFields, {
@@ -80,7 +81,7 @@ function CartDrawerContent({
   const cart = useCartContext();
   const confirm = useConfirm();
   const customAlert = useAlert();
-  const { profile } = useUser();
+  const { user, profile, loading: userLoading } = useUser();
   const searchParams = useSearchParams(); // ← novo
   const router = useRouter(); // ← novo
 
@@ -517,6 +518,40 @@ function CartDrawerContent({
       setPurchaseStage("costumerInfos");
     }
   }, [selectedService]);
+
+  // ── Convite para criar conta (só visitante) ──────────────────────────────
+  const showSignUpCta = !userLoading && !user;
+  const signUpCtaColors = {
+    text: foregroundToUse,
+    muted: grayToUse,
+    surface: translucidToUse,
+    accent: menu?.details_color,
+  };
+  // volta para este cardápio (mantém ?mesa=); com ?finalizar= a compra reabre na mesma etapa
+  const menuReturnPath = (service) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("finalizar");
+    if (service) params.set("finalizar", service);
+    const qs = params.toString();
+    return `/menu/${menu?.slug}${qs ? `?${qs}` : ""}`;
+  };
+
+  // Voltou do cadastro/login aberto no checkout: reabre o carrinho e a compra onde estava
+  const resumeService = searchParams.get("finalizar");
+  useEffect(() => {
+    if (resumeService == null || !cart.raw.hydrated || !menu?.id) return;
+    router.replace(menuReturnPath(null), { scroll: false });
+    if (!cart.totalItems(menu.id)) return;
+    onOpen?.();
+    // ponytail: só o horário (isOpen) é conferido aqui; o "Continuar compra" também lê o controle manual e o mínimo
+    if (!isOpen) return;
+    if (availableServiceOptions.some((option) => option.id === resumeService)) {
+      setSelectedService(resumeService);
+    }
+    setIsPurchaseModalOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resumeService, cart.raw.hydrated, menu?.id]);
+  // ────────────────────────────────────────────────────────────────────────
 
   // limpar bairro se o estabelecimento não receber mais bairro
   useEffect(() => {
@@ -1719,6 +1754,13 @@ function CartDrawerContent({
               </div>
             ) : purchaseStage === "costumerInfos" ? (
               <div className="flex flex-col gap-2">
+                {showSignUpCta && (
+                  <SignUpCta
+                    next={menuReturnPath(selectedService || "")}
+                    colors={signUpCtaColors}
+                    onBeforeLeave={saveCustomerInfo}
+                  />
+                )}
                 <div>
                   {counterMode && (
                     <p
@@ -2264,6 +2306,20 @@ function CartDrawerContent({
                 </a>
               </div>
             ) : null}
+
+            {/* depois do pedido, abaixo do botão de confirmação: o pedido feito já entra no histórico da conta */}
+            {showSignUpCta &&
+              (["whatsapp", "tableSuccess"].includes(purchaseStage) ||
+                (purchaseStage === "pixOnline" && pixOnline?.paid)) && (
+                <div className="mt-4">
+                  <SignUpCta
+                    next={menuReturnPath(null)}
+                    colors={signUpCtaColors}
+                    title="Guarde este pedido"
+                    text="Crie sua conta grátis e veja este pedido no seu histórico. Nos próximos, seus dados já vêm preenchidos."
+                  />
+                </div>
+              )}
           </div>
         </div>
       )}

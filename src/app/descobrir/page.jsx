@@ -15,6 +15,7 @@ import { saveProfileAddress } from "@/lib/queries/profiles";
 import BrandLogo from "@/components/BrandLogo";
 import ThemeToggle from "@/components/ThemeToggle";
 import CustomerMenu from "@/components/CustomerMenu";
+import SignUpCta from "@/components/SignUpCta";
 import GenericModal from "@/components/GenericModal";
 import ScrollToTopButton from "@/components/ScrollToTopButton";
 import AddressFields, {
@@ -223,6 +224,12 @@ export default function DescobrirPage() {
         <p className="mt-1 text-sm text-brand-muted">
           Restaurantes, lanchonetes e deliveries que usam o Bite Menu.
         </p>
+
+        {ready && !user && (
+          <div className="mt-4">
+            <SignUpCta next="/descobrir" />
+          </div>
+        )}
 
         <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
           <FaMapMarkerAlt className="text-brand-red" />
