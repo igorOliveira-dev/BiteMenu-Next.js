@@ -383,17 +383,21 @@ function CartDrawerContent({
     { id: "pix", label: "PIX" },
   ];
 
-  const availablePaymentsOptions = paymentOptions.filter((option) =>
-    (menu?.payments || []).includes(option.id),
-  );
-  // Pix online (subconta ValidaPay): só Pro/Business, fora de mesa e balcão
-  if (
+  // Pix online (subconta ValidaPay) substitui o PIX manual onde está disponível (delivery e retirada);
+  // em mesa e balcão continua o PIX com chave
+  const pixOnlineAvailable =
     menu?.online_payment_enabled &&
     ownerRole === "admin" && // em teste: só admin (ver ONLINE_PAYMENT_ROLES)
     !tableInfo &&
-    !counterMode
-  ) {
-    availablePaymentsOptions.push({ id: "pix_online", label: "Pix online (pagar agora)" });
+    !counterMode;
+
+  const availablePaymentsOptions = paymentOptions.filter(
+    (option) =>
+      (menu?.payments || []).includes(option.id) &&
+      !(pixOnlineAvailable && option.id === "pix"),
+  );
+  if (pixOnlineAvailable) {
+    availablePaymentsOptions.push({ id: "pix_online", label: "PIX" });
   }
 
   function normalizeMoney(value) {
@@ -2064,33 +2068,26 @@ function CartDrawerContent({
                   />
                 ) : pixOnline.paid ? (
                   <>
+                    {/* mesmo passo final do pedido comum: confirmação no WhatsApp */}
                     <p className="text-sm" style={{ color: grayToUse }}>
-                      {`Seu pedido foi pago e enviado para ${menu.title}.`}
+                      {`Pagamento recebido! Para confirmar a compra, envie a mensagem de confirmação ao WhatsApp de ${menu.title}.`}
                     </p>
                     <p className="font-semibold">
                       Total pago:{" "}
                       <strong>{formatCurrency(finalValue, menu?.currency)}</strong>
                     </p>
-                    {whatsappURL && (
-                      <a href={whatsappURL} rel="noopener noreferrer" className="w-full">
-                        <span
-                          className="cursor-pointer py-2 px-4 rounded-full font-bold flex items-center justify-center gap-2"
-                          style={{
-                            backgroundColor: menu.details_color,
-                            color: getContrastTextColor(menu.details_color),
-                          }}
-                        >
-                          <FaWhatsapp />
-                          Avisar no WhatsApp (opcional)
-                        </span>
-                      </a>
-                    )}
-                    <button
-                      onClick={() => resetPurchase()}
-                      className="cursor-pointer w-full py-2 px-4 rounded-full font-bold border"
-                    >
-                      Fechar
-                    </button>
+                    <a href={whatsappURL || "#"} rel="noopener noreferrer" className="w-full">
+                      <span
+                        className="cursor-pointer py-2 px-4 rounded-full font-bold flex items-center justify-center gap-2"
+                        style={{
+                          backgroundColor: menu.details_color,
+                          color: getContrastTextColor(menu.details_color),
+                        }}
+                      >
+                        <FaWhatsapp />
+                        Enviar confirmação
+                      </span>
+                    </a>
                   </>
                 ) : pixOnline.expired ? (
                   <>
