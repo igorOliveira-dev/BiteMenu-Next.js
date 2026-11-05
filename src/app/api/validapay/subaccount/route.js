@@ -23,17 +23,15 @@ async function ownerMenu(req) {
   ]);
   if (error) throw error;
   if (!menu) return { error: json({ error: "Cardápio não encontrado" }, 404) };
-  if (!ONLINE_PAYMENT_ROLES.includes(profile?.role)) {
-    return { error: json({ error: "Pagamento online indisponível." }, 403) };
-  }
-  return { menu };
+  // Só Pro/Business/admin cadastram; quem já tem subconta e mudou de plano continua vendo o saldo e sacando
+  return { menu, allowed: ONLINE_PAYMENT_ROLES.includes(profile?.role) };
 }
 
 const handle = (fn) => async (req) => {
   try {
-    const { menu, error } = await ownerMenu(req);
+    const { menu, allowed, error } = await ownerMenu(req);
     if (error) return error;
-    return await fn(req, menu);
+    return await fn(req, menu, allowed);
   } catch (err) {
     console.error("[ValidaPay Subconta] Erro:", err, err.details);
     // erros de validação da ValidaPay trazem os campos em details
@@ -56,7 +54,8 @@ const address = (a = {}) => ({
 
 const brDate = (iso) => (iso ? iso.split("-").reverse().join("-") : ""); // yyyy-mm-dd → dd-mm-yyyy
 
-export const POST = handle(async (req, menu) => {
+export const POST = handle(async (req, menu, allowed) => {
+  if (!allowed) return json({ error: "Pagamento online disponível nos planos Pro e Business." }, 403);
   if (menu.online_payment_form_id) return json({ error: "Cadastro já enviado." }, 400);
 
   const f = await req.json();
@@ -100,8 +99,8 @@ export const POST = handle(async (req, menu) => {
   return json({ ok: true });
 });
 
-export const GET = handle(async (req, menu) => {
-  if (!menu.online_payment_form_id) return json({ stage: "none" });
+export const GET = handle(async (req, menu, allowed) => {
+  if (!menu.online_payment_form_id) return json({ stage: "none", allowed });
 
   let account = menu.online_payment_account;
   if (!account) {
@@ -113,7 +112,7 @@ export const GET = handle(async (req, menu) => {
       // o dono pode atualizar ou refazer o cadastro
       if (!err.status || err.status >= 500) throw err;
       console.error("[ValidaPay Subconta] Proposta inacessível:", err.message);
-      return json({ stage: "pending", proposalError: err.message });
+      return json({ stage: "pending", allowed, proposalError: err.message });
     }
     const cnpj = proposal.documentNumber;
     // ponytail: só a 1ª página (100 mais recentes); paginar quando houver mais subcontas que isso
@@ -123,6 +122,7 @@ export const GET = handle(async (req, menu) => {
     if (!account) {
       return json({
         stage: "pending",
+        allowed,
         proposal: proposal.proposalStatus?.proposal ?? null,
         documents: proposal.proposalStatus?.documents ?? null,
         documentsUrl: proposal.proposalStatus?.urlDocumentscopy ?? null,
@@ -135,6 +135,7 @@ export const GET = handle(async (req, menu) => {
   const { balances = [] } = await validapay(`/v1/wallet/balance?accountId=${account}`);
   const active = {
     stage: "active",
+    allowed,
     enabled: (menu.payments ?? []).includes("pix_online"),
     balance: balances.find((b) => String(b.accountNumber) === String(account))?.balance ?? 0,
   };

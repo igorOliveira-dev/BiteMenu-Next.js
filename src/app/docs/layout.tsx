@@ -82,6 +82,20 @@ const docsNavigation = [
     ],
   },
   {
+    key: "pix-online",
+    label: "Pix online",
+    href: "/docs/pix-online",
+    sections: [
+      { label: "O que é o Pix online?", href: "/docs/pix-online#o-que-e" },
+      { label: "Quem pode usar?", href: "/docs/pix-online#quem-pode-usar" },
+      { label: "Como ativar", href: "/docs/pix-online#como-ativar" },
+      { label: "Como o cliente paga", href: "/docs/pix-online#como-o-cliente-paga" },
+      { label: "Taxas", href: "/docs/pix-online#taxas" },
+      { label: "Conta de recebimentos e saques", href: "/docs/pix-online#conta-de-recebimentos" },
+      { label: "Dúvidas comuns", href: "/docs/pix-online#duvidas" },
+    ],
+  },
+  {
     key: "vendas",
     label: "Vendas",
     href: "/docs/vendas",

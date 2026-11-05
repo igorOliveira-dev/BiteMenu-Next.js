@@ -13,7 +13,7 @@ const INPUT =
   "h-11 w-full rounded-xl border border-[var(--translucid)] bg-translucid px-3 text-[15px] outline-none transition focus:border-brand-select/70";
 const BUTTON =
   "inline-flex h-11 cursor-pointer items-center justify-center rounded-full bg-bite px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50";
-const ALLOWED = ["admin"]; // em teste: só admin (ver ONLINE_PAYMENT_ROLES)
+const ALLOWED = ["pro", "business", "admin"]; // ONLINE_PAYMENT_ROLES em src/lib/validapay.js
 
 const INCOME = [
   "Até R$ 5.000",
@@ -382,10 +382,11 @@ export default function OnlinePayment({ role }) {
     openDetails({ from, to });
   };
 
+  // carrega para todos os planos: quem mudou de plano e já tem subconta continua vendo o saldo e sacando
   useEffect(() => {
-    if (allowed) load();
+    if (role) load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allowed]);
+  }, [role]);
 
   const run = async (fn, success) => {
     setBusy(true);
@@ -413,8 +414,15 @@ export default function OnlinePayment({ role }) {
     </div>
   );
 
-  if (!allowed) return null; // fora do admin não aparece nada enquanto está em teste
+  const upgrade = (
+    <a href="/dashboard/pricing?plan=pro" className="block text-sm font-semibold text-brand-red underline">
+      Disponível nos planos Pro e Business
+    </a>
+  );
+
   if (!status) return wrap(<p className="text-xs opacity-60">Carregando...</p>);
+  // fora do Pro/Business: aparece, mas não dá para cadastrar
+  if (!allowed && status.stage === "none") return wrap(upgrade);
 
   if (status.stage === "error") {
     return wrap(
@@ -474,6 +482,14 @@ export default function OnlinePayment({ role }) {
   if (status.stage === "active") {
     return wrap(
       <div className="space-y-3">
+        {!allowed && (
+          <p className="text-xs">
+            Seu plano atual não inclui o Pix online. O saldo continua disponível para saque.{" "}
+            <a href="/dashboard/pricing?plan=pro" className="font-semibold text-brand-red underline">
+              Ver planos
+            </a>
+          </p>
+        )}
         <p className="text-xs opacity-60">
           {status.enabled
             ? "Pix online ativo no cardápio (entrega e retirada)."

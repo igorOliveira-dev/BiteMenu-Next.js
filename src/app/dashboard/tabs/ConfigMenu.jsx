@@ -407,13 +407,14 @@ function GhostButton({ className = "", children, ...props }) {
   );
 }
 
-function OptionCard({ selected, multi, title, description, onClick }) {
+function OptionCard({ selected, multi, title, description, onClick, locked }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cx(
         "flex w-full cursor-pointer items-start gap-3 rounded-xl border p-3 text-left transition",
+        locked && "cursor-not-allowed opacity-50",
         selected
           ? "border-brand-select/60 bg-brand-select/10"
           : "border-[var(--translucid)] bg-translucid hover:border-brand-select/30",
@@ -1409,16 +1410,51 @@ const ConfigMenu = (props) => {
                   onClick={() => togglePayment(opt.id)}
                 />
               ))}
-              {/* Pix online: só com a subconta aprovada (em teste: só admin, ver ONLINE_PAYMENT_ROLES) */}
-              {userRole === "admin" && (menu?.online_payment_account || selectedPayments?.includes("pix_online")) && (
-                <OptionCard
-                  multi
-                  selected={selectedPayments?.includes("pix_online")}
-                  title="Pix online"
-                  onClick={() => togglePayment("pix_online")}
-                />
-              )}
+              {/* Pix online: visível para todos; só Pro/Business/admin com subconta aprovada conseguem marcar */}
+              {(() => {
+                const selected = selectedPayments?.includes("pix_online");
+                const planOk = ["pro", "business", "admin"].includes(userRole); // ONLINE_PAYMENT_ROLES
+                const ready = planOk && !!menu?.online_payment_account;
+                return (
+                  <OptionCard
+                    multi
+                    locked={!ready && !selected}
+                    selected={selected}
+                    title="Pix online"
+                    description={
+                      !planOk
+                        ? "Disponível nos planos Pro e Business."
+                        : !ready
+                          ? "Cadastre o pagamento online abaixo para ativar."
+                          : "Cliente paga no cardápio e o pedido chega pago (taxa de 5%)."
+                    }
+                    onClick={() => {
+                      // desmarcar sempre pode; marcar só com plano e subconta prontos
+                      if (selected || ready) return togglePayment("pix_online");
+                      customAlert(
+                        planOk
+                          ? "Cadastre o pagamento online logo abaixo para ativar o Pix online."
+                          : "O Pix online está disponível nos planos Pro e Business.",
+                      );
+                    }}
+                  />
+                );
+              })()}
             </div>
+
+            {/* Pix online marcado num plano que não inclui o recurso (ex.: depois de um rebaixamento) */}
+            {selectedPayments?.includes("pix_online") &&
+              userRole &&
+              !["pro", "business", "admin"].includes(userRole) && (
+                <Notice>
+                  O <strong>Pix online</strong> está marcado, mas o seu plano atual não inclui esse recurso, então ele não
+                  aparece para os seus clientes. Ele volta a funcionar se você voltar ao plano Pro ou superior. Enquanto
+                  isso, para aceitar Pix, marque a opção <strong>PIX</strong> com a sua chave.{" "}
+                  <a href="/dashboard/pricing?plan=pro" className="font-semibold underline">
+                    Ver planos
+                  </a>
+                </Notice>
+              )}
 
             {selectedPayments?.includes("pix") && (
               <Field label="Chave PIX">
