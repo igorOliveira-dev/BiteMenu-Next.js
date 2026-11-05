@@ -14,6 +14,7 @@ import useModalBackHandler from "@/hooks/useModalBackHandler";
 import { getContrastTextColor } from "@/utils/color";
 import { removeUnusedImages } from "@/lib/uploadImage";
 import { formatAddress } from "@/components/AddressFields";
+import { geocodeAddress } from "@/lib/deliveryRadius";
 import useUser from "@/hooks/useUser";
 import UpdatePlanModal from "./tabs/components/UpdatePlanModal";
 import AiAssistant from "./components/AiAssistant";
@@ -219,6 +220,7 @@ export default function StatesManager({
     "hours",
     "currency",
     "timezone",
+    "discoverable",
   ],
   onSave,
   defaultFolderPrefix,
@@ -291,6 +293,7 @@ export default function StatesManager({
       hours: menuFromServer.hours ?? null,
       currency: menuFromServer.currency ?? "BRL",
       timezone: menuFromServer.timezone ?? "America/Sao_Paulo",
+      discoverable: menuFromServer.discoverable ?? true,
     };
     setServerState(normalized);
     setLocalState(normalized);
@@ -487,7 +490,19 @@ export default function StatesManager({
         hours: state.hours,
         currency: state.currency || "BRL",
         timezone: state.timezone || "America/Sao_Paulo",
+
+        // só envia quando mexido: não quebra o salvamento se a coluna ainda não existir
+        ...(changed.includes("discoverable") && { discoverable: state.discoverable }),
       };
+
+      // coordenadas da loja para /descobrir: só geocodifica quando o endereço muda (Nominatim ~1 req/s)
+      if (changed.includes("addressDetails") && state.addressDetails) {
+        const r = state.deliveryRadius;
+        const pos =
+          (await geocodeAddress(state.addressDetails)) ?? (r?.lat != null && r?.lng != null ? r : null);
+        payload.lat = pos?.lat ?? null;
+        payload.lng = pos?.lng ?? null;
+      }
 
       // folderPrefix: use prop defaultFolderPrefix se fornecida, senão userId/menuId
       const folderPrefix = defaultFolderPrefix ?? `${user.id}/${menuFromServer?.id ?? "temp"}`;
@@ -583,6 +598,7 @@ export default function StatesManager({
           hours: data.hours ?? null,
           currency: data.currency ?? "BRL",
           timezone: data.timezone ?? "America/Sao_Paulo",
+          discoverable: data.discoverable ?? true,
         };
 
         setServerState(normalized);
@@ -620,6 +636,7 @@ export default function StatesManager({
           hours: data.hours ?? null,
           currency: data.currency ?? "BRL",
           timezone: data.timezone ?? "America/Sao_Paulo",
+          discoverable: data.discoverable ?? true,
           minimumOrderValue:
             data.minimum_order_value !== undefined && data.minimum_order_value !== null
               ? String(data.minimum_order_value)
@@ -757,6 +774,7 @@ export default function StatesManager({
                     hours: "Horário",
                     currency: "Moeda",
                     timezone: "Fuso horário",
+                    discoverable: "Aparecer em Descobrir",
                   };
 
                   const displayName = displayNameMap[key] || key;

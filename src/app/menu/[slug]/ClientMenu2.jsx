@@ -544,17 +544,17 @@ export default function ClientMenu2({ menu: rawMenu, ownerPhone, ownerRole, demo
             <div className="mb-3 -mt-10 relative z-10">
               <Image
                 alt="Logo do estabelecimento"
-                src={supabaseImg(menu.logo_url, { width: 120, height: 120, quality: 80 })}
-                width={90}
-                height={90}
-                className="w-[70px] h-[70px] sm:w-[90px] sm:h-[90px] object-cover rounded-full border-4"
+                src={supabaseImg(menu.logo_url, { width: 200, height: 200, quality: 80 })}
+                width={110}
+                height={110}
+                className="w-[84px] h-[84px] sm:w-[110px] sm:h-[110px] object-cover rounded-full border-2"
                 style={{ borderColor: menu.background_color }}
                 loading="lazy"
               />
             </div>
           )}
 
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-wide" style={{ color: menu.title_color }}>
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight" style={{ color: menu.title_color }}>
             {menu.title}
           </h1>
 
@@ -621,17 +621,19 @@ export default function ClientMenu2({ menu: rawMenu, ownerPhone, ownerRole, demo
         {/* Nav de categorias — linha de texto simples */}
         {navCategories.length > 0 && (
           <div
-            className="flex sticky -top-1 border-y-2 overflow-x-auto whitespace-nowrap scrollbar-none z-10 lg:mx-20 xl:mx-32"
+            className="flex gap-1 px-2 py-2 sticky -top-1 border-y overflow-x-auto whitespace-nowrap scrollbar-none z-10 lg:mx-20 xl:mx-32"
             style={{
               backgroundColor: menu.background_color,
               borderColor: translucidToUse,
               color: foregroundToUse,
+              "--nav-hover": translucidToUse, // hover dos itens no tom do dono, como a barra lateral do painel
+              "--nav-glass": `${translucidToUse.slice(0, 7)}0d`, // vidro leve: mesmo tom com ~5% de opacidade
             }}
           >
             <>
               {hasStarred && hasPlusPermissions && (
                 <button
-                  className="cursor-pointer p-4 font-semibold"
+                  className="cursor-pointer rounded-xl border border-[var(--nav-hover)] bg-[var(--nav-glass)] backdrop-blur-sm px-4 py-2.5 transition-colors hover:bg-[var(--nav-hover)] font-semibold"
                   onClick={(e) => {
                     e.preventDefault();
                     scrollToCategoryId("starred-section", 40);
@@ -644,7 +646,7 @@ export default function ClientMenu2({ menu: rawMenu, ownerPhone, ownerRole, demo
               {navCategories.map((cat) => (
                 <div key={cat.id}>
                   <button
-                    className="cursor-pointer p-4"
+                    className="cursor-pointer rounded-xl border border-[var(--nav-hover)] bg-[var(--nav-glass)] backdrop-blur-sm px-4 py-2.5 transition-colors hover:bg-[var(--nav-hover)]"
                     onClick={(e) => {
                       e.preventDefault();
                       scrollToCategoryId(cat.id.slice(0, 5), 40);
@@ -675,7 +677,7 @@ export default function ClientMenu2({ menu: rawMenu, ownerPhone, ownerRole, demo
                 {starredItems.map((it) => (
                   <div
                     key={it.id}
-                    className="min-w-[220px] max-w-[220px] snap-start cursor-pointer rounded-xl overflow-hidden"
+                    className="min-w-[220px] max-w-[220px] snap-start cursor-pointer rounded-2xl overflow-hidden"
                     style={{ backgroundColor: translucidToUse }}
                     onClick={() => handleItemClick(it)}
                   >
@@ -743,7 +745,7 @@ export default function ClientMenu2({ menu: rawMenu, ownerPhone, ownerRole, demo
                 <div key={cat.id} id={cat.id.slice(0, 5)}>
                   {/* Título de categoria com ornamento */}
                   <div className="flex items-center gap-3 flex-wrap pt-6 mb-2">
-                    <strong style={{ color: foregroundToUse }}>{cat.name}</strong>
+                    <strong className="text-lg font-extrabold tracking-tight" style={{ color: foregroundToUse }}>{cat.name}</strong>
                     {categoryCombos[cat.id]?.length > 0 && (
                       <span
                         className="text-xs font-semibold flex flex-wrap gap-x-2"
@@ -812,7 +814,7 @@ export default function ClientMenu2({ menu: rawMenu, ownerPhone, ownerRole, demo
                         {/* Imagem + botão à direita */}
                         <div className="flex flex-col items-center gap-2 shrink-0">
                           {isSafeImageUrl(it.image_url) && (
-                            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden">
+                            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden">
                               <Image
                                 src={
                                   it.thumb_url || supabaseImg(it.image_url, { width: 120, height: 120, quality: 80 })
@@ -856,7 +858,7 @@ export default function ClientMenu2({ menu: rawMenu, ownerPhone, ownerRole, demo
         >
           <button
             onClick={openCart}
-            className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg shadow-[0_0_20px_var(--shadow)] font-bold transition-transform duration-200 hover:opacity-90 hover:scale-110 ${
+            className={`cursor-pointer flex items-center gap-2 px-5 py-2.5 rounded-full font-bold transition-transform duration-200 hover:opacity-90 ${
               animateCart ? "scale-110" : "scale-100"
             }`}
             style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
@@ -890,7 +892,7 @@ export default function ClientMenu2({ menu: rawMenu, ownerPhone, ownerRole, demo
               return (
                 <div
                   key={day}
-                  className="flex justify-between gap-3 px-2 py-1 rounded"
+                  className="flex justify-between gap-3 px-3 py-1 rounded-lg"
                   style={{ backgroundColor: isToday ? translucidToUse : "transparent" }}
                 >
                   <span>{day}:</span>
@@ -926,7 +928,7 @@ export default function ClientMenu2({ menu: rawMenu, ownerPhone, ownerRole, demo
                 <button
                   type="button"
                   onClick={openImagePreview}
-                  className="h-26 w-26 sm:h-30 sm:w-30 overflow-hidden rounded-lg cursor-zoom-in hover:opacity-95 transition"
+                  className="h-26 w-26 sm:h-30 sm:w-30 overflow-hidden rounded-xl cursor-zoom-in hover:opacity-95 transition"
                   style={{ flexShrink: 0 }}
                   aria-label="Ampliar imagem do produto"
                 >
@@ -1002,7 +1004,7 @@ export default function ClientMenu2({ menu: rawMenu, ownerPhone, ownerRole, demo
                 <textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  className="w-[100%] h-full p-2 border"
+                  className="w-[100%] h-full p-3 border rounded-xl outline-none"
                   style={{ backgroundColor: translucidToUse, color: foregroundToUse, borderColor: grayToUse }}
                   placeholder="Comentário (opicional)"
                 />
@@ -1082,7 +1084,7 @@ export default function ClientMenu2({ menu: rawMenu, ownerPhone, ownerRole, demo
                                     key={c.id}
                                     type="button"
                                     onClick={() => toggleOptionChoice(g, c)}
-                                    className="flex flex-col items-center justify-center rounded-lg cursor-pointer p-2 min-w-[120px] text-center"
+                                    className="flex flex-col items-center justify-center rounded-full cursor-pointer px-4 py-2 min-w-[120px] text-center"
                                     style={{
                                       backgroundColor: boxBg,
                                       color: foregroundToUse,
@@ -1114,7 +1116,8 @@ export default function ClientMenu2({ menu: rawMenu, ownerPhone, ownerRole, demo
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="cursor-pointer p-2 rounded bg-red-500 hover:bg-red-600 transition"
+                  className="cursor-pointer p-2 rounded-full border transition hover:opacity-70"
+                  style={{ color: foregroundToUse, borderColor: grayToUse }}
                 >
                   <FaMinus />
                 </button>
@@ -1123,7 +1126,8 @@ export default function ClientMenu2({ menu: rawMenu, ownerPhone, ownerRole, demo
                 </span>
                 <button
                   onClick={() => setQuantity((q) => q + 1)}
-                  className="cursor-pointer p-2 rounded bg-green-500 hover:bg-green-600 transition"
+                  className="cursor-pointer p-2 rounded-full border transition hover:opacity-70"
+                  style={{ color: foregroundToUse, borderColor: grayToUse }}
                 >
                   <FaPlus />
                 </button>
@@ -1132,7 +1136,7 @@ export default function ClientMenu2({ menu: rawMenu, ownerPhone, ownerRole, demo
 
               <button
                 onClick={handleAddToCart}
-                className="cursor-pointer p-2 gap-2 font-bold flex items-center justify-center rounded w-full xs:w-auto hover:opacity-90 transition"
+                className="cursor-pointer py-2 px-5 gap-2 font-bold flex items-center justify-center rounded-full w-full xs:w-auto hover:opacity-90 transition"
                 style={{ backgroundColor: menu.details_color, color: getContrastTextColor(menu.details_color) }}
               >
                 <span>Adicionar {quantity} ao carrinho</span>
@@ -1175,7 +1179,7 @@ export default function ClientMenu2({ menu: rawMenu, ownerPhone, ownerRole, demo
             <button
               type="button"
               onClick={closeImagePreview}
-              className="w-full h-full block rounded-2xl overflow-hidden shadow-2xl cursor-zoom-out"
+              className="w-full h-full block rounded-2xl overflow-hidden cursor-zoom-out"
             >
               <Image
                 src={supabaseImg(selectedItem.image_url, { width: 900, height: 900, quality: 85 })}

@@ -25,6 +25,8 @@ import { calculateComboDiscount } from "@/lib/comboDiscount";
 import { applyCoupon } from "@/lib/couponDiscount";
 import { STOCK_ROLES, stockPayload } from "@/lib/stock";
 import { saveReceipt } from "@/lib/orderReceipts";
+import useUser from "@/hooks/useUser";
+import SignUpCta from "@/components/SignUpCta";
 import { renderWhatsappMessage } from "@/lib/whatsappMessage";
 import { getContrastTextColor } from "@/utils/color";
 import AddressFields, {
@@ -37,6 +39,20 @@ import {
   feeForDistance,
   geocodeAddress,
 } from "@/lib/deliveryRadius";
+
+// Pedido com o id do cliente logado (histórico em /conta). Se o banco recusar só por causa dele (coluna ou policy de
+// tasks/descobrir/orders-customer.sql ainda não aplicadas), grava sem ele: o pedido nunca se perde por causa do histórico.
+async function insertOrder(payload, customerId) {
+  if (customerId) {
+    const res = await supabase
+      .from("orders")
+      .insert([{ ...payload, customer_id: customerId }]);
+    if (!res.error || !["PGRST204", "42703", "42501"].includes(res.error.code))
+      return res;
+    console.warn("[pedido] gravando sem customer_id:", res.error.message);
+  }
+  return supabase.from("orders").insert([payload]);
+}
 
 // useSearchParams (mesa/balcão) exige Suspense na página cacheada por ISR;
 // sem isso o /menu/[slug] estático quebra com erro 500
@@ -65,10 +81,12 @@ function CartDrawerContent({
   const cart = useCartContext();
   const confirm = useConfirm();
   const customAlert = useAlert();
+  const { user, profile, loading: userLoading } = useUser();
   const searchParams = useSearchParams(); // ← novo
   const router = useRouter(); // ← novo
 
   const [whatsappURL, setWhatsappURL] = useState(null);
+  const [pixOnline, setPixOnline] = useState(null); // { chargeId, emv, qrCode, paid, expired }
   const [myOrdersOpen, setMyOrdersOpen] = useState(false);
 
   // ── Pedido de mesa (QR code) ──────────────────────────────────────────────
@@ -103,6 +121,9 @@ function CartDrawerContent({
   // nome/telefone opcionais e o pedido é gravado direto, sem WhatsApp
   const counterRequested = searchParams.get("balcao") === "1";
   const [counterMode, setCounterMode] = useState(false);
+  // no balcão quem está logado é o dono/equipe: o pedido não é dele
+  const customerId =
+    !counterMode && profile?.account_type === "customer" ? profile.id : null;
 
   useEffect(() => {
     if (!counterRequested || !menu?.id) {
@@ -363,9 +384,20 @@ function CartDrawerContent({
     { id: "pix", label: "PIX" },
   ];
 
+  // Pix online (subconta ValidaPay): "pix_online" em menu.payments, exclusivo com o PIX com chave.
+  // Só delivery e retirada; em mesa e balcão não é oferecido.
+  const pixOnlineAvailable =
+    (menu?.payments || []).includes("pix_online") &&
+    ["pro", "business", "admin"].includes(ownerRole) && // ONLINE_PAYMENT_ROLES
+    !tableInfo &&
+    !counterMode;
+
   const availablePaymentsOptions = paymentOptions.filter((option) =>
     (menu?.payments || []).includes(option.id),
   );
+  if (pixOnlineAvailable) {
+    availablePaymentsOptions.push({ id: "pix_online", label: "PIX" });
+  }
 
   function normalizeMoney(value) {
     const num = Number(String(value ?? "").replace(",", "."));
@@ -487,6 +519,40 @@ function CartDrawerContent({
     }
   }, [selectedService]);
 
+  // ── Convite para criar conta (só visitante) ──────────────────────────────
+  const showSignUpCta = !userLoading && !user;
+  const signUpCtaColors = {
+    text: foregroundToUse,
+    muted: grayToUse,
+    surface: translucidToUse,
+    accent: menu?.details_color,
+  };
+  // volta para este cardápio (mantém ?mesa=); com ?finalizar= a compra reabre na mesma etapa
+  const menuReturnPath = (service) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("finalizar");
+    if (service) params.set("finalizar", service);
+    const qs = params.toString();
+    return `/menu/${menu?.slug}${qs ? `?${qs}` : ""}`;
+  };
+
+  // Voltou do cadastro/login aberto no checkout: reabre o carrinho e a compra onde estava
+  const resumeService = searchParams.get("finalizar");
+  useEffect(() => {
+    if (resumeService == null || !cart.raw.hydrated || !menu?.id) return;
+    router.replace(menuReturnPath(null), { scroll: false });
+    if (!cart.totalItems(menu.id)) return;
+    onOpen?.();
+    // ponytail: só o horário (isOpen) é conferido aqui; o "Continuar compra" também lê o controle manual e o mínimo
+    if (!isOpen) return;
+    if (availableServiceOptions.some((option) => option.id === resumeService)) {
+      setSelectedService(resumeService);
+    }
+    setIsPurchaseModalOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resumeService, cart.raw.hydrated, menu?.id]);
+  // ────────────────────────────────────────────────────────────────────────
+
   // limpar bairro se o estabelecimento não receber mais bairro
   useEffect(() => {
     if (!(
@@ -581,25 +647,36 @@ function CartDrawerContent({
 
     try {
       const stored = localStorage.getItem("customerInfo");
-      if (stored) {
-        const {
-          name = "",
-          phone = "",
-          address = "",
-          addressParts,
-        } = JSON.parse(stored);
-        setCostumerName(name);
-        setCostumerPhone(phone);
-        // endereço salvo no formato antigo (texto livre) vira a rua, pro cliente completar
-        setCostumerAddressParts(
-          addressParts ?? { ...EMPTY_ADDRESS, street: address },
-        );
-        console.log("📥 LocalStorage carregado:", { name, phone, address });
-      }
+      const {
+        name = "",
+        phone = "",
+        address = "",
+        addressParts,
+      } = stored ? JSON.parse(stored) : {};
+      // aparelho primeiro; o que faltar vem da conta do cliente logado (igual ao /conta > Dados pessoais)
+      const account = profile?.account_type === "customer" ? profile : null;
+      setCostumerName(name || account?.display_name || "");
+      setCostumerPhone(phone || (account?.phone ? String(account.phone) : ""));
+      // endereço salvo no formato antigo (texto livre) vira a rua, pro cliente completar
+      setCostumerAddressParts(
+        addressParts?.street
+          ? addressParts
+          : account?.address_details?.street
+            ? { ...EMPTY_ADDRESS, ...account.address_details }
+            : address
+              ? { ...EMPTY_ADDRESS, street: address }
+              : {
+                  ...EMPTY_ADDRESS,
+                  ...addressParts,
+                  cep: addressParts?.cep || account?.cep || "",
+                },
+      );
     } catch (error) {
       console.warn("⚠ Erro ao ler customerInfo do localStorage", error);
     }
-  }, [open, counterRequested]);
+    // só quando a conta muda: rodar a cada render do perfil apagaria o que o cliente está digitando
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, counterRequested, profile?.id]);
 
   // calcular taxa de entrega
   useEffect(() => {
@@ -898,7 +975,19 @@ function CartDrawerContent({
     setPurchaseStage("whatsapp");
   };
 
+  // trava de clique duplo: um segundo clique durante a confirmação não repete cupom, estoque nem Pix
+  const submittingRef = useRef(false);
   const confirmPurchase = async () => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    try {
+      await confirmPurchaseOnce();
+    } finally {
+      submittingRef.current = false;
+    }
+  };
+
+  const confirmPurchaseOnce = async () => {
     saveCustomerInfo();
 
     if (!validateCustomerFields()) return;
@@ -907,6 +996,9 @@ function CartDrawerContent({
       customAlert("Selecione a forma de pagamento", "error");
       return;
     }
+
+    // mesmo carrinho com Pix em aberto: mostra o mesmo QR (sem gerar outro nem consumir cupom/estoque de novo)
+    if (selectedPayment === "pix_online" && resumePixOnline()) return;
 
     if (!(await consumeCoupon()) || !(await consumeStock())) return;
 
@@ -917,6 +1009,11 @@ function CartDrawerContent({
       } else {
         finalizeTableOrder();
       }
+      return;
+    }
+
+    if (selectedPayment === "pix_online") {
+      startPixOnline();
       return;
     }
 
@@ -985,7 +1082,7 @@ function CartDrawerContent({
     const ANIM_MS = 1100;
 
     const [{ error }] = await Promise.all([
-      supabase.from("orders").insert([payload]),
+      insertOrder(payload, customerId),
       new Promise((resolve) => setTimeout(resolve, ANIM_MS)),
     ]);
 
@@ -1001,6 +1098,7 @@ function CartDrawerContent({
       saveReceipt(menu?.id, {
         id: `local-${Date.now()}`,
         menuTitle: menu?.title,
+        menuSlug: menu?.slug,
         createdAt: payload.created_at,
         costumerName: payload.costumer_name,
         paymentMethod: payload.payment_method,
@@ -1068,10 +1166,13 @@ function CartDrawerContent({
 
     setWhatsappURL(url);
 
+    // mesma data no comprovante e no pedido: /conta junta os dois sem repetir o pedido
+    const orderCreatedAt = new Date().toISOString();
     saveReceipt(menu?.id, {
       id: `local-${Date.now()}`,
       menuTitle: menu?.title,
-      createdAt: new Date().toISOString(),
+      menuSlug: menu?.slug,
+      createdAt: orderCreatedAt,
       costumerName,
       paymentMethod: selectedPayment,
       service: selectedService,
@@ -1115,13 +1216,11 @@ function CartDrawerContent({
             discount: discountAmount,
             is_paid: false,
             total,
-            created_at: new Date().toISOString(),
+            created_at: orderCreatedAt,
             updated_at: new Date().toISOString(),
           };
 
-          const { data, error } = await supabase
-            .from("orders")
-            .insert([payload]);
+          const { data, error } = await insertOrder(payload, customerId);
 
           if (error) {
             console.error("❌ Erro ao salvar pedido no Supabase:", error);
@@ -1140,6 +1239,158 @@ function CartDrawerContent({
       cart.clear(menu.id);
     })();
   };
+
+  // ── Pix online: cobrança na subconta do estabelecimento; o pedido só entra em orders depois de pago
+  // ponytail: cupom e estoque já foram consumidos antes do Pix; Pix abandonado não devolve
+  // Pix em aberto fica salvo por cardápio: retoma o mesmo QR e, se o carrinho mudar, o servidor cancela o anterior
+  const pixStorageKey = `pixOnline:${menu?.id}`;
+  const readPendingPix = () => {
+    try {
+      return JSON.parse(localStorage.getItem(pixStorageKey));
+    } catch {
+      return null;
+    }
+  };
+  const savePendingPix = (value) => {
+    try {
+      if (value) localStorage.setItem(pixStorageKey, JSON.stringify(value));
+      else localStorage.removeItem(pixStorageKey);
+    } catch {}
+  };
+  const pixSignature = () =>
+    JSON.stringify([
+      drawerTotal,
+      selectedService,
+      (currentItems || []).map((it) => [it.name, it.qty, it.price, it.additionals, it.note]),
+    ]);
+
+  const resumePixOnline = () => {
+    const pending = readPendingPix();
+    if (!pending || pending.signature !== pixSignature()) return false;
+    setFinalValue(pending.total);
+    setWhatsappURL(pending.whatsappURL);
+    setPixOnline(pending);
+    setPurchaseStage("pixOnline");
+    return true;
+  };
+
+  const pixStartingRef = useRef(false);
+  const startPixOnline = async () => {
+    if (pixStartingRef.current) return;
+    pixStartingRef.current = true;
+    try {
+      await createPixOnline();
+    } finally {
+      pixStartingRef.current = false;
+    }
+  };
+
+  const createPixOnline = async () => {
+    const deliveryFee = selectedService === "delivery" ? deliveryFeeValue : 0;
+    const total = drawerTotal;
+    setFinalValue(total);
+    setPixOnline(null);
+    setPurchaseStage("pixOnline");
+
+    const whatsappLink = buildWhatsappURL({
+      items: currentItems,
+      subtotal: drawerSubtotal,
+      discount: discountAmount,
+      deliveryFee,
+      total,
+      costumerName,
+      costumerPhone,
+      costumerAddress,
+      costumerNeighborhood,
+      selectedService,
+      selectedPayment,
+      paymentLabel: "Pix online (pago)",
+    });
+    setWhatsappURL(whatsappLink);
+
+    const payload = {
+      costumer_name: costumerName || null,
+      costumer_phone: costumerPhone || null,
+      service: selectedService || null,
+      items_list: (currentItems || []).map((it) => ({
+        name: it.name,
+        qty: it.qty,
+        price: it.price,
+        image_url: it.image_url || null,
+        additionals: it.additionals || [],
+        note: it.note || "",
+      })),
+      neighborhood:
+        selectedService === "delivery" && canUseZones ? costumerNeighborhood : null,
+      address: selectedService === "delivery" ? costumerAddress : null,
+      delivery_fee: deliveryFee,
+      discount: discountAmount,
+      total,
+    };
+
+    try {
+      const res = await fetch("/api/orders/pix", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // o anterior é cancelado no servidor antes de gerar o novo (evita pagar os dois)
+        body: JSON.stringify({ menuId: menu.id, payload, previousChargeId: readPendingPix()?.chargeId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (data.previousPaid) savePendingPix(null); // o anterior já foi pago: não tenta mais cancelar
+        throw new Error(data.error);
+      }
+      const pix = {
+        ...data,
+        receipt: { payload, subtotal: drawerSubtotal },
+        signature: pixSignature(),
+        whatsappURL: whatsappLink,
+      };
+      savePendingPix(pix);
+      setPixOnline(pix);
+    } catch (err) {
+      customAlert(err.message || "Não foi possível gerar o Pix.", "error");
+      setPurchaseStage("costumerInfos");
+    }
+  };
+
+  const pixChargeId = purchaseStage === "pixOnline" && !pixOnline?.paid ? pixOnline?.chargeId : null;
+  useEffect(() => {
+    if (!pixChargeId) return;
+    const timer = setInterval(async () => {
+      const res = await fetch(`/api/orders/pix?chargeId=${pixChargeId}`).catch(() => null);
+      const { status } = (await res?.json().catch(() => null)) ?? {};
+      if (status === "PAID") {
+        clearInterval(timer);
+        const { payload, subtotal } = pixOnline.receipt;
+        saveReceipt(menu?.id, {
+          id: `local-${Date.now()}`,
+          menuTitle: menu?.title,
+          createdAt: new Date().toISOString(),
+          costumerName: payload.costumer_name,
+          paymentMethod: "pix_online",
+          service: payload.service,
+          tableLabel: null,
+          itemsList: payload.items_list,
+          subtotal,
+          deliveryFee: payload.delivery_fee,
+          discount: payload.discount,
+          total: payload.total,
+          isPaid: true,
+        });
+        cart.clear(menu?.id);
+        savePendingPix(null);
+        setPixOnline((p) => ({ ...p, paid: true }));
+      } else if (["EXPIRED", "CANCELED", "FAILED", "UNKNOWN"].includes(status)) {
+        clearInterval(timer);
+        savePendingPix(null);
+        setPixOnline((p) => ({ ...p, expired: true }));
+      }
+    }, 3000);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pixChargeId]);
+  // ────────────────────────────────────────────────────────────────────────
 
   if (!isMounted) return null;
 
@@ -1207,7 +1458,7 @@ function CartDrawerContent({
               return (
                 <div
                   key={idx}
-                  className="p-3 rounded-xl flex flex-col"
+                  className="p-3 rounded-2xl flex flex-col"
                   style={{ backgroundColor: translucidToUse }}
                 >
                   <div className="flex-1 min-w-0">
@@ -1245,7 +1496,7 @@ function CartDrawerContent({
                     </p>
                     <button
                       onClick={() => cart.remove(menu.id, idx)}
-                      className="cursor-pointer text-white bg-red-600 opacity-75 hover:opacity-100 py-1 px-2 text-sm flex items-center gap-2 rounded-lg"
+                      className="cursor-pointer border opacity-75 hover:opacity-100 hover:bg-red-600 hover:border-red-600 hover:text-white py-1 px-3 text-sm flex items-center gap-2 rounded-full transition"
                     >
                       Remover
                     </button>
@@ -1292,7 +1543,7 @@ function CartDrawerContent({
                     value={couponInput}
                     onChange={(e) => setCouponInput(e.target.value)}
                     placeholder="Cupom de desconto"
-                    className="flex-1 min-w-0 rounded-lg bg-translucid px-3 py-2 text-sm uppercase"
+                    className="flex-1 min-w-0 rounded-xl bg-translucid px-3 py-2 text-sm uppercase"
                     style={{
                       backgroundColor: translucidToUse,
                       color: foregroundToUse,
@@ -1301,7 +1552,7 @@ function CartDrawerContent({
                   <button
                     type="button"
                     onClick={handleApplyCoupon}
-                    className="cursor-pointer rounded-lg px-3 py-2 text-sm font-semibold"
+                    className="cursor-pointer rounded-full px-3 py-2 text-sm font-semibold"
                     style={{
                       backgroundColor: translucidToUse,
                       color: foregroundToUse,
@@ -1377,7 +1628,7 @@ function CartDrawerContent({
 
                   setIsPurchaseModalOpen(true);
                 }}
-                className="cursor-pointer flex-1 py-2 rounded hover:opacity-90 text-white font-bold transition"
+                className="cursor-pointer flex-1 py-2 rounded-full hover:opacity-90 text-white font-bold transition"
                 style={{
                   backgroundColor: menu.details_color,
                   color: getContrastTextColor(menu.details_color),
@@ -1393,7 +1644,7 @@ function CartDrawerContent({
                   if (!ok) return;
                   cart.clear(menu.id);
                 }}
-                className="cursor-pointer py-2 px-4 rounded border opacity-75 hover:opacity-100 transition"
+                className="cursor-pointer py-2 px-4 rounded-full border opacity-75 hover:opacity-100 transition"
               >
                 Limpar
               </button>
@@ -1410,7 +1661,7 @@ function CartDrawerContent({
         >
           <div className={backdropClasses} aria-hidden="true" />
           <div
-            className="relative rounded-lg p-6 w-[90%] max-w-md z-70 max-h-[100dvh] overflow-y-auto overscroll-contain"
+            className="relative rounded-2xl p-6 w-[90%] max-w-md z-70 max-h-[100dvh] overflow-y-auto overscroll-contain"
             style={{ backgroundColor: bgColor }}
           >
             {purchaseStage === "confirmingTable" && (
@@ -1455,6 +1706,10 @@ function CartDrawerContent({
                           ? "Enviando pedido..."
                           : purchaseStage === "sendPix"
                             ? "Envio do PIX"
+                            : purchaseStage === "pixOnline"
+                            ? pixOnline?.paid
+                              ? "Pagamento confirmado!"
+                              : "Pague com Pix"
                             : purchaseStage === "whatsapp"
                               ? "Confirmação no WhatsApp"
                               : purchaseStage === "tableSuccess"
@@ -1486,7 +1741,7 @@ function CartDrawerContent({
                 {availableServiceOptions.map((option) => (
                   <button
                     key={option.id}
-                    className="cursor-pointer p-2 hover:opacity-90 transition rounded-lg font-semibold"
+                    className="cursor-pointer p-2 hover:opacity-90 transition rounded-full font-semibold"
                     style={{
                       backgroundColor: menu.details_color,
                       color: getContrastTextColor(menu.details_color),
@@ -1499,10 +1754,17 @@ function CartDrawerContent({
               </div>
             ) : purchaseStage === "costumerInfos" ? (
               <div className="flex flex-col gap-2">
+                {showSignUpCta && (
+                  <SignUpCta
+                    next={menuReturnPath(selectedService || "")}
+                    colors={signUpCtaColors}
+                    onBeforeLeave={saveCustomerInfo}
+                  />
+                )}
                 <div>
                   {counterMode && (
                     <p
-                      className="mb-2 rounded p-2 text-sm"
+                      className="mb-2 rounded-xl p-3 text-sm"
                       style={{ backgroundColor: translucidToUse }}
                     >
                       Pedido de balcão: nome e telefone são opcionais e o pedido
@@ -1522,7 +1784,7 @@ function CartDrawerContent({
                       setCostumerName(e.target.value);
                     }}
                     maxLength={40}
-                    className="w-full p-2 rounded mb-2"
+                    className="w-full px-3 py-2 rounded-xl mb-2"
                     style={{ backgroundColor: translucidToUse }}
                   />
                 </div>
@@ -1538,7 +1800,7 @@ function CartDrawerContent({
                       value={costumerPhone}
                       onChange={(value) => setCostumerPhone(value)}
                       inputProps={{ required: !counterMode }}
-                      inputClass="!w-full !px-3 !py-2 !border !rounded !focus:outline-none !focus:ring-2 !focus:ring-blue-400 !pl-14"
+                      inputClass="!w-full !px-3 !py-2 !border !rounded-xl !focus:outline-none !focus:ring-2 !focus:ring-current !pl-14"
                       buttonClass="!border-r !bg-transparent !rounded-l"
                       containerClass="!flex !items-center !mb-2"
                       inputStyle={{
@@ -1564,7 +1826,7 @@ function CartDrawerContent({
                               setIsOpenDropdown(true);
                             }}
                             onFocus={() => setIsOpenDropdown(true)}
-                            className="w-full p-2 rounded"
+                            className="w-full px-3 py-2 rounded-xl"
                             style={{
                               backgroundColor: translucidToUse,
                               color: foregroundToUse,
@@ -1574,7 +1836,7 @@ function CartDrawerContent({
                           {/* DROPDOWN */}
                           {isOpenDropdown && (
                             <div
-                              className="absolute w-full mt-1 max-h-60 overflow-y-auto rounded-lg shadow-lg z-50"
+                              className="absolute w-full mt-1 max-h-60 overflow-y-auto rounded-xl z-50"
                               style={{
                                 backgroundColor: bgColor,
                                 border: `1px solid ${translucidToUse}`,
@@ -1634,7 +1896,7 @@ function CartDrawerContent({
                           value={costumerAddressParts}
                           onChange={setCostumerAddressParts}
                           hideNeighborhood={canUseZones}
-                          inputClassName="w-full p-2 rounded"
+                          inputClassName="w-full px-3 py-2 rounded-xl"
                           inputStyle={{ backgroundColor: translucidToUse }}
                         />
                       </div>
@@ -1647,7 +1909,7 @@ function CartDrawerContent({
                             type="button"
                             onClick={() => locateCustomer(true)}
                             disabled={radiusStatus === "loading"}
-                            className="cursor-pointer rounded p-2 font-semibold disabled:opacity-50"
+                            className="cursor-pointer rounded-full px-4 py-2 font-semibold disabled:opacity-50"
                             style={{ backgroundColor: translucidToUse }}
                           >
                             Calcular taxa de entrega
@@ -1656,7 +1918,7 @@ function CartDrawerContent({
                             type="button"
                             onClick={() => locateCustomer(false)}
                             disabled={radiusStatus === "loading"}
-                            className="cursor-pointer rounded p-2 disabled:opacity-50"
+                            className="cursor-pointer rounded-full px-4 py-2 disabled:opacity-50"
                             style={{ backgroundColor: translucidToUse }}
                           >
                             Usar minha localização
@@ -1749,7 +2011,7 @@ function CartDrawerContent({
 
                       confirmPurchase();
                     }}
-                    className="cursor-pointer hover:opacity-90 p-2 font-bold transition rounded disabled:opacity-50"
+                    className="cursor-pointer hover:opacity-90 py-2 px-4 font-bold transition rounded-full disabled:opacity-50"
                     style={{
                       backgroundColor: menu.details_color,
                       color: getContrastTextColor(menu.details_color),
@@ -1774,7 +2036,7 @@ function CartDrawerContent({
                 <div className="flex gap-2">
                   <button
                     onClick={() => setNeedsChange(true)}
-                    className="flex-1 py-2 rounded font-semibold cursor-pointer transition"
+                    className="flex-1 py-2 rounded-full font-semibold cursor-pointer transition"
                     style={{
                       backgroundColor:
                         needsChange === true
@@ -1793,7 +2055,7 @@ function CartDrawerContent({
                       setNeedsChange(false);
                       setChangeForAmount("");
                     }}
-                    className="flex-1 py-2 rounded font-semibold cursor-pointer transition"
+                    className="flex-1 py-2 rounded-full font-semibold cursor-pointer transition"
                     style={{
                       backgroundColor:
                         needsChange === false
@@ -1820,7 +2082,7 @@ function CartDrawerContent({
                       placeholder="Ex: 50,00"
                       value={changeForAmount}
                       onChange={(e) => setChangeForAmount(e.target.value)}
-                      className="w-full p-2 rounded"
+                      className="w-full px-3 py-2 rounded-xl"
                       style={{ backgroundColor: translucidToUse }}
                     />
                   </div>
@@ -1828,7 +2090,7 @@ function CartDrawerContent({
 
                 <button
                   onClick={confirmCashChange}
-                  className="cursor-pointer hover:opacity-90 p-2 font-bold transition rounded mt-2"
+                  className="cursor-pointer hover:opacity-90 py-2 px-4 font-bold transition rounded-full mt-2"
                   style={{
                     backgroundColor: menu.details_color,
                     color: getContrastTextColor(menu.details_color),
@@ -1853,7 +2115,7 @@ function CartDrawerContent({
                   Chave PIX:
                 </p>
                 <div
-                  className="cursor-pointer rounded-lg text-sm p-2 flex items-center justify-center gap-2 text-center hover:opacity-80 transition mt-1"
+                  className="cursor-pointer rounded-full text-sm p-2 flex items-center justify-center gap-2 text-center hover:opacity-80 transition mt-1"
                   style={{ backgroundColor: translucidToUse }}
                   onClick={() =>
                     navigator.clipboard
@@ -1883,7 +2145,7 @@ function CartDrawerContent({
                   showWhatsappButtonOnPixStage && (
                     <button
                       onClick={() => setPurchaseStage("tableSuccess")}
-                      className="cursor-pointer w-full py-2 px-4 rounded font-bold text-white flex items-center justify-center gap-2 mt-2"
+                      className="cursor-pointer w-full py-2 px-4 rounded-full font-bold text-white flex items-center justify-center gap-2 mt-2"
                       style={{ backgroundColor: menu.details_color }}
                     >
                       Concluir pedido
@@ -1892,7 +2154,7 @@ function CartDrawerContent({
                 ) : (
                   <a href={whatsappURL || "#"} rel="noopener noreferrer">
                     <span
-                      className="cursor-pointer py-2 px-4 rounded font-bold flex items-center justify-center gap-2 mt-2"
+                      className="cursor-pointer py-2 px-4 rounded-full font-bold flex items-center justify-center gap-2 mt-2"
                       style={{
                         backgroundColor: menu.details_color,
                         color: getContrastTextColor(menu.details_color),
@@ -1902,6 +2164,93 @@ function CartDrawerContent({
                       Enviar confirmação
                     </span>
                   </a>
+                )}
+              </div>
+            ) : purchaseStage === "pixOnline" ? (
+              <div
+                className="flex flex-col items-center gap-2 text-center"
+                style={{ animation: "popInAnim 0.35s ease-out" }}
+              >
+                {!pixOnline ? (
+                  <FaSpinner
+                    className="animate-spin text-2xl my-6"
+                    style={{ color: menu.details_color }}
+                  />
+                ) : pixOnline.paid ? (
+                  <>
+                    {/* mesmo passo final do pedido comum: confirmação no WhatsApp */}
+                    <p className="text-sm" style={{ color: grayToUse }}>
+                      {`Pagamento recebido! Para confirmar a compra, envie a mensagem de confirmação ao WhatsApp de ${menu.title}.`}
+                    </p>
+                    <p className="font-semibold">
+                      Total pago:{" "}
+                      <strong>{formatCurrency(finalValue, menu?.currency)}</strong>
+                    </p>
+                    <a href={whatsappURL || "#"} rel="noopener noreferrer" className="w-full">
+                      <span
+                        className="cursor-pointer py-2 px-4 rounded-full font-bold flex items-center justify-center gap-2"
+                        style={{
+                          backgroundColor: menu.details_color,
+                          color: getContrastTextColor(menu.details_color),
+                        }}
+                      >
+                        <FaWhatsapp />
+                        Enviar confirmação
+                      </span>
+                    </a>
+                  </>
+                ) : pixOnline.expired ? (
+                  <>
+                    <p className="text-sm" style={{ color: grayToUse }}>
+                      Este Pix expirou. Gere um novo para concluir o pedido.
+                    </p>
+                    <button
+                      onClick={() => startPixOnline()}
+                      className="cursor-pointer w-full py-2 px-4 rounded-full font-bold"
+                      style={{
+                        backgroundColor: menu.details_color,
+                        color: getContrastTextColor(menu.details_color),
+                      }}
+                    >
+                      Gerar novo Pix
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {pixOnline.qrCode && (
+                      <img
+                        src={pixOnline.qrCode}
+                        alt="QR Code do Pix"
+                        className="w-52 h-52 rounded-xl bg-white p-2"
+                      />
+                    )}
+                    <p>
+                      Valor:{" "}
+                      <strong className="text-2xl">
+                        {formatCurrency(finalValue, menu?.currency)}
+                      </strong>
+                    </p>
+                    <button
+                      onClick={() =>
+                        navigator.clipboard
+                          .writeText(pixOnline.emv)
+                          .then(() => customAlert("Código Pix copiado!"))
+                          .catch(() => customAlert("Erro ao copiar código", "error"))
+                      }
+                      className="cursor-pointer w-full py-2 px-4 rounded-full font-bold flex items-center justify-center gap-2"
+                      style={{
+                        backgroundColor: menu.details_color,
+                        color: getContrastTextColor(menu.details_color),
+                      }}
+                    >
+                      <FaCopy />
+                      Copiar código Pix
+                    </button>
+                    <p className="text-xs flex items-center gap-2" style={{ color: grayToUse }}>
+                      <FaSpinner className="animate-spin" />
+                      Aguardando pagamento. Não feche esta tela.
+                    </p>
+                  </>
                 )}
               </div>
             ) : purchaseStage === "tableSuccess" ? (
@@ -1924,7 +2273,7 @@ function CartDrawerContent({
                 )}
                 <button
                   onClick={() => resetPurchase()}
-                  className="cursor-pointer w-full py-2 px-4 rounded font-bold text-white flex items-center justify-center gap-2 mt-2"
+                  className="cursor-pointer w-full py-2 px-4 rounded-full font-bold text-white flex items-center justify-center gap-2 mt-2"
                   style={{ backgroundColor: menu.details_color }}
                 >
                   Fechar
@@ -1945,7 +2294,7 @@ function CartDrawerContent({
                 )}
                 <a href={whatsappURL || "#"} rel="noopener noreferrer">
                   <span
-                    className="cursor-pointer py-2 px-4 rounded font-bold flex items-center justify-center gap-2 mt-2"
+                    className="cursor-pointer py-2 px-4 rounded-full font-bold flex items-center justify-center gap-2 mt-2"
                     style={{
                       backgroundColor: menu.details_color,
                       color: getContrastTextColor(menu.details_color),
@@ -1957,6 +2306,20 @@ function CartDrawerContent({
                 </a>
               </div>
             ) : null}
+
+            {/* depois do pedido, abaixo do botão de confirmação: o pedido feito já entra no histórico da conta */}
+            {showSignUpCta &&
+              (["whatsapp", "tableSuccess"].includes(purchaseStage) ||
+                (purchaseStage === "pixOnline" && pixOnline?.paid)) && (
+                <div className="mt-4">
+                  <SignUpCta
+                    next={menuReturnPath(null)}
+                    colors={signUpCtaColors}
+                    title="Guarde este pedido"
+                    text="Crie sua conta grátis e veja este pedido no seu histórico. Nos próximos, seus dados já vêm preenchidos."
+                  />
+                </div>
+              )}
           </div>
         </div>
       )}

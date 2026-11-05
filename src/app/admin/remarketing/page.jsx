@@ -602,7 +602,7 @@ export default function AdminRemarketingPage() {
     return (
       <div className="p-6 text-center text-sm space-y-2">
         <p className="text-red-500">{error}</p>
-        <p style={gray}>Tabelas não criadas? Rode tasks/remarketing.sql no Supabase.</p>
+        <p style={gray}>Tabelas não criadas? Rode tasks/sql/remarketing.sql no Supabase.</p>
       </div>
     );
   }

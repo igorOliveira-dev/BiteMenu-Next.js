@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { FaStar, FaWhatsapp } from "react-icons/fa";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { FaStar, FaUser, FaWhatsapp } from "react-icons/fa";
 import {
   LuArrowRight,
   LuChartLine,
@@ -15,6 +17,7 @@ import {
   LuSmartphone,
   LuWallet,
   LuZap,
+  LuCompass,
 } from "react-icons/lu";
 
 import menuExemplo from "../../../public/LandingPageImgs/cardapio-exemplo.webp";
@@ -23,6 +26,8 @@ import BrandLogo from "@/components/BrandLogo";
 import ThemeToggle from "@/components/ThemeToggle";
 import PlansSection from "@/components/PlansSection";
 import useUser from "@/hooks/useUser";
+import CustomerMenu from "@/components/CustomerMenu";
+import ScrollToTopButton from "@/components/ScrollToTopButton";
 
 const DEMO_URL = "https://www.bitemenu.com.br/menu/bite-menu";
 
@@ -154,9 +159,16 @@ const PhoneMock = () => (
 );
 
 export default function LandingPageV2() {
-  const { user, loading } = useUser();
+  const { user, profile, loading } = useUser();
   const isLogged = !loading && !!user;
+  const isCustomer = isLogged && profile?.account_type === "customer";
   const ctaHref = isLogged ? "/dashboard" : "/register";
+  const router = useRouter();
+
+  // cliente logado: a tela inicial dele é Descobrir (a landing continua no HTML do servidor para SEO)
+  useEffect(() => {
+    if (isCustomer) router.replace("/descobrir");
+  }, [isCustomer, router]);
 
   return (
     <main className="brand-scope hide-overflow">
@@ -170,9 +182,30 @@ export default function LandingPageV2() {
             <BrandLogo showName={false} />
           </div>
           <div className="flex items-center gap-1">
-            <Link className="cta-button small" href={ctaHref}>
-              {isLogged ? "Acessar cardápio" : "Criar cardápio grátis"}
-            </Link>
+            {(!isLogged || isCustomer) && (
+              <Link
+                href="/descobrir"
+                aria-label="Descobrir estabelecimentos"
+                className="flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium transition hover:bg-brand-line"
+              >
+                <LuCompass size={16} />
+                <span className="hidden sm:inline">Descobrir</span>
+              </Link>
+            )}
+            {isCustomer ? (
+              <CustomerMenu profile={profile} />
+            ) : isLogged ? (
+              <Link className="cta-button small" href="/dashboard">
+                Acessar cardápio
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="flex items-center gap-2 whitespace-nowrap rounded-full bg-verde px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+              >
+                <FaUser size={12} /> Entrar
+              </Link>
+            )}
             <ThemeToggle />
           </div>
         </div>
@@ -531,6 +564,7 @@ export default function LandingPageV2() {
           </div>
         </div>
       </footer>
+      <ScrollToTopButton />
     </main>
   );
 }

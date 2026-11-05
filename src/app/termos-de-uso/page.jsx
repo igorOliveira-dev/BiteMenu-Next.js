@@ -11,7 +11,7 @@ const page = () => {
       <div className="max-w-2xl flex flex-col gap-6 p-4 pt-12">
         <h1 className="default-h1">Termos de Uso – Bite Menu</h1>
 
-        <p>Última atualização: 30/10/2026</p>
+        <p>Última atualização: 05/11/2026</p>
 
         <p>
           Bem-vindo ao <strong>Bite Menu</strong>, plataforma operada por{" "}
@@ -85,7 +85,15 @@ const page = () => {
             </li>
             <li>
               <strong>ValidaPay:</strong> a processadora de pagamentos utilizada pelo Bite Menu para as cobranças de
-              assinatura dos planos pagos.
+              assinatura dos planos pagos e para o Pix online.
+            </li>
+            <li>
+              <strong>Pix online:</strong> recurso opcional que permite ao consumidor final pagar o pedido por Pix no
+              próprio cardápio digital, com o valor creditado na Conta de Recebimentos do estabelecimento.
+            </li>
+            <li>
+              <strong>Conta de Recebimentos:</strong> conta de pagamento aberta na ValidaPay em nome do estabelecimento
+              (subconta vinculada ao Bite Menu), que recebe os pagamentos feitos por Pix online.
             </li>
           </ul>
         </section>
@@ -182,6 +190,14 @@ const page = () => {
           <p>
             <strong>Alteração de preços:</strong> O Bite Menu poderá ajustar os valores dos planos mediante aviso prévio de
             30 dias. O Usuário poderá cancelar sem ônus antes da entrada em vigor do novo valor.
+          </p>
+          <p>
+            <strong>Taxa do Pix online:</strong> Nos pedidos pagos por Pix online, o Bite Menu cobra uma taxa de 5% (cinco
+            por cento) sobre o valor total pago pelo consumidor final, incluindo a taxa de entrega. A taxa é retida
+            automaticamente no momento do pagamento, por divisão (split) realizada pela ValidaPay, e não é cobrada à parte.
+            As tarifas da própria ValidaPay sobre pagamentos e saques são independentes dessa taxa e descontadas na Conta
+            de Recebimentos. A alteração do percentual seguirá o mesmo aviso prévio de 30 dias aplicável aos preços dos
+            planos.
           </p>
           <p>
             <strong>Falha no pagamento:</strong> Em caso de falha na cobrança recorrente, novas tentativas podem ser feitas
@@ -335,6 +351,51 @@ const page = () => {
             consumidor final e o estabelecimento. O Bite Menu não é parte dessa relação e não se responsabiliza por disputas,
             inadimplências, reclamações ou danos decorrentes das transações realizadas entre estabelecimento e consumidor.
           </p>
+
+          <h3 className="mt-2 font-semibold">10.1. Pagamento online (Pix online)</h3>
+          <p>
+            <strong>Adesão:</strong> O Pix online é opcional e está disponível para estabelecimentos com CNPJ nos planos
+            que o incluem, conforme a{" "}
+            <a href="/docs/pix-online" className="underline text-brand-red hover:opacity-80">
+              documentação do Pix online
+            </a>
+            . Para ativá-lo, o Usuário solicita a abertura da Conta de Recebimentos informando dados da empresa e do sócio
+            responsável, que são enviados à ValidaPay. A abertura depende da análise cadastral da ValidaPay, inclusive
+            envio de documentos, e pode ser recusada a critério dela. O Bite Menu não garante a aprovação nem o prazo da
+            análise.
+          </p>
+          <p>
+            <strong>Titularidade dos valores:</strong> A Conta de Recebimentos é aberta em nome do estabelecimento, e os
+            valores pagos pelos consumidores finais pertencem ao estabelecimento, descontadas a taxa do Bite Menu (Seção 5)
+            e as tarifas da ValidaPay. O Bite Menu não recebe, não guarda e não administra esses valores: o processamento e
+            a guarda dos recursos são feitos pela ValidaPay. Os saques são feitos pelo painel do Bite Menu e só podem ser
+            destinados a chaves Pix de mesma titularidade da Conta de Recebimentos, respeitados os limites definidos pela
+            ValidaPay.
+          </p>
+          <p>
+            <strong>Devoluções e contestações:</strong> Devoluções de pagamentos, contestações e pedidos de reembolso dos
+            consumidores finais são de responsabilidade do estabelecimento, que deve atendê-los conforme o Código de Defesa
+            do Consumidor. Valores devolvidos ou bloqueados por mecanismos do Pix (como o Mecanismo Especial de Devolução,
+            MED) são debitados da Conta de Recebimentos. A taxa do Bite Menu sobre um pagamento devolvido não é restituída,
+            salvo quando a devolução decorrer de falha da plataforma.
+          </p>
+          <p>
+            <strong>Obrigações do estabelecimento:</strong> O estabelecimento é responsável pelos produtos vendidos, pela
+            emissão de documentos fiscais aos consumidores finais e pelas obrigações tributárias sobre os valores
+            recebidos. Também deve manter atualizados os dados da Conta de Recebimentos e cumprir os termos de uso da
+            ValidaPay, que se aplicam à Conta de Recebimentos.
+          </p>
+          <p>
+            <strong>Mudança de plano e encerramento:</strong> Se o estabelecimento mudar para um plano que não inclui o
+            Pix online, o recurso deixa de ser oferecido no cardápio, mas o saldo da Conta de Recebimentos continua
+            disponível para saque pelo painel. Antes de encerrar a conta no Bite Menu, o estabelecimento deve sacar todo o
+            saldo disponível.
+          </p>
+          <p>
+            <strong>Suspensão do recurso:</strong> O Bite Menu ou a ValidaPay podem suspender o Pix online de um
+            estabelecimento em caso de suspeita de fraude, uso indevido, descumprimento destes Termos ou exigência legal ou
+            regulatória.
+          </p>
         </section>
 
         {/* 11. Propriedade Intelectual */}
@@ -460,7 +521,8 @@ const page = () => {
           </p>
           <p>
             Alguns serviços de terceiros integrados à plataforma — em especial a ValidaPay, no processamento das assinaturas
-            — podem realizar análises automatizadas para fins de prevenção a fraudes, de acordo com suas próprias políticas.
+            e do Pix online, inclusive na análise cadastral para abertura da Conta de Recebimentos — podem realizar análises
+            automatizadas para fins de prevenção a fraudes e à lavagem de dinheiro, de acordo com suas próprias políticas.
             Essas análises são de responsabilidade exclusiva da ValidaPay e regidas por seus próprios termos.
           </p>
         </section>
@@ -531,8 +593,9 @@ const page = () => {
           </p>
           <p className="text-sm color-gray mt-4">
             O Bite Menu é uma plataforma de tecnologia desenvolvida para estabelecimentos do setor de alimentação. Não somos
-            uma instituição financeira, operadora de pagamentos ou adquirente. Os serviços de processamento de pagamentos são
-            prestados pela ValidaPay, empresa independente e devidamente regulamentada.
+            uma instituição financeira, operadora de pagamentos ou adquirente. Os serviços de processamento de pagamentos, as
+            Contas de Recebimentos do Pix online e a guarda dos valores recebidos são prestados pela ValidaPay, empresa
+            independente e devidamente regulamentada.
           </p>
         </section>
       </div>

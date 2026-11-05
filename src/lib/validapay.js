@@ -2,7 +2,14 @@ import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 // VALIDAPAY_API_URL / VALIDAPAY_OAUTH_URL: sandbox ou produção (ver .env)
-const SCOPES = "checkouts/write checkouts/read subscriptions/write subscriptions/read customers/read charges/write";
+// Um token só com todos os escopos: a ValidaPay reaproveita o token já emitido para a credencial,
+// então um segundo token "com outros escopos" volta igual ao primeiro (401 TOKEN EXPIRADO OU INVALIDO).
+// A credencial (sandbox e produção) precisa ter todos estes escopos liberados no painel.
+const SCOPES = [
+  "checkouts/write checkouts/read subscriptions/write subscriptions/read customers/read charges/write",
+  // pagamento online (subcontas). proposals/read não está na doc, mas GET /v1/proposals/:formId exige
+  "charges/read proposals/write proposals/read subaccounts/read wallet/read wallet/write",
+].join(" ");
 
 let cachedToken = null; // { value, expiresAt }
 
@@ -28,12 +35,28 @@ async function getToken() {
   return cachedToken.value;
 }
 
-export async function validapay(path, { method = "GET", body } = {}) {
+// Escopos gravados no JWT do access_token (só leitura do payload, não é segredo)
+function tokenScopes(token) {
+  try {
+    const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString());
+    const scope = payload.scope ?? payload.scopes ?? payload.scp;
+    return (
+      (Array.isArray(scope) ? scope.join(" ") : scope) || `não informado (claims: ${Object.keys(payload).join(", ")})`
+    );
+  } catch {
+    return "token não é JWT";
+  }
+}
+
+// subAccount: número da subconta do estabelecimento (header X-Sub-Account) — pagamento online
+export async function validapay(path, { method = "GET", body, subAccount } = {}) {
+  const token = await getToken();
   const res = await fetch(`${process.env.VALIDAPAY_API_URL}${path}`, {
     method,
     headers: {
-      Authorization: `Bearer ${await getToken()}`,
+      Authorization: `Bearer ${token}`,
       ...(body ? { "Content-Type": "application/json" } : {}),
+      ...(subAccount ? { "X-Sub-Account": String(subAccount) } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
     cache: "no-store",
@@ -41,9 +64,16 @@ export async function validapay(path, { method = "GET", body } = {}) {
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    if (res.status === 401) cachedToken = null;
-    const err = new Error(data?.error?.message || data?.message || `ValidaPay ${res.status}`);
+    let message = data?.error?.message || data?.message || `ValidaPay ${res.status}`;
+    if (res.status === 401) {
+      cachedToken = null;
+      // "TOKEN EXPIRADO OU INVALIDO" quase sempre é escopo faltando: diz a rota e os escopos que o token tem
+      message = `${message} em ${method} ${path.split("?")[0]} (escopos do token: ${tokenScopes(token)})`;
+    }
+    const err = new Error(message);
+    err.status = res.status;
     err.code = data?.error?.code || data?.code;
+    err.details = data?.error?.details;
     throw err;
   }
   return data;
@@ -62,6 +92,11 @@ export const PRICE_IDS = {
     yearly: process.env.VALIDAPAY_PRICE_BUSINESS_YEARLY,
   },
 };
+
+// Pagamento online dos pedidos: % do total que vai pra conta master (split no Pix da subconta)
+export const PLATFORM_FEE_PERCENT = 5;
+// Planos que podem ativar o Pix online (mesma lista em OnlinePayment.jsx, ConfigMenu.jsx e CartDrawer.jsx)
+export const ONLINE_PAYMENT_ROLES = ["pro", "business", "admin"];
 
 export const TIER = { plus: 1, pro: 2, business: 3 };
 

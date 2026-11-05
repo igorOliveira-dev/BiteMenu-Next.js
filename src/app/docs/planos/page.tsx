@@ -105,6 +105,12 @@ const page = () => {
           <li>Dashboard de vendas para análise de desempenho</li>
           <li>Download de relatório de vendas em CSV</li>
           <li>Criação de cupons de desconto para o cardápio</li>
+          <li>
+            <Link href="/docs/pix-online" className="underline text-brand-red hover:opacity-80">
+              Pix online
+            </Link>
+            : o cliente paga no cardápio e o pedido chega pago (taxa de 5% por pagamento)
+          </li>
           <li>Prioridade no suporte</li>
         </ul>
       </section>

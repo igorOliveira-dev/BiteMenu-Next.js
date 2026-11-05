@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useAlert } from "@/providers/AlertProvider";
 import { CURRENT_PRIVACY_VERSION } from "@/lib/privacy";
 import { getAcquisitionSource } from "@/utils/acquisitionSource";
+import { EMPTY_ADDRESS, formatCep } from "@/components/AddressFields";
 
 export default function SignUp() {
   const router = useRouter();
@@ -20,10 +21,26 @@ export default function SignUp() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [phone, setPhone] = useState("");
+  const [cep, setCep] = useState("");
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [accountType, setAccountType] = useState("owner");
   const customAlert = useAlert();
+  const isCustomer = accountType === "customer";
+
+  const [query, setQuery] = useState("");
+
+  // Lido no cliente para não exigir Suspense do useSearchParams
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("tipo") === "cliente") setAccountType("customer");
+    setQuery(window.location.search); // repassado ao link de login
+    // CEP que o visitante já informou neste aparelho (ex.: em /descobrir); o resto do endereço já está salvo aqui
+    try {
+      const savedCep = JSON.parse(localStorage.getItem("customerInfo") || "{}").addressParts?.cep;
+      if (savedCep) setCep(formatCep(savedCep));
+    } catch {}
+  }, []);
 
   useEffect(() => {
     if (error != null) {
@@ -41,6 +58,11 @@ export default function SignUp() {
       const phoneNumber = parsePhoneNumberFromString(rawValue);
       if (!phoneNumber || !phoneNumber.isValid()) {
         setError("Telefone inválido.");
+        return;
+      }
+
+      if (isCustomer && cep.length !== 9) {
+        setError("CEP inválido.");
         return;
       }
 
@@ -92,7 +114,8 @@ export default function SignUp() {
             phone: fullPhone,
             privacy_accepted_at: nowIso,
             privacy_policy_version: CURRENT_PRIVACY_VERSION,
-            acquisition_source: getAcquisitionSource(),
+            account_type: accountType,
+            ...(isCustomer ? { cep } : { acquisition_source: getAcquisitionSource() }),
           },
         ]);
 
@@ -116,8 +139,23 @@ export default function SignUp() {
         }
 
         // 5. Registro completo
-        window.gtag?.("event", "sign_up");
-        router.replace("/getstart");
+        window.gtag?.("event", "sign_up", { account_type: accountType });
+        if (!isCustomer) return router.replace("/getstart");
+
+        // Já deixa o CEP nos dados de entrega deste aparelho (o carrinho lê daqui)
+        try {
+          const saved = JSON.parse(localStorage.getItem("customerInfo") || "{}");
+          const addressParts = { ...EMPTY_ADDRESS, ...saved.addressParts };
+          if (!addressParts.cep) addressParts.cep = cep;
+          localStorage.setItem(
+            "customerInfo",
+            JSON.stringify({ ...saved, name: saved.name || displayName, phone: saved.phone || fullPhone, addressParts }),
+          );
+        } catch {}
+
+        // Cliente volta para o cardápio de origem; só caminho interno, para não virar redirecionamento aberto
+        const next = new URLSearchParams(window.location.search).get("next") || "";
+        router.replace(next.startsWith("/") && !next.startsWith("//") ? next : "/");
       }
     } catch (err) {
       setError("Erro inesperado. Por favor, tente novamente mais tarde.");
@@ -129,7 +167,26 @@ export default function SignUp() {
   return (
     <div className="h-[100dvh] flex items-center justify-center">
       <div className="max-w-[350px] w-full rounded-2xl mt-6 p-6 space-y-6 bg-translucid border border-brand-line">
-        <h1 className="text-2xl font-semibold text-center mb-6">Cadastro</h1>
+        <div role="tablist" className="flex p-1 rounded-full border border-brand-line">
+          {[
+            ["owner", "Estabelecimento"],
+            ["customer", "Cliente"],
+          ].map(([type, label]) => (
+            <button
+              key={type}
+              type="button"
+              role="tab"
+              aria-selected={accountType === type}
+              onClick={() => setAccountType(type)}
+              className={`flex-1 py-1.5 rounded-full text-sm font-medium cursor-pointer transition-colors ${
+                accountType === type ? "bg-brand-red text-white" : "hover:opacity-80"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <h1 className="text-2xl font-semibold text-center mb-6">{isCustomer ? "Cadastro de cliente" : "Cadastro"}</h1>
         <form onSubmit={handleSignUp} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Nome</label>
@@ -158,6 +215,23 @@ export default function SignUp() {
               />
             </div>
           </div>
+
+          {isCustomer && (
+            <div>
+              <label className="block text-sm font-medium mb-1">CEP</label>
+              <input
+                name="cep"
+                className="w-[300px] px-3 py-2 bg-translucid border border-low-gray rounded-xl focus:outline-none focus:ring-2 focus:ring-bite"
+                type="text"
+                inputMode="numeric"
+                autoComplete="postal-code"
+                placeholder="00000-000"
+                value={cep}
+                onChange={(e) => setCep(formatCep(e.target.value))}
+                required
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium mb-1">Email</label>
@@ -245,7 +319,7 @@ export default function SignUp() {
         <div>
           <p className="text-center">
             Já tem uma conta?{" "}
-            <Link href="/login" className="underline text-brand-red hover:opacity-80">
+            <Link href={`/login${query}`} className="underline text-brand-red hover:opacity-80">
               Faça login
             </Link>
           </p>
@@ -256,7 +330,11 @@ export default function SignUp() {
         <div className="mb-4 flex justify-center">
           <BrandLogo large />
         </div>
-        <h2 style={{ fontSize: "30px" }}>Cadastre-se e comece a criar seu cardápio em minutos!</h2>
+        <h2 style={{ fontSize: "30px" }}>
+          {isCustomer
+            ? "Crie sua conta e faça seus pedidos com mais praticidade!"
+            : "Cadastre-se e comece a criar seu cardápio em minutos!"}
+        </h2>
       </div>
     </div>
   );

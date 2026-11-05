@@ -7,15 +7,16 @@ import { getReceipts } from "@/lib/orderReceipts";
 import { FaReceipt } from "react-icons/fa";
 import { getContrastTextColor } from "@/utils/color";
 
-const paymentLabels = {
+export const paymentLabels = {
   pix: "Pix",
+  pix_online: "Pix online (pago)",
   debit: "Débito",
   credit: "Crédito",
   cash: "Dinheiro",
   stripe: "Cartão (online)",
 };
 
-const serviceLabels = {
+export const serviceLabels = {
   delivery: "Entrega",
   pickup: "Retirada",
   dinein: "No local",
@@ -59,7 +60,7 @@ export default function MyOrdersModal({
             {receipts.map((receipt) => (
               <div
                 key={receipt.id}
-                className="rounded-xl p-3"
+                className="rounded-2xl p-3"
                 style={{ backgroundColor: translucidToUse }}
               >
                 <div className="flex items-center justify-between gap-2 mb-1">

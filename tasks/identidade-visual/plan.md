@@ -75,7 +75,7 @@ Continuam como estão, porque têm função: verde (WhatsApp e sucesso), âmbar 
 as cores escolhidas pelo dono, os valores salvos em `consts/colorPallets.jsx` e o CSS de impressão.
 
 ## Tarefas
-Detalhes em `tasks/todo.md`.
+Detalhes em `tasks/identidade-visual/todo.md`.
 
 ### Fase 1: Base e shell
 - [ ] Task 1: Tokens e fonte globais

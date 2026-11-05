@@ -11,7 +11,7 @@ const page = () => {
       <div className="max-w-2xl flex flex-col gap-6 p-4 pt-12">
         <h1 className="default-h1">Política de Privacidade – Bite Menu</h1>
 
-        <p>Última atualização: 30/10/2026</p>
+        <p>Última atualização: 05/11/2026</p>
 
         <p>
           O <strong>Bite Menu</strong>, operado por <strong>67.096.848 IGOR VENTURA DE OLIVEIRA</strong>, inscrita no CNPJ
@@ -73,6 +73,10 @@ const page = () => {
             <li>Dados dos cardápios criados (produtos, categorias, preços e configurações);</li>
             <li>Telefone de contato;</li>
             <li>Dados relacionados à assinatura dos planos Bite Menu (processados via ValidaPay);</li>
+            <li>
+              Quando o estabelecimento ativa o Pix online (seção 11.2): dados cadastrais da empresa e do sócio responsável
+              informados para abrir a Conta de Recebimentos, além do saldo, do extrato e dos saques dessa conta.
+            </li>
           </ul>
 
           <p>As informações coletadas pelo Bite Menu são utilizadas para:</p>
@@ -107,8 +111,8 @@ const page = () => {
           <p>
             Os dados são armazenados em servidores seguros e criptografados. O Bite Menu compartilha informações dos
             estabelecimentos apenas com fornecedores de infraestrutura necessários ao funcionamento da plataforma
-            (Supabase), com a ValidaPay para fins de processamento de assinaturas e, quando legalmente exigido, com
-            autoridades competentes.
+            (Supabase), com a ValidaPay para fins de processamento de assinaturas, de abertura da Conta de Recebimentos e
+            de processamento do Pix online e, quando legalmente exigido, com autoridades competentes.
           </p>
           <p>
             Os dados de pagamento da assinatura não são armazenados pelo Bite Menu, mas pela ValidaPay, que atua
@@ -153,8 +157,17 @@ const page = () => {
             (estabelecimento) para atendimento do pedido e prevenção de fraudes (art. 7º, IX da LGPD).
           </p>
           <p>
+            <strong>Pagamento por Pix online:</strong> Quando o estabelecimento oferece o Pix online e o consumidor escolhe
+            essa forma de pagamento, o pagamento é processado pela ValidaPay. Os dados bancários do pagador (como nome, CPF
+            e instituição) são transmitidos pelo arranjo Pix diretamente à ValidaPay e não são armazenados pelo Bite Menu.
+            O Bite Menu guarda apenas o identificador da cobrança e a confirmação do pagamento, vinculados ao pedido. Os
+            dados do pedido ficam guardados temporariamente enquanto o pagamento não é confirmado e só são registrados no
+            painel do estabelecimento depois do pagamento.
+          </p>
+          <p>
             Nenhum dado pessoal identificável dos consumidores é compartilhado com terceiros além do estabelecimento
-            responsável pelo pedido, sem o consentimento do titular.
+            responsável pelo pedido e, no caso do Pix online, da ValidaPay como processadora do pagamento, sem o
+            consentimento do titular.
           </p>
         </section>
 
@@ -320,6 +333,10 @@ const page = () => {
               <strong>Dados financeiros e fiscais (assinaturas e transações):</strong> pelo prazo mínimo de 5 (cinco) anos,
               conforme exigido pela legislação tributária e contábil brasileira;
             </li>
+            <li>
+              <strong>Pedidos aguardando pagamento por Pix online:</strong> até a confirmação ou o cancelamento do
+              pagamento; depois disso, passam a seguir as regras dos dados de pedidos;
+            </li>
           </ul>
           <p>
             Utilizamos medidas técnicas e administrativas adequadas para proteger as informações armazenadas pelo Bite Menu,
@@ -329,7 +346,8 @@ const page = () => {
 
         {/* 11. Pagamentos de Assinatura (Planos Bite Menu) */}
         <section className="flex flex-col gap-2 mb-4">
-          <h2 className="default-h2">11. Pagamentos de Assinatura (Planos Bite Menu)</h2>
+          <h2 className="default-h2">11. Pagamentos via ValidaPay</h2>
+          <h3 className="mt-2 font-semibold">11.1. Assinatura dos planos Bite Menu</h3>
           <p>
             Para a contratação dos planos pagos <strong>Plus</strong> e <strong>Pro</strong>, o Bite Menu utiliza a{" "}
             <strong>ValidaPay</strong> como processadora de pagamentos. Nesse contexto, o Bite Menu é o{" "}
@@ -362,6 +380,42 @@ const page = () => {
           <p>
             <strong>Base legal:</strong> O tratamento desses dados fundamenta-se na execução de contrato (art. 7º, V da LGPD)
             e no cumprimento de obrigação legal (art. 7º, II da LGPD) para fins fiscais e contábeis.
+          </p>
+
+          <h3 className="mt-2 font-semibold">11.2. Pix online e Conta de Recebimentos</h3>
+          <p>
+            Para usar o Pix online, o estabelecimento abre uma Conta de Recebimentos na ValidaPay, em nome da sua empresa.
+            Para isso, informa no painel do Bite Menu os seguintes dados, que são enviados à ValidaPay:
+          </p>
+          <ul className="list-disc ml-6">
+            <li>
+              Da empresa: CNPJ, razão social, nome fantasia, e-mail, telefone, endereço e faixa de faturamento declarada;
+            </li>
+            <li>
+              Do sócio responsável: nome completo, CPF, nome da mãe, data de nascimento, telefone, e-mail, endereço, faixa de
+              renda declarada e se é pessoa politicamente exposta.
+            </li>
+          </ul>
+          <p>
+            Esses dados são usados pela ValidaPay para a análise cadastral e para cumprir as normas de prevenção à lavagem
+            de dinheiro e de conhecimento do cliente aplicáveis às instituições de pagamento. Nessa análise, a ValidaPay
+            atua como <strong>controladora</strong> dos dados, conforme a sua própria política de privacidade, e pode
+            solicitar documentos diretamente ao estabelecimento. O Bite Menu não armazena os dados do formulário: guarda
+            apenas o identificador do cadastro e o número da Conta de Recebimentos, para vinculá-la ao cardápio.
+          </p>
+          <p>
+            Para exibir a conta no painel, o Bite Menu consulta na ValidaPay o status do cadastro, o saldo, o extrato e os
+            saques, e envia a ela as solicitações de saque feitas pelo estabelecimento. Essas informações são mostradas
+            apenas ao próprio estabelecimento.
+          </p>
+          <p>
+            Nos pagamentos feitos pelos consumidores finais, o estabelecimento é o controlador dos dados do pedido, o Bite
+            Menu atua como operador e a ValidaPay como processadora do pagamento.
+          </p>
+          <p>
+            <strong>Base legal:</strong> execução de contrato (art. 7º, V da LGPD), para a prestação do Pix online, e
+            cumprimento de obrigação legal ou regulatória (art. 7º, II da LGPD), no caso das verificações cadastrais
+            exigidas da ValidaPay.
           </p>
         </section>
 

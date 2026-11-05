@@ -25,6 +25,7 @@ export async function GET() {
     { url: `${BASE_URL}/docs/cardapio-digital`, lastmod: "2026-10-27" },
     { url: `${BASE_URL}/docs/pedidos`, lastmod: "2026-10-27" },
     { url: `${BASE_URL}/docs/vendas`, lastmod: "2026-10-27" },
+    { url: `${BASE_URL}/docs/pix-online`, lastmod: "2026-11-05" },
   ];
 
   // 🌐 Busca todos os menus registrados

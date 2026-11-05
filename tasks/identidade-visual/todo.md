@@ -1,6 +1,6 @@
 # Todo: nova identidade visual no painel e no resto do site
 
-Decisões, tokens e regras de troca estão em `tasks/plan.md`.
+Decisões, tokens e regras de troca estão em `tasks/identidade-visual/plan.md`.
 
 O projeto não tem testes automatizados e o lint está quebrado no Next 16. Em toda task, a verificação é:
 - `npm run build` passa

@@ -130,8 +130,9 @@ function ActionsMenuPanel({ anchorRef, onClose, children }) {
 /**
  * Botão de 3 pontinhos que abre um menu de ações posicionado via portal.
  * options: [{ label, icon?: ReactNode, onClick, danger?: boolean }]
+ * children: troca os 3 pontinhos por outro botão (ex.: avatar), sem o estilo padrão
  */
-const ActionsMenu = ({ options, buttonClassName = "" }) => {
+const ActionsMenu = ({ options, buttonClassName = "", children, ariaLabel = "Abrir opções" }) => {
   const [open, setOpen] = useState(false);
   const btnRef = useRef(null);
 
@@ -141,13 +142,12 @@ const ActionsMenu = ({ options, buttonClassName = "" }) => {
         ref={btnRef}
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        aria-label="Abrir opções"
-        className={`cursor-pointer p-2 rounded ${buttonClassName}`}
-        style={{
-          backgroundColor: "var(--translucid)",
-        }}
+        aria-label={ariaLabel}
+        aria-expanded={open}
+        className={children ? `cursor-pointer ${buttonClassName}` : `cursor-pointer p-2 rounded ${buttonClassName}`}
+        style={children ? undefined : { backgroundColor: "var(--translucid)" }}
       >
-        <FaEllipsisVertical />
+        {children ?? <FaEllipsisVertical />}
       </button>
 
       {open && (

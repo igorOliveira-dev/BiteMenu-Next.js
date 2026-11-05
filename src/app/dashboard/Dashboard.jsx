@@ -349,6 +349,7 @@ const Dashboard = ({
         className="w-[100dvw] lg:w-auto lg:flex-1 lg:min-w-0 h-[calc(100dvh-85px)] pb-[80px] lg:pb-0 lg:h-[calc(100dvh-100px)] overflow-auto scrollbar-none"
       >
         <UpsellBanner selectedTab={selectedTab} collapsed={collapsed} />
+        {/* abas sem painel à direita: centralizadas em telas grandes (cada uma com a largura máxima que já usa) */}
         <div className={selectedTab === "menu" ? "block" : "hidden"}>
           <Menu
             setSelectedTab={setSelectedTab}
@@ -376,32 +377,32 @@ const Dashboard = ({
           </div>
         )}
         {selectedTab === "sales" && (
-          <div className="block">
+          <div className="block mx-auto w-full max-w-[1056px]">
             <Sales setSelectedTab={setSelectedTab} />
           </div>
         )}
         {selectedTab === "tables" && (
-          <div className="block">
+          <div className="block mx-auto w-full max-w-[1024px]">
             <Tables />
           </div>
         )}
         {selectedTab === "stock" && (
-          <div className="block">
+          <div className="block mx-auto w-full max-w-[1024px]">
             <Stock setSelectedTab={setSelectedTab} />
           </div>
         )}
         {selectedTab === "whatsappMessage" && (
-          <div className="block">
+          <div className="block mx-auto w-full max-w-[1200px]">
             <WhatsappMessage setSelectedTab={setSelectedTab} />
           </div>
         )}
         {selectedTab === "salesDashboard" && (
-          <div className="block">
+          <div className="block mx-auto w-full max-w-[1116px]">
             <SalesDashboard setSelectedTab={setSelectedTab} />
           </div>
         )}
         {selectedTab === "configMenu" && (
-          <div className="block">
+          <div className="block mx-auto w-full max-w-[1096px]">
             <ConfigMenu
               setSelectedTab={setSelectedTab}
               title={title}
@@ -424,7 +425,7 @@ const Dashboard = ({
           </div>
         )}
         {selectedTab === "account" && (
-          <div className="block">
+          <div className="block mx-auto w-full max-w-[812px]">
             <Account setSelectedTab={setSelectedTab} />
           </div>
         )}
@@ -439,12 +440,12 @@ const Dashboard = ({
           </div>
         )}
         {selectedTab === "team" && (
-          <div className="block">
+          <div className="block mx-auto w-full max-w-[812px]">
             <Team setSelectedTab={setSelectedTab} />
           </div>
         )}
         {selectedTab === "planDetails" && (
-          <div className="block">
+          <div className="block mx-auto w-full max-w-[1040px]">
             <PlanDetails setSelectedTab={setSelectedTab} />
           </div>
         )}
