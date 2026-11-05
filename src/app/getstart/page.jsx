@@ -22,6 +22,8 @@ import { getCurrencySymbol } from "@/lib/formatCurrency";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { fileToWebp, cropToWebp } from "@/app/utils/imageToWebp";
 import { useAlert } from "@/providers/AlertProvider";
+import AddressFields, { formatAddress } from "@/components/AddressFields";
+import { geocodeAddress } from "@/lib/deliveryRadius";
 import { getContrastTextColor as contrastText } from "@/utils/color";
 
 // ---- CONFIG ----
@@ -191,6 +193,7 @@ export default function GetStart() {
     "dinein",
   ]);
 
+  const [addressDetails, setAddressDetails] = useState(null);
   const [logoFile, setLogoFile] = useState(null);
   const [bannerFiles, setBannerFiles] = useState(NO_BANNER);
   const [bannerCropAreas, setBannerCropAreas] = useState(NO_BANNER);
@@ -470,6 +473,16 @@ export default function GetStart() {
         details_color: detailsColor || null,
         currency: detectedCurrency,
       };
+
+      // endereço é opcional: só grava com a rua preenchida (mesmo critério do painel)
+      const address = addressDetails ? formatAddress(addressDetails) : "";
+      if (address) {
+        insertObj.address = address;
+        insertObj.address_details = addressDetails;
+        const pos = await geocodeAddress(addressDetails);
+        insertObj.lat = pos?.lat ?? null;
+        insertObj.lng = pos?.lng ?? null;
+      }
 
       const MAX_INSERT_ATTEMPTS = 5;
       let insertAttempt = 0;
@@ -755,6 +768,19 @@ export default function GetStart() {
         {selectedServices.length === 1 ? "selecionado" : "selecionados"} · pelo
         menos um
       </p>
+
+      <div className="mt-6">
+        <FieldLabel hint="(opcional)">Endereço do estabelecimento</FieldLabel>
+        <p className="text-xs text-brand-muted mb-3">
+          Com o endereço, seu cardápio aparece no Descobrir do Bite Menu para
+          clientes da sua região. Digite o CEP para preencher o resto.
+        </p>
+        <AddressFields
+          value={addressDetails}
+          onChange={setAddressDetails}
+          inputClassName="w-full px-4 py-3 bg-brand-bg text-brand-fg placeholder:text-brand-muted/70 border border-brand-line rounded-2xl focus:outline-none focus:border-brand-select focus:ring-4 focus:ring-brand-select/15 transition"
+        />
+      </div>
     </StepCard>
   );
 

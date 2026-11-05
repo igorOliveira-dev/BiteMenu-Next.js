@@ -20,6 +20,7 @@ import Team from "./tabs/Team";
 import Kitchen from "@/app/equipe/Kitchen";
 import Delivery from "@/app/equipe/Delivery";
 import UpsellBanner from "./components/UpsellBanner";
+import AddressUpdateModal from "./components/AddressUpdateModal";
 import GenericModal from "@/components/GenericModal";
 import QrCodeModal from "./tabs/components/menu/QrCodeModal";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
@@ -450,6 +451,16 @@ const Dashboard = ({
           </div>
         )}
       </main>
+
+      <AddressUpdateModal
+        menu={menu}
+        onUpdate={() => {
+          try {
+            sessionStorage.setItem("configMenuSection", "basico");
+          } catch {}
+          setSelectedTab("configMenu");
+        }}
+      />
 
       {/* impressão automática: um pedido por vez, o próximo entra ao terminar */}
       {printQueue[0] && (

@@ -79,6 +79,7 @@ export default function DescobrirPage() {
   const [local, setLocal] = useState("");
   const [km, setKm] = useState("");
   const [results, setResults] = useState(null);
+  const [expanded, setExpanded] = useState(null); // raio ampliado pela API quando o escolhido veio vazio
   const [error, setError] = useState(false);
   const [notFound, setNotFound] = useState(false);
 
@@ -162,6 +163,7 @@ export default function DescobrirPage() {
         .then((data) => {
           setError(false);
           setResults(data.results);
+          setExpanded(data.expanded ?? null);
         })
         .catch((e) => e?.name !== "AbortError" && setError(true));
     }, 300);
@@ -319,6 +321,15 @@ export default function DescobrirPage() {
               )}
             </div>
           ) : (
+            <>
+            {expanded && (
+              <p className="mb-3 text-sm opacity-70">
+                Nenhum estabelecimento em até {km} km.{" "}
+                {expanded === "all"
+                  ? "Nem em até 100 km, mostrando todos."
+                  : `Mostrando os que estão em até ${expanded} km.`}
+              </p>
+            )}
             <ul className="grid gap-3 sm:grid-cols-2">
               {results.map((m) => (
                 <li key={m.slug}>
@@ -373,6 +384,7 @@ export default function DescobrirPage() {
                 </li>
               ))}
             </ul>
+            </>
           )}
         </section>
       </main>
