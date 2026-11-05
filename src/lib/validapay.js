@@ -7,7 +7,8 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 // A credencial (sandbox e produção) precisa ter todos estes escopos liberados no painel.
 const SCOPES = [
   "checkouts/write checkouts/read subscriptions/write subscriptions/read customers/read charges/write",
-  "charges/read proposals/write subaccounts/read wallet/read wallet/write", // pagamento online (subcontas)
+  // pagamento online (subcontas). proposals/read não está na doc, mas GET /v1/proposals/:formId exige
+  "charges/read proposals/write proposals/read subaccounts/read wallet/read wallet/write",
 ].join(" ");
 
 let cachedToken = null; // { value, expiresAt }
