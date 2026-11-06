@@ -63,9 +63,12 @@ export const POST = handle(async (req, menu, allowed) => {
 
   // A ValidaPay cobra R$ 15 da master a cada proposta, mesmo se reprovar na hora (ex.: CNPJ inapto).
   // Confere a situação na Receita (BrasilAPI) antes de enviar; na dúvida não envia, para não cobrar à toa.
+  // User-Agent próprio: a BrasilAPI responde 403 para o User-Agent padrão do fetch do Node
   const cnpjRes = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits(f.documentNumber)}`, {
+    headers: { "User-Agent": "BiteMenu/1.0 (+https://www.bitemenu.com.br)" },
     cache: "no-store",
   }).catch(() => null);
+  if (!cnpjRes?.ok) console.error("[ValidaPay Subconta] BrasilAPI CNPJ:", cnpjRes?.status ?? "sem resposta");
   if (cnpjRes?.status === 404) return json({ error: "CNPJ não encontrado na Receita Federal." }, 400);
   if (!cnpjRes?.ok) {
     return json({ error: "Não foi possível consultar o CNPJ na Receita Federal agora. Tente de novo em alguns minutos." }, 503);
