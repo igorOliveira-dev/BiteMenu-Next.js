@@ -1,5 +1,5 @@
 // Programa de fidelidade (tasks/fidelidade/fidelidade-plan.md). Config em menus.loyalty: { enabled, reward, goal }.
-// Ciclo de goal + 1 vendas: goal compras que juntam e 1 que usa o prêmio. Self-check: node scripts/loyalty-check.mjs
+// Ciclo de goal + 1 vendas: goal compras que juntam e 1 que usa o prêmio (loyaltyState). Self-check: node scripts/loyalty-check.mjs
 
 export const LOYALTY_MIN = 2;
 export const LOYALTY_MAX = 20;
@@ -14,11 +14,26 @@ export const isLoyaltyOn = (loyalty) =>
   loyalty.goal >= LOYALTY_MIN &&
   loyalty.goal <= LOYALTY_MAX;
 
-// count = vendas finalizadas do cliente no cardápio.
+// Progresso do cliente. dates = created_at das vendas dele no cardápio (data do pedido).
+// loyalty.history = metas antigas, [{ goal, until }] da mais antiga para a mais nova (o modal do dono grava ao mudar).
+// Cada compra conta com a meta que valia quando o pedido foi feito: mudar a meta não apaga compras. Quem tinha mais
+// compras do que a nova meta fica com o prêmio liberado; prêmio liberado continua liberado.
 // done: traços cheios; ready: prêmio liberado (a próxima compra usa); used: prêmios já usados
-export function loyaltyState(count, goal) {
-  const k = count % (goal + 1);
-  return { done: k, ready: k === goal, used: Math.floor(count / (goal + 1)) };
+export function loyaltyState(dates, loyalty) {
+  const history = (loyalty?.history || []).map((h) => ({ goal: h.goal, until: Date.parse(h.until) }));
+  const goalAt = (t) => (history.find((h) => t < h.until) || loyalty).goal;
+  let k = 0;
+  let used = 0;
+  let ready = false; // liberado fica liberado até ser usado, mesmo se a meta subir depois
+  for (const t of dates.map((d) => Date.parse(d)).sort((a, b) => a - b)) {
+    if (ready || k >= goalAt(t)) {
+      used++; // compra com o prêmio liberado: foi a que usou o prêmio
+      k = 0;
+      ready = false;
+    } else ready = ++k >= goalAt(t);
+  }
+  ready = ready || k >= loyalty.goal;
+  return { done: ready ? loyalty.goal : k, ready, used };
 }
 
 // Desconto do prêmio sobre o subtotal, para quem está com o prêmio liberado. items = linhas do carrinho.

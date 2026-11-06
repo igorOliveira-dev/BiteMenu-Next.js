@@ -20,13 +20,13 @@ export default function LoyaltyCards() {
     (async () => {
       const { data: sales, error } = await supabase
         .from("sales")
-        .select("menu_id")
+        .select("menu_id, created_at")
         .eq("customer_id", user.id);
       if (error) console.warn("[fidelidade] vendas da conta indisponíveis:", error.message);
 
-      const counts = {};
-      for (const s of sales || []) counts[s.menu_id] = (counts[s.menu_id] || 0) + 1;
-      const ids = Object.keys(counts);
+      const dates = {}; // menu_id -> created_at das vendas
+      for (const s of sales || []) (dates[s.menu_id] ||= []).push(s.created_at);
+      const ids = Object.keys(dates);
       if (ids.length === 0) return setCards([]);
 
       const { data: menus } = await supabase
@@ -48,11 +48,11 @@ export default function LoyaltyCards() {
 
       setCards(
         active
-          .map((m) => ({ ...m, count: counts[m.id], locked: allowed[m.id] === false }))
+          .map((m) => ({ ...m, state: loyaltyState(dates[m.id], m.loyalty), locked: allowed[m.id] === false }))
           // bloqueados por último; prêmio liberado primeiro, depois quem está mais perto
           .sort((a, b) => {
-            const sa = loyaltyState(a.count, a.loyalty.goal);
-            const sb = loyaltyState(b.count, b.loyalty.goal);
+            const sa = a.state;
+            const sb = b.state;
             return (
               a.locked - b.locked || sb.ready - sa.ready || sb.done / b.loyalty.goal - sa.done / a.loyalty.goal
             );
@@ -82,7 +82,7 @@ export default function LoyaltyCards() {
         <ul className="grid gap-3 sm:grid-cols-2">
           {cards.map((m) => {
             const banner = m.banner_mobile_url || m.banner_url;
-            const { used } = loyaltyState(m.count, m.loyalty.goal);
+            const { used } = m.state;
             return (
               <li
                 key={m.id}
@@ -124,7 +124,7 @@ export default function LoyaltyCards() {
                   {m.locked ? (
                     <div className="mt-3">
                       <div className="pointer-events-none opacity-40 grayscale" aria-hidden="true">
-                        <LoyaltyProgress count={m.count} goal={m.loyalty.goal} reward={m.loyalty.reward} />
+                        <LoyaltyProgress state={m.state} goal={m.loyalty.goal} reward={m.loyalty.reward} />
                       </div>
                       <p className="mt-2 flex items-start gap-2 rounded-xl bg-[var(--translucid)] p-2.5 text-sm">
                         <FaLock className="mt-0.5 shrink-0 text-xs opacity-70" />
@@ -136,7 +136,7 @@ export default function LoyaltyCards() {
                     </div>
                   ) : (
                     <div className="mt-3">
-                      <LoyaltyProgress count={m.count} goal={m.loyalty.goal} reward={m.loyalty.reward} />
+                      <LoyaltyProgress state={m.state} goal={m.loyalty.goal} reward={m.loyalty.reward} />
                     </div>
                   )}
                   <div className="mt-3 flex items-center justify-between gap-2">

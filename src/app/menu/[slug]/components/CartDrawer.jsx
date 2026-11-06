@@ -29,7 +29,7 @@ import { STOCK_ROLES, stockPayload } from "@/lib/stock";
 import { saveReceipt } from "@/lib/orderReceipts";
 import useUser from "@/hooks/useUser";
 import useLoyaltyCount from "@/hooks/useLoyaltyCount";
-import { loyaltyDiscount, loyaltyState } from "@/lib/loyalty";
+import { loyaltyDiscount } from "@/lib/loyalty";
 import SignUpCta from "@/components/SignUpCta";
 import { renderWhatsappMessage } from "@/lib/whatsappMessage";
 import { getContrastTextColor } from "@/utils/color";
@@ -299,28 +299,14 @@ function CartDrawerContent({
   // Item grátis (1 unidade do item escolhido, quando está no carrinho) ou desconto (% ou valor, mínimo opcional).
   // Entra em discountAmount como o cupom, então total, pedido, WhatsApp e Pix online seguem iguais.
   const loyalty = menu?.loyalty; // `locked` se o dono está abaixo do Pro (page.jsx): sem prêmio
-  const { count: loyaltyCount } = useLoyaltyCount(menu?.id, loyalty);
+  // Reconfere o pedido em aberto quando o carrinho esvazia (acabou de fazer um pedido).
+  // ponytail: valida só no navegador, como o cupom
+  const { state: loyaltyProgress, hasOpenOrder: loyaltyHasOpenOrder } = useLoyaltyCount(menu?.id, loyalty, cartIsEmpty);
   const loyaltyReady =
     !!customerId &&
     !loyalty?.locked &&
     (loyalty?.type === "discount" || loyalty?.type === "item") &&
-    loyaltyCount != null &&
-    loyaltyState(loyaltyCount, loyalty.goal).ready;
-  // o prêmio só "gasta" quando o dono finaliza o pedido: com pedido em aberto aqui, ele já foi usado nele.
-  // Reconfere quando o carrinho esvazia (acabou de fazer um pedido). ponytail: valida só no navegador, como o cupom
-  const [loyaltyHasOpenOrder, setLoyaltyHasOpenOrder] = useState(null);
-  useEffect(() => {
-    if (!loyaltyReady) return;
-    supabase
-      .from("orders")
-      .select("id", { count: "exact", head: true })
-      .eq("menu_id", menu.id)
-      .eq("customer_id", customerId)
-      .then(({ count, error }) => {
-        if (error) console.warn("[fidelidade] pedidos em aberto indisponíveis:", error.message);
-        setLoyaltyHasOpenOrder(error ? true : (count ?? 0) > 0);
-      });
-  }, [loyaltyReady, menu?.id, customerId, cartIsEmpty]);
+    !!loyaltyProgress?.ready;
   const loyaltyCanUse = loyaltyReady && loyaltyHasOpenOrder === false;
   const loyaltyBase = Math.max(
     0,

@@ -108,10 +108,11 @@ export default function LoyaltyModal({ menuId, canSave, items = [], currency, on
     if (!goalOk) return setError("goal");
     setError(null);
 
-    // mudar o número recalcula o progresso de quem já está juntando
-    if (saved?.enabled && enabled && saved.goal !== goalNum) {
+    // mudar o número: compras já feitas continuam valendo (loyaltyState em lib/loyalty.js lê o histórico)
+    const goalChanged = !!saved?.goal && saved.goal !== goalNum;
+    if (goalChanged && saved.enabled && enabled) {
       const ok = await confirm(
-        "Mudar o número de compras recalcula o progresso dos clientes que já estão juntando. Continuar?",
+        `Quem já está juntando mantém as compras feitas. Quem já tem ${goalNum} ou mais compras no ciclo fica com o prêmio liberado, e quem já está com o prêmio liberado não perde. Continuar?`,
         { tone: "confirm" },
       );
       if (!ok) return;
@@ -123,6 +124,11 @@ export default function LoyaltyModal({ menuId, canSave, items = [], currency, on
       goal: goalNum,
       type,
       reward: rewardText,
+      // metas antigas e até quando valeram: cada compra conta com a meta da data do pedido
+      history: [
+        ...(saved?.history || []),
+        ...(goalChanged ? [{ goal: saved.goal, until: new Date().toISOString() }] : []),
+      ],
       ...(type === "item" && item && { item_id: item.id }),
       ...(type === "discount" && {
         discount_type: discountType,
@@ -228,7 +234,9 @@ export default function LoyaltyModal({ menuId, canSave, items = [], currency, on
             )}
 
             {type === "discount" && (
-              <div className="mt-2 space-y-3">
+              <div className="mt-3 space-y-3 border-t border-translucid pt-3">
+                <div>
+                <div className="text-sm color-gray mb-1">Tipo de desconto</div>
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     { value: "percentage", label: "Porcentagem" },
@@ -246,6 +254,7 @@ export default function LoyaltyModal({ menuId, canSave, items = [], currency, on
                       {t.label}
                     </button>
                   ))}
+                </div>
                 </div>
 
                 <label className="block">
@@ -333,12 +342,18 @@ export default function LoyaltyModal({ menuId, canSave, items = [], currency, on
               onChange={(e) => setGoal(e.target.value)}
             />
             {error === "goal" && errorText(`Use um número de ${LOYALTY_MIN} a ${LOYALTY_MAX}.`)}
+            {saved?.goal && goalOk && saved.goal !== goalNum && (
+              <p className="mt-1 text-xs color-gray">
+                Mudando de {saved.goal} para {goalNum}: nenhum cliente perde compras. Quem já tem {goalNum} ou mais
+                compras no ciclo ganha o prêmio na próxima, e prêmio já liberado continua valendo.
+              </p>
+            )}
           </label>
 
           {goalOk && rewardText && (
             <div className="rounded-2xl border border-brand-line p-3">
               <p className="mb-2 text-xs font-semibold uppercase color-gray">Como o cliente vê</p>
-              <LoyaltyProgress count={Math.min(2, goalNum - 1)} goal={goalNum} reward={rewardText} />
+              <LoyaltyProgress state={{ done: Math.min(2, goalNum - 1), ready: false }} goal={goalNum} reward={rewardText} />
             </div>
           )}
 

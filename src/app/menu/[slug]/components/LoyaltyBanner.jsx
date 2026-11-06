@@ -10,7 +10,7 @@ import LoyaltyProgress from "@/components/LoyaltyProgress";
 // só o cliente que já tem compra vê a faixa, com cadeado e aviso.
 // colors: { text, muted, track, accent }
 export default function LoyaltyBanner({ loyalty, menuId, slug, colors, className = "" }) {
-  const { user, profile, loading, on, isCustomer, count } = useLoyaltyCount(menuId, loyalty);
+  const { user, profile, loading, on, isCustomer, count, state, hasOpenOrder } = useLoyaltyCount(menuId, loyalty);
 
   if (!on || loading || (user && !profile)) return null;
   if (user && !isCustomer) return null;
@@ -27,7 +27,7 @@ export default function LoyaltyBanner({ loyalty, menuId, slug, colors, className
         {loyalty.locked ? (
           <>
             <div className="pointer-events-none opacity-40" aria-hidden="true">
-              <LoyaltyProgress count={count} goal={loyalty.goal} reward={loyalty.reward} colors={colors} />
+              <LoyaltyProgress state={state} goal={loyalty.goal} reward={loyalty.reward} colors={colors} />
             </div>
             <p className="mt-2 text-sm" style={{ color: colors.text }}>
               Este estabelecimento não tem acesso à fidelidade no momento. Seu progresso fica guardado e volta a valer
@@ -35,7 +35,13 @@ export default function LoyaltyBanner({ loyalty, menuId, slug, colors, className
             </p>
           </>
         ) : user ? (
-          <LoyaltyProgress count={count} goal={loyalty.goal} reward={loyalty.reward} colors={colors} />
+          <LoyaltyProgress
+            state={state}
+            goal={loyalty.goal}
+            reward={loyalty.reward}
+            colors={colors}
+            inOpenOrder={!!hasOpenOrder}
+          />
         ) : (
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm" style={{ color: colors.muted }}>

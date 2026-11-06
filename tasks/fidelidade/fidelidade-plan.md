@@ -80,7 +80,7 @@ compra de visitante contando, cardápio "só WhatsApp", notificação ao liberar
   recusar (coluna ainda não criada), grava de novo sem ele, igual ao carrinho: a venda nunca se perde.
 - **Prêmio na compra N+1, sem tabela de resgate.** Cada ciclo tem `goal + 1` vendas: `goal` que juntam e 1 que usa o
   prêmio. Tudo sai de uma conta, em `src/lib/loyalty.js`:
-  - `k = vendas % (goal + 1)`
+  - `k = vendas % (goal + 1)` enquanto a meta não muda (com meta mudada, `loyaltyState` percorre as vendas por data, ver riscos)
   - `k < goal`: juntando, `k` de `goal` traços cheios. Texto: "3 de 5 compras · faltam 2 para ganhar <recompensa>".
   - `k === goal`: prêmio liberado, linha cheia e verde. Texto: "Prêmio liberado! Na sua próxima compra você ganha
     <recompensa>".
@@ -175,7 +175,7 @@ Testado com fake-supabase em 390px: +, digitar 5, 0 + sair do campo (voltou para
 | Policy de `sales` mal escrita expõe vendas de outros clientes | Alto | Só `select` com `customer_id = auth.uid()`; conferir com 2 contas antes de publicar (mexe em RLS: revisar) |
 | Dono esquece de dar o prêmio na compra N+1 | Médio | Aviso no card do pedido; o cliente também vê "Prêmio liberado" e pede |
 | Dono não usa "Finalizar" (só exclui ou deixa parado) | Médio | Texto no modal: "A compra conta quando você finaliza o pedido" |
-| Dono muda o `goal` com clientes no meio | Médio | Progresso é recalculado; aviso no modal ao trocar o número |
+| Dono muda o `goal` com clientes no meio | Médio | Resolvido sem SQL: `loyalty.history` guarda as metas antigas (`{ goal, until }`) e cada venda conta com a meta da data do pedido (`sales.created_at`). Ninguém perde compras; quem passa da nova meta fica com o prêmio liberado; liberado continua liberado. Self-check em `scripts/loyalty-check.mjs` |
 | Dois pedidos abertos do mesmo cliente: os dois mostram "usa o prêmio" | Baixo | Aceito; o dono vê os dois juntos. Comentário `ponytail:` |
 | Dono que cai abaixo do Pro | Médio | Bloqueada para ele e para o cliente (cadeado + aviso no cardápio e em `/conta`, sem prêmio no carrinho); `/api/fidelidade` diz quais cardápios estão liberados |
 | Desconto da fidelidade aplicado por quem mexe no navegador | Médio | Mesmo limite do cupom (total calculado no navegador). O dono confere: o card do pedido só mostra "usa o prêmio" para quem liberou de verdade |

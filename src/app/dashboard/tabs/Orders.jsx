@@ -176,7 +176,7 @@ const Orders = ({
   // fidelidade: vendas finalizadas de cada cliente logado da página (tasks/fidelidade/fidelidade-plan.md)
   const loyalty =
     LOYALTY_ROLES.includes(planRole) && isLoyaltyOn(menu?.loyalty) ? menu.loyalty : null;
-  const [loyaltyCounts, setLoyaltyCounts] = useState({}); // customer_id -> vendas
+  const [loyaltyDates, setLoyaltyDates] = useState({}); // customer_id -> created_at das vendas
   // ids dos pedidos (não só dos clientes): finalizar um pedido muda a lista e recarrega a contagem
   const loyaltyKey = loyalty
     ? orders.filter((o) => o.customer_id).map((o) => `${o.id}:${o.customer_id}`).join(",")
@@ -516,14 +516,14 @@ const Orders = ({
     const ids = [...new Set(loyaltyKey.split(",").map((k) => k.split(":")[1]))];
     supabase
       .from("sales")
-      .select("customer_id")
+      .select("customer_id, created_at")
       .eq("menu_id", menu.id)
       .in("customer_id", ids)
       .then(({ data, error }) => {
         if (error) return console.warn("[fidelidade] contagem indisponível:", error.message);
-        const counts = Object.fromEntries(ids.map((id) => [id, 0]));
-        for (const s of data || []) counts[s.customer_id]++;
-        setLoyaltyCounts(counts);
+        const dates = Object.fromEntries(ids.map((id) => [id, []]));
+        for (const s of data || []) dates[s.customer_id].push(s.created_at);
+        setLoyaltyDates(dates);
       });
   }, [loyaltyKey, menu?.id]);
 
@@ -997,9 +997,12 @@ const Orders = ({
                           <p className="mt-1.5 truncate text-base font-semibold">
                             {order.costumer_name || "Cliente"}
                           </p>
-                          {loyalty && loyaltyCounts[order.customer_id] != null && (() => {
+                          <p className="text-xs color-gray">
+                            {formatOrderTime(order.updated_at)}
+                          </p>
+                          {loyalty && loyaltyDates[order.customer_id] && (() => {
                             // ponytail: dois pedidos abertos do mesmo cliente com prêmio liberado mostram o aviso nos dois
-                            const st = loyaltyState(loyaltyCounts[order.customer_id], loyalty.goal);
+                            const st = loyaltyState(loyaltyDates[order.customer_id], loyalty);
                             return st.ready ? (
                               <span className="mt-1 inline-flex rounded-full bg-st-done/12 px-2.5 py-1 text-xs font-semibold text-st-done">
                                 🎁 Fidelidade: esta compra usa o prêmio {loyalty.reward}
@@ -1010,9 +1013,7 @@ const Orders = ({
                               </p>
                             );
                           })()}
-                          <p className="text-xs color-gray">
-                            {formatOrderTime(order.updated_at)}
-                          </p>
+                          
                         </div>
 
                         <div className="shrink-0 text-right">

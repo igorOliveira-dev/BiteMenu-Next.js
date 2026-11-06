@@ -79,7 +79,7 @@ export default function SignIn() {
   };
 
   return (
-    <div className="h-[100dvh] flex items-center justify-center">
+    <div className="min-h-[100dvh] flex items-center justify-center px-4 py-6">
       <div className="max-w-[350px] w-full rounded-2xl mt-6 p-6 space-y-6 bg-translucid border border-brand-line">
         <h1 className="text-2xl font-semibold text-center mb-6">Login</h1>
         <form onSubmit={handleSignIn} className="space-y-4">

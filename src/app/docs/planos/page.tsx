@@ -106,6 +106,12 @@ const page = () => {
           <li>Download de relatório de vendas em CSV</li>
           <li>Criação de cupons de desconto para o cardápio</li>
           <li>
+            Programa de fidelidade: a cada tantas compras (de 2 a 20, você escolhe), a próxima sai com um prêmio, que
+            pode ser um item grátis do cardápio ou um desconto em porcentagem ou valor fixo. O cliente acompanha o
+            progresso no cardápio e o prêmio entra sozinho no carrinho. Vale para clientes logados, e a compra conta
+            quando você finaliza o pedido. Se você mudar o número de compras, nenhum cliente perde as compras que já fez
+          </li>
+          <li>
             <Link href="/docs/pix-online" className="underline text-brand-red hover:opacity-80">
               Pix online
             </Link>

@@ -1,10 +1,9 @@
-import { loyaltyState } from "@/lib/loyalty";
-
-// Linha tracejada da fidelidade: 1 traço = 1 compra, mais o texto indicativo.
+// Linha tracejada da fidelidade: 1 traço = 1 compra, mais o texto indicativo. state = loyaltyState(...) ({ done, ready }).
 // Sem `colors`: identidade do Bite Menu (azul = andamento, verde = prêmio liberado).
 // Com `colors` ({ text, muted, track, accent }): cores do cardápio.
-export default function LoyaltyProgress({ count, goal, reward, colors }) {
-  const { done, ready } = loyaltyState(count, goal);
+// inOpenOrder: prêmio liberado e já há pedido em aberto, que é onde o prêmio vale.
+export default function LoyaltyProgress({ state, goal, reward, colors, inOpenOrder = false }) {
+  const { done, ready } = state;
   const missing = goal - done;
 
   const fill = (filled) =>
@@ -34,7 +33,12 @@ export default function LoyaltyProgress({ count, goal, reward, colors }) {
         className={`mt-2 text-sm ${colors ? "" : ready ? "text-st-done" : "color-gray"}`}
         style={colors ? { color: ready ? colors.text : colors.muted } : undefined}
       >
-        {ready ? (
+        {ready && inOpenOrder ? (
+          <>
+            <strong>Prêmio em uso!</strong> Seu <strong>{reward}</strong> já está valendo no pedido em aberto. Quando
+            ele for concluído, você volta a juntar compras.
+          </>
+        ) : ready ? (
           <>
             <strong>Prêmio liberado!</strong> Na sua próxima compra você ganha <strong>{reward}</strong>.
           </>
