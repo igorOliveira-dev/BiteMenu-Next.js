@@ -124,9 +124,21 @@ export default function MyOrdersModal({
                   ))}
                 </div>
 
-                <p className="text-right font-bold">
-                  Total: {formatCurrency(receipt.total, menu?.currency)}
-                </p>
+                <div className="flex items-center justify-between gap-2">
+                  {receipt.orderId ? (
+                    <a
+                      href={`/pedido/${receipt.orderId}`}
+                      className="text-sm font-semibold underline underline-offset-2"
+                    >
+                      Acompanhar pedido
+                    </a>
+                  ) : (
+                    <span />
+                  )}
+                  <p className="font-bold">
+                    Total: {formatCurrency(receipt.total, menu?.currency)}
+                  </p>
+                </div>
               </div>
             ))}
           </div>

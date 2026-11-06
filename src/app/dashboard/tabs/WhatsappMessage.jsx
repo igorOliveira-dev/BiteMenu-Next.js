@@ -31,10 +31,11 @@ const sampleValues = (menuTitle) => ({
   pagamento: "Pix",
   troco: "",
   servico: "Entrega",
+  link: "https://bitemenu.com.br/pedido/…",
 });
 
 const TAG_GROUPS = [
-  { title: "Pedido", tags: ["{estabelecimento}", "{itens}", "{servico}"] },
+  { title: "Pedido", tags: ["{estabelecimento}", "{itens}", "{servico}", "{link}"] },
   {
     title: "Valores",
     tags: [

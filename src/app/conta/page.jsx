@@ -8,7 +8,7 @@ import Loading from "@/components/Loading";
 import BrandLogo from "@/components/BrandLogo";
 import ThemeToggle from "@/components/ThemeToggle";
 import Account from "@/app/dashboard/tabs/Account";
-import OrdersHistory from "./components/OrdersHistory";
+import OrdersHistory, { countActiveOrders } from "./components/OrdersHistory";
 import PersonalInfo from "./components/PersonalInfo";
 import LoyaltyCards from "./components/LoyaltyCards";
 
@@ -16,7 +16,7 @@ import LoyaltyCards from "./components/LoyaltyCards";
 const TABS = [
   { tab: "perfil", label: "Perfil", Icon: FaUser },
   { tab: "dados", label: "Dados pessoais", Icon: FaAddressCard },
-  { tab: "pedidos", label: "Histórico de pedidos", Icon: FaReceipt },
+  { tab: "pedidos", label: "Meus pedidos", Icon: FaReceipt },
   { tab: "fidelidades", label: "Fidelidades", Icon: FaGift },
 ];
 
@@ -24,12 +24,23 @@ export default function ContaPage() {
   const router = useRouter();
   const { user, loading } = useUser();
   const [selectedTab, setSelectedTab] = useState("perfil");
+  const [activeOrders, setActiveOrders] = useState(0);
 
   // lido após o mount (sem useSearchParams, que exigiria Suspense)
   useEffect(() => {
     const aba = new URLSearchParams(window.location.search).get("aba");
     if (TABS.some((t) => t.tab === aba)) setSelectedTab(aba);
   }, []);
+
+  // pedido em andamento: contador no menu e, sem ?aba, a conta já abre nos pedidos
+  useEffect(() => {
+    if (!user?.id) return;
+    countActiveOrders(user.id).then((n) => {
+      setActiveOrders(n);
+      if (n > 0 && !new URLSearchParams(window.location.search).get("aba"))
+        setSelectedTab("pedidos");
+    });
+  }, [user?.id]);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -71,7 +82,17 @@ export default function ContaPage() {
                 aria-current={selectedTab === tab ? "page" : undefined}
                 className={navClass(selectedTab === tab)}
               >
-                <Icon className="text-lg shrink-0" />
+                <span className="relative">
+                  <Icon className="text-lg shrink-0" />
+                  {tab === "pedidos" && activeOrders > 0 && (
+                    <span
+                      aria-label={`${activeOrders} em andamento`}
+                      className="absolute -right-2.5 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-verde px-1 text-[10px] font-bold text-white"
+                    >
+                      {activeOrders}
+                    </span>
+                  )}
+                </span>
                 <span className="hidden lg:block">{label}</span>
               </button>
             ))}
@@ -86,7 +107,9 @@ export default function ContaPage() {
             ) : (
               <div className="pt-2">
                 <h2 className="mb-4 font-semibold">{current.label}</h2>
-                {selectedTab === "pedidos" && <OrdersHistory />}
+                {selectedTab === "pedidos" && (
+                  <OrdersHistory onActiveCount={setActiveOrders} />
+                )}
                 {selectedTab === "dados" && <PersonalInfo />}
                 {selectedTab === "fidelidades" && <LoyaltyCards />}
               </div>

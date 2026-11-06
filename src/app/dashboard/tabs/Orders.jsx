@@ -567,9 +567,15 @@ const Orders = ({
     };
     // customer_id conta a compra na fidelidade (tasks/fidelidade/fidelidade.sql). Sem a coluna, grava sem ele:
     // a venda nunca se perde por causa da fidelidade
+    // order_id: o link do pedido no WhatsApp continua abrindo depois de finalizado (tasks/acompanhar-pedido)
+    const withCustomer = order.customer_id ? { ...sale, customer_id: order.customer_id } : sale;
     let { error: insertError } = await supabase
       .from("sales")
-      .insert([order.customer_id ? { ...sale, customer_id: order.customer_id } : sale]);
+      .insert([{ ...withCustomer, order_id: order.id }]);
+    if (insertError && ["PGRST204", "42703"].includes(insertError.code)) {
+      console.warn("[venda] gravando sem order_id:", insertError.message);
+      ({ error: insertError } = await supabase.from("sales").insert([withCustomer]));
+    }
     if (order.customer_id && insertError && ["PGRST204", "42703", "42501"].includes(insertError.code)) {
       console.warn("[venda] gravando sem customer_id:", insertError.message);
       ({ error: insertError } = await supabase.from("sales").insert([sale]));
@@ -632,6 +638,27 @@ const Orders = ({
     setOpenOrderSections({ cliente: false, pedido: false, itens: false });
     setOpenItemIndexes(new Set());
   };
+
+  // link do pedido no WhatsApp (/pedido/<id>) chega como ?pedido=<id>: abre o pedido direto
+  useEffect(() => {
+    if (!menu?.id) return;
+    const url = new URL(window.location.href);
+    const id = url.searchParams.get("pedido");
+    if (!id) return;
+    url.searchParams.delete("pedido");
+    window.history.replaceState(null, "", url);
+    supabase
+      .from("orders")
+      .select("*")
+      .eq("id", id)
+      .eq("menu_id", menu.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) openOrderModal({ ...data, delivery_fee: Number(data.delivery_fee) || 0 });
+        else customAlert("Esse pedido já foi finalizado ou excluído.", "info");
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [menu?.id]);
 
   const toggleOrderSection = (key) => {
     setOpenOrderSections((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -919,10 +946,11 @@ const Orders = ({
             <OrdersFilter
               onChange={setFilters}
               statusOptions={
-                kitchenOn || deliveryOn
+                kitchenOn || deliveryOn || !teamPlan
                   ? Object.entries(ORDER_STATUS).filter(
                       ([value]) =>
                         deliveryOn ||
+                        !teamPlan ||
                         !["out_for_delivery", "delivered"].includes(value),
                     )
                   : null
@@ -943,14 +971,20 @@ const Orders = ({
                   const items = order.items_list || [];
                   const ServiceIcon = serviceIcons[order.service] || FaShoppingBag;
 
-                  // etapas que fazem sentido pra este pedido, conforme as telas ligadas
-                  const steps = [
-                    "received",
-                    ...(kitchenOn ? ["preparing", "ready"] : []),
-                    ...(deliveryOn && order.service === "delivery"
-                      ? ["out_for_delivery", "delivered"]
-                      : []),
-                  ];
+                  // etapas que fazem sentido pra este pedido: no Business, conforme as telas da equipe ligadas;
+                  // nos outros planos o dono avança tudo por aqui (o cliente acompanha em /conta)
+                  const isDelivery = order.service === "delivery";
+                  const steps = teamPlan
+                    ? [
+                        "received",
+                        ...(kitchenOn ? ["preparing", "ready"] : []),
+                        ...(deliveryOn && isDelivery
+                          ? ["out_for_delivery", "delivered"]
+                          : []),
+                      ]
+                    : isDelivery
+                      ? ["received", "preparing", "out_for_delivery", "delivered"]
+                      : ["received", "preparing", "ready"];
                   const stepIndex = steps.indexOf(order.status);
                   const showSteps = steps.length > 1;
                   const statusStyle = ORDER_STATUS_STYLE[order.status] ?? ORDER_STATUS_STYLE.received;
@@ -1050,7 +1084,7 @@ const Orders = ({
                         )}
                       </div>
 
-                      {/* progresso da equipe (Business) */}
+                      {/* etapas do pedido (todos os planos) e entregador (Business) */}
                       {(showSteps || showCourier) && (
                         <div className="mx-4 mb-3 flex flex-col gap-2 rounded-xl bg-[var(--low-translucid)] p-3">
                           {showSteps && (

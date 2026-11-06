@@ -12,6 +12,7 @@ Planos, tarefas e SQL manual do Supabase, separados por funcionalidade. O SQL da
 | `cardapio-visual/` | Identidade visual nos elementos do cardápio público (3 layouts e carrinho): plano, tarefas e resumo |
 | `cta-conta/` | Convite para o visitante criar conta de cliente no checkout do cardápio: plano e tarefas |
 | `fidelidade/` | Programa de fidelidade (item grátis ou desconto após N compras; faixa no cardápio, aba Fidelidades em `/conta`) e quantidade no carrinho: plano, tarefas e SQL (`fidelidade.sql`) |
+| `acompanhar-pedido/` | Cliente acompanha o pedido em `/conta` e link `/pedido/<id>` na mensagem do WhatsApp: SQL (`acompanhar-pedido.sql`) |
 | `seguranca/` | Auditoria, funções e policies de segurança (`security-0` a `security-2`, nessa ordem) |
 | `sql/` | SQL avulso de funcionalidades sem plano aqui: exclusão de conta, lembrete de boleto, NFS-e, resumo de pedidos, remarketing |
 | `archive/` | Planos concluídos |

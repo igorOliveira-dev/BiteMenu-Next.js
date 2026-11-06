@@ -44,6 +44,16 @@ import {
   geocodeAddress,
 } from "@/lib/deliveryRadius";
 
+// randomUUID só existe em HTTPS/localhost (ex.: teste pelo IP da rede no celular); getRandomValues existe sempre
+const newOrderId = () => {
+  if (crypto.randomUUID) return crypto.randomUUID();
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  b[6] = (b[6] & 0x0f) | 0x40; // versão 4
+  b[8] = (b[8] & 0x3f) | 0x80; // variante
+  const h = [...b].map((x) => x.toString(16).padStart(2, "0")).join("");
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+};
+
 // Pedido com o id do cliente logado (histórico em /conta). Se o banco recusar só por causa dele (coluna ou policy de
 // tasks/descobrir/orders-customer.sql ainda não aplicadas), grava sem ele: o pedido nunca se perde por causa do histórico.
 async function insertOrder(payload, customerId) {
@@ -917,6 +927,7 @@ function CartDrawerContent({
     paymentLabel,
     needsChange,
     changeForAmount,
+    orderId,
   }) {
     const itemsList = (items || [])
       .map((it) => {
@@ -957,6 +968,8 @@ function CartDrawerContent({
           : "",
       servico:
         serviceOptions.find((s) => s.id === selectedService)?.label || "-",
+      // só com o pedido salvo no sistema: cliente acompanha em /conta, dono abre no painel
+      link: orderId ? `${window.location.origin}/pedido/${orderId}` : "",
     });
 
     const rawPhone =
@@ -1134,6 +1147,7 @@ function CartDrawerContent({
     setPurchaseStage("confirmingTable");
 
     const payload = {
+      id: newOrderId(),
       menu_id: menu?.id || null,
       costumer_name: costumerName || null,
       costumer_phone: costumerPhone || null,
@@ -1186,6 +1200,7 @@ function CartDrawerContent({
     if (!counterMode) {
       saveReceipt(menu?.id, {
         id: `local-${Date.now()}`,
+        orderId: payload.id,
         menuTitle: menu?.title,
         menuSlug: menu?.slug,
         createdAt: payload.created_at,
@@ -1232,7 +1247,12 @@ function CartDrawerContent({
 
     setFinalValue(total);
 
+    // id gerado aqui (não pelo banco) para o link do pedido já ir na mensagem
+    const orderId =
+      menu.orders === "site_whatsapp" ? newOrderId() : null;
+
     const url = buildWhatsappURL({
+      orderId,
       items: currentItems,
       subtotal,
       discount: discountAmount,
@@ -1259,6 +1279,7 @@ function CartDrawerContent({
     const orderCreatedAt = new Date().toISOString();
     saveReceipt(menu?.id, {
       id: `local-${Date.now()}`,
+      orderId,
       menuTitle: menu?.title,
       menuSlug: menu?.slug,
       createdAt: orderCreatedAt,
@@ -1278,6 +1299,7 @@ function CartDrawerContent({
       try {
         if (menu.orders === "site_whatsapp") {
           const payload = {
+            id: orderId,
             menu_id: menu?.id || null,
             costumer_name: costumerName || null,
             costumer_phone: costumerPhone || null,
