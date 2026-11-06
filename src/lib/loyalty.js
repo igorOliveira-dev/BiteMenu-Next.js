@@ -4,8 +4,8 @@
 export const LOYALTY_MIN = 2;
 export const LOYALTY_MAX = 20;
 
-// Planos com fidelidade (mesmo corte de Combos no painel)
-export const LOYALTY_ROLES = ["plus", "pro", "business", "admin", "designer"];
+// Planos com fidelidade: Pro para cima (mesmo corte de Cupons no painel)
+export const LOYALTY_ROLES = ["pro", "business", "admin", "designer"];
 
 export const isLoyaltyOn = (loyalty) =>
   !!loyalty?.enabled &&

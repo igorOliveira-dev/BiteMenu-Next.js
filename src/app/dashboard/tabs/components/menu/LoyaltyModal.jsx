@@ -147,9 +147,9 @@ export default function LoyaltyModal({ menuId, canSave, items = [], currency, on
     <GenericModal wfull maxWidth={"420px"} py={"24px"} title="Fidelidade" onClose={onClose}>
       {showPlanModal && (
         <UpdatePlanModal
-          plan="plus"
+          plan="pro"
           title="Programa de fidelidade"
-          text="Assine o plano Plus para ativar a fidelidade. Seus clientes juntam compras e ganham um prêmio: um motivo a mais para voltar."
+          text="Assine o plano Pro para ativar a fidelidade. Seus clientes juntam compras e ganham um prêmio: um motivo a mais para voltar."
           onClose={() => setShowPlanModal(false)}
         />
       )}
@@ -157,6 +157,13 @@ export default function LoyaltyModal({ menuId, canSave, items = [], currency, on
         <p className="text-sm color-gray">Carregando…</p>
       ) : (
         <div className="space-y-4">
+          {!canSave && (
+            <p className="rounded-xl border border-st-wait/40 bg-st-wait/12 p-3 text-sm">
+              Seu plano não inclui a fidelidade: ela fica <strong>bloqueada para você e para seus clientes</strong>{" "}
+              (sem prêmio no carrinho; quem já participa vê um cadeado e o progresso fica guardado). Assine o Pro
+              para liberar.
+            </p>
+          )}
           <p className="text-sm color-gray">
             Depois de {goalOk ? goalNum : "N"} compras, a próxima sai com o prêmio. A compra conta quando você
             finaliza o pedido de um cliente logado.

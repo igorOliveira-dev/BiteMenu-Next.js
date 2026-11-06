@@ -2,14 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { FaExternalLinkAlt, FaStore } from "react-icons/fa";
+import { FaExternalLinkAlt, FaLock, FaStore } from "react-icons/fa";
 import { supabase } from "@/lib/supabaseClient";
 import useUser from "@/hooks/useUser";
 import LoyaltyProgress from "@/components/LoyaltyProgress";
 import { isLoyaltyOn, loyaltyState } from "@/lib/loyalty";
 
 // Fidelidades de que o cliente participa: cardápio com programa ativo e pelo menos 1 venda dele
-// (sales.customer_id + policy sales_select_own_customer, tasks/fidelidade/fidelidade.sql)
+// (sales.customer_id + policy sales_select_own_customer, tasks/fidelidade/fidelidade.sql).
+// Dono abaixo do Pro: card com cadeado e aviso (GET /api/fidelidade diz quais cardápios estão liberados).
 export default function LoyaltyCards() {
   const { user } = useUser();
   const [cards, setCards] = useState(null);
@@ -28,21 +29,33 @@ export default function LoyaltyCards() {
       const ids = Object.keys(counts);
       if (ids.length === 0) return setCards([]);
 
-      // ponytail: o plano do dono não é legível aqui; dono abaixo do Plus continua aparecendo (o cardápio já esconde)
       const { data: menus } = await supabase
         .from("menus")
         .select("id, slug, title, logo_url, banner_url, banner_mobile_url, loyalty")
         .in("id", ids);
+      const active = (menus || []).filter((m) => isLoyaltyOn(m.loyalty));
+
+      // plano do dono (só sim/não). Falhou: mostra sem cadeado (o carrinho já não dá o prêmio sem o plano)
+      let allowed = {};
+      if (active.length) {
+        try {
+          const res = await fetch(`/api/fidelidade?menus=${active.map((m) => m.id).join(",")}`);
+          if (res.ok) allowed = (await res.json()).allowed || {};
+        } catch (err) {
+          console.warn("[fidelidade] plano dos estabelecimentos indisponível:", err?.message);
+        }
+      }
 
       setCards(
-        (menus || [])
-          .filter((m) => isLoyaltyOn(m.loyalty))
-          .map((m) => ({ ...m, count: counts[m.id] }))
-          // prêmio liberado primeiro, depois quem está mais perto
+        active
+          .map((m) => ({ ...m, count: counts[m.id], locked: allowed[m.id] === false }))
+          // bloqueados por último; prêmio liberado primeiro, depois quem está mais perto
           .sort((a, b) => {
             const sa = loyaltyState(a.count, a.loyalty.goal);
             const sb = loyaltyState(b.count, b.loyalty.goal);
-            return sb.ready - sa.ready || sb.done / b.loyalty.goal - sa.done / a.loyalty.goal;
+            return (
+              a.locked - b.locked || sb.ready - sa.ready || sb.done / b.loyalty.goal - sa.done / a.loyalty.goal
+            );
           }),
       );
     })();
@@ -75,10 +88,20 @@ export default function LoyaltyCards() {
                 key={m.id}
                 className="overflow-hidden rounded-2xl border border-brand-line bg-brand-surface"
               >
-                <span className="block h-20 bg-[var(--translucid)]">
+                <span className="relative block h-20 bg-[var(--translucid)]">
                   {banner && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={banner} alt="" loading="lazy" className="h-full w-full object-cover" />
+                    <img
+                      src={banner}
+                      alt=""
+                      loading="lazy"
+                      className={`h-full w-full object-cover ${m.locked ? "grayscale opacity-60" : ""}`}
+                    />
+                  )}
+                  {m.locked && (
+                    <span className="absolute top-2 right-2 flex items-center gap-1.5 rounded-full bg-black/55 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-sm">
+                      <FaLock size={10} /> Bloqueada
+                    </span>
                   )}
                 </span>
                 <div className="px-3 pb-3">
@@ -98,9 +121,24 @@ export default function LoyaltyCards() {
                     )}
                     <h3 className="min-w-0 truncate pt-1.5 text-base font-semibold">{m.title}</h3>
                   </div>
-                  <div className="mt-3">
-                    <LoyaltyProgress count={m.count} goal={m.loyalty.goal} reward={m.loyalty.reward} />
-                  </div>
+                  {m.locked ? (
+                    <div className="mt-3">
+                      <div className="pointer-events-none opacity-40 grayscale" aria-hidden="true">
+                        <LoyaltyProgress count={m.count} goal={m.loyalty.goal} reward={m.loyalty.reward} />
+                      </div>
+                      <p className="mt-2 flex items-start gap-2 rounded-xl bg-[var(--translucid)] p-2.5 text-sm">
+                        <FaLock className="mt-0.5 shrink-0 text-xs opacity-70" />
+                        <span>
+                          Este estabelecimento não tem acesso à fidelidade no momento. Seu progresso fica guardado e
+                          volta a valer quando o programa for liberado.
+                        </span>
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="mt-3">
+                      <LoyaltyProgress count={m.count} goal={m.loyalty.goal} reward={m.loyalty.reward} />
+                    </div>
+                  )}
                   <div className="mt-3 flex items-center justify-between gap-2">
                     <span className="text-xs color-gray">
                       {used > 0 ? `Prêmios usados: ${used}` : ""}

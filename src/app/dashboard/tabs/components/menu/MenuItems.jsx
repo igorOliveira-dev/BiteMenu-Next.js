@@ -60,6 +60,7 @@ import ActionsMenu from "@/components/ActionMenu";
 import CouponsModal from "./CouponsModal";
 import LoyaltyModal from "./LoyaltyModal";
 import { STOCK_ROLES } from "@/lib/stock";
+import { LOYALTY_ROLES } from "@/lib/loyalty";
 import { FaBoxes, FaGift, FaLayerGroup, FaLock, FaSort, FaTicketAlt, FaTools } from "react-icons/fa";
 import { getContrastTextColor as contrastText } from "@/utils/color";
 
@@ -2951,7 +2952,7 @@ export default function MenuItems({
                   onClick: () => setCouponsModalOpen(true),
                   locked: !["pro", "business", "admin", "designer"].includes(ownerRole),
                 },
-                { label: "Fidelidade", Icon: FaGift, onClick: () => setLoyaltyModalOpen(true), locked: !hasPlusPermissions },
+                { label: "Fidelidade", Icon: FaGift, onClick: () => setLoyaltyModalOpen(true), locked: !LOYALTY_ROLES.includes(ownerRole) },
                 { label: "Estoque", Icon: FaBoxes, onClick: onOpenStock, locked: !STOCK_ROLES.includes(ownerRole) },
               ].map(({ label, Icon, onClick, locked }) => (
                 <button
@@ -4814,7 +4815,7 @@ export default function MenuItems({
       {loyaltyModalOpen && (
         <LoyaltyModal
           menuId={menu?.id}
-          canSave={hasPlusPermissions}
+          canSave={LOYALTY_ROLES.includes(ownerRole)}
           items={allItemsFlat}
           currency={menu?.currency}
           onClose={() => setLoyaltyModalOpen(false)}

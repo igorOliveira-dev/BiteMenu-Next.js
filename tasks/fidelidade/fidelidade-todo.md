@@ -41,18 +41,18 @@ tema do Bite Menu por padrão e `colors` opcional para o cardápio. `scripts/loy
 
 ## Tarefa 3: Dono configura a fidelidade
 **Descrição:** botão "Fidelidade" (`FaGift`) na barra Ferramentas de `MenuItems.jsx`, com cadeado quando
-`!hasPlusPermissions`. `LoyaltyModal.jsx`: switch "Programa ativo", "Recompensa" (até 80), "Compras necessárias"
-(2 a 20) e prévia com o `LoyaltyProgress`. Grava `menus.loyalty` direto. Sem Plus: abre, mas o salvar mostra
-`UpdatePlanModal plan="plus"` (igual a Cupons). Textos: "Depois de N compras, a próxima sai com o prêmio", "A compra
+`!LOYALTY_ROLES.includes(ownerRole)` (Pro+). `LoyaltyModal.jsx`: switch "Programa ativo", "Recompensa" (até 80), "Compras necessárias"
+(2 a 20) e prévia com o `LoyaltyProgress`. Grava `menus.loyalty` direto. Sem Pro: abre, mas o salvar mostra
+`UpdatePlanModal plan="pro"` (igual a Cupons). Textos: "Depois de N compras, a próxima sai com o prêmio", "A compra
 conta quando você finaliza o pedido" e, ao mudar o número com o programa ativo, aviso de que o progresso dos clientes
 é recalculado.
 
 **Critérios de aceite:**
 - [x] Salvar grava `{ enabled, reward, goal }` e reabrir o modal mostra os valores salvos
 - [x] Recompensa vazia ou número fora de 2–20 não salva (mensagem no campo)
-- [x] Free vê o cadeado e o convite do Plus; Plus, Pro, Business, admin e designer salvam
+- [x] Free e Plus veem o cadeado e o convite do Pro; Pro, Business, admin e designer salvam
 
-**Verificação:** manual no painel com plano free e plus (fake-supabase) + lint/build
+**Verificação:** manual no painel com plano free, plus e pro (fake-supabase) + lint/build
 **Dependências:** Tarefas 1 e 2
 **Arquivos:** `src/app/dashboard/tabs/components/menu/LoyaltyModal.jsx` (novo), `src/app/dashboard/tabs/components/menu/MenuItems.jsx`
 **Tamanho:** S
@@ -73,7 +73,7 @@ conta quando você finaliza o pedido" e, ao mudar o número com o programa ativo
 
 ## Checkpoint 1
 - [ ] SQL rodado e revisado
-- [ ] Dono Plus liga a fidelidade e finaliza um pedido de cliente logado: a venda tem `customer_id`
+- [ ] Dono Pro liga a fidelidade e finaliza um pedido de cliente logado: a venda tem `customer_id`
 - [ ] Revisão humana antes de seguir
 
 ## Tarefa 5: Aba "Fidelidades" em `/conta`
@@ -96,14 +96,14 @@ desktop, claro e escuro
 
 ## Tarefa 6: Progresso no cardápio, acima das categorias
 **Descrição:** `loyalty` entra no select de `getMenuData.js`; o `page.jsx` zera `menu.loyalty` quando o `ownerRole` não é
-Plus+. Componente `LoyaltyBanner.jsx` em `menu/[slug]/components/`: só para cliente logado (`useUser`,
+Pro+. Componente `LoyaltyBanner.jsx` em `menu/[slug]/components/`: só para cliente logado (`useUser`,
 `account_type = 'customer'`), conta as vendas dele no cardápio e mostra a faixa com o `LoyaltyProgress` nas cores do
 dono. Uma linha em cada layout, logo antes do `div sticky` das categorias.
 
 **Critérios de aceite:**
 - [x] Cliente logado vê "N de goal" (0 inclusive) ou "Prêmio liberado" nos 3 layouts, com as cores do cardápio
 - [x] Visitante vê a faixa sem linha, com "Entre para participar" (volta para o cardápio depois do login)
-- [x] Dono, equipe, programa desligado ou dono abaixo do Plus: nada aparece e nada é consultado
+- [x] Dono, equipe, programa desligado ou dono abaixo do Pro: nada aparece e nada é consultado
 - [x] A faixa não fica fixa e não cobre a barra de categorias; o layout não pula ao carregar (renderiza só com o
   número pronto)
 
@@ -131,7 +131,7 @@ logado, texto pequeno "Fidelidade: 3 de 5".
 **Tamanho:** S
 
 ## Checkpoint 2: pronto para revisão
-- [ ] Ponta a ponta: dono Plus liga (goal 3) → cliente logado faz 3 pedidos e o dono finaliza → cardápio e `/conta`
+- [ ] Ponta a ponta: dono Pro liga (goal 3) → cliente logado faz 3 pedidos e o dono finaliza → cardápio e `/conta`
   mostram 1, 2, 3 e "Prêmio liberado" → 4º pedido tem o aviso do prêmio → depois de finalizado volta para 0 de 3 com
   "Prêmios usados: 1"
 - [x] `graphify update .` rodado
@@ -155,4 +155,21 @@ compra do prêmio (`loyaltyDiscount`), menos quando o cliente já tem pedido em 
 **Dependências:** Tarefas 3, 5 e 6
 **Arquivos:** `LoyaltyModal.jsx`, `MenuItems.jsx`, `CartDrawer.jsx`, `src/hooks/useLoyaltyCount.js` (novo),
 `LoyaltyBanner.jsx`, `LoyaltyCards.jsx`, `src/lib/loyalty.js`
+**Tamanho:** M
+
+## Tarefa 9: Fidelidade bloqueada quando o dono cai abaixo do Pro
+**Descrição:** sem mexer no banco, a fidelidade de dono abaixo do Pro fica bloqueada: sem prêmio no carrinho, cadeado e
+aviso para o cliente que já participa (faixa do cardápio e `/conta`), aviso no modal do dono. `/conta` descobre quais
+cardápios estão liberados por `GET /api/fidelidade` (service role, só sim/não).
+
+**Critérios de aceite:**
+- [x] Carrinho não aplica item grátis nem desconto com `loyalty.locked`
+- [x] Cliente que participa vê cadeado + "Este estabelecimento não tem acesso à fidelidade no momento…"; visitante não vê a faixa
+- [x] `/conta`: card "Bloqueada" no fim da lista; com dono Pro, sem cadeado
+- [x] Modal do dono avisa que está bloqueada para ele e para os clientes
+
+**Verificação:** fake-supabase com `FAKE_ROLE=plus` e `pro` (feito); build
+**Dependências:** Tarefas 5, 6 e 8
+**Arquivos:** `src/app/api/fidelidade/route.js` (novo), `page.jsx`, `LoyaltyBanner.jsx`, `CartDrawer.jsx`,
+`LoyaltyCards.jsx`, `LoyaltyModal.jsx`
 **Tamanho:** M

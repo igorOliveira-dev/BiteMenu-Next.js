@@ -1,7 +1,7 @@
 # Plano: programa de fidelidade
 
 ## Visão geral
-O dono (plano Plus para cima) liga um programa de fidelidade no cardápio e escolhe a recompensa (texto livre, ex.:
+O dono (plano Pro para cima) liga um programa de fidelidade no cardápio e escolhe a recompensa (texto livre, ex.:
 "1 pizza broto grátis") e quantas compras são necessárias. Depois de N compras, a **compra seguinte (N+1)** usa o
 prêmio. O cliente logado vê o progresso em dois lugares, sempre com a linha tracejada (1 traço = 1 compra) e um texto
 indicativo:
@@ -32,7 +32,7 @@ compra de visitante contando, cardápio "só WhatsApp", notificação ao liberar
   tem os atalhos da navbar.
 - **Ferramentas do dono:** a barra "Ferramentas" em `MenuItems.jsx:2943` (Ordenar, Combos, Cupons, Estoque) abre
   modais que gravam direto no banco, com cadeado por plano (`CouponsModal` + `UpdatePlanModal`). Combos usa
-  `hasPlusPermissions`, que é exatamente o corte Plus+.
+  `hasPlusPermissions` (Plus+); Cupons é Pro+, o corte usado pela fidelidade.
 
 ## Decisões
 - **Configuração: 1 coluna `menus.loyalty jsonb`**, padrão `null` = desligado:
@@ -59,9 +59,23 @@ compra de visitante contando, cardápio "só WhatsApp", notificação ao liberar
     esvazia. Como o cupom, é validado só no navegador (comentário `ponytail:`).
   - `reward` é o texto que todas as telas mostram, gerado ao salvar ("1 X-Salada grátis", "10% de desconto em compras a
     partir de R$ 30,00"). Renomear o item depois não atualiza o texto: é só salvar de novo (comentário `ponytail:`).
-- **Plano: Plus para cima.** Botão "Fidelidade" na barra Ferramentas com cadeado e `UpdatePlanModal plan="plus"` para
-  quem não tem (`hasPlusPermissions`, igual a Combos). No cardápio público, o `page.jsx` só repassa `loyalty` se o
-  `ownerRole` for Plus+: dono que cai de plano some do cardápio sem mexer no banco.
+- **Plano: Pro para cima** (`LOYALTY_ROLES` em `src/lib/loyalty.js`: pro, business, admin, designer; mesmo corte de
+  Cupons). Era Plus+ e passou para Pro+ a pedido. Botão "Fidelidade" na barra Ferramentas com cadeado e
+  `UpdatePlanModal plan="pro"` para quem não tem. O card do pedido só mostra a fidelidade para Pro+.
+- **Dono que cai abaixo do Pro: fidelidade bloqueada para ele e para o cliente**, sem mexer no banco (a configuração
+  e o progresso ficam guardados e voltam a valer se ele voltar ao Pro):
+  - Dono: botão com cadeado; o modal abre com o aviso "Seu plano não inclui a fidelidade: ela fica bloqueada para
+    você e para seus clientes…" e o salvar abre o convite do Pro.
+  - Cardápio: o `page.jsx` marca `loyalty.locked` (em vez de apagar). O carrinho não dá prêmio com `locked`. A faixa
+    some para visitante e para cliente sem compra; o cliente que já participa vê a faixa com cadeado, a linha apagada
+    e "Este estabelecimento não tem acesso à fidelidade no momento. Seu progresso fica guardado e volta a valer quando
+    o programa for liberado."
+  - `/conta` > Fidelidades: card com selo "Bloqueada" sobre o banner (vidro escuro), banner em cinza, linha apagada e a
+    mesma mensagem; bloqueados vão para o fim da lista. O plano do dono vem de `GET /api/fidelidade?menus=<ids>`
+    (`src/app/api/fidelidade/route.js`): o servidor lê `menus`/`profiles` com service role e devolve só
+    `{ allowed: { <menu_id>: true|false } }`, nunca o plano (profiles não é legível pelo cliente e `menu_owner_role`
+    só responde ao dono/equipe). Até 50 ids, só UUID; rate limit de `/api/` no `proxy.js`. Se a rota falhar, o card
+    aparece sem cadeado (o carrinho continua sem prêmio, porque quem decide é o `page.jsx`).
 - **Compra = venda finalizada com `sales.customer_id`.** `finalizeOrder` passa a copiar `order.customer_id`. Se o banco
   recusar (coluna ainda não criada), grava de novo sem ele, igual ao carrinho: a venda nunca se perde.
 - **Prêmio na compra N+1, sem tabela de resgate.** Cada ciclo tem `goal + 1` vendas: `goal` que juntam e 1 que usa o
@@ -98,7 +112,7 @@ compra de visitante contando, cardápio "só WhatsApp", notificação ao liberar
 ## Lista de tarefas
 - [x] Tarefa 1: SQL manual (escrito; rodar à mão: `tasks/fidelidade/fidelidade.sql`)
 - [x] Tarefa 2: Regra do ciclo (`lib/loyalty.js` + self-check) e linha tracejada (`LoyaltyProgress`)
-- [x] Tarefa 3: Dono configura a fidelidade (Ferramentas + `LoyaltyModal`, Plus+)
+- [x] Tarefa 3: Dono configura a fidelidade (Ferramentas + `LoyaltyModal`, Pro+)
 - [x] Tarefa 4: Finalizar pedido leva o `customer_id` para a venda
 - [ ] Checkpoint 1: venda finalizada de cliente logado tem `customer_id` no banco
 - [x] Tarefa 5: Aba "Fidelidades" em `/conta`
@@ -106,6 +120,7 @@ compra de visitante contando, cardápio "só WhatsApp", notificação ao liberar
 - [x] Tarefa 7: Card do pedido avisa o dono da compra que usa o prêmio
 - [ ] Checkpoint 2: fluxo de ponta a ponta e pronto para revisão
 - [x] Tarefa 8: Recompensa como item do cardápio ou desconto (porcentagem/valor fixo, mínimo opcional) aplicado no carrinho
+- [x] Tarefa 9: Fidelidade bloqueada (cadeado + aviso) quando o dono cai abaixo do Pro
 
 ### SQL pendente (rodar no Supabase ANTES do deploy)
 - [ ] `tasks/fidelidade/fidelidade.sql`: `menus.loyalty`, `sales.customer_id` + índice, policy `sales_select_own_customer`
@@ -114,14 +129,15 @@ compra de visitante contando, cardápio "só WhatsApp", notificação ao liberar
 ## O que foi feito
 | Arquivo | Mudança |
 |---|---|
-| `src/lib/loyalty.js` (novo) | Regra do ciclo (`loyaltyState`), `isLoyaltyOn`, limites e `LOYALTY_ROLES` (Plus+). Self-check: `node scripts/loyalty-check.mjs` |
+| `src/lib/loyalty.js` (novo) | Regra do ciclo (`loyaltyState`), `isLoyaltyOn`, limites e `LOYALTY_ROLES` (Pro+). Self-check: `node scripts/loyalty-check.mjs` |
 | `src/components/LoyaltyProgress.jsx` (novo) | Linha tracejada + texto indicativo; identidade do Bite Menu ou `colors` do cardápio |
-| `src/app/dashboard/tabs/components/menu/LoyaltyModal.jsx` (novo) | Modal do dono: ativo, recompensa, compras (2–20), prévia, aviso ao mudar o número, convite do Plus |
-| `src/app/dashboard/tabs/components/menu/MenuItems.jsx` | Botão "Fidelidade" na barra Ferramentas (cadeado abaixo do Plus) |
+| `src/app/dashboard/tabs/components/menu/LoyaltyModal.jsx` (novo) | Modal do dono: ativo, recompensa, compras (2–20), prévia, aviso ao mudar o número, convite do Pro |
+| `src/app/dashboard/tabs/components/menu/MenuItems.jsx` | Botão "Fidelidade" na barra Ferramentas (cadeado abaixo do Pro) |
 | `src/app/dashboard/tabs/Orders.jsx` | `finalizeOrder` copia `customer_id` para `sales` (tenta de novo sem ele se a coluna faltar); card do pedido mostra "esta compra usa o prêmio" ou "Fidelidade: 3 de 5" |
 | `src/app/conta/page.jsx`, `src/app/conta/components/LoyaltyCards.jsx` (novo) | Aba Fidelidades: banner, logo, linha, texto, "Prêmios usados", "Ver cardápio"; prêmio liberado primeiro |
 | `src/components/CustomerMenu.jsx` | Atalho "Fidelidades" |
-| `src/app/menu/[slug]/getMenuData.js`, `page.jsx` | Lê `loyalty`; zera quando o dono está abaixo do Plus |
+| `src/app/menu/[slug]/getMenuData.js`, `page.jsx` | Lê `loyalty`; marca `locked` quando o dono está abaixo do Pro |
+| `src/app/api/fidelidade/route.js` (novo) | Diz, por cardápio, se a fidelidade está liberada (dono Pro+), sem expor o plano |
 | `src/app/menu/[slug]/components/LoyaltyBanner.jsx` (novo), `ClientMenu*.jsx` | Faixa acima das categorias nas cores do dono: progresso para cliente, "Entre para participar" para visitante |
 | `LoyaltyModal.jsx`, `MenuItems.jsx` (tarefa 8) | Recompensa: Item do cardápio (`SearchSelect`, itens agrupados por categoria) ou Desconto (porcentagem/valor fixo, mínimo opcional na moeda do cardápio) |
 | `src/hooks/useLoyaltyCount.js` (novo) | Vendas do cliente no cardápio; usado pela faixa e pelo carrinho |
@@ -129,12 +145,20 @@ compra de visitante contando, cardápio "só WhatsApp", notificação ao liberar
 
 Testado com fake-supabase: visitante e cliente (0, 3, prêmio liberado, 12 vendas com meta 8) nos 3 layouts, fundo claro
 e escuro do dono, 390px; `/conta` > Fidelidades (390px, tema claro); modal do dono (validação, confirmação ao trocar o
-número, gravação) e aviso no card do pedido (desktop); dono free não mostra a faixa. Build ok.
+número, gravação) e aviso no card do pedido (desktop); dono abaixo do plano exigido não mostra a faixa. Build ok.
 Não testado: dados reais (SQL não rodado), `/conta` no tema escuro e no desktop, staff (caixa) lendo `sales`.
 Tarefa 8 (item/desconto), testado com fake-supabase em 390px: modal com dropdown agrupado por categoria (claro e
 escuro), desconto em valor fixo com mínimo (erro sem o mínimo, símbolo da moeda, gravação certa); carrinho com prêmio
 liberado: barra do mínimo ("Faltam R$ 5,00…") e desconto ao passar dele (R$ 50 → R$ 45); item grátis (só 1 unidade:
 R$ 78 → R$ 53) e lembrete sem o item; pedido em aberto bloqueia o prêmio. Build ok, self-check ok.
+
+Mudança para Pro+ testada com fake-supabase: dono Plus não mostra a faixa no cardápio e, no modal, o salvar abre
+"Disponível a partir do plano Pro"; dono Pro mostra a faixa.
+
+Bloqueio abaixo do Pro testado com fake-supabase (dono Plus, cliente com prêmio liberado, 390px): `/api/fidelidade`
+devolve `false` e ignora id inválido; visitante não vê a faixa; cliente vê a faixa com cadeado e a mensagem; carrinho
+sem prêmio (X-Burguer cobrado R$ 25); `/conta` com o card "Bloqueada" e a mensagem; modal do dono com o aviso. Com dono
+Pro, `/conta` sem cadeado e com "3 de 5".
 
 ### Também nesta entrega: quantidade no carrinho
 O botão "Remover" de cada produto do carrinho (`CartDrawer.jsx`) virou `− [qtd] +` (`QtyStepper`, no mesmo arquivo),
@@ -153,7 +177,7 @@ Testado com fake-supabase em 390px: +, digitar 5, 0 + sair do campo (voltou para
 | Dono não usa "Finalizar" (só exclui ou deixa parado) | Médio | Texto no modal: "A compra conta quando você finaliza o pedido" |
 | Dono muda o `goal` com clientes no meio | Médio | Progresso é recalculado; aviso no modal ao trocar o número |
 | Dois pedidos abertos do mesmo cliente: os dois mostram "usa o prêmio" | Baixo | Aceito; o dono vê os dois juntos. Comentário `ponytail:` |
-| Dono que cai abaixo do Plus continua na aba Fidelidades do cliente | Baixo | O cardápio já esconde; a aba não sabe o plano do dono. Aceito, comentário `ponytail:` (resolver com RPC se incomodar) |
+| Dono que cai abaixo do Pro | Médio | Bloqueada para ele e para o cliente (cadeado + aviso no cardápio e em `/conta`, sem prêmio no carrinho); `/api/fidelidade` diz quais cardápios estão liberados |
 | Desconto da fidelidade aplicado por quem mexe no navegador | Médio | Mesmo limite do cupom (total calculado no navegador). O dono confere: o card do pedido só mostra "usa o prêmio" para quem liberou de verdade |
 | Vendas antigas não têm `customer_id` | Baixo | O programa conta a partir do deploy; dito no modal |
 

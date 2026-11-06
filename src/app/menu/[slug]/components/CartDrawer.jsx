@@ -298,10 +298,11 @@ function CartDrawerContent({
   // ── Fidelidade: prêmio na compra seguinte às N compras (tasks/fidelidade/fidelidade-plan.md) ──
   // Item grátis (1 unidade do item escolhido, quando está no carrinho) ou desconto (% ou valor, mínimo opcional).
   // Entra em discountAmount como o cupom, então total, pedido, WhatsApp e Pix online seguem iguais.
-  const loyalty = menu?.loyalty; // nulo se o dono está abaixo do Plus (page.jsx)
+  const loyalty = menu?.loyalty; // `locked` se o dono está abaixo do Pro (page.jsx): sem prêmio
   const { count: loyaltyCount } = useLoyaltyCount(menu?.id, loyalty);
   const loyaltyReady =
     !!customerId &&
+    !loyalty?.locked &&
     (loyalty?.type === "discount" || loyalty?.type === "item") &&
     loyaltyCount != null &&
     loyaltyState(loyaltyCount, loyalty.goal).ready;

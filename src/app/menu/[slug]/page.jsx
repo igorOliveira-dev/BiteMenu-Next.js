@@ -126,8 +126,9 @@ export default async function MenuPage({ params }) {
 
   const optionStock = STOCK_ROLES.includes(ownerRole) ? await getOptionStock(rawMenu.id) : [];
   const menu = applyStock(hideHiddenGroups(rawMenu), ownerRole, optionStock);
-  // fidelidade é do Plus para cima: dono que caiu de plano some do cardápio sem mexer no banco
-  if (!LOYALTY_ROLES.includes(ownerRole)) menu.loyalty = null;
+  // fidelidade é do Pro para cima: dono que caiu de plano fica com a fidelidade bloqueada (sem prêmio no carrinho;
+  // o cliente que já participa vê o cadeado), sem mexer no banco
+  if (menu.loyalty && !LOYALTY_ROLES.includes(ownerRole)) menu.loyalty = { ...menu.loyalty, locked: true };
 
   const effectiveLayout = menu.layout;
   const isDemo = slug === DEMO_SLUG;
