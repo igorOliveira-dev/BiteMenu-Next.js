@@ -21,6 +21,7 @@ import Kitchen from "@/app/equipe/Kitchen";
 import Delivery from "@/app/equipe/Delivery";
 import UpsellBanner from "./components/UpsellBanner";
 import AddressUpdateModal from "./components/AddressUpdateModal";
+import PixOnlineModal from "./components/PixOnlineModal";
 import GenericModal from "@/components/GenericModal";
 import QrCodeModal from "./tabs/components/menu/QrCodeModal";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
@@ -461,6 +462,20 @@ const Dashboard = ({
           setSelectedTab("configMenu");
         }}
       />
+
+      {/* um convite por vez: o do endereço tem prioridade */}
+      {!(menu?.address?.trim() && !menu?.address_details?.city && menu?.discoverable !== false) && (
+        <PixOnlineModal
+          menu={menu}
+          role={profile?.role}
+          onActivate={() => {
+            try {
+              sessionStorage.setItem("configMenuSection", "pagamentos");
+            } catch {}
+            setSelectedTab("configMenu");
+          }}
+        />
+      )}
 
       {/* impressão automática: um pedido por vez, o próximo entra ao terminar */}
       {printQueue[0] && (
