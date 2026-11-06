@@ -34,6 +34,7 @@ import {
 } from "@/utils/storeHours";
 import { getContrastTextColor } from "@/utils/color";
 import { mapsUrl } from "@/components/AddressFields";
+import LoyaltyBanner from "./components/LoyaltyBanner";
 
 function findScrollParent(el) {
   let parent = el.parentElement;
@@ -617,6 +618,14 @@ export default function ClientMenu2({ menu: rawMenu, ownerPhone, ownerRole, demo
             style={{ backgroundColor: translucidToUse, color: foregroundToUse, borderColor: translucidToUse }}
           />
         </div>
+
+        <LoyaltyBanner
+          loyalty={menu.loyalty}
+          menuId={menu.id}
+          slug={menu.slug}
+          className="px-4 sm:px-8 lg:px-20 xl:px-32 mb-3"
+          colors={{ text: foregroundToUse, muted: grayToUse, track: translucidToUse, accent: menu.details_color }}
+        />
 
         {/* Nav de categorias — linha de texto simples */}
         {navCategories.length > 0 && (

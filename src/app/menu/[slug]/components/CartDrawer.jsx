@@ -9,6 +9,8 @@ import {
   FaWhatsapp,
   FaSpinner,
   FaReceipt,
+  FaMinus,
+  FaPlus,
 } from "react-icons/fa";
 import MyOrdersModal from "./MyOrdersModal";
 import { useCartContext } from "@/contexts/CartContext";
@@ -26,6 +28,8 @@ import { applyCoupon } from "@/lib/couponDiscount";
 import { STOCK_ROLES, stockPayload } from "@/lib/stock";
 import { saveReceipt } from "@/lib/orderReceipts";
 import useUser from "@/hooks/useUser";
+import useLoyaltyCount from "@/hooks/useLoyaltyCount";
+import { loyaltyDiscount, loyaltyState } from "@/lib/loyalty";
 import SignUpCta from "@/components/SignUpCta";
 import { renderWhatsappMessage } from "@/lib/whatsappMessage";
 import { getContrastTextColor } from "@/utils/color";
@@ -52,6 +56,55 @@ async function insertOrder(payload, customerId) {
     console.warn("[pedido] gravando sem customer_id:", res.error.message);
   }
   return supabase.from("orders").insert([payload]);
+}
+
+// − [qtd] + de cada produto no carrinho, nas cores do cardápio (mesmo visual do − e + do modal do item).
+// "−" em 1 tira o produto. O campo aceita digitar; vazio ou 0 ao sair do campo volta para a quantidade anterior
+// (tirar o produto é só pelo "−", para não sumir sem querer).
+const QTY_MAX = 99;
+function QtyStepper({ qty, onChange, name, color, borderColor }) {
+  const [text, setText] = useState(String(qty));
+  useEffect(() => setText(String(qty)), [qty]);
+
+  const btn = "cursor-pointer p-2 rounded-full border transition hover:opacity-70 disabled:opacity-30 disabled:cursor-default";
+  return (
+    <div className="flex items-center gap-1.5">
+      <button
+        type="button"
+        onClick={() => onChange(qty - 1)}
+        aria-label={qty === 1 ? `Remover ${name}` : `Diminuir ${name}`}
+        className={btn}
+        style={{ color, borderColor }}
+      >
+        <FaMinus size={11} />
+      </button>
+      <input
+        type="text"
+        inputMode="numeric"
+        aria-label={`Quantidade de ${name}`}
+        value={text}
+        onChange={(e) => {
+          const v = e.target.value.replace(/\D/g, "").slice(0, 2);
+          setText(v);
+          if (Number(v) > 0) onChange(Math.min(QTY_MAX, Number(v)));
+        }}
+        onBlur={() => setText(String(qty))}
+        onFocus={(e) => e.target.select()}
+        className="w-10 rounded-lg border bg-transparent py-1 text-center text-sm font-semibold outline-none"
+        style={{ color, borderColor }}
+      />
+      <button
+        type="button"
+        onClick={() => onChange(Math.min(QTY_MAX, qty + 1))}
+        disabled={qty >= QTY_MAX}
+        aria-label={`Aumentar ${name}`}
+        className={btn}
+        style={{ color, borderColor }}
+      >
+        <FaPlus size={11} />
+      </button>
+    </div>
+  );
 }
 
 // useSearchParams (mesa/balcão) exige Suspense na página cacheada por ISR;
@@ -241,7 +294,56 @@ function CartDrawerContent({
     subtotal: Math.max(0, currentTotalPrice - comboDiscount),
     isDelivery: selectedService === "delivery",
   });
-  const discountAmount = comboDiscount + couponResult.discount;
+
+  // ── Fidelidade: prêmio na compra seguinte às N compras (tasks/fidelidade/fidelidade-plan.md) ──
+  // Item grátis (1 unidade do item escolhido, quando está no carrinho) ou desconto (% ou valor, mínimo opcional).
+  // Entra em discountAmount como o cupom, então total, pedido, WhatsApp e Pix online seguem iguais.
+  const loyalty = menu?.loyalty; // nulo se o dono está abaixo do Plus (page.jsx)
+  const { count: loyaltyCount } = useLoyaltyCount(menu?.id, loyalty);
+  const loyaltyReady =
+    !!customerId &&
+    (loyalty?.type === "discount" || loyalty?.type === "item") &&
+    loyaltyCount != null &&
+    loyaltyState(loyaltyCount, loyalty.goal).ready;
+  // o prêmio só "gasta" quando o dono finaliza o pedido: com pedido em aberto aqui, ele já foi usado nele.
+  // Reconfere quando o carrinho esvazia (acabou de fazer um pedido). ponytail: valida só no navegador, como o cupom
+  const [loyaltyHasOpenOrder, setLoyaltyHasOpenOrder] = useState(null);
+  useEffect(() => {
+    if (!loyaltyReady) return;
+    supabase
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("menu_id", menu.id)
+      .eq("customer_id", customerId)
+      .then(({ count, error }) => {
+        if (error) console.warn("[fidelidade] pedidos em aberto indisponíveis:", error.message);
+        setLoyaltyHasOpenOrder(error ? true : (count ?? 0) > 0);
+      });
+  }, [loyaltyReady, menu?.id, customerId, cartIsEmpty]);
+  const loyaltyCanUse = loyaltyReady && loyaltyHasOpenOrder === false;
+  const loyaltyBase = Math.max(
+    0,
+    currentTotalPrice - comboDiscount - couponResult.discount,
+  );
+  const loyaltyDiscountValue = loyaltyCanUse
+    ? loyaltyDiscount(loyalty, loyaltyBase, currentItems)
+    : 0;
+  // desconto com valor mínimo: barra contínua acima do cupom até chegar no mínimo
+  const loyaltyMin =
+    loyaltyCanUse && loyalty.type === "discount"
+      ? Number(loyalty.min_order) || 0
+      : 0;
+  const loyaltyDiscountLabel =
+    loyalty?.type === "discount"
+      ? `${
+          loyalty.discount_type === "fixed"
+            ? formatCurrency(loyalty.discount_value, menu?.currency)
+            : `${Number(loyalty.discount_value).toLocaleString("pt-BR")}%`
+        } de desconto`
+      : "";
+
+  const discountAmount =
+    comboDiscount + couponResult.discount + loyaltyDiscountValue;
   const deliveryFeeValue = couponResult.freeShipping ? 0 : rawDeliveryFee;
   const appliedCouponCode =
     couponResult.discount > 0 || couponResult.freeShipping ? coupon.code : null;
@@ -1487,19 +1589,20 @@ function CartDrawerContent({
                       </div>
                     )}
                   </div>
-                  <div className="flex items-end justify-between mt-4 gap-2">
+                  <div className="flex items-center justify-between mt-4 gap-2">
                     <p className="font-bold text-xl">
                       {formatCurrency(
                         (it.price + addonsTotal) * it.qty,
                         menu?.currency,
                       )}
                     </p>
-                    <button
-                      onClick={() => cart.remove(menu.id, idx)}
-                      className="cursor-pointer border opacity-75 hover:opacity-100 hover:bg-red-600 hover:border-red-600 hover:text-white py-1 px-3 text-sm flex items-center gap-2 rounded-full transition"
-                    >
-                      Remover
-                    </button>
+                    <QtyStepper
+                      qty={it.qty}
+                      name={it.name}
+                      onChange={(q) => cart.updateQty(menu.id, idx, q)}
+                      color={foregroundToUse}
+                      borderColor={grayToUse}
+                    />
                   </div>
                 </div>
               );
@@ -1510,6 +1613,45 @@ function CartDrawerContent({
         {/* FOOTER */}
         {currentItems && currentItems.length > 0 && (
           <div className="fixed w-full bottom-0 bg-inherit z-10 p-4">
+            {loyaltyMin > 0 && (
+              <div className="mb-3">
+                <p className="text-xs mb-1.5" style={{ color: grayToUse }}>
+                  {loyaltyBase < loyaltyMin ? (
+                    <>
+                      Faltam{" "}
+                      <strong style={{ color: foregroundToUse }}>
+                        {formatCurrency(loyaltyMin - loyaltyBase, menu?.currency)}
+                      </strong>{" "}
+                      para usar seu prêmio da fidelidade: {loyaltyDiscountLabel}
+                    </>
+                  ) : (
+                    <>
+                      Prêmio da fidelidade liberado:{" "}
+                      <strong style={{ color: foregroundToUse }}>
+                        {loyaltyDiscountLabel}
+                      </strong>
+                    </>
+                  )}
+                </p>
+                <div
+                  role="progressbar"
+                  aria-label="Valor mínimo para o prêmio da fidelidade"
+                  aria-valuemin={0}
+                  aria-valuemax={loyaltyMin}
+                  aria-valuenow={Math.min(loyaltyBase, loyaltyMin)}
+                  className="h-1.5 w-full overflow-hidden rounded-full"
+                  style={{ backgroundColor: translucidToUse }}
+                >
+                  <div
+                    className="h-full rounded-full transition-[width] duration-300"
+                    style={{
+                      width: `${Math.min(100, (loyaltyBase / loyaltyMin) * 100)}%`,
+                      backgroundColor: menu.details_color,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
             {canUseCoupon &&
               (coupon ? (
                 <div
@@ -1571,14 +1713,51 @@ function CartDrawerContent({
                   <span>Subtotal</span>
                   <span>{formatCurrency(drawerSubtotal, menu?.currency)}</span>
                 </div>
-                <div
-                  className="flex items-center justify-between text-sm mb-1"
-                  style={{ color: menu.details_color }}
-                >
-                  <span>Desconto</span>
-                  <span>-{formatCurrency(discountAmount, menu?.currency)}</span>
-                </div>
+                {discountAmount - loyaltyDiscountValue > 0 && (
+                  <div
+                    className="flex items-center justify-between text-sm mb-1"
+                    style={{ color: menu.details_color }}
+                  >
+                    <span>Desconto</span>
+                    <span>
+                      -
+                      {formatCurrency(
+                        discountAmount - loyaltyDiscountValue,
+                        menu?.currency,
+                      )}
+                    </span>
+                  </div>
+                )}
+                {loyaltyDiscountValue > 0 && (
+                  <div
+                    className="flex items-center justify-between text-sm mb-1"
+                    style={{ color: menu.details_color }}
+                  >
+                    <span>
+                      {loyalty.type === "item"
+                        ? `Fidelidade: ${loyalty.reward}`
+                        : "Prêmio da fidelidade"}
+                    </span>
+                    <span>
+                      -{formatCurrency(loyaltyDiscountValue, menu?.currency)}
+                    </span>
+                  </div>
+                )}
               </>
+            )}
+            {loyaltyCanUse &&
+              loyalty.type === "item" &&
+              loyaltyDiscountValue === 0 &&
+              !cartIsEmpty && (
+                <p className="text-xs mb-2" style={{ color: grayToUse }}>
+                  Seu prêmio da fidelidade: {loyalty.reward}. Adicione o item ao
+                  carrinho e ele sai de graça.
+                </p>
+              )}
+            {loyaltyReady && loyaltyHasOpenOrder && (
+              <p className="text-xs mb-2" style={{ color: grayToUse }}>
+                Seu prêmio da fidelidade ficou no pedido em aberto neste estabelecimento.
+              </p>
             )}
             <div className="flex items-center justify-between mb-2">
               <div className="font-semibold">Total</div>

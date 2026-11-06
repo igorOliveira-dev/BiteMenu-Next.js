@@ -32,6 +32,7 @@ import { useConfirm } from "@/providers/ConfirmProvider";
 import OrdersFilter from "./components/orders/OrdersFilter";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import useUser from "@/hooks/useUser";
+import { LOYALTY_ROLES, isLoyaltyOn, loyaltyState } from "@/lib/loyalty";
 import UpdatePlanModal from "./components/UpdatePlanModal";
 import { mapsUrl } from "@/components/AddressFields";
 import PrintDocumentButton, {
@@ -171,6 +172,15 @@ const Orders = ({
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [orders, setOrders] = useState([]);
+
+  // fidelidade: vendas finalizadas de cada cliente logado da página (tasks/fidelidade/fidelidade-plan.md)
+  const loyalty =
+    LOYALTY_ROLES.includes(planRole) && isLoyaltyOn(menu?.loyalty) ? menu.loyalty : null;
+  const [loyaltyCounts, setLoyaltyCounts] = useState({}); // customer_id -> vendas
+  // ids dos pedidos (não só dos clientes): finalizar um pedido muda a lista e recarrega a contagem
+  const loyaltyKey = loyalty
+    ? orders.filter((o) => o.customer_id).map((o) => `${o.id}:${o.customer_id}`).join(",")
+    : "";
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [filters, setFilters] = useState({});
   const [orderModalOpen, setOrderModalOpen] = useState(false);
@@ -501,6 +511,22 @@ const Orders = ({
     }
   };
 
+  useEffect(() => {
+    if (!loyaltyKey || !menu?.id) return;
+    const ids = [...new Set(loyaltyKey.split(",").map((k) => k.split(":")[1]))];
+    supabase
+      .from("sales")
+      .select("customer_id")
+      .eq("menu_id", menu.id)
+      .in("customer_id", ids)
+      .then(({ data, error }) => {
+        if (error) return console.warn("[fidelidade] contagem indisponível:", error.message);
+        const counts = Object.fromEntries(ids.map((id) => [id, 0]));
+        for (const s of data || []) counts[s.customer_id]++;
+        setLoyaltyCounts(counts);
+      });
+  }, [loyaltyKey, menu?.id]);
+
   const finalizeOrder = async (id) => {
     const ok = await confirm("Quer mesmo finalizar esse pedido?", { tone: "confirm" });
     if (!ok) return;
@@ -526,21 +552,28 @@ const Orders = ({
     const netTotal = isStripeWithNet ? Number(order.net_total) : null;
 
     // total principal continua sendo o bruto (mantém compatibilidade com relatórios existentes)
-    const { error: insertError } = await supabase.from("sales").insert([
-      {
-        menu_id: order.menu_id,
-        costumer_name: order.costumer_name,
-        costumer_phone: order.costumer_phone,
-        payment_method: order.payment_method,
-        service: order.service,
-        items_list: order.items_list,
-        created_at: order.created_at,
-        updated_at: new Date().toISOString(),
-        total: grossTotal,
-        delivery_fee: deliveryFee,
-        net_total: netTotal,
-      },
-    ]);
+    const sale = {
+      menu_id: order.menu_id,
+      costumer_name: order.costumer_name,
+      costumer_phone: order.costumer_phone,
+      payment_method: order.payment_method,
+      service: order.service,
+      items_list: order.items_list,
+      created_at: order.created_at,
+      updated_at: new Date().toISOString(),
+      total: grossTotal,
+      delivery_fee: deliveryFee,
+      net_total: netTotal,
+    };
+    // customer_id conta a compra na fidelidade (tasks/fidelidade/fidelidade.sql). Sem a coluna, grava sem ele:
+    // a venda nunca se perde por causa da fidelidade
+    let { error: insertError } = await supabase
+      .from("sales")
+      .insert([order.customer_id ? { ...sale, customer_id: order.customer_id } : sale]);
+    if (order.customer_id && insertError && ["PGRST204", "42703", "42501"].includes(insertError.code)) {
+      console.warn("[venda] gravando sem customer_id:", insertError.message);
+      ({ error: insertError } = await supabase.from("sales").insert([sale]));
+    }
 
     if (insertError) {
       console.error(insertError);
@@ -964,6 +997,19 @@ const Orders = ({
                           <p className="mt-1.5 truncate text-base font-semibold">
                             {order.costumer_name || "Cliente"}
                           </p>
+                          {loyalty && loyaltyCounts[order.customer_id] != null && (() => {
+                            // ponytail: dois pedidos abertos do mesmo cliente com prêmio liberado mostram o aviso nos dois
+                            const st = loyaltyState(loyaltyCounts[order.customer_id], loyalty.goal);
+                            return st.ready ? (
+                              <span className="mt-1 inline-flex rounded-full bg-st-done/12 px-2.5 py-1 text-xs font-semibold text-st-done">
+                                🎁 Fidelidade: esta compra usa o prêmio {loyalty.reward}
+                              </span>
+                            ) : (
+                              <p className="text-xs color-gray">
+                                Fidelidade: {st.done} de {loyalty.goal}
+                              </p>
+                            );
+                          })()}
                           <p className="text-xs color-gray">
                             {formatOrderTime(order.updated_at)}
                           </p>

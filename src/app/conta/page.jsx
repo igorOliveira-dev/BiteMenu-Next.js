@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FaUser, FaReceipt, FaAddressCard } from "react-icons/fa";
+import { FaUser, FaReceipt, FaAddressCard, FaGift } from "react-icons/fa";
 import useUser from "@/hooks/useUser";
 import Loading from "@/components/Loading";
 import BrandLogo from "@/components/BrandLogo";
@@ -10,12 +10,14 @@ import ThemeToggle from "@/components/ThemeToggle";
 import Account from "@/app/dashboard/tabs/Account";
 import OrdersHistory from "./components/OrdersHistory";
 import PersonalInfo from "./components/PersonalInfo";
+import LoyaltyCards from "./components/LoyaltyCards";
 
 // ?aba=<tab> abre direto numa seção (ex.: o menu da navbar abre ?aba=pedidos)
 const TABS = [
   { tab: "perfil", label: "Perfil", Icon: FaUser },
   { tab: "dados", label: "Dados pessoais", Icon: FaAddressCard },
   { tab: "pedidos", label: "Histórico de pedidos", Icon: FaReceipt },
+  { tab: "fidelidades", label: "Fidelidades", Icon: FaGift },
 ];
 
 export default function ContaPage() {
@@ -86,6 +88,7 @@ export default function ContaPage() {
                 <h2 className="mb-4 font-semibold">{current.label}</h2>
                 {selectedTab === "pedidos" && <OrdersHistory />}
                 {selectedTab === "dados" && <PersonalInfo />}
+                {selectedTab === "fidelidades" && <LoyaltyCards />}
               </div>
             )}
           </div>
