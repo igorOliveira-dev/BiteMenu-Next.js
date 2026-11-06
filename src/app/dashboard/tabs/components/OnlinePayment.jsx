@@ -467,19 +467,26 @@ export default function OnlinePayment({ role }) {
   }
 
   if (status.stage === "pending") {
+    const reproved = status.proposal === "REPROVED";
     return wrap(
       <div className="space-y-2 text-sm">
         {status.proposalError ? (
           <p className="text-xs text-red-500">
             Cadastro enviado, mas a ValidaPay não deixou consultar o status: {status.proposalError}
           </p>
+        ) : reproved ? (
+          <div className="space-y-1 rounded-xl border border-red-500/40 bg-red-500/10 p-3">
+            <p className="font-semibold text-red-500">Cadastro recusado pela ValidaPay</p>
+            <p className="text-xs">{status.rejectedReason || "A ValidaPay não informou o motivo."}</p>
+            <p className="text-xs opacity-70">Corrija o problema antes de refazer o cadastro.</p>
+          </div>
         ) : (
           <p>
             Cadastro em análise pela ValidaPay (proposta: {status.proposal ?? "-"}, documentos:{" "}
             {status.documents ?? "-"}).
           </p>
         )}
-        {status.documentsUrl && (
+        {status.documentsUrl && !reproved && (
           <a href={status.documentsUrl} target="_blank" rel="noopener noreferrer" className={BUTTON}>
             Enviar documentos
           </a>

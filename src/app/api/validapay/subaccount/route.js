@@ -60,6 +60,27 @@ export const POST = handle(async (req, menu, allowed) => {
 
   const f = await req.json();
   const o = f.owner ?? {};
+
+  // A ValidaPay cobra R$ 15 da master a cada proposta, mesmo se reprovar na hora (ex.: CNPJ inapto).
+  // Confere a situação na Receita (BrasilAPI) antes de enviar; na dúvida não envia, para não cobrar à toa.
+  const cnpjRes = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits(f.documentNumber)}`, {
+    cache: "no-store",
+  }).catch(() => null);
+  if (cnpjRes?.status === 404) return json({ error: "CNPJ não encontrado na Receita Federal." }, 400);
+  if (!cnpjRes?.ok) {
+    return json({ error: "Não foi possível consultar o CNPJ na Receita Federal agora. Tente de novo em alguns minutos." }, 503);
+  }
+  const cnpj = await cnpjRes.json();
+  if (cnpj.descricao_situacao_cadastral !== "ATIVA") {
+    const motivo = cnpj.descricao_motivo_situacao_cadastral ? ` (${cnpj.descricao_motivo_situacao_cadastral.toLowerCase()})` : "";
+    return json(
+      {
+        error: `Seu CNPJ está com situação "${cnpj.descricao_situacao_cadastral}" na Receita Federal${motivo}. Regularize o CNPJ e tente de novo.`,
+      },
+      400,
+    );
+  }
+
   const { formId } = await validapay("/v1/proposals", {
     method: "POST",
     body: {
@@ -126,6 +147,7 @@ export const GET = handle(async (req, menu, allowed) => {
         proposal: proposal.proposalStatus?.proposal ?? null,
         documents: proposal.proposalStatus?.documents ?? null,
         documentsUrl: proposal.proposalStatus?.urlDocumentscopy ?? null,
+        rejectedReason: proposal.proposalStatus?.rejectedReason ?? null,
       });
     }
     const { error } = await supabaseAdmin.from("menus").update({ online_payment_account: account }).eq("id", menu.id);
