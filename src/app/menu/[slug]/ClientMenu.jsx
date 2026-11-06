@@ -34,6 +34,7 @@ import {
 } from "@/utils/storeHours";
 import { getContrastTextColor } from "@/utils/color";
 import { mapsUrl } from "@/components/AddressFields";
+import LoyaltyBanner from "./components/LoyaltyBanner";
 
 // util: encontra o primeiro ancestor rolável (ou retorna window)
 function findScrollParent(el) {
@@ -665,6 +666,14 @@ export default function ClientMenu({ menu: rawMenu, ownerPhone, ownerRole, demoT
             }}
           />
         </div>
+
+        <LoyaltyBanner
+          loyalty={menu.loyalty}
+          menuId={menu.id}
+          slug={menu.slug}
+          className="px-4 mb-4"
+          colors={{ text: foregroundToUse, muted: grayToUse, track: translucidToUse, accent: menu.details_color }}
+        />
 
         {navCategories.length > 0 && (
           <div

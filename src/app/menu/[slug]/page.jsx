@@ -6,6 +6,7 @@ import ClientMenu3 from "./ClientMenu3";
 import MenuAccountButton from "./components/MenuAccountButton";
 import { getMenuBySlug, getOwnerInfo, getOptionStock } from "./getMenuData";
 import { applyStock, hideHiddenGroups, STOCK_ROLES } from "@/lib/stock";
+import { LOYALTY_ROLES } from "@/lib/loyalty";
 
 // cardápio de exemplo da landing: segue o tema claro/escuro do site (useDemoTheme).
 // Fica aqui e não no useDemoTheme: importar constante de módulo "use client" no servidor não traz o valor
@@ -125,6 +126,9 @@ export default async function MenuPage({ params }) {
 
   const optionStock = STOCK_ROLES.includes(ownerRole) ? await getOptionStock(rawMenu.id) : [];
   const menu = applyStock(hideHiddenGroups(rawMenu), ownerRole, optionStock);
+  // fidelidade é do Pro para cima: dono que caiu de plano fica com a fidelidade bloqueada (sem prêmio no carrinho;
+  // o cliente que já participa vê o cadeado), sem mexer no banco
+  if (menu.loyalty && !LOYALTY_ROLES.includes(ownerRole)) menu.loyalty = { ...menu.loyalty, locked: true };
 
   const effectiveLayout = menu.layout;
   const isDemo = slug === DEMO_SLUG;

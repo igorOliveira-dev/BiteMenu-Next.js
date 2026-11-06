@@ -58,8 +58,10 @@ import { useLayoutEffect } from "react";
 import { supabaseImg } from "@/lib/imageUtils";
 import ActionsMenu from "@/components/ActionMenu";
 import CouponsModal from "./CouponsModal";
+import LoyaltyModal from "./LoyaltyModal";
 import { STOCK_ROLES } from "@/lib/stock";
-import { FaBoxes, FaLayerGroup, FaLock, FaSort, FaTicketAlt, FaTools } from "react-icons/fa";
+import { LOYALTY_ROLES } from "@/lib/loyalty";
+import { FaBoxes, FaGift, FaLayerGroup, FaLock, FaSort, FaTicketAlt, FaTools } from "react-icons/fa";
 import { getContrastTextColor as contrastText } from "@/utils/color";
 
 const getContrastTextColor = (hex) => contrastText(hex, "#000000");
@@ -829,6 +831,7 @@ export default function MenuItems({
     } catch {}
   };
   const [couponsModalOpen, setCouponsModalOpen] = useState(false);
+  const [loyaltyModalOpen, setLoyaltyModalOpen] = useState(false);
   const [comboFormOpen, setComboFormOpen] = useState(false);
   const [comboDraft, setComboDraft] = useState(null);
 
@@ -2949,6 +2952,7 @@ export default function MenuItems({
                   onClick: () => setCouponsModalOpen(true),
                   locked: !["pro", "business", "admin", "designer"].includes(ownerRole),
                 },
+                { label: "Fidelidade", Icon: FaGift, onClick: () => setLoyaltyModalOpen(true), locked: !LOYALTY_ROLES.includes(ownerRole) },
                 { label: "Estoque", Icon: FaBoxes, onClick: onOpenStock, locked: !STOCK_ROLES.includes(ownerRole) },
               ].map(({ label, Icon, onClick, locked }) => (
                 <button
@@ -4806,6 +4810,16 @@ export default function MenuItems({
             </button>
           </>
         </GenericModal>
+      )}
+
+      {loyaltyModalOpen && (
+        <LoyaltyModal
+          menuId={menu?.id}
+          canSave={LOYALTY_ROLES.includes(ownerRole)}
+          items={allItemsFlat}
+          currency={menu?.currency}
+          onClose={() => setLoyaltyModalOpen(false)}
+        />
       )}
 
       {couponsModalOpen && (

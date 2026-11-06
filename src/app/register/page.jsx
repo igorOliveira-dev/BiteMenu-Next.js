@@ -165,7 +165,7 @@ export default function SignUp() {
   };
 
   return (
-    <div className="h-[100dvh] flex items-center justify-center">
+    <div className="min-h-[100dvh] flex items-center justify-center px-4 py-6">
       <div className="max-w-[350px] w-full rounded-2xl mt-6 p-6 space-y-6 bg-translucid border border-brand-line">
         <div role="tablist" className="flex p-1 rounded-full border border-brand-line">
           {[
