@@ -129,6 +129,7 @@ export default function OrdersHistory() {
                 {slug ? (
                   <Link
                     href={`/menu/${slug}`}
+                    prefetch={false}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 font-semibold underline-offset-2 hover:text-brand-red hover:underline"

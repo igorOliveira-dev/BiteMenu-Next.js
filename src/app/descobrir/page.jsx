@@ -335,6 +335,7 @@ export default function DescobrirPage() {
                 <li key={m.slug}>
                   <Link
                     href={`/menu/${m.slug}`}
+                    prefetch={false}
                     className="block overflow-hidden rounded-2xl border border-brand-line bg-brand-surface transition hover:border-brand-red"
                   >
                     {/* metade de cima: faixa do banner (sem banner, faixa neutra do mesmo tamanho) */}
