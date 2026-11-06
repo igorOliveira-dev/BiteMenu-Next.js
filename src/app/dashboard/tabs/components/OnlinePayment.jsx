@@ -13,7 +13,7 @@ const INPUT =
   "h-11 w-full rounded-xl border border-[var(--translucid)] bg-translucid px-3 text-[15px] outline-none transition focus:border-brand-select/70";
 const BUTTON =
   "inline-flex h-11 cursor-pointer items-center justify-center rounded-full bg-bite px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50";
-const ALLOWED = ["admin"]; // TEMPORÁRIO: só admin (ONLINE_PAYMENT_ROLES em src/lib/validapay.js)
+const ALLOWED = ["pro", "business", "admin"]; // ONLINE_PAYMENT_ROLES em src/lib/validapay.js
 
 const INCOME = [
   "Até R$ 5.000",
@@ -243,6 +243,7 @@ function downloadStatement({ transactions, period }) {
 }
 
 function AccountDetails({ details, busy, onWithdraw, onFilter }) {
+  const [view, setView] = useState("statement"); // "statement" (extrato) | "withdrawals" (saques)
   if (!details.account) return <p className="text-sm opacity-60">Carregando...</p>;
   const { account } = details;
 
@@ -282,69 +283,92 @@ function AccountDetails({ details, busy, onWithdraw, onFilter }) {
         </form>
       </section>
 
-      <section className="space-y-2">
-        <div className="text-xs font-semibold uppercase opacity-60">Saques</div>
-        {details.withdrawals.length === 0 ? (
-          <p className="opacity-60">Nenhum saque ainda.</p>
-        ) : (
-          details.withdrawals.map((w) => (
-            <Row
-              key={w.id}
-              left={formatBRL(w.amount)}
-              sub={`${formatDate(w.createdAt)} · ${w.pixKey ?? ""}${w.fee ? ` · tarifa ${formatBRL(w.fee)}` : ""}`}
-              right={WITHDRAWAL_STATUS[w.status] ?? w.status}
-              rightClass="text-xs font-semibold"
-            />
-          ))
-        )}
-      </section>
-
-      <section className="space-y-2">
-        <div className="text-xs font-semibold uppercase opacity-60">Extrato</div>
-        <form
-          className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:items-end"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const { from, to } = formToObject(e.currentTarget);
-            onFilter(from, to);
-          }}
-        >
-          <Input label="De" name="from" type="date" defaultValue={details.period?.from} />
-          <Input label="Até" name="to" type="date" defaultValue={details.period?.to} />
-          <button type="submit" disabled={busy} className={BUTTON}>
-            Filtrar
-          </button>
+      {/* extrato e saques no mesmo espaço, alternados pelo seletor */}
+      <div className="inline-flex rounded-full border border-[var(--translucid)] p-1" role="tablist">
+        {[
+          ["statement", "Extrato"],
+          ["withdrawals", "Saques"],
+        ].map(([id, label]) => (
           <button
+            key={id}
             type="button"
-            disabled={!details.transactions.length}
-            onClick={() => downloadStatement(details)}
-            className={`${BUTTON} bg-transparent border border-[var(--translucid)] text-[var(--foreground)]`}
+            role="tab"
+            aria-selected={view === id}
+            onClick={() => setView(id)}
+            className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-semibold transition ${
+              view === id ? "bg-bite text-white" : "opacity-70 hover:opacity-100"
+            }`}
           >
-            Baixar relatório
+            {label}
           </button>
-        </form>
-        <p className="text-xs opacity-60">Período de até 1 mês.</p>
-        {details.transactions.length === 0 ? (
-          <p className="opacity-60">Nenhuma movimentação no período.</p>
-        ) : (
-          details.transactions.map((t) => (
-            <Row
-              key={t.id}
-              left={t.order ? `${t.order.customer || "Cliente"} · pedido de ${formatDate(t.order.createdAt)}` : t.title}
-              sub={t.order ? `${t.title} · ${formatDate(t.createdAt)}` : formatDate(t.createdAt)}
-              right={`${t.type === "DEBIT" ? "-" : "+"}${formatBRL(t.amount)}`}
-              rightClass={t.type === "DEBIT" ? "text-red-500" : "text-green-600"}
-              rightSub={
-                t.gross != null
-                  ? `pago ${formatBRL(t.gross)} · taxa 5% ${formatBRL(platformFee(t))} · tarifa ${formatBRL(t.fee)}`
-                  : t.balanceAfter != null
-                    ? `saldo ${formatBRL(t.balanceAfter)}`
-                    : null
-              }
-            />
-          ))
-        )}
-      </section>
+        ))}
+      </div>
+
+      {view === "withdrawals" ? (
+        <section className="space-y-2">
+          {details.withdrawals.length === 0 ? (
+            <p className="opacity-60">Nenhum saque ainda.</p>
+          ) : (
+            details.withdrawals.map((w) => (
+              <Row
+                key={w.id}
+                left={formatBRL(w.amount)}
+                sub={`${formatDate(w.createdAt)} · ${w.pixKey ?? ""}${w.fee ? ` · tarifa ${formatBRL(w.fee)}` : ""}`}
+                right={WITHDRAWAL_STATUS[w.status] ?? w.status}
+                rightClass="text-xs font-semibold"
+              />
+            ))
+          )}
+        </section>
+      ) : (
+        <section className="space-y-2">
+          <form
+            className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:items-end"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const { from, to } = formToObject(e.currentTarget);
+              onFilter(from, to);
+            }}
+          >
+            <Input label="De" name="from" type="date" defaultValue={details.period?.from} />
+            <Input label="Até" name="to" type="date" defaultValue={details.period?.to} />
+            <button type="submit" disabled={busy} className={BUTTON}>
+              Filtrar
+            </button>
+            <button
+              type="button"
+              disabled={!details.transactions.length}
+              onClick={() => downloadStatement(details)}
+              className={`${BUTTON} bg-transparent border border-[var(--translucid)] text-[var(--foreground)]`}
+            >
+              Baixar relatório
+            </button>
+          </form>
+          <p className="text-xs opacity-60">Período de até 1 mês.</p>
+          {details.transactions.length === 0 ? (
+            <p className="opacity-60">Nenhuma movimentação no período.</p>
+          ) : (
+            details.transactions.map((t) => (
+              <Row
+                key={t.id}
+                left={
+                  t.order ? `${t.order.customer || "Cliente"} · pedido de ${formatDate(t.order.createdAt)}` : t.title
+                }
+                sub={t.order ? `${t.title} · ${formatDate(t.createdAt)}` : formatDate(t.createdAt)}
+                right={`${t.type === "DEBIT" ? "-" : "+"}${formatBRL(t.amount)}`}
+                rightClass={t.type === "DEBIT" ? "text-red-500" : "text-green-600"}
+                rightSub={
+                  t.gross != null
+                    ? `pago ${formatBRL(t.gross)} · taxa 5% ${formatBRL(platformFee(t))} · tarifa ${formatBRL(t.fee)}`
+                    : t.balanceAfter != null
+                      ? `saldo ${formatBRL(t.balanceAfter)}`
+                      : null
+                }
+              />
+            ))
+          )}
+        </section>
+      )}
     </div>
   );
 }
@@ -384,7 +408,7 @@ export default function OnlinePayment({ role }) {
 
   // carrega para todos os planos: quem mudou de plano e já tem subconta continua vendo o saldo e sacando
   useEffect(() => {
-    if (allowed) load(); // TEMPORÁRIO: no lançamento voltar para `if (role)` (mudou de plano continua sacando)
+    if (role) load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role]);
 
@@ -420,7 +444,6 @@ export default function OnlinePayment({ role }) {
     </a>
   );
 
-  if (!allowed) return null; // TEMPORÁRIO: fora do admin não aparece nada enquanto está em teste
   if (!status) return wrap(<p className="text-xs opacity-60">Carregando...</p>);
   // fora do Pro/Business: aparece, mas não dá para cadastrar
   if (!allowed && status.stage === "none") return wrap(upgrade);
