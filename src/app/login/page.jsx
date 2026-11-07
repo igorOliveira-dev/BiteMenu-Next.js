@@ -62,9 +62,14 @@ export default function SignIn() {
         .select("account_type")
         .eq("id", data.user.id)
         .maybeSingle();
+      const next = new URLSearchParams(window.location.search).get("next") || "";
       if (profile?.account_type === "customer") {
-        const next = new URLSearchParams(window.location.search).get("next") || "";
         router.push(next.startsWith("/") && !next.startsWith("//") ? next : "/");
+        return;
+      }
+      // link do pedido no WhatsApp: dono e equipe também vão pra ele (a página leva ao pedido no painel)
+      if (next.startsWith("/pedido/")) {
+        router.push(next);
         return;
       }
 

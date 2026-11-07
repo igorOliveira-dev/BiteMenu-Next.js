@@ -49,6 +49,7 @@ async function loadMenus() {
   return menus;
 }
 
+const FALLBACK_KM = 100;
 const num = (v) => (v == null || v === "" ? NaN : Number(v));
 
 export async function GET(request) {
@@ -63,7 +64,7 @@ export async function GET(request) {
     return NextResponse.json({ error: "Não foi possível carregar os estabelecimentos." }, { status: 500 });
   }
 
-  const results = searchMenus(menus, {
+  const opts = {
     lat: num(p.get("lat")),
     lng: num(p.get("lng")),
     km: num(p.get("km")),
@@ -71,10 +72,20 @@ export async function GET(request) {
     uf: text("uf"),
     q: text("q"),
     local: text("local"),
-  });
+  };
+  let results = searchMenus(menus, opts);
+
+  // nada no raio escolhido: tenta até 100 km; se ainda vazio, lista padrão (sem limite de distância)
+  let expanded = null;
+  if (!results.length && opts.km > 0) {
+    if (opts.km < FALLBACK_KM) results = searchMenus(menus, { ...opts, km: FALLBACK_KM });
+    expanded = results.length ? FALLBACK_KM : "all";
+    if (!results.length) results = searchMenus(menus, { ...opts, km: NaN });
+  }
 
   // só o que o cardápio público já mostra: sem owner_id, telefone, plano ou pix
   return NextResponse.json({
+    expanded,
     results: results.map((m) => ({
       slug: m.slug,
       title: m.title,

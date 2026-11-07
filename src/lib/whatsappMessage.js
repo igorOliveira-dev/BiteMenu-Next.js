@@ -17,6 +17,8 @@ export const WHATSAPP_TAGS = [
   { tag: "{pagamento}", label: "Forma de pagamento", line: "Pagamento: {pagamento}" },
   { tag: "{troco}", label: "Troco (se pedido)", line: "Troco para: {troco}" },
   { tag: "{servico}", label: "Tipo de serviço", line: "Serviço: {servico}" },
+  // vazio no cardápio "só WhatsApp" (o pedido não fica salvo): a linha some
+  { tag: "{link}", label: "Link para acompanhar o pedido", line: "Acompanhe o pedido: {link}" },
   { tag: "{estabelecimento}", label: "Nome do estabelecimento", optional: true },
 ];
 
@@ -37,7 +39,9 @@ Bairro: {bairro}
 Endereço: {endereco}
 Pagamento: {pagamento}
 Troco para: {troco}
-Serviço: {servico}`;
+Serviço: {servico}
+
+Acompanhe o pedido: {link}`;
 
 const TAG_REGEX = /\{(\w+)\}/g;
 
