@@ -290,6 +290,12 @@ const Admin = () => {
               Remarketing por e-mail
             </a>
           </p>
+
+          <p className="text-center mb-2 text-sm">
+            <a href="/admin/clientes" className="underline text-brand-red">
+              Clientes (não donos)
+            </a>
+          </p>
         </>
       )}
 
