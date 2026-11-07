@@ -33,7 +33,7 @@ function getIp(request) {
 function getBucket(pathname) {
   if (pathname.startsWith("/api/")) return "api";
   if (pathname.startsWith("/_next/image")) return "image";
-  if (pathname.startsWith("/menu/")) return "menu";
+  if (pathname.startsWith("/menu/") || pathname.startsWith("/site/")) return "menu";
   return null;
 }
 
@@ -82,5 +82,5 @@ export function proxy(request) {
 }
 
 export const config = {
-  matcher: ["/api/:path*", "/_next/image", "/menu/:path*"],
+  matcher: ["/api/:path*", "/_next/image", "/menu/:path*", "/site/:path*"],
 };

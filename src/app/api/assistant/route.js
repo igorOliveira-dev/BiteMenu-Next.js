@@ -4,12 +4,12 @@ import { getUserFromRequest } from "@/lib/validapay";
 import {
   AI_FIELDS,
   AI_PLAN_ROLES,
-  AI_SESSION_HOURS,
   AI_SESSION_TOKEN_LIMIT,
   CATEGORY_LIMITS,
   ITEM_LIMITS,
 } from "@/lib/assistant";
 import { STOCK_ROLES } from "@/lib/stock";
+import { addUsage, getUsage, usageInfo } from "@/lib/aiUsage";
 
 // Assistente do dashboard: só PROPÕE alterações. Quem grava é o dashboard (StatesManager),
 // depois que o dono confirma, pelo mesmo fluxo de "Salvar tudo" (client do usuário + RLS).
@@ -341,41 +341,6 @@ const TOOLS = [
     },
   },
 ];
-
-// ---- Limite de tokens por sessão (tabela ai_usage, só o servidor acessa) ----
-const SESSION_MS = AI_SESSION_HOURS * 60 * 60 * 1000;
-
-// Sem linha ou janela vencida = sessão zerada (a nova começa na próxima mensagem)
-async function getUsage(userId) {
-  const { data, error } = await supabaseAdmin
-    .from("ai_usage")
-    .select("window_start, tokens")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error) throw error;
-  if (!data || Date.now() - new Date(data.window_start).getTime() >= SESSION_MS) return { windowStart: null, tokens: 0 };
-  return { windowStart: data.window_start, tokens: data.tokens };
-}
-
-async function addUsage(userId, current, used) {
-  const row = {
-    user_id: userId,
-    window_start: current.windowStart ?? new Date().toISOString(),
-    tokens: current.tokens + used,
-    updated_at: new Date().toISOString(),
-  };
-  const { error } = await supabaseAdmin.from("ai_usage").upsert(row);
-  if (error) console.error("[assistant] erro ao registrar uso:", error);
-  return { windowStart: row.window_start, tokens: row.tokens };
-}
-
-// O que o painel mostra: % usado e quando a sessão zera
-function usageInfo({ windowStart, tokens }) {
-  return {
-    percent: Math.min(100, Math.round((tokens / AI_SESSION_TOKEN_LIMIT) * 100)),
-    resetsAt: windowStart ? new Date(new Date(windowStart).getTime() + SESSION_MS).toISOString() : null,
-  };
-}
 
 // Usuário logado e com plano liberado; senão devolve a resposta de erro
 async function authorize(req) {

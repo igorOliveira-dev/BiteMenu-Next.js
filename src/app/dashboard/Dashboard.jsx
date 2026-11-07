@@ -17,6 +17,8 @@ import Link from "next/link";
 import SalesDashboard from "./tabs/SalesDashboard";
 import PlanDetails from "./tabs/PlanDetails";
 import Team from "./tabs/Team";
+import Landing from "./tabs/Landing";
+import { LANDING_ROLES } from "@/lib/landing";
 import Kitchen from "@/app/equipe/Kitchen";
 import Delivery from "@/app/equipe/Delivery";
 import UpsellBanner from "./components/UpsellBanner";
@@ -25,7 +27,7 @@ import PixOnlineModal from "./components/PixOnlineModal";
 import GenericModal from "@/components/GenericModal";
 import QrCodeModal from "./tabs/components/menu/QrCodeModal";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
-import { FaChartLine, FaLifeRing, FaShieldAlt, FaChair } from "react-icons/fa";
+import { FaChartLine, FaLifeRing, FaShieldAlt, FaChair, FaGlobe } from "react-icons/fa";
 import { supabase } from "@/lib/supabaseClient";
 import { countVisibleOrders, listRecentVisibleOrders } from "@/lib/queries/orders";
 import useUser from "@/hooks/useUser";
@@ -232,6 +234,7 @@ const Dashboard = ({
     { tab: "orders", label: "Pedidos", Icon: IconSino },
     { tab: "sales", label: "Vendas", Icon: FaChartLine },
     { tab: "tables", label: "Mesas", Icon: FaChair },
+    ...(LANDING_ROLES.includes(profile?.role) ? [{ tab: "landing", label: "Landing page", Icon: FaGlobe }] : []),
   ];
 
   const navClass = (active) =>
@@ -444,6 +447,11 @@ const Dashboard = ({
         {selectedTab === "team" && (
           <div className="block mx-auto w-full max-w-[812px]">
             <Team setSelectedTab={setSelectedTab} />
+          </div>
+        )}
+        {selectedTab === "landing" && LANDING_ROLES.includes(profile?.role) && (
+          <div className="block mx-auto w-full max-w-[1400px]">
+            <Landing />
           </div>
         )}
         {selectedTab === "planDetails" && (
