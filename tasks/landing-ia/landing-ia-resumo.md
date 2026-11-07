@@ -67,7 +67,7 @@ Plano: `landing-ia-plan.md` · Tarefas: `landing-ia-todo.md` · SQL: `landing-ia
 3. **Decidir o modelo:** hoje é `claude-haiku-5-5` (o mesmo do Bite Menu IA). Trocar só `LANDING_MODEL` em
    `src/app/api/assistant/landing/route.js` (`claude-sonnet-5-5` é melhor em design e mais caro).
 4. **Commitar** as correções que os testes pedirem.
-5. **Quando o Enterprise existir:** acrescentar `"enterprise"` em `LANDING_ROLES` (`src/lib/landing.js`) e revisar a
+5. **Enterprise:** `"enterprise"` já está em `LANDING_ROLES` (`src/lib/landing.js`). Quando o plano existir, revisar a
    mensagem do 403 em `api/assistant/landing/route.js`. Criar o plano em si (ValidaPay, preços, ~59 listas de plano em
    37 arquivos) é um plano próprio.
 

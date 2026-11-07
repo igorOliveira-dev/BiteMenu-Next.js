@@ -1,8 +1,8 @@
 // Landing page do estabelecimento gerada pela IA (tasks/landing-ia/landing-ia-plan.md).
 // Sem imports de servidor: a aba do dashboard também usa este arquivo.
 
-// Por enquanto só admin. Quando o plano Enterprise existir: acrescentar "enterprise".
-export const LANDING_ROLES = ["admin"];
+// Exclusivo do Enterprise (plano ainda não lançado; ninguém tem esse role até lá)
+export const LANDING_ROLES = ["admin", "enterprise"];
 
 // mesmo limite do check da coluna menus.landing_html (tasks/landing-ia/landing-ia.sql)
 export const LANDING_MAX_LENGTH = 300_000;

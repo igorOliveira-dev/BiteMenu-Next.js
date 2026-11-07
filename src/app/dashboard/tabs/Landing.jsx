@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FaExternalLinkAlt, FaMagic, FaPaperPlane } from "react-icons/fa";
+import { FaMagic, FaPaperPlane, FaQrcode } from "react-icons/fa";
 import { supabase } from "@/lib/supabaseClient";
 import useMenu, { updateCachedMenu } from "@/hooks/useMenu";
 import { updateMenuById } from "@/lib/queries/menus";
 import { useAlert } from "@/providers/AlertProvider";
 import { useConfirm } from "@/providers/ConfirmProvider";
+import QrCodeModal from "./components/menu/QrCodeModal";
 
 // conversa e rascunho sobrevivem à troca de aba (o Dashboard desmonta a aba); somem ao recarregar
 let kept = { messages: [], draft: null };
@@ -27,6 +28,7 @@ export default function Landing() {
   const [sending, setSending] = useState(false);
   const [saving, setSaving] = useState(false);
   const [usage, setUsage] = useState(null);
+  const [showShare, setShowShare] = useState(false);
   const listRef = useRef(null);
 
   useEffect(() => {
@@ -112,7 +114,9 @@ export default function Landing() {
   };
 
   const unpublished = !!draft && draft !== published;
-  const siteUrl = menu?.slug ? `/site/${menu.slug}` : null;
+  // no app instalado (PWA) abre pelo domínio externo, para não carregar dentro da janela do dashboard (igual ao cardápio)
+  const siteUrl = menu?.slug && typeof window !== "undefined" ? `${window.location.origin}/site/${menu.slug}` : "";
+  const externalSiteUrl = menu?.slug ? `https://external.bitemenu.com.br/site/${menu.slug}` : "";
 
   return (
     <div className="pt-2 px-4 pb-4 flex flex-col gap-4">
@@ -211,14 +215,13 @@ export default function Landing() {
               </button>
             )}
             {published && siteUrl && (
-              <a
-                href={siteUrl}
-                target="_blank"
-                rel="noopener"
-                className="flex items-center gap-2 rounded-full px-4 py-2 text-sm bg-[var(--translucid)] hover:opacity-80"
+              <button
+                type="button"
+                onClick={() => setShowShare(true)}
+                className="cursor-pointer flex items-center gap-2 rounded-full px-4 py-2 text-sm bg-[var(--translucid)] hover:opacity-80"
               >
-                Ver página <FaExternalLinkAlt className="text-xs" />
-              </a>
+                <FaQrcode /> Compartilhar
+              </button>
             )}
             {published && (
               <button
@@ -248,6 +251,16 @@ export default function Landing() {
           )}
         </div>
       </div>
+
+      <QrCodeModal
+        isOpen={showShare}
+        onClose={() => setShowShare(false)}
+        title="QR Code da sua landing page"
+        url={siteUrl}
+        externalUrl={externalSiteUrl}
+        filename={`qrcode-site-${menu?.slug || "landing"}`}
+        onToast={(msg, type) => customAlert(msg, type === "error" ? "error" : undefined)}
+      />
     </div>
   );
 }

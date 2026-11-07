@@ -30,9 +30,9 @@ export async function addUsage(userId, current, used) {
 }
 
 // O que o painel mostra: % usado e quando a sessão zera
-export function usageInfo({ windowStart, tokens }) {
+export function usageInfo({ windowStart, tokens }, limit = AI_SESSION_TOKEN_LIMIT) {
   return {
-    percent: Math.min(100, Math.round((tokens / AI_SESSION_TOKEN_LIMIT) * 100)),
+    percent: Math.min(100, Math.round((tokens / limit) * 100)),
     resetsAt: windowStart ? new Date(new Date(windowStart).getTime() + SESSION_MS).toISOString() : null,
   };
 }

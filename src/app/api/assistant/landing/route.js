@@ -1,7 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getUserFromRequest } from "@/lib/validapay";
-import { AI_SESSION_TOKEN_LIMIT } from "@/lib/assistant";
 import { addUsage, getUsage, usageInfo } from "@/lib/aiUsage";
 import { LANDING_MAX_LENGTH, LANDING_ROLES, applyLandingEdits, cleanLandingHtml } from "@/lib/landing";
 
@@ -12,6 +11,8 @@ export const maxDuration = 300;
 const anthropic = new Anthropic();
 // modelo da landing ainda em decisão (Haiku x Sonnet): trocar só aqui
 const LANDING_MODEL = "claude-haiku-5-5";
+// Enterprise: um pouco mais de saldo que o Bite Menu IA (180k). O saldo é o mesmo, só o teto da landing é maior.
+const LANDING_TOKEN_LIMIT = 250_000;
 
 const SYSTEM = `Você é o assistente de landing page do Bite Menu, um sistema de cardápio digital para restaurantes.
 Você cria e ajusta a landing page (página de apresentação) do estabelecimento do dono, em português do Brasil.
@@ -33,9 +34,16 @@ Regras do HTML:
 - NADA de JavaScript, <script>, atributos on*, <form>, <iframe>. Eles são removidos e não funcionam.
 - Mobile first e responsivo. Visual moderno, bom contraste, use as cores do cardápio como base se o dono não pedir outras.
 - Imagens: SOMENTE as URLs enviadas (logo, banner, fotos dos produtos). Não invente URLs. Se não houver imagem, use cores/gradientes.
+- Banner: NUNCA corte. Use <img> com width:100%; height:auto (sem altura fixa, sem object-fit:cover, sem usar como background-image com background-size:cover). Não coloque texto por cima dele; o título e os botões vêm acima ou abaixo do banner.
 - Fontes: só Google Fonts via <link> para https://fonts.googleapis.com, ou fontes do sistema.
 - Botão principal "Fazer pedido" / "Ver cardápio" com link para o link do cardápio enviado. Se houver WhatsApp, pode usar https://wa.me/<número> com target="_blank".
 - Use só dados enviados (nome, descrição, endereço, horário, produtos, preços). Não invente preços, telefones, endereços ou avaliações.
+
+Conteúdo da página (ao criar ou refazer):
+- A landing NÃO é o cardápio. Nunca liste os produtos por categoria nem monte uma lista de itens com preços: o cardápio já faz isso e o botão leva até ele.
+- O foco é o estabelecimento: quem é, o que oferece, serviços, endereço, horário e como pedir. Use tudo o que existir desses dados; o que não existir, simplesmente não aparece.
+- Dê personalidade: deduza o estilo do lugar pelo nome, descrição, categorias e produtos (ex.: hamburgueria descolada, pizzaria familiar, doceria delicada) e reflita isso no texto, nas fontes e no visual.
+- Destaque: se houver "destaques", dê protagonismo a eles (até 3 ou 4, com foto quando houver, em formato de vitrine/chamada, não de lista). Sem destaques, identifique a categoria principal do negócio (a que define o lugar, nunca bebidas, adicionais ou sobremesas de um restaurante salgado) e destaque poucos itens dela do mesmo jeito.
 - Não coloque selo "Feito com Bite Menu": o sistema já adiciona.`;
 
 const TOOLS = [
@@ -91,25 +99,32 @@ async function getContext(ownerId) {
   const { data: profile } = await supabaseAdmin.from("profiles").select("phone").eq("id", ownerId).maybeSingle();
 
   const byPos = (a, b) => (a.position ?? 0) - (b.position ?? 0);
-  // até 20 produtos visíveis: destacados e com foto primeiro (economiza tokens)
-  const products = [...(menu.categories || [])]
-    .sort(byPos)
-    .flatMap((c) =>
-      [...(c.menu_items || [])]
-        .sort(byPos)
-        .filter((it) => it.visible !== false)
-        .map((it) => ({
-          name: it.name,
-          category: c.name,
-          price: Number(it.price ?? 0),
-          ...(it.promo_price != null && it.promo_price !== "" && { promoPrice: Number(it.promo_price) }),
-          ...(it.description && { description: it.description.slice(0, 160) }),
-          ...(it.image_url && { image: it.image_url }),
-          ...(it.starred && { starred: true }),
-        })),
-    )
-    .sort((a, b) => (b.starred ? 2 : 0) + (b.image ? 1 : 0) - ((a.starred ? 2 : 0) + (a.image ? 1 : 0)))
-    .slice(0, 20);
+  const withImageFirst = (a, b) => (b.image ? 1 : 0) - (a.image ? 1 : 0);
+  const toProduct = (it, category) => ({
+    name: it.name,
+    category,
+    price: Number(it.price ?? 0),
+    ...(it.promo_price != null && it.promo_price !== "" && { promoPrice: Number(it.promo_price) }),
+    ...(it.description && { description: it.description.slice(0, 160) }),
+    ...(it.image_url && { image: it.image_url }),
+  });
+  const categories = [...(menu.categories || [])].sort(byPos).map((c) => {
+    const items = [...(c.menu_items || [])].sort(byPos).filter((it) => it.visible !== false);
+    return { name: c.name, items };
+  });
+  // destaques do dono; sem eles a IA escolhe a categoria principal pelos exemplos de cada uma (economiza tokens)
+  const starred = categories
+    .flatMap((c) => c.items.filter((it) => it.starred).map((it) => toProduct(it, c.name)))
+    .sort(withImageFirst)
+    .slice(0, 6);
+  const categorias = categories
+    .filter((c) => c.items.length)
+    .slice(0, 12)
+    .map((c) => ({
+      nome: c.name,
+      totalProdutos: c.items.length,
+      exemplos: c.items.map((it) => toProduct(it, c.name)).sort(withImageFirst).slice(0, starred.length ? 2 : 4),
+    }));
 
   const phone = String(profile?.phone ?? "").replace(/\D/g, "");
   return {
@@ -124,7 +139,8 @@ async function getContext(ownerId) {
     logo: menu.logo_url,
     banner: menu.banner_url,
     cores: { fundo: menu.background_color, titulo: menu.title_color, detalhes: menu.details_color },
-    produtos: products,
+    destaques: starred,
+    categorias,
   };
 }
 
@@ -147,8 +163,8 @@ export async function POST(req) {
     console.error("[landing] erro ao ler ai_usage:", err);
     return fail("O assistente está indisponível agora. Tente novamente.", 503);
   }
-  if (usage.tokens >= AI_SESSION_TOKEN_LIMIT) {
-    return Response.json({ error: "Você usou 100% do limite desta sessão.", usage: usageInfo(usage) }, { status: 429 });
+  if (usage.tokens >= LANDING_TOKEN_LIMIT) {
+    return Response.json({ error: "Você usou 100% do limite desta sessão.", usage: usageInfo(usage, LANDING_TOKEN_LIMIT) }, { status: 429 });
   }
 
   const history = messages
@@ -185,7 +201,7 @@ export async function POST(req) {
   const u = response.usage ?? {};
   const used =
     (u.input_tokens ?? 0) + (u.output_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0);
-  const usageNow = usageInfo(await addUsage(user.id, usage, used));
+  const usageNow = usageInfo(await addUsage(user.id, usage, used), LANDING_TOKEN_LIMIT);
   const respond = (body) => Response.json({ ...body, usage: usageNow });
 
   if (response.stop_reason === "refusal") {
