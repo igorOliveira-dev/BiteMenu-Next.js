@@ -10,7 +10,7 @@ import Stock from "./tabs/Stock";
 import WhatsappMessage from "./tabs/WhatsappMessage";
 import { useAlert } from "@/providers/AlertProvider";
 import ConfigMenu from "./tabs/ConfigMenu";
-import { FaBars, FaBook, FaChevronLeft, FaHeadset, FaQrcode } from "react-icons/fa";
+import { FaBars, FaBook, FaChevronLeft, FaHeadset, FaQrcode, FaTimes } from "react-icons/fa";
 import Account from "./tabs/Account";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -24,7 +24,6 @@ import Delivery from "@/app/equipe/Delivery";
 import UpsellBanner from "./components/UpsellBanner";
 import AddressUpdateModal from "./components/AddressUpdateModal";
 import PixOnlineModal from "./components/PixOnlineModal";
-import GenericModal from "@/components/GenericModal";
 import QrCodeModal from "./tabs/components/menu/QrCodeModal";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import { FaChartLine, FaLifeRing, FaShieldAlt, FaChair, FaGlobe } from "react-icons/fa";
@@ -207,6 +206,20 @@ const Dashboard = ({
   // Modal de compartilhamento (hamburger) fecha com botão "Voltar"
   useModalBackHandler(isOpen, () => setIsOpen(false));
 
+  // arrastar o menu lateral pra direita fecha
+  const dragStartX = useRef(null);
+  const [dragX, setDragX] = useState(0);
+  const onDrawerTouchStart = (e) => (dragStartX.current = e.touches[0].clientX);
+  const onDrawerTouchMove = (e) => {
+    if (dragStartX.current === null) return;
+    setDragX(Math.max(0, e.touches[0].clientX - dragStartX.current));
+  };
+  const onDrawerTouchEnd = () => {
+    if (dragX > 80) setIsOpen(false);
+    dragStartX.current = null;
+    setDragX(0);
+  };
+
   const handleMenuSelect = (tab) => {
     setSelectedTab(tab);
     setIsOpen(false);
@@ -234,13 +247,18 @@ const Dashboard = ({
     { tab: "orders", label: "Pedidos", Icon: IconSino },
     { tab: "sales", label: "Vendas", Icon: FaChartLine },
     { tab: "tables", label: "Mesas", Icon: FaChair },
-    ...(LANDING_ROLES.includes(profile?.role) ? [{ tab: "landing", label: "Landing page", Icon: FaGlobe }] : []),
+    ...(LANDING_ROLES.includes(profile?.role) ? [{ tab: "landing", label: "Landing page", Icon: FaGlobe, desktopOnly: true }] : []),
   ];
 
   const navClass = (active) =>
     `cursor-pointer w-full px-1 xxs:px-4 py-5 lg:py-3 lg:rounded-xl hover-bg-translucid transition-colors text-sm xs:text-base flex items-center gap-3 justify-center whitespace-nowrap ${
       collapsed ? "lg:px-0" : "lg:justify-start lg:px-3"
     } ${active ? "bg-brand-gradient bg-brand-gradient-soft text-white font-semibold" : ""}`;
+
+  const drawerItemClass = (active) =>
+    `cursor-pointer w-full px-4 py-3 rounded-xl hover-bg-translucid transition-colors flex items-center gap-3 text-left ${
+      active ? "bg-brand-gradient bg-brand-gradient-soft text-white font-semibold" : ""
+    }`;
 
   const labelClass = collapsed ? "hidden" : "hidden lg:block";
 
@@ -286,13 +304,13 @@ const Dashboard = ({
               <FaChevronLeft className={`text-sm transition-transform duration-200 ${collapsed ? "rotate-180" : ""}`} />
             </button>
 
-            {navItems.map(({ tab, label, Icon }) => (
+            {navItems.map(({ tab, label, Icon, desktopOnly }) => (
               <button
                 key={tab}
                 onClick={() => setSelectedTab(tab)}
                 title={label}
                 aria-label={label}
-                className={navClass(selectedTab === tab)}
+                className={`${navClass(selectedTab === tab)} ${desktopOnly ? "max-lg:hidden" : ""}`}
               >
                 <span className="relative shrink-0">
                   <Icon className="text-lg" />
@@ -308,7 +326,12 @@ const Dashboard = ({
               </button>
             ))}
 
-            <button onClick={() => setIsOpen(!isOpen)} aria-label="Mais opções" className={`${navClass(false)} lg:hidden`}>
+            <button
+              onClick={() => setIsOpen(true)}
+              aria-label="Mais opções"
+              aria-expanded={isOpen}
+              className={`${navClass(["landing", "account"].includes(selectedTab))} lg:hidden`}
+            >
               <FaBars className="text-lg shrink-0" />
             </button>
           </div>
@@ -503,60 +526,72 @@ const Dashboard = ({
         />
       )}
 
-      {/* Modal central ao clicar no hamburger */}
-      {isOpen && (
-        <GenericModal
-          title="Compartilhe seu cardápio"
-          onClose={() => setIsOpen(false)}
-          wfull
-          maxWidth={"420px"}
-          py={"24px"}
-        >
-          <div className="grid gap-2 mb-6">
-            <button
-              onClick={() => shareUrl && setShowQrCode(true)}
-              className="disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer mt-2 p-2 bg-azul text-white font-semibold rounded-full hover:opacity-90 transition"
-            >
-              Opções de compartilhamento
-            </button>
-          </div>
+      {/* Menu lateral (mobile) ao clicar no hamburger */}
+      <div
+        className={`lg:hidden fixed inset-0 z-[155] bg-black/50 backdrop-blur-sm transition-opacity duration-200 ${isOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        onClick={() => setIsOpen(false)}
+        aria-hidden="true"
+      />
+      <nav
+        aria-label="Mais opções"
+        inert={!isOpen}
+        onTouchStart={onDrawerTouchStart}
+        onTouchMove={onDrawerTouchMove}
+        onTouchEnd={onDrawerTouchEnd}
+        onTouchCancel={onDrawerTouchEnd}
+        style={dragX ? { transform: `translateX(${dragX}px)`, transition: "none" } : undefined}
+        className={`lg:hidden fixed inset-y-0 right-0 z-[156] w-[85vw] max-w-[320px] bg-brand-surface border-l border-brand-line shadow-2xl flex flex-col transition-transform duration-200 touch-pan-y ${isOpen ? "translate-x-0" : "translate-x-full"}`}
+      >
+        <div className="flex items-center justify-between px-4 h-16 border-b border-brand-line">
+          <span className="font-semibold">Menu</span>
+          <button
+            onClick={() => setIsOpen(false)}
+            aria-label="Fechar menu"
+            className="cursor-pointer w-10 h-10 flex items-center justify-center rounded-xl hover-bg-translucid"
+          >
+            <FaTimes />
+          </button>
+        </div>
 
-          <ul className="flex flex-col">
-            <li>
-              <button
-                className="w-full text-left px-2 py-2 hover:bg-[var(--translucid)] border-b border-[var(--translucid)] rounded"
-                onClick={() => {
-                  setSelectedTab("account");
-                  setIsOpen(false);
-                }}
-              >
-                Conta
-              </button>
-            </li>
-            <li>
-              <button className="w-full flex text-left px-2 py-2 hover:bg-[var(--translucid)] border-b border-[var(--translucid)] rounded">
-                <Link href="/docs" className="flex-1">
-                  Documentação
-                </Link>
-              </button>
-            </li>
-            <li>
-              <button className="w-full flex text-left px-2 py-2 hover:bg-[var(--translucid)] border-b border-[var(--translucid)] rounded">
-                <Link href="/support" className="flex-1">
-                  Suporte
-                </Link>
-              </button>
-            </li>
-            <li>
-              <button className="w-full flex text-left px-2 py-2 hover:bg-[var(--translucid)] border-b border-[var(--translucid)] rounded">
-                <Link href="/politica-de-privacidade" className="flex-1">
-                  Política de privacidade
-                </Link>
-              </button>
-            </li>
-          </ul>
-        </GenericModal>
-      )}
+        <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1">
+          <button
+            onClick={() => {
+              if (!shareUrl) return;
+              setIsOpen(false);
+              setShowQrCode(true);
+            }}
+            className={drawerItemClass(false)}
+          >
+            <FaQrcode className="text-lg shrink-0" />
+            Compartilhar cardápio
+          </button>
+          {LANDING_ROLES.includes(profile?.role) && (
+            <button onClick={() => handleMenuSelect("landing")} className={drawerItemClass(selectedTab === "landing")}>
+              <FaGlobe className="text-lg shrink-0" />
+              Landing page
+            </button>
+          )}
+        </div>
+
+        <div className="p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] border-t border-brand-line flex flex-col gap-1">
+          <Link href="/docs" className={drawerItemClass(false)}>
+            <FaBook className="text-lg shrink-0" />
+            Documentação
+          </Link>
+          <Link href="/support" className={drawerItemClass(false)}>
+            <FaHeadset className="text-lg shrink-0" />
+            Suporte
+          </Link>
+          <Link href="/politica-de-privacidade" className={drawerItemClass(false)}>
+            <FaShieldAlt className="text-lg shrink-0" />
+            Política de privacidade
+          </Link>
+          <button onClick={() => handleMenuSelect("account")} className={drawerItemClass(selectedTab === "account")}>
+            <IconPessoa className="text-lg shrink-0" />
+            Conta
+          </button>
+        </div>
+      </nav>
 
       <QrCodeModal
         isOpen={showQrCode}
