@@ -24,5 +24,7 @@ ativa mas a loja não aparece, o modal lista os motivos, cada um com o atalho pa
 - Produtos visíveis: uma consulta leve (`categories → menu_items(visible)`) ao montar e a cada abertura do modal.
 - Aviso de que mudanças levam até 10 min (cache da rota em produção).
 - Nada muda em Supabase, RLS ou nas regras da rota.
+- Depois: o modal ganhou o seletor "No Descobrir, abrir primeiro" (cardápio ou landing), só para `LANDING_ROLES`,
+  salvo na hora como o switch (`tasks/landing-ia/landing-descobrir-plan.md`).
 
 Tarefas em `tasks/descobrir/descobrir-status-todo.md`.

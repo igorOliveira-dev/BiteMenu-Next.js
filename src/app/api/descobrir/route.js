@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { norm, searchMenus } from "@/lib/discover";
+import { LANDING_ROLES } from "@/lib/landing";
 
 // em dev sem cache: logo/banner/endereço trocados no painel aparecem na hora
 const CACHE_MS = process.env.NODE_ENV === "production" ? 10 * 60 * 1000 : 0;
@@ -15,19 +16,22 @@ async function loadMenus() {
   // quando houver avaliação, incluir rating_avg e rating_count aqui (tasks/descobrir/descobrir-avaliacoes.md)
   const { data, error } = await supabaseAdmin
     .from("menus")
-    .select("id, owner_id, slug, title, logo_url, banner_url, address_details, lat, lng, categories(menu_items(name, description, visible))")
+    .select("id, owner_id, slug, title, logo_url, banner_url, address_details, lat, lng, discover_landing, categories(menu_items(name, description, visible))")
     .eq("discoverable", true)
     .not("address_details", "is", null);
   if (error) throw error;
 
   const ownerIds = [...new Set(data.map((m) => m.owner_id).filter(Boolean))];
   const { data: owners, error: ownersError } = ownerIds.length
-    ? await supabaseAdmin.from("profiles").select("id, account_type, deletion_requested_at").in("id", ownerIds)
+    ? await supabaseAdmin.from("profiles").select("id, role, account_type, deletion_requested_at").in("id", ownerIds)
     : { data: [] };
   if (ownersError) throw ownersError;
   const blocked = new Set(
     owners.filter((p) => p.deletion_requested_at || p.account_type === "customer").map((p) => p.id),
   );
+
+  // opção "abrir a landing" só vale para quem tem a landing no plano
+  const withLanding = new Set(owners.filter((p) => LANDING_ROLES.includes(p.role)).map((p) => p.id));
 
   const menus = [];
   for (const m of data) {
@@ -42,6 +46,7 @@ async function loadMenus() {
       address_details: m.address_details,
       lat: m.lat,
       lng: m.lng,
+      landing: m.discover_landing === true && withLanding.has(m.owner_id),
       searchText: norm(items.map((i) => `${i.name} ${i.description || ""}`).join(" ")),
     });
   }
@@ -103,6 +108,8 @@ export async function GET(request) {
       city: m.address_details?.city || "",
       state: m.address_details?.state || "",
       distance: m.distance == null ? null : Math.round(m.distance * 10) / 10,
+      // /site sem landing publicada já redireciona para o cardápio
+      landing: m.landing,
     })),
   });
 }

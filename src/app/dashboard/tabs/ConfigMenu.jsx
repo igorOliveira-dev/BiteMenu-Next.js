@@ -29,6 +29,8 @@ import { useConfirm } from "@/providers/ConfirmProvider";
 import useUser from "@/hooks/useUser";
 import { supabase } from "@/lib/supabaseClient";
 import { updateMenuById } from "@/lib/queries/menus";
+import { LANDING_ROLES } from "@/lib/landing";
+import DiscoverOpenSelect from "./components/menu/DiscoverOpenSelect";
 import OnlinePayment from "./components/OnlinePayment";
 import AddressFields, { formatAddress, mapsUrl } from "@/components/AddressFields";
 import { currentPosition, geocodeAddress } from "@/lib/deliveryRadius";
@@ -109,12 +111,15 @@ const paymentOptions = [
 
 // O que cada seção tem, pra busca achar pelo nome do campo e por palavras que o dono usaria
 const SECTION_SEARCH = {
-  basico: "informações básicas nome do estabelecimento descrição endereço cep localização mapa link do cardápio url endereço do site moeda",
+  basico: "informações básicas nome do estabelecimento descrição endereço cep localização mapa link do cardápio url endereço do site moeda aparecer em descobrir busca de restaurantes no descobrir",
   servicos: `serviços entrega delivery frete taxa fixa bairro raio km distância valor mínimo de pedido ${serviceOptions.map((o) => o.label).join(" ")}`,
   pagamentos: `pagamentos formas de pagamento chave pix cartão ${paymentOptions.map((o) => o.label).join(" ")}`,
   aparencia: "aparência cores cor do fundo cor do título cor dos detalhes paleta estilo do menu layout padrão lista grade visual",
   horarios: "horários horário de funcionamento abertura fechamento abrir fechar dias da semana fuso horário",
 };
+
+// só para quem tem a landing (LANDING_ROLES), igual ao campo "No Descobrir, abrir primeiro"
+const LANDING_SEARCH = " abrir primeiro landing page página inicial site cardápio";
 
 const normalizeSearch = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
@@ -635,7 +640,9 @@ const ConfigMenu = (props) => {
   const [search, setSearch] = useState("");
   const searchWords = normalizeSearch(search).split(/\s+/).filter(Boolean);
   const matchingSections = Object.keys(SECTION_SEARCH).filter((key) =>
-    searchWords.every((w) => normalizeSearch(SECTION_SEARCH[key]).includes(w)),
+    searchWords.every((w) =>
+      normalizeSearch(SECTION_SEARCH[key] + (key === "basico" && LANDING_ROLES.includes(userRole) ? LANDING_SEARCH : "")).includes(w),
+    ),
   );
   const isHidden = (key) => searchWords.length > 0 && !matchingSections.includes(key);
 
@@ -1246,6 +1253,16 @@ const ConfigMenu = (props) => {
                   </span>
                 </span>
               </label>
+            )}
+
+            {usingExternal && LANDING_ROLES.includes(userRole) && (
+              <Field label="No Descobrir, abrir primeiro">
+                <DiscoverOpenSelect
+                  landing={externalState.discoverLanding}
+                  hasLanding={!!menu?.landing_html}
+                  onChange={(discoverLanding) => externalSetState((p) => ({ ...p, discoverLanding }))}
+                />
+              </Field>
             )}
 
             <Field label="Link do cardápio">

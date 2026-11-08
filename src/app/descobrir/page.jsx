@@ -352,9 +352,10 @@ export default function DescobrirPage() {
             <ul className="grid gap-3 sm:grid-cols-2">
               {results.map((m) => (
                 <li key={m.slug}>
-                  <Link
-                    href={`/menu/${m.slug}`}
-                    prefetch={false}
+                  {/* landing é route handler (HTML cru), não página: <a> em vez de Link */}
+                  <CardLink
+                    href={m.landing ? `/site/${m.slug}` : `/menu/${m.slug}`}
+                    landing={m.landing}
                     className="block overflow-hidden rounded-2xl border border-brand-line bg-brand-surface transition hover:border-brand-red"
                   >
                     {/* metade de cima: faixa do banner (sem banner, faixa neutra do mesmo tamanho) */}
@@ -400,7 +401,7 @@ export default function DescobrirPage() {
                         </span>
                       </span>
                     </span>
-                  </Link>
+                  </CardLink>
                 </li>
               ))}
             </ul>
@@ -490,4 +491,8 @@ function AddressModal({ initial, onSave, onGps, onClose }) {
       )}
     </GenericModal>
   );
+}
+
+function CardLink({ landing, ...props }) {
+  return landing ? <a {...props} /> : <Link prefetch={false} {...props} />;
 }

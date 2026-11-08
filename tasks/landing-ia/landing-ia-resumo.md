@@ -33,6 +33,11 @@ Plano: `landing-ia-plan.md` · Tarefas: `landing-ia-todo.md` · SQL: `landing-ia
 - Servidor de produção local: `/site/<inexistente>` → 404; `/site/teste` (sem landing) → 307 para `/menu/teste`;
   `POST /api/assistant/landing` sem login → 401.
 
+## Depois: Descobrir abre a landing (2026-11-08)
+O dono escolhe se o card do `/descobrir` abre o cardápio ou a landing (`menus.discover_landing`). Seletor em
+Configurações e no status do Descobrir, só para `LANDING_ROLES`. Plano e tarefas em `landing-descobrir-*.md`;
+SQL `landing-descobrir.sql` (**rodar antes do deploy**).
+
 ## Próximos passos
 1. **Teste sem IA** (pode fazer já): gravar uma landing de teste no cardápio admin e conferir.
    ```sql

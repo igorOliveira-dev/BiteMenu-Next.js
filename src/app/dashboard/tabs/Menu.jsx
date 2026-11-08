@@ -507,7 +507,7 @@ const Menu = (props) => {
                 setSelectedTab={setSelectedTab}
                 menuState={usingExternal ? menuState : null}
                 saveAll={props.saveAll}
-                unsaved={(changedFields || []).some((k) => ["discoverable", "addressDetails", "address", "slug"].includes(k))}
+                unsaved={(changedFields || []).some((k) => ["discoverable", "discoverLanding", "addressDetails", "address", "slug"].includes(k))}
               />
             </div>
 

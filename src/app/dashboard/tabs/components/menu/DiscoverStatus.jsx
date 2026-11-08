@@ -8,6 +8,8 @@ import { supabase } from "@/lib/supabaseClient";
 import GenericModal from "@/components/GenericModal";
 import AddressFields from "@/components/AddressFields";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
+import { LANDING_ROLES } from "@/lib/landing";
+import DiscoverOpenSelect from "./DiscoverOpenSelect";
 
 const INPUT_CLASS =
   "h-11 w-full rounded-xl border border-[var(--translucid)] bg-translucid px-3 text-[15px] outline-none transition focus:border-brand-select/70";
@@ -71,10 +73,10 @@ export default function DiscoverStatus({ setSelectedTab, menuState, saveAll, uns
     setAddressDraft(null);
   };
 
-  // mesmo toggle de Configurações > Informações básicas, salvo na hora
-  const toggleDiscoverable = async (discoverable) => {
+  // mesmos campos de Configurações > Informações básicas, salvos na hora
+  const saveField = async (patch) => {
     setSavingToggle(true);
-    const next = { ...state, discoverable };
+    const next = { ...state, ...patch };
     setState(next);
     await saveAll(next);
     setSavingToggle(false);
@@ -173,7 +175,7 @@ export default function DiscoverStatus({ setSelectedTab, menuState, saveAll, uns
                 type="checkbox"
                 checked={active}
                 disabled={savingToggle}
-                onChange={(e) => toggleDiscoverable(e.target.checked)}
+                onChange={(e) => saveField({ discoverable: e.target.checked })}
               />
               <span className="slider"></span>
             </span>
@@ -181,6 +183,18 @@ export default function DiscoverStatus({ setSelectedTab, menuState, saveAll, uns
               Aparecer em Descobrir {savingToggle && <span className="font-normal color-gray">· salvando...</span>}
             </span>
           </label>
+
+          {LANDING_ROLES.includes(profile?.role) && (
+            <div className="mb-4 text-sm">
+              <span className="mb-1.5 block font-medium">No Descobrir, abrir primeiro</span>
+              <DiscoverOpenSelect
+                landing={state.discoverLanding}
+                hasLanding={!!menu.landing_html}
+                disabled={savingToggle}
+                onChange={(discoverLanding) => saveField({ discoverLanding })}
+              />
+            </div>
+          )}
 
           {reasons.length > 0 && (
             <div className="mb-4 rounded-xl border border-[var(--translucid)] p-3 text-sm">
@@ -207,7 +221,7 @@ export default function DiscoverStatus({ setSelectedTab, menuState, saveAll, uns
 
           <p className="text-xs color-gray">
             Mudanças podem levar até 10 minutos para aparecer no Descobrir.
-            {unsaved && " Você tem outras alterações não salvas: ligar ou desligar acima também salva elas."}
+            {unsaved && " Você tem outras alterações não salvas: mudar as opções acima também salva elas."}
           </p>
         </GenericModal>
       )}

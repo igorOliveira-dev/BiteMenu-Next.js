@@ -8,6 +8,7 @@ em `tasks/descobrir/descobrir-todo.md`.
    1. `tasks/descobrir/descobrir.sql`
    2. `tasks/descobrir/profile-address.sql`
    3. `tasks/descobrir/orders-customer.sql` (mexe em RLS de `orders`: revisar antes)
+   4. `tasks/landing-ia/landing-descobrir.sql` (`menus.discover_landing`; sem ela `/api/descobrir` dá erro)
 2. Preencher as coordenadas dos cardápios que já existem:
    `node --env-file=.env.local scripts/backfill-menu-coords.mjs` (com o `.env` apontando para produção).
 3. Conferir os fluxos manuais da seção "Como testar".
@@ -152,3 +153,11 @@ SQL dos buckets foi passado na conversa e não é arquivo do projeto, porque a p
    vez só.
 5. **Carrinho:** adicionar itens, sair e voltar para a loja; os itens continuam lá.
 6. **Navegação:** em `/`, cliente vai para `/descobrir`; dono e visitante veem a landing.
+
+## Depois: card abre a landing ou o cardápio (2026-11-08)
+
+- `/api/descobrir` lê `menus.discover_landing` e devolve `landing: true` quando a opção está ligada e o dono está em
+  `LANDING_ROLES` (o `role` veio para a consulta de `profiles`). O card então vai para `/site/[slug]` com `<a>`
+  (route handler, não página); senão, `/menu/[slug]` como antes.
+- O dono escolhe em Configurações > Informações básicas ou no modal do status do Descobrir.
+- Plano em `tasks/landing-ia/landing-descobrir-plan.md`.
