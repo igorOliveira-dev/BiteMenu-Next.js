@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { norm, searchMenus } from "@/lib/discover";
 import { LANDING_ROLES } from "@/lib/landing";
+import { LINKTREE_ROLES } from "@/lib/linktree";
 
 // em dev sem cache: logo/banner/endereço trocados no painel aparecem na hora
 const CACHE_MS = process.env.NODE_ENV === "production" ? 10 * 60 * 1000 : 0;
@@ -16,7 +17,7 @@ async function loadMenus() {
   // quando houver avaliação, incluir rating_avg e rating_count aqui (tasks/descobrir/descobrir-avaliacoes.md)
   const { data, error } = await supabaseAdmin
     .from("menus")
-    .select("id, owner_id, slug, title, logo_url, banner_url, address_details, lat, lng, discover_landing, categories(menu_items(name, description, visible))")
+    .select("id, owner_id, slug, title, logo_url, banner_url, address_details, lat, lng, discover_landing, discover_links, categories(menu_items(name, description, visible))")
     .eq("discoverable", true)
     .not("address_details", "is", null);
   if (error) throw error;
@@ -32,12 +33,15 @@ async function loadMenus() {
 
   // opção "abrir a landing" só vale para quem tem a landing no plano
   const withLanding = new Set(owners.filter((p) => LANDING_ROLES.includes(p.role)).map((p) => p.id));
+  // idem para os links (tasks/linktree/); links ganham da landing se as duas estiverem ligadas
+  const withLinks = new Set(owners.filter((p) => LINKTREE_ROLES.includes(p.role)).map((p) => p.id));
 
   const menus = [];
   for (const m of data) {
     if (!m.slug || !m.address_details?.city || blocked.has(m.owner_id)) continue;
     const items = (m.categories || []).flatMap((c) => c.menu_items || []).filter((i) => i.visible !== false);
     if (!items.length) continue;
+    const links = m.discover_links === true && withLinks.has(m.owner_id);
     menus.push({
       slug: m.slug,
       title: m.title,
@@ -46,7 +50,8 @@ async function loadMenus() {
       address_details: m.address_details,
       lat: m.lat,
       lng: m.lng,
-      landing: m.discover_landing === true && withLanding.has(m.owner_id),
+      links,
+      landing: !links && m.discover_landing === true && withLanding.has(m.owner_id),
       searchText: norm(items.map((i) => `${i.name} ${i.description || ""}`).join(" ")),
     });
   }
@@ -108,8 +113,9 @@ export async function GET(request) {
       city: m.address_details?.city || "",
       state: m.address_details?.state || "",
       distance: m.distance == null ? null : Math.round(m.distance * 10) / 10,
-      // /site sem landing publicada já redireciona para o cardápio
+      // /site e /links sem página publicada já redirecionam para o cardápio
       landing: m.landing,
+      links: m.links,
     })),
   });
 }

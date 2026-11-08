@@ -3,7 +3,7 @@
 import React, { useMemo, useRef } from "react";
 import QRCode from "react-qr-code";
 import GenericModal from "@/components/GenericModal";
-import { FaRegCopy, FaDownload, FaChevronLeft } from "react-icons/fa";
+import { FaRegCopy, FaDownload, FaChevronLeft, FaWhatsapp, FaShareAlt } from "react-icons/fa";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import { IconAcessar } from "@/components/BrandIcons";
 
@@ -16,6 +16,7 @@ export default function QrCodeModal({
   title = "QR Code do seu cardápio",
   onToast, // (msg, type) => void  // type: "success" | "error"
   zIndex = 180,
+  shareText, // opcional: mostra "WhatsApp" e "Compartilhar" (linktree, tasks/linktree/)
 }) {
   const qrRef = useRef(null);
 
@@ -46,6 +47,14 @@ export default function QrCodeModal({
 
     window.open(urlToOpen, "_blank", "noopener,noreferrer");
   };
+
+  const shareWhatsapp = () => {
+    window.open(`https://wa.me/?text=${encodeURIComponent(`${shareText} ${url}`)}`, "_blank", "noopener,noreferrer");
+  };
+
+  // compartilhar nativo do celular; cancelar não é erro
+  const canNativeShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+  const shareNative = () => navigator.share({ title: shareText, text: shareText, url }).catch(() => {});
 
   const downloadPng = () => {
     try {
@@ -136,6 +145,25 @@ export default function QrCodeModal({
               <FaDownload /> Baixar
             </button>
           </div>
+
+          {shareText && (
+            <div className={`grid grid-cols-1 gap-2 w-full ${canNativeShare ? "xxs:grid-cols-2" : ""}`}>
+              <button
+                onClick={shareWhatsapp}
+                className="cursor-pointer p-2 border border-brand-line font-semibold rounded-full hover:bg-[var(--translucid)] transition flex items-center justify-center gap-2"
+              >
+                <FaWhatsapp className="text-lg" /> WhatsApp
+              </button>
+              {canNativeShare && (
+                <button
+                  onClick={shareNative}
+                  className="cursor-pointer p-2 border border-brand-line font-semibold rounded-full hover:bg-[var(--translucid)] transition flex items-center justify-center gap-2"
+                >
+                  <FaShareAlt /> Compartilhar
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
     </GenericModal>

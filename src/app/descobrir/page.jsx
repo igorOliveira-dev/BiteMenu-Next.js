@@ -350,7 +350,7 @@ export default function DescobrirPage() {
                 <li key={m.slug}>
                   {/* landing é route handler (HTML cru), não página: <a> em vez de Link */}
                   <CardLink
-                    href={m.landing ? `/site/${m.slug}` : `/menu/${m.slug}`}
+                    href={m.links ? `/links/${m.slug}` : m.landing ? `/site/${m.slug}` : `/menu/${m.slug}`}
                     landing={m.landing}
                     className="block overflow-hidden rounded-2xl border border-brand-line bg-brand-surface transition hover:border-brand-red"
                   >

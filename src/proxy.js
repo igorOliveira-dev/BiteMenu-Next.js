@@ -27,7 +27,7 @@ function getBucket(pathname) {
   if (pathname.startsWith("/api/attendant")) return "ai";
   if (pathname.startsWith("/api/")) return "api";
   if (pathname.startsWith("/_next/image")) return "image";
-  if (pathname.startsWith("/menu/") || pathname.startsWith("/site/")) return "menu";
+  if (pathname.startsWith("/menu/") || pathname.startsWith("/site/") || pathname.startsWith("/links/")) return "menu";
   return null;
 }
 
@@ -76,5 +76,5 @@ export function proxy(request) {
 }
 
 export const config = {
-  matcher: ["/api/:path*", "/_next/image", "/menu/:path*", "/site/:path*"],
+  matcher: ["/api/:path*", "/_next/image", "/menu/:path*", "/site/:path*", "/links/:path*"],
 };

@@ -21,5 +21,6 @@ export async function POST(req) {
   if (!menu?.slug) return Response.json({ ok: false });
 
   revalidatePath(`/menu/${menu.slug}`);
+  revalidatePath(`/links/${menu.slug}`); // linktree (tasks/linktree/)
   return Response.json({ ok: true });
 }

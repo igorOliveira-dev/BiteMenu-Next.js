@@ -23,6 +23,8 @@ import Attendant from "./tabs/Attendant";
 import { ATTENDANT_ROLES } from "@/lib/attendant";
 import CustomLayout from "./tabs/CustomLayout";
 import { CUSTOM_LAYOUT_ROLES } from "@/lib/customLayout";
+import Linktree from "./tabs/Linktree";
+import { LINKTREE_ROLES } from "@/lib/linktree";
 import Kitchen from "@/app/equipe/Kitchen";
 import Delivery from "@/app/equipe/Delivery";
 import UpsellBanner from "./components/UpsellBanner";
@@ -30,7 +32,7 @@ import AddressUpdateModal from "./components/AddressUpdateModal";
 import PixOnlineModal from "./components/PixOnlineModal";
 import QrCodeModal from "./tabs/components/menu/QrCodeModal";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
-import { FaChartLine, FaLifeRing, FaShieldAlt, FaChair, FaGlobe, FaMagic, FaPalette } from "react-icons/fa";
+import { FaChartLine, FaLifeRing, FaShieldAlt, FaChair, FaGlobe, FaMagic, FaPalette, FaLink } from "react-icons/fa";
 import { supabase } from "@/lib/supabaseClient";
 import { countVisibleOrders, listRecentVisibleOrders } from "@/lib/queries/orders";
 import useUser from "@/hooks/useUser";
@@ -252,6 +254,7 @@ const Dashboard = ({
     { tab: "sales", label: "Vendas", Icon: FaChartLine },
     { tab: "tables", label: "Mesas", Icon: FaChair },
     ...(LANDING_ROLES.includes(profile?.role) ? [{ tab: "landing", label: "Landing page", Icon: FaGlobe, desktopOnly: true }] : []),
+    ...(LINKTREE_ROLES.includes(profile?.role) ? [{ tab: "links", label: "Links", Icon: FaLink, desktopOnly: true }] : []),
     ...(ATTENDANT_ROLES.includes(profile?.role) ? [{ tab: "attendant", label: "Atendente IA", Icon: FaMagic, desktopOnly: true }] : []),
     ...(CUSTOM_LAYOUT_ROLES.includes(profile?.role) ? [{ tab: "customLayout", label: "Layout personalizado", Icon: FaPalette, desktopOnly: true }] : []),
   ];
@@ -483,6 +486,11 @@ const Dashboard = ({
             <Landing />
           </div>
         )}
+        {selectedTab === "links" && LINKTREE_ROLES.includes(profile?.role) && (
+          <div className="block mx-auto w-full max-w-[1100px]">
+            <Linktree />
+          </div>
+        )}
         {selectedTab === "attendant" && ATTENDANT_ROLES.includes(profile?.role) && (
           <div className="block mx-auto w-full max-w-[812px]">
             <Attendant />
@@ -585,6 +593,12 @@ const Dashboard = ({
             <button onClick={() => handleMenuSelect("landing")} className={drawerItemClass(selectedTab === "landing")}>
               <FaGlobe className="text-lg shrink-0" />
               Landing page
+            </button>
+          )}
+          {LINKTREE_ROLES.includes(profile?.role) && (
+            <button onClick={() => handleMenuSelect("links")} className={drawerItemClass(selectedTab === "links")}>
+              <FaLink className="text-lg shrink-0" />
+              Links
             </button>
           )}
           {ATTENDANT_ROLES.includes(profile?.role) && (

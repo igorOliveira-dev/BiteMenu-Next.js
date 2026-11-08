@@ -223,6 +223,7 @@ export default function StatesManager({
     "timezone",
     "discoverable",
     "discoverLanding",
+    "discoverLinks",
   ],
   onSave,
   defaultFolderPrefix,
@@ -298,6 +299,7 @@ export default function StatesManager({
       timezone: menuFromServer.timezone ?? "America/Sao_Paulo",
       discoverable: menuFromServer.discoverable ?? true,
       discoverLanding: menuFromServer.discover_landing ?? false,
+      discoverLinks: menuFromServer.discover_links ?? false,
     };
     setServerState(normalized);
     setLocalState(normalized);
@@ -501,6 +503,7 @@ export default function StatesManager({
         // só envia quando mexido: não quebra o salvamento se a coluna ainda não existir
         ...(changed.includes("discoverable") && { discoverable: state.discoverable }),
         ...(changed.includes("discoverLanding") && { discover_landing: state.discoverLanding }),
+        ...(changed.includes("discoverLinks") && { discover_links: state.discoverLinks }),
       };
 
       // coordenadas da loja para /descobrir: só geocodifica quando o endereço muda (Nominatim ~1 req/s)
@@ -609,6 +612,7 @@ export default function StatesManager({
           timezone: data.timezone ?? "America/Sao_Paulo",
           discoverable: data.discoverable ?? true,
           discoverLanding: data.discover_landing ?? false,
+          discoverLinks: data.discover_links ?? false,
         };
 
         setServerState(normalized);
@@ -649,6 +653,7 @@ export default function StatesManager({
           timezone: data.timezone ?? "America/Sao_Paulo",
           discoverable: data.discoverable ?? true,
           discoverLanding: data.discover_landing ?? false,
+          discoverLinks: data.discover_links ?? false,
           minimumOrderValue:
             data.minimum_order_value !== undefined && data.minimum_order_value !== null
               ? String(data.minimum_order_value)
@@ -789,6 +794,7 @@ export default function StatesManager({
                     timezone: "Fuso horário",
                     discoverable: "Aparecer em Descobrir",
                     discoverLanding: "Descobrir abre",
+                    discoverLinks: "Descobrir abre os links",
                   };
 
                   const displayName = displayNameMap[key] || key;
