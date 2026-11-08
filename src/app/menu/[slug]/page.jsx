@@ -4,7 +4,8 @@ import { CartProvider } from "@/contexts/CartContext";
 import ClientMenu2 from "./ClientMenu2";
 import ClientMenu3 from "./ClientMenu3";
 import MenuAccountButton from "./components/MenuAccountButton";
-import { getMenuBySlug, getOwnerInfo, getOptionStock } from "./getMenuData";
+import { getMenuBySlug, getOwnerInfo, getOptionStock, getAttendantEnabled } from "./getMenuData";
+import { ATTENDANT_ROLES } from "@/lib/attendant";
 import { applyStock, hideHiddenGroups, STOCK_ROLES } from "@/lib/stock";
 import { LOYALTY_ROLES } from "@/lib/loyalty";
 
@@ -129,6 +130,9 @@ export default async function MenuPage({ params }) {
   // fidelidade é do Pro para cima: dono que caiu de plano fica com a fidelidade bloqueada (sem prêmio no carrinho;
   // o cliente que já participa vê o cadeado), sem mexer no banco
   if (menu.loyalty && !LOYALTY_ROLES.includes(ownerRole)) menu.loyalty = { ...menu.loyalty, locked: true };
+
+  // botão do atendente IA nos layouts (ClientMenu*.jsx)
+  menu.attendant_enabled = ATTENDANT_ROLES.includes(ownerRole) && menu.orders !== "none" && (await getAttendantEnabled(menu.id));
 
   const effectiveLayout = menu.layout;
   const isDemo = slug === DEMO_SLUG;

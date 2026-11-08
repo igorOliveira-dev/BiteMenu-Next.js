@@ -140,6 +140,7 @@ function CartDrawerContent({
   isOpen,
   ownerPhone,
   ownerRole,
+  checkoutSignal = 0,
 }) {
   const cart = useCartContext();
   const confirm = useConfirm();
@@ -634,6 +635,54 @@ function CartDrawerContent({
     const qs = params.toString();
     return `/menu/${menu?.slug}${qs ? `?${qs}` : ""}`;
   };
+
+  // "Continuar compra": confere loja aberta e mínimos e abre a finalização. Também chamado pelo atendente IA (checkoutSignal).
+  const continuePurchase = async () => {
+    // controle manual vale mais que o horário: confere o estado atual no banco
+    const { data: store } = await getStoreState(
+      supabase,
+      menu.id,
+    );
+    const openNow = store?.manual_control
+      ? store.is_open
+      : isOpen;
+
+    if (!openNow) {
+      customAlert(`${menu.title} está fechado no momento!`);
+      return;
+    }
+
+    // Mínimo fixo do sistema (R$2,00)
+    if (drawerSubtotal < 2) {
+      customAlert(
+        `O valor mínimo para realizar um pedido é de ${formatCurrency(2, menu?.currency)}`,
+      );
+      return;
+    }
+
+    if (hasPlusPermissions) {
+      if (
+        menu.minimum_order_value &&
+        drawerSubtotal < menu.minimum_order_value
+      ) {
+        customAlert(
+          `O valor mínimo para pedidos neste estabelecimento é de ${formatCurrency(
+            menu.minimum_order_value,
+            menu?.currency,
+          )}`,
+        );
+        return;
+      }
+    }
+
+    setIsPurchaseModalOpen(true);
+  };
+
+  // Atendente IA pediu para fechar o pedido: mesmo caminho do botão (0 = nunca pediu)
+  useEffect(() => {
+    if (checkoutSignal) continuePurchase();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checkoutSignal]);
 
   // Voltou do cadastro/login aberto no checkout: reabre o carrinho e a compra onde estava
   const resumeService = searchParams.get("finalizar");
@@ -1555,7 +1604,7 @@ function CartDrawerContent({
         </div>
 
         {/* ITENS */}
-        <div className="overflow-y-auto cart-scrollable px-4 space-y-4 py-4 mb-[110px]">
+        <div className="flex-1 min-h-0 overflow-y-auto cart-scrollable px-4 space-y-4 py-4">
           {!currentItems || currentItems.length === 0 ? (
             <div className="py-10 text-center" style={{ color: grayToUse }}>
               Carrinho vazio
@@ -1619,9 +1668,10 @@ function CartDrawerContent({
           )}
         </div>
 
-        {/* FOOTER */}
+        {/* FOOTER: no fluxo (não fixed), abaixo da lista. A altura muda com cupom/fidelidade/descontos;
+            fixed com margem fixa na lista fazia ele cobrir os últimos itens. */}
         {currentItems && currentItems.length > 0 && (
-          <div className="fixed w-full bottom-0 bg-inherit z-10 p-4">
+          <div className="shrink-0 w-full bg-inherit z-10 p-4">
             {loyaltyMin > 0 && (
               <div className="mb-3">
                 <p className="text-xs mb-1.5" style={{ color: grayToUse }}>
@@ -1776,46 +1826,7 @@ function CartDrawerContent({
             </div>
             <div className="flex gap-2">
               <button
-                onClick={async () => {
-                  // controle manual vale mais que o horário: confere o estado atual no banco
-                  const { data: store } = await getStoreState(
-                    supabase,
-                    menu.id,
-                  );
-                  const openNow = store?.manual_control
-                    ? store.is_open
-                    : isOpen;
-
-                  if (!openNow) {
-                    customAlert(`${menu.title} está fechado no momento!`);
-                    return;
-                  }
-
-                  // Mínimo fixo do sistema (R$2,00)
-                  if (drawerSubtotal < 2) {
-                    customAlert(
-                      `O valor mínimo para realizar um pedido é de ${formatCurrency(2, menu?.currency)}`,
-                    );
-                    return;
-                  }
-
-                  if (hasPlusPermissions) {
-                    if (
-                      menu.minimum_order_value &&
-                      drawerSubtotal < menu.minimum_order_value
-                    ) {
-                      customAlert(
-                        `O valor mínimo para pedidos neste estabelecimento é de ${formatCurrency(
-                          menu.minimum_order_value,
-                          menu?.currency,
-                        )}`,
-                      );
-                      return;
-                    }
-                  }
-
-                  setIsPurchaseModalOpen(true);
-                }}
+                onClick={continuePurchase}
                 className="cursor-pointer flex-1 py-2 rounded-full hover:opacity-90 text-white font-bold transition"
                 style={{
                   backgroundColor: menu.details_color,

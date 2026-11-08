@@ -8,6 +8,7 @@ import GenericModal from "@/components/GenericModal";
 import { useCartContext } from "@/contexts/CartContext";
 import { stockError } from "@/lib/stock";
 import CartDrawer from "./components/CartDrawer";
+import AiAttendant from "./components/AiAttendant";
 import VariationPicker from "./components/VariationPicker";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { useAlert } from "@/providers/AlertProvider";
@@ -136,6 +137,7 @@ export default function ClientMenu({ menu: rawMenu, ownerPhone, ownerRole, demoT
   const [animateCart, setAnimateCart] = useState(false);
   const [hoursModalOpen, setHoursModalOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [checkoutSignal, setCheckoutSignal] = useState(0); // atendente IA: +1 = fazer o "Continuar compra"
   const cartOpenRef = useRef(cartOpen);
 
   const establishmentPhone = ownerPhone ?? null;
@@ -908,7 +910,25 @@ export default function ClientMenu({ menu: rawMenu, ownerPhone, ownerRole, demoT
             zIndex: 40,
             transition: "bottom 0.2s ease-in-out",
           }}
+          className="flex items-center gap-2"
         >
+          {menu.attendant_enabled === true && (
+            <AiAttendant
+              menu={menu}
+              ownerRole={ownerRole}
+              canShowPromoPrice={canShowPromoPrice}
+              storeOpen={open}
+              onOpenCart={openCart}
+              onCheckout={() => {
+                openCart();
+                setCheckoutSignal((n) => n + 1);
+              }}
+              bgColor={menu.background_color}
+              foreground={foregroundToUse}
+              gray={grayToUse}
+              translucid={translucidToUse}
+            />
+          )}
           <button
             onClick={openCart}
             className={`cursor-pointer flex items-center gap-2 px-5 py-2.5 rounded-full font-bold transition-transform duration-200 hover:opacity-90 ${
@@ -1261,6 +1281,7 @@ export default function ClientMenu({ menu: rawMenu, ownerPhone, ownerRole, demoT
         isOpen={open}
         ownerPhone={ownerPhone}
         ownerRole={ownerRole}
+        checkoutSignal={checkoutSignal}
       />
 
       {/* Footer */}
