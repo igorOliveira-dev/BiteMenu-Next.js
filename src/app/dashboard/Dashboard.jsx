@@ -10,7 +10,7 @@ import Stock from "./tabs/Stock";
 import WhatsappMessage from "./tabs/WhatsappMessage";
 import { useAlert } from "@/providers/AlertProvider";
 import ConfigMenu from "./tabs/ConfigMenu";
-import { FaBars, FaBook, FaChevronLeft, FaHeadset, FaQrcode, FaTimes } from "react-icons/fa";
+import { FaBars, FaBook, FaChevronDown, FaChevronLeft, FaHeadset, FaQrcode, FaTimes } from "react-icons/fa";
 import Account from "./tabs/Account";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -25,6 +25,8 @@ import CustomLayout from "./tabs/CustomLayout";
 import { CUSTOM_LAYOUT_ROLES } from "@/lib/customLayout";
 import Linktree from "./tabs/Linktree";
 import { LINKTREE_ROLES } from "@/lib/linktree";
+import Schedule from "./tabs/Schedule";
+import { SCHEDULE_ROLES } from "@/lib/schedule";
 import Kitchen from "@/app/equipe/Kitchen";
 import Delivery from "@/app/equipe/Delivery";
 import UpsellBanner from "./components/UpsellBanner";
@@ -32,7 +34,7 @@ import AddressUpdateModal from "./components/AddressUpdateModal";
 import PixOnlineModal from "./components/PixOnlineModal";
 import QrCodeModal from "./tabs/components/menu/QrCodeModal";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
-import { FaChartLine, FaLifeRing, FaShieldAlt, FaChair, FaGlobe, FaMagic, FaPalette, FaLink } from "react-icons/fa";
+import { FaChartLine, FaLifeRing, FaShieldAlt, FaChair, FaGlobe, FaMagic, FaPalette, FaLink, FaCalendarAlt } from "react-icons/fa";
 import { supabase } from "@/lib/supabaseClient";
 import { countVisibleOrders, listRecentVisibleOrders } from "@/lib/queries/orders";
 import useUser from "@/hooks/useUser";
@@ -236,7 +238,8 @@ const Dashboard = ({
 
   useEffect(() => {
     try {
-      setCollapsed(localStorage.getItem("dashboard-sidebar-collapsed") === "1");
+      const saved = localStorage.getItem("dashboard-sidebar-collapsed");
+      setCollapsed(saved === null ? window.innerWidth < 1280 : saved === "1");
     } catch {}
   }, []);
 
@@ -248,19 +251,39 @@ const Dashboard = ({
     } catch {}
   };
 
+  // Agenda só com o agendamento ativado em Configurações > Serviços
+  const scheduleMode = usingExternal ? externalState?.scheduleMode : menu?.schedule_mode;
+  const showSchedule = SCHEDULE_ROLES.includes(profile?.role) && ["optional", "required"].includes(scheduleMode);
+
+  // grupo retrátil das abas extras (Enterprise): sozinhas elas não cabem em telas baixas
+  const [extrasOpen, setExtrasOpen] = useState(true);
+  useEffect(() => {
+    try {
+      setExtrasOpen(localStorage.getItem("dashboard-sidebar-extras") !== "0");
+    } catch {}
+  }, []);
+  const toggleExtras = () => {
+    const next = !extrasOpen;
+    setExtrasOpen(next);
+    try {
+      localStorage.setItem("dashboard-sidebar-extras", next ? "1" : "0");
+    } catch {}
+  };
+
   const navItems = [
     { tab: "menu", label: "Cardápio", Icon: IconPrato },
     { tab: "orders", label: "Pedidos", Icon: IconSino },
     { tab: "sales", label: "Vendas", Icon: FaChartLine },
     { tab: "tables", label: "Mesas", Icon: FaChair },
-    ...(LANDING_ROLES.includes(profile?.role) ? [{ tab: "landing", label: "Landing page", Icon: FaGlobe, desktopOnly: true }] : []),
-    ...(LINKTREE_ROLES.includes(profile?.role) ? [{ tab: "links", label: "Links", Icon: FaLink, desktopOnly: true }] : []),
-    ...(ATTENDANT_ROLES.includes(profile?.role) ? [{ tab: "attendant", label: "Atendente IA", Icon: FaMagic, desktopOnly: true }] : []),
-    ...(CUSTOM_LAYOUT_ROLES.includes(profile?.role) ? [{ tab: "customLayout", label: "Layout personalizado", Icon: FaPalette, desktopOnly: true }] : []),
+    ...(showSchedule ? [{ tab: "schedule", label: "Agenda", Icon: FaCalendarAlt, desktopOnly: true }] : []),
+    ...(LANDING_ROLES.includes(profile?.role) ? [{ tab: "landing", label: "Landing page", Icon: FaGlobe, desktopOnly: true, extra: true }] : []),
+    ...(LINKTREE_ROLES.includes(profile?.role) ? [{ tab: "links", label: "Links", Icon: FaLink, desktopOnly: true, extra: true }] : []),
+    ...(ATTENDANT_ROLES.includes(profile?.role) ? [{ tab: "attendant", label: "Atendente IA", Icon: FaMagic, desktopOnly: true, extra: true }] : []),
+    ...(CUSTOM_LAYOUT_ROLES.includes(profile?.role) ? [{ tab: "customLayout", label: "Layout personalizado", Icon: FaPalette, desktopOnly: true, extra: true }] : []),
   ];
 
   const navClass = (active) =>
-    `cursor-pointer w-full px-1 xxs:px-4 py-5 lg:py-3 lg:rounded-xl hover-bg-translucid transition-colors text-sm xs:text-base flex items-center gap-3 justify-center whitespace-nowrap ${
+    `cursor-pointer w-full px-1 xxs:px-4 py-5 lg:py-3 [@media(max-height:820px)]:lg:py-2 lg:rounded-xl hover-bg-translucid transition-colors text-sm xs:text-base flex items-center gap-3 justify-center whitespace-nowrap ${
       collapsed ? "lg:px-0" : "lg:justify-start lg:px-3"
     } ${active ? "bg-brand-gradient bg-brand-gradient-soft text-white font-semibold" : ""}`;
 
@@ -302,7 +325,7 @@ const Dashboard = ({
           className={`max-lg:fixed max-lg:z-[60] max-lg:bottom-2 max-lg:inset-x-2 max-lg:mx-auto max-lg:w-auto max-lg:h-auto max-lg:rounded-2xl max-lg:bg-brand-surface/70 max-lg:backdrop-blur-md lg:m-2 lg:rounded-2xl lg:bg-brand-surface border border-brand-line h-full max-w-[812px] ${collapsed ? "lg:w-16" : "lg:w-60"} lg:transition-[width] lg:duration-200 flex flex-col justify-between items-stretch overflow-hidden lg:h-[calc(100dvh-110px)]`}
         >
           {/* Top section */}
-          <div className="w-full flex lg:flex-col lg:gap-1 lg:p-2">
+          <div className="w-full flex lg:flex-col lg:gap-1 lg:p-2 lg:flex-1 lg:min-h-0">
             <button
               onClick={toggleCollapsed}
               aria-expanded={!collapsed}
@@ -313,40 +336,69 @@ const Dashboard = ({
               <FaChevronLeft className={`text-sm transition-transform duration-200 ${collapsed ? "rotate-180" : ""}`} />
             </button>
 
-            {navItems.map(({ tab, label, Icon, desktopOnly }) => (
-              <button
-                key={tab}
-                onClick={() => setSelectedTab(tab)}
-                title={label}
-                aria-label={label}
-                className={`${navClass(selectedTab === tab)} ${desktopOnly ? "max-lg:hidden" : ""}`}
-              >
-                <span className="relative shrink-0">
-                  <Icon className="text-lg" />
-                  {tab === "orders" && pendingOrdersCount > 0 && (
-                    <span className="absolute -top-2 -right-3 bg-bite ring-2 ring-brand-surface text-white rounded-full text-[10px] min-w-[18px] h-[18px] px-1 flex items-center justify-center">
-                      {pendingOrdersCount}
-                    </span>
+            {(() => {
+              const renderItem = ({ tab, label, Icon, desktopOnly }) => (
+                <button
+                  key={tab}
+                  onClick={() => setSelectedTab(tab)}
+                  title={label}
+                  aria-label={label}
+                  className={`${navClass(selectedTab === tab)} ${desktopOnly ? "max-lg:hidden" : ""}`}
+                >
+                  <span className="relative shrink-0">
+                    <Icon className="text-lg" />
+                    {tab === "orders" && pendingOrdersCount > 0 && (
+                      <span className="absolute -top-2 -right-3 bg-bite ring-2 ring-brand-surface text-white rounded-full text-[10px] min-w-[18px] h-[18px] px-1 flex items-center justify-center">
+                        {pendingOrdersCount}
+                      </span>
+                    )}
+                  </span>
+                  <span className={labelClass}>
+                    {tab === "menu" && changedFields.length > 0 ? `${label} *` : label}
+                  </span>
+                </button>
+              );
+              const extras = navItems.filter((i) => i.extra);
+              // aba ativa dentro do grupo fechado: mostra só ela, pra não sumir da barra
+              const visibleExtras = extrasOpen ? extras : extras.filter((i) => i.tab === selectedTab);
+              return (
+                <>
+                  {navItems.filter((i) => !i.extra).map(renderItem)}
+                  {extras.length > 0 && (
+                    <>
+                      <button
+                        onClick={toggleExtras}
+                        aria-expanded={extrasOpen}
+                        title={extrasOpen ? "Recolher ferramentas" : "Mostrar ferramentas"}
+                        className={`max-lg:hidden mt-2 flex cursor-pointer items-center gap-2 h-8 rounded-lg color-gray hover-bg-translucid transition-colors text-xs font-semibold uppercase tracking-wide ${
+                          collapsed ? "justify-center border-t border-brand-line rounded-none pt-2 h-10" : "px-3 justify-between"
+                        }`}
+                      >
+                        <span className={collapsed ? "hidden" : ""}>Ferramentas</span>
+                        <FaChevronDown className={`text-[10px] transition-transform duration-200 ${extrasOpen ? "" : "-rotate-90"}`} />
+                      </button>
+                      {/* só as ferramentas rolam: as abas principais e o rodapé ficam sempre visíveis */}
+                      <div className="max-lg:hidden flex flex-col gap-1 min-h-0 overflow-y-auto scrollbar-none">
+                        {visibleExtras.map(renderItem)}
+                      </div>
+                    </>
                   )}
-                </span>
-                <span className={labelClass}>
-                  {tab === "menu" && changedFields.length > 0 ? `${label} *` : label}
-                </span>
-              </button>
-            ))}
+                </>
+              );
+            })()}
 
             <button
               onClick={() => setIsOpen(true)}
               aria-label="Mais opções"
               aria-expanded={isOpen}
-              className={`${navClass(["landing", "attendant", "account"].includes(selectedTab))} lg:hidden`}
+              className={`${navClass(["schedule", "landing", "links", "attendant", "customLayout", "account"].includes(selectedTab))} lg:hidden`}
             >
               <FaBars className="text-lg shrink-0" />
             </button>
           </div>
 
           {/* Bottom section */}
-          <div className="w-full hidden lg:flex flex-col gap-1 p-2 border-t border-brand-line">
+          <div className="w-full hidden lg:flex flex-col gap-1 p-2 border-t border-brand-line shrink-0">
             <Link href="/docs" title="Documentação" aria-label="Documentação" className={navClass(false)}>
               <FaBook className="text-lg shrink-0" />
               <span className={labelClass}>Documentação</span>
@@ -486,6 +538,11 @@ const Dashboard = ({
             <Landing />
           </div>
         )}
+        {selectedTab === "schedule" && showSchedule && (
+          <div className="block mx-auto w-full max-w-[1024px]">
+            <Schedule />
+          </div>
+        )}
         {selectedTab === "links" && LINKTREE_ROLES.includes(profile?.role) && (
           <div className="block mx-auto w-full max-w-[1100px]">
             <Linktree />
@@ -589,6 +646,12 @@ const Dashboard = ({
             <FaQrcode className="text-lg shrink-0" />
             Compartilhar cardápio
           </button>
+          {showSchedule && (
+            <button onClick={() => handleMenuSelect("schedule")} className={drawerItemClass(selectedTab === "schedule")}>
+              <FaCalendarAlt className="text-lg shrink-0" />
+              Agenda
+            </button>
+          )}
           {LANDING_ROLES.includes(profile?.role) && (
             <button onClick={() => handleMenuSelect("landing")} className={drawerItemClass(selectedTab === "landing")}>
               <FaGlobe className="text-lg shrink-0" />

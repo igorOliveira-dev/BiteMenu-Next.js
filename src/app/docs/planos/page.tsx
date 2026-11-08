@@ -137,6 +137,11 @@ const page = () => {
           </li>
           <li>Controle de estoque</li>
           <li>
+            Agendamento de pedidos: o cliente escolhe dia e horário da entrega ou retirada, dentro do horário de
+            funcionamento. Ative em Configurações → Serviços e entrega, deixando o agendamento opcional ou obrigatório
+            (só agendamento) e definindo a antecedência mínima. Os pedidos agendados aparecem no calendário da aba Agenda
+          </li>
+          <li>
             Mensagem do WhatsApp personalizada: edite a mensagem de confirmação do pedido que o cliente envia, usando
             tags para inserir os dados do pedido onde quiser
           </li>

@@ -37,6 +37,7 @@ import AddressFields, {
   EMPTY_ADDRESS,
   formatAddress,
 } from "@/components/AddressFields";
+import { SCHEDULE_ROLES, formatScheduled, isWithinHours, nowLocalInput } from "@/lib/schedule";
 import {
   currentPosition,
   distanceKm,
@@ -484,6 +485,23 @@ function CartDrawerContent({
     { id: "pix", label: "PIX" },
   ];
 
+  // agendamento (Business): data/hora opcional, vazio = pedido para agora
+  const [scheduledFor, setScheduledFor] = useState("");
+  // config do dono, lazy fora da query principal (se a coluna faltar, fica desativado)
+  const [scheduleCfg, setScheduleCfg] = useState({ mode: "off", min: 0 });
+  useEffect(() => {
+    if (!open || !menu?.id || !SCHEDULE_ROLES.includes(ownerRole)) return;
+    supabase
+      .from("menus")
+      .select("schedule_mode, schedule_min_minutes")
+      .eq("id", menu.id)
+      .maybeSingle()
+      .then(({ data }) => data && setScheduleCfg({ mode: data.schedule_mode || "off", min: data.schedule_min_minutes || 0 }));
+  }, [open, menu?.id, ownerRole]);
+  const canSchedule = SCHEDULE_ROLES.includes(ownerRole) && scheduleCfg.mode !== "off" && !tableInfo && !counterMode;
+  const scheduleRequired = canSchedule && scheduleCfg.mode === "required";
+  const scheduledIso = canSchedule && scheduledFor ? new Date(scheduledFor).toISOString() : null;
+  const scheduleOutOfHours = !!scheduledIso && !isWithinHours(menu?.hours, menu?.timezone, scheduledIso);
   // Pix online (subconta ValidaPay): "pix_online" em menu.payments, exclusivo com o PIX com chave.
   // Só delivery e retirada; em mesa e balcão não é oferecido.
   const pixOnlineAvailable =
@@ -495,9 +513,17 @@ function CartDrawerContent({
   const availablePaymentsOptions = paymentOptions.filter((option) =>
     (menu?.payments || []).includes(option.id),
   );
+  // pedido agendado: o Pix online (cobrança expira) vira PIX normal
   if (pixOnlineAvailable) {
-    availablePaymentsOptions.push({ id: "pix_online", label: "PIX" });
+    availablePaymentsOptions.push(
+      scheduledIso ? { id: "pix", label: "PIX" } : { id: "pix_online", label: "PIX" },
+    );
   }
+  useEffect(() => {
+    if (!pixOnlineAvailable) return;
+    if (scheduledIso && selectedPayment === "pix_online") setSelectedPayment("pix");
+    else if (!scheduledIso && selectedPayment === "pix") setSelectedPayment("pix_online");
+  }, [scheduledIso, selectedPayment, pixOnlineAvailable]);
 
   function normalizeMoney(value) {
     const num = Number(String(value ?? "").replace(",", "."));
@@ -1033,12 +1059,13 @@ function CartDrawerContent({
       link: orderId ? `${window.location.origin}/pedido/${orderId}` : "",
     });
 
+    const when = scheduledIso ? `\n\nAgendado para: ${formatScheduled(scheduledIso)}` : "";
     const rawPhone =
       establishmentPhone || menu?.owner_phone || menu?.phone || null;
     if (!rawPhone) return null;
 
     const normalized = String(rawPhone).replace(/\D/g, "");
-    return `https://wa.me/${normalized}?text=${encodeURIComponent(message)}`;
+    return `https://wa.me/${normalized}?text=${encodeURIComponent(message + when)}`;
   }
   // ────────────────────────────────────────────────────────────────────────
 
@@ -1046,6 +1073,19 @@ function CartDrawerContent({
   function validateCustomerFields() {
     if (!counterMode && costumerName.trim().length < 3) {
       customAlert("O nome deve ter pelo menos 3 letras.", "error");
+      return false;
+    }
+
+    if (scheduleRequired && !scheduledFor) {
+      customAlert("Escolha a data e hora do agendamento.", "error");
+      return false;
+    }
+    if (scheduledIso && new Date(scheduledIso) < new Date(Date.now() + scheduleCfg.min * 60000 - 60000)) {
+      customAlert(`O agendamento precisa ser com pelo menos ${scheduleCfg.min} min de antecedência.`, "error");
+      return false;
+    }
+    if (scheduleOutOfHours) {
+      customAlert("Esse horário está fora do funcionamento. Escolha um horário em que o estabelecimento esteja aberto.", "error");
       return false;
     }
 
@@ -1388,6 +1428,7 @@ function CartDrawerContent({
             discount: discountAmount,
             is_paid: false,
             total,
+            ...(scheduledIso && { scheduled_for: scheduledIso }),
             created_at: orderCreatedAt,
             updated_at: new Date().toISOString(),
           };
@@ -2167,6 +2208,27 @@ function CartDrawerContent({
                       </div>
                     )}
                   </>
+                )}
+                {canSchedule && (
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      {scheduleRequired ? "Agendar para:" : "Agendar para (opcional):"}
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={scheduledFor}
+                      min={nowLocalInput(scheduleCfg.min)}
+                      onChange={(e) => setScheduledFor(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl mb-2"
+                      style={{ backgroundColor: translucidToUse }}
+                      aria-invalid={scheduleOutOfHours}
+                    />
+                    {scheduleOutOfHours && (
+                      <p className="text-sm text-red-500 -mt-1 mb-2">
+                        Fora do horário de funcionamento. Escolha outro horário.
+                      </p>
+                    )}
+                  </div>
                 )}
                 <>
                   <div>
