@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getUserFromRequest } from "@/lib/validapay";
 import { ATTENDANT_DAILY_BUDGET_MICRO_USD, ENTERPRISE_AI_MONTHLY_BUDGET_MICRO_USD } from "@/lib/attendant";
+import { aiLimitFactor } from "@/lib/assistant";
 
 // Gasto de hoje do atendente IA do cardápio do dono (aba "Atendente IA"). A tabela não tem policy: lê pelo servidor.
 export async function GET(req) {
@@ -9,6 +10,9 @@ export async function GET(req) {
 
   const { data: menu } = await supabaseAdmin.from("menus").select("id").eq("owner_id", user.id).maybeSingle();
   if (!menu) return Response.json({ error: "Cardápio não encontrado" }, { status: 404 });
+
+  const { data: profile } = await supabaseAdmin.from("profiles").select("role").eq("id", user.id).maybeSingle();
+  const factor = aiLimitFactor(profile?.role); // admin: tetos dobrados, igual ao reserveBudget
 
   const { data, error } = await supabaseAdmin
     .from("ai_attendant_usage")
@@ -26,7 +30,7 @@ export async function GET(req) {
   // só % dos limites: o valor em dólar é custo interno do Bite Menu, não vai para o estabelecimento
   return Response.json({
     messages: isToday ? data.messages : 0,
-    percent: pct(isToday ? data.micro_usd : 0, ATTENDANT_DAILY_BUDGET_MICRO_USD),
-    monthPercent: pct(isThisMonth ? data.month_micro_usd : 0, ENTERPRISE_AI_MONTHLY_BUDGET_MICRO_USD),
+    percent: pct(isToday ? data.micro_usd : 0, ATTENDANT_DAILY_BUDGET_MICRO_USD * factor),
+    monthPercent: pct(isThisMonth ? data.month_micro_usd : 0, ENTERPRISE_AI_MONTHLY_BUDGET_MICRO_USD * factor),
   });
 }

@@ -3,6 +3,7 @@
 // Só servidor.
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { ATTENDANT_DAILY_BUDGET_MICRO_USD, ENTERPRISE_AI_MONTHLY_BUDGET_MICRO_USD } from "@/lib/attendant";
+import { aiLimitFactor } from "@/lib/assistant";
 
 // Haiku 5.5, US$ por milhão de tokens = micro-dólares por token. Prompt acima de 100k tokens usa a tabela mais cara.
 const PRICE = { input: 0.1, output: 0.5, cacheRead: 0.01, cacheWrite1h: 0.2 };
@@ -20,13 +21,15 @@ export function costMicroUsd(u) {
 }
 
 // true = reservado, pode chamar a IA. daily: conta no teto diário do atendente (a landing só conta no mensal).
+// role: plano do dono do cardápio (admin tem os tetos dobrados).
 // Erro no banco = não reserva (fail closed): sem conta, sem chamada.
-export async function reserveBudget(menuId, amount, daily) {
+export async function reserveBudget(menuId, amount, daily, role) {
+  const factor = aiLimitFactor(role);
   const { data, error } = await supabaseAdmin.rpc("ai_attendant_reserve", {
     p_menu_id: menuId,
     p_amount: amount,
-    p_daily_cap: ATTENDANT_DAILY_BUDGET_MICRO_USD,
-    p_monthly_cap: ENTERPRISE_AI_MONTHLY_BUDGET_MICRO_USD,
+    p_daily_cap: ATTENDANT_DAILY_BUDGET_MICRO_USD * factor,
+    p_monthly_cap: ENTERPRISE_AI_MONTHLY_BUDGET_MICRO_USD * factor,
     p_daily: daily,
   });
   if (error) {

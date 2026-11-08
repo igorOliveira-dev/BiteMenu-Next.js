@@ -21,6 +21,8 @@ import Landing from "./tabs/Landing";
 import { LANDING_ROLES } from "@/lib/landing";
 import Attendant from "./tabs/Attendant";
 import { ATTENDANT_ROLES } from "@/lib/attendant";
+import CustomLayout from "./tabs/CustomLayout";
+import { CUSTOM_LAYOUT_ROLES } from "@/lib/customLayout";
 import Kitchen from "@/app/equipe/Kitchen";
 import Delivery from "@/app/equipe/Delivery";
 import UpsellBanner from "./components/UpsellBanner";
@@ -28,7 +30,7 @@ import AddressUpdateModal from "./components/AddressUpdateModal";
 import PixOnlineModal from "./components/PixOnlineModal";
 import QrCodeModal from "./tabs/components/menu/QrCodeModal";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
-import { FaChartLine, FaLifeRing, FaShieldAlt, FaChair, FaGlobe, FaMagic } from "react-icons/fa";
+import { FaChartLine, FaLifeRing, FaShieldAlt, FaChair, FaGlobe, FaMagic, FaPalette } from "react-icons/fa";
 import { supabase } from "@/lib/supabaseClient";
 import { countVisibleOrders, listRecentVisibleOrders } from "@/lib/queries/orders";
 import useUser from "@/hooks/useUser";
@@ -251,6 +253,7 @@ const Dashboard = ({
     { tab: "tables", label: "Mesas", Icon: FaChair },
     ...(LANDING_ROLES.includes(profile?.role) ? [{ tab: "landing", label: "Landing page", Icon: FaGlobe, desktopOnly: true }] : []),
     ...(ATTENDANT_ROLES.includes(profile?.role) ? [{ tab: "attendant", label: "Atendente IA", Icon: FaMagic, desktopOnly: true }] : []),
+    ...(CUSTOM_LAYOUT_ROLES.includes(profile?.role) ? [{ tab: "customLayout", label: "Layout personalizado", Icon: FaPalette, desktopOnly: true }] : []),
   ];
 
   const navClass = (active) =>
@@ -485,6 +488,11 @@ const Dashboard = ({
             <Attendant />
           </div>
         )}
+        {selectedTab === "customLayout" && CUSTOM_LAYOUT_ROLES.includes(profile?.role) && (
+          <div className="block mx-auto w-full max-w-[1100px]">
+            <CustomLayout />
+          </div>
+        )}
         {selectedTab === "planDetails" && (
           <div className="block mx-auto w-full max-w-[1040px]">
             <PlanDetails setSelectedTab={setSelectedTab} />
@@ -583,6 +591,12 @@ const Dashboard = ({
             <button onClick={() => handleMenuSelect("attendant")} className={drawerItemClass(selectedTab === "attendant")}>
               <FaMagic className="text-lg shrink-0" />
               Atendente IA
+            </button>
+          )}
+          {CUSTOM_LAYOUT_ROLES.includes(profile?.role) && (
+            <button onClick={() => handleMenuSelect("customLayout")} className={drawerItemClass(selectedTab === "customLayout")}>
+              <FaPalette className="text-lg shrink-0" />
+              Layout personalizado
             </button>
           )}
         </div>

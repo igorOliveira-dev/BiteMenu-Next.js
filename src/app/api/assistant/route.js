@@ -5,6 +5,7 @@ import {
   AI_FIELDS,
   AI_PLAN_ROLES,
   AI_SESSION_TOKEN_LIMIT,
+  aiLimitFactor,
   CATEGORY_LIMITS,
   ITEM_LIMITS,
 } from "@/lib/assistant";
@@ -360,10 +361,10 @@ const usageUnavailable = (err) => {
 };
 
 export async function GET(req) {
-  const { user, error } = await authorize(req);
+  const { user, profile, error } = await authorize(req);
   if (error) return error;
   try {
-    return Response.json({ usage: usageInfo(await getUsage(user.id)) });
+    return Response.json({ usage: usageInfo(await getUsage(user.id), AI_SESSION_TOKEN_LIMIT * aiLimitFactor(profile.role)) });
   } catch (err) {
     return usageUnavailable(err);
   }
@@ -881,9 +882,10 @@ export async function POST(req) {
   } catch (err) {
     return usageUnavailable(err);
   }
-  if (usage.tokens >= AI_SESSION_TOKEN_LIMIT) {
+  const tokenLimit = AI_SESSION_TOKEN_LIMIT * aiLimitFactor(profile.role);
+  if (usage.tokens >= tokenLimit) {
     return Response.json(
-      { error: "Você usou 100% do limite desta sessão.", usage: usageInfo(usage) },
+      { error: "Você usou 100% do limite desta sessão.", usage: usageInfo(usage, tokenLimit) },
       { status: 429 },
     );
   }
@@ -967,7 +969,7 @@ Hoje: ${new Intl.DateTimeFormat("pt-BR", { timeZone: current.timezone || "Americ
   const u = response.usage ?? {};
   const used =
     (u.input_tokens ?? 0) + (u.output_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0);
-  const usageNow = usageInfo(await addUsage(user.id, usage, used));
+  const usageNow = usageInfo(await addUsage(user.id, usage, used), tokenLimit);
   const respond = (body) => Response.json({ ...body, usage: usageNow });
 
   if (response.stop_reason === "refusal") {

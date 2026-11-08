@@ -25,7 +25,7 @@ function formatHours(hours, toViewer) {
   });
 }
 
-export function CategoryNav({ m, className = "" }) {
+export function CategoryNav({ m, className = "", style }) {
   const { menu, navCategories, hasStarred, hasPlusPermissions, translucidToUse, foregroundToUse } = m;
   if (navCategories.length === 0) return null;
 
@@ -41,6 +41,7 @@ export function CategoryNav({ m, className = "" }) {
         color: foregroundToUse,
         "--nav-hover": translucidToUse, // hover dos itens no tom do dono, como a barra lateral do painel
         "--nav-glass": `${translucidToUse.slice(0, 7)}0d`, // vidro leve: mesmo tom com ~5% de opacidade
+        ...style, // layout personalizado: fundo escolhido no painel
       }}
     >
       {hasStarred && hasPlusPermissions && (
