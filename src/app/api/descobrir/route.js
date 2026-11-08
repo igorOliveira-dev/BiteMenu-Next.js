@@ -50,6 +50,7 @@ async function loadMenus() {
 }
 
 const FALLBACK_KM = 100;
+const PAGE_SIZE = 50;
 const num = (v) => (v == null || v === "" ? NaN : Number(v));
 
 export async function GET(request) {
@@ -83,10 +84,16 @@ export async function GET(request) {
     if (!results.length) results = searchMenus(menus, { ...opts, km: NaN });
   }
 
+  const pages = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
+  const page = Math.min(Math.max(1, Math.floor(num(p.get("page"))) || 1), pages);
+
   // só o que o cardápio público já mostra: sem owner_id, telefone, plano ou pix
   return NextResponse.json({
     expanded,
-    results: results.map((m) => ({
+    total: results.length,
+    page,
+    pages,
+    results: results.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((m) => ({
       slug: m.slug,
       title: m.title,
       logo_url: m.logo_url,

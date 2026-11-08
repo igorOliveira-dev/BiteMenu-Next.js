@@ -32,13 +32,14 @@ SQL dos buckets foi passado na conversa e não é arquivo do projeto, porque a p
 - **Busca e ordem de Descobrir**: `src/lib/discover.js` (novo), uma função pura `searchMenus`.
   - Filtros (sem acento e sem maiúscula): `q` (nome do estabelecimento ou nome/descrição de produto), `local` (bairro,
     cidade ou UF) e `km` (só com a coordenada do cliente).
-  - Ordem: região (mesma cidade → mesmo estado → resto) → nota → distância → nome. Máximo de 50 resultados.
+  - Ordem: região (mesma cidade → mesmo estado → resto) → nota → distância → nome. Devolve todos os resultados.
   - Nota: média bayesiana com `C = 3,5` e `M = 5`. Sem avaliação, a loja fica com a nota neutra `C`. Hoje todas
     empatam. Detalhes em `tasks/descobrir/descobrir-avaliacoes.md`.
 - **Rota `GET /api/descobrir`**: `src/app/api/descobrir/route.js` (novo).
   - Usa `supabaseAdmin`. Só entram cardápios com `discoverable = true`, cidade no endereço, pelo menos 1 produto
     visível e dono sem exclusão pedida e que não seja conta cliente.
   - Cache em memória: 10 min em produção, nenhum em dev.
+  - Paginada: `page` (50 por página); a resposta traz `total`, `page` e `pages`. A tela tem "Anterior / Próxima" e volta para a página 1 quando um filtro muda.
   - Devolve só `slug, title, logo_url, banner_url`, bairro, cidade, UF e distância. Nunca `owner_id`, telefone, plano
     ou pix.
 - **Coordenadas da loja**: `src/app/dashboard/StatesManager.jsx`.

@@ -31,7 +31,7 @@ Tarefas em `tasks/descobrir/descobrir-todo.md`.
   Sem coordenada, o estabelecimento ainda aparece, mas só na busca por texto, sem distância.
 - **Lista vem de uma rota do servidor `GET /api/descobrir`** com `supabaseAdmin`: lê os cardápios uma vez (cache de
   10 min em memória, a produção roda numa instância só, igual ao rate limit do `proxy.js`), descarta dono com exclusão
-  pedida e conta cliente, filtra e ordena por distância, devolve no máximo 50. Cada item: `slug, title, logo_url,
+  pedida e conta cliente, filtra e ordena por distância, devolve 50 por página (parâmetro `page`; sem limite de total). Cada item: `slug, title, logo_url,
   address (cidade/bairro), distância`. Nunca devolve telefone, `owner_id` nem plano.
   - Por que servidor: a busca por comida precisa dos nomes de todos os `menu_items`; mandar tudo para o navegador pesa.
   - Parâmetros: `lat`, `lng`, `q` (nome do estabelecimento **ou** nome/descrição de produto), `local` (cidade/bairro),

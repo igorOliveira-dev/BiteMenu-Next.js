@@ -64,4 +64,8 @@ assert.deepEqual(slugs(searchMenus(rated, { city: "São Paulo", uf: "sp" })), [
   "Outro Estado",
 ]);
 
+// sem limite de 50: a rota pagina, a busca devolve tudo
+const many = Array.from({ length: 120 }, (_, i) => menu(`Loja ${i}`, "São Paulo", "SP"));
+assert.equal(searchMenus(many).length, 120);
+
 console.log("discover-check: ok");
