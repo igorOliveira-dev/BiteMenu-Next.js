@@ -216,6 +216,7 @@ export default function StatesManager({
     "deliveryFeeMode",
     "deliveryRadius",
     "minimumOrderValue",
+    "deliveryTime",
     "pixKey",
     "hours",
     "currency",
@@ -290,6 +291,7 @@ export default function StatesManager({
         menuFromServer.minimum_order_value !== undefined && menuFromServer.minimum_order_value !== null
           ? String(menuFromServer.minimum_order_value)
           : "",
+      deliveryTime: menuFromServer.delivery_time ?? "",
       pixKey: menuFromServer.pix_key ?? null,
       hours: menuFromServer.hours ?? null,
       currency: menuFromServer.currency ?? "BRL",
@@ -488,6 +490,9 @@ export default function StatesManager({
             ? Number(state.minimumOrderValue)
             : null,
 
+        // só envia quando mexido: não quebra o salvamento se a coluna ainda não existir
+        ...(changed.includes("deliveryTime") && { delivery_time: state.deliveryTime.trim() || null }),
+
         pix_key: state.pixKey || null,
         hours: state.hours,
         currency: state.currency || "BRL",
@@ -597,6 +602,7 @@ export default function StatesManager({
             data.minimum_order_value !== undefined && data.minimum_order_value !== null
               ? String(data.minimum_order_value)
               : "",
+          deliveryTime: data.delivery_time ?? "",
           pixKey: data.pix_key ?? null,
           hours: data.hours ?? null,
           currency: data.currency ?? "BRL",
@@ -636,6 +642,7 @@ export default function StatesManager({
           selectedServices: data.services ?? [],
           selectedPayments: data.payments ?? [],
           deliveryFee: data.delivery_fee ?? 0,
+          deliveryTime: data.delivery_time ?? "",
           pixKey: data.pix_key ?? null,
           hours: data.hours ?? null,
           currency: data.currency ?? "BRL",
@@ -775,6 +782,7 @@ export default function StatesManager({
                     deliveryZones: "Bairros de entrega",
                     deliveryFeeMode: "Modo do frete",
                     deliveryRadius: "Taxa por raio",
+                    deliveryTime: "Tempo de entrega",
                     pixKey: "Chave PIX",
                     hours: "Horário",
                     currency: "Moeda",

@@ -3,10 +3,13 @@ import ClientMenu from "./ClientMenu";
 import { CartProvider } from "@/contexts/CartContext";
 import ClientMenu2 from "./ClientMenu2";
 import ClientMenu3 from "./ClientMenu3";
+import ClientMenuCustom from "./ClientMenuCustom";
 import MenuAccountButton from "./components/MenuAccountButton";
-import { getMenuBySlug, getOwnerInfo, getOptionStock } from "./getMenuData";
+import { getMenuBySlug, getOwnerInfo, getOptionStock, getAttendantEnabled, getCustomLayout } from "./getMenuData";
+import { ATTENDANT_ROLES } from "@/lib/attendant";
 import { applyStock, hideHiddenGroups, STOCK_ROLES } from "@/lib/stock";
 import { LOYALTY_ROLES } from "@/lib/loyalty";
+import { CUSTOM_LAYOUT_ROLES, cleanLayout } from "@/lib/customLayout";
 
 // cardápio de exemplo da landing: segue o tema claro/escuro do site (useDemoTheme).
 // Fica aqui e não no useDemoTheme: importar constante de módulo "use client" no servidor não traz o valor
@@ -130,7 +133,15 @@ export default async function MenuPage({ params }) {
   // o cliente que já participa vê o cadeado), sem mexer no banco
   if (menu.loyalty && !LOYALTY_ROLES.includes(ownerRole)) menu.loyalty = { ...menu.loyalty, locked: true };
 
-  const effectiveLayout = menu.layout;
+  // botão do atendente IA nos layouts (ClientMenu*.jsx)
+  menu.attendant_enabled = ATTENDANT_ROLES.includes(ownerRole) && menu.orders !== "none" && (await getAttendantEnabled(menu.id));
+
+  let effectiveLayout = menu.layout;
+  // layout personalizado: dono fora do plano ou layout inválido/ausente cai no padrão (o JSON continua salvo)
+  if (effectiveLayout === "custom") {
+    menu.custom_layout = CUSTOM_LAYOUT_ROLES.includes(ownerRole) ? cleanLayout(await getCustomLayout(menu.id)) : null;
+    if (!menu.custom_layout) effectiveLayout = "default";
+  }
   const isDemo = slug === DEMO_SLUG;
 
   return (
@@ -156,6 +167,13 @@ export default async function MenuPage({ params }) {
         />
       ) : effectiveLayout === "grid" ? (
         <ClientMenu3
+          menu={menu}
+          ownerPhone={ownerPhone}
+          ownerRole={ownerRole}
+          demoTheme={isDemo}
+        />
+      ) : effectiveLayout === "custom" ? (
+        <ClientMenuCustom
           menu={menu}
           ownerPhone={ownerPhone}
           ownerRole={ownerRole}

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getClientIp as getIp } from "@/lib/clientIp";
 
 // Rate limit simples em memória, por IP. Funciona porque a produção roda em
 // uma única instância (VPS via Coolify). Se um dia houver mais de uma
@@ -10,6 +11,7 @@ const WINDOW_MS = 60 * 1000;
 // pessoas na mesma rede do restaurante), apertados para robôs.
 const LIMITS = {
   api: 60,
+  ai: 15, // atendente IA do cardápio: cada chamada custa tokens
   image: 400,
   menu: 60,
 };
@@ -21,16 +23,8 @@ const BLOCKED_BOTS = /AhrefsBot|SemrushBot|MJ12bot|DotBot|BLEXBot|DataForSeoBot|
 
 const hits = new Map();
 
-function getIp(request) {
-  return (
-    request.headers.get("cf-connecting-ip") ||
-    request.headers.get("x-real-ip") ||
-    request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-    "unknown"
-  );
-}
-
 function getBucket(pathname) {
+  if (pathname.startsWith("/api/attendant")) return "ai";
   if (pathname.startsWith("/api/")) return "api";
   if (pathname.startsWith("/_next/image")) return "image";
   if (pathname.startsWith("/menu/") || pathname.startsWith("/site/")) return "menu";

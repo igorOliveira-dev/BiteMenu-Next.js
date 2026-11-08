@@ -7,6 +7,10 @@ export const AI_PLAN_ROLES = ["business", "admin", "designer"];
 export const AI_SESSION_TOKEN_LIMIT = 180_000;
 export const AI_SESSION_HOURS = 5;
 
+// Admin tem o dobro de todos os limites de IA (saldo da sessão e tetos de gasto por cardápio). Fica aqui para as
+// rotas de IA e a aba do atendente usarem a mesma regra.
+export const aiLimitFactor = (role) => (role === "admin" ? 2 : 1);
+
 // mesmos limites de MenuItems.jsx (getItemLimitByRole / getCategoryLimitByRole)
 export const ITEM_LIMITS = { free: 20, plus: 50, pro: 200, business: 500, admin: Infinity, designer: Infinity };
 export const CATEGORY_LIMITS = { free: 4, plus: 10, pro: 20, business: 100, admin: Infinity, designer: Infinity };

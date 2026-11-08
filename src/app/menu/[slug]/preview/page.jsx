@@ -6,6 +6,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { getMenuBySlug, getOwnerInfo, getOptionStock } from "../getMenuData";
 import { applyStock, hideHiddenGroups, STOCK_ROLES } from "@/lib/stock";
 import AiDraftPreview from "./AiDraftPreview";
+import CustomDraftPreview from "./CustomDraftPreview";
 
 // Uso interno: pré-visualização de layout a partir do dashboard (ConfigMenu.jsx).
 // Fica fora de /menu/[slug] para não forçar renderização dinâmica na rota pública.
@@ -13,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 export default async function MenuPreviewPage({ params, searchParams }) {
   const { slug } = await params;
-  const { preview_layout, ai_draft } = (await searchParams) ?? {};
+  const { preview_layout, ai_draft, custom_draft } = (await searchParams) ?? {};
 
   const rawMenu = await getMenuBySlug(slug);
 
@@ -24,6 +25,15 @@ export default async function MenuPreviewPage({ params, searchParams }) {
   const menu = applyStock(hideHiddenGroups(rawMenu), ownerRole, optionStock);
 
   const effectiveLayout = preview_layout || menu.layout;
+
+  // rascunho do layout personalizado (aba Layout personalizado), recebido por postMessage
+  if (custom_draft) {
+    return (
+      <CartProvider>
+        <CustomDraftPreview menu={menu} ownerPhone={ownerPhone} ownerRole={ownerRole} />
+      </CartProvider>
+    );
+  }
 
   // proposta do assistente de IA (dashboard): aplicada só na tela
   if (ai_draft) {

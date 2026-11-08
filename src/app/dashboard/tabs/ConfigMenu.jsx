@@ -1109,7 +1109,9 @@ const ConfigMenu = (props) => {
     return `${count} forma${count === 1 ? "" : "s"} de pagamento`;
   })();
 
-  const aparenciaSummary = `Estilo ${layout === "default" ? "padrão" : layout === "list" ? "lista" : "grade"}`;
+  const aparenciaSummary = `Estilo ${
+    layout === "default" ? "padrão" : layout === "list" ? "lista" : layout === "custom" ? "personalizado" : "grade"
+  }`;
 
   const horariosSummary = (() => {
     const closedDays = dayOrder.filter((d) => hours?.[d] === null).length;
@@ -1403,6 +1405,18 @@ const ConfigMenu = (props) => {
               </Field>
             )}
 
+            {selectedServices?.includes("delivery") && usingExternal && (
+              <Field label="Tempo médio de entrega">
+                <TextInput
+                  value={externalState?.deliveryTime || ""}
+                  onChange={(e) => externalSetState((p) => ({ ...p, deliveryTime: e.target.value }))}
+                  placeholder="Ex.: 30 a 45 min"
+                  maxLength={40}
+                  className="max-w-xs"
+                />
+              </Field>
+            )}
+
             <Field label={`Valor mínimo de pedido (${getCurrencySymbol(currency)})`}>
               <TextInput
                 type="number"
@@ -1567,6 +1581,10 @@ const ConfigMenu = (props) => {
                   description="Fotos maiores em grade."
                   onClick={() => handleLayoutClick("grid")}
                 />
+                {/* Enterprise: editado na aba Layout personalizado; aqui só aparece quando está em uso */}
+                {layout === "custom" && (
+                  <OptionCard selected title="Personalizado" description="Editado na aba Layout personalizado." onClick={() => {}} />
+                )}
               </div>
             </Field>
           </div>

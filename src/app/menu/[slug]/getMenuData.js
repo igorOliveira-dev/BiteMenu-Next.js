@@ -115,3 +115,26 @@ export async function getOptionStock(menuId) {
   const { data } = await supabase.from("option_stock").select("name_key, stock").eq("menu_id", menuId);
   return data || [];
 }
+
+// Atendente IA ligado? Fora do getMenuBySlug de propósito: só roda para o plano do atendente e, se a coluna faltar
+// (SQL tasks/atendente-ia/atendente-ia.sql não rodado) ou o banco falhar, só esconde o botão em vez de derrubar o cardápio
+export async function getAttendantEnabled(menuId) {
+  const { data, error } = await supabase.from("menus").select("attendant_enabled").eq("id", menuId).maybeSingle();
+  if (error) {
+    console.error("[attendant] erro ao ler attendant_enabled:", error.message);
+    return false;
+  }
+  return data?.attendant_enabled !== false;
+}
+
+// Layout personalizado (Enterprise, tasks/layout-personalizado/). Fora do getMenuBySlug pelo mesmo motivo do
+// atendente: só roda com layout "custom" e, se a coluna faltar ou o banco falhar, o cardápio cai no layout padrão.
+// Devolve o JSON cru: quem chama passa por cleanLayout (src/lib/customLayout.js).
+export async function getCustomLayout(menuId) {
+  const { data, error } = await supabase.from("menus").select("custom_layout").eq("id", menuId).maybeSingle();
+  if (error) {
+    console.error("[custom-layout] erro ao ler custom_layout:", error.message);
+    return null;
+  }
+  return data?.custom_layout ?? null;
+}
