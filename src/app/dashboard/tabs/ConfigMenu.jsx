@@ -30,6 +30,7 @@ import useUser from "@/hooks/useUser";
 import { supabase } from "@/lib/supabaseClient";
 import { updateMenuById } from "@/lib/queries/menus";
 import { LANDING_ROLES } from "@/lib/landing";
+import { LINKTREE_ROLES, hasVisibleLinks } from "@/lib/linktree";
 import DiscoverOpenSelect from "./components/menu/DiscoverOpenSelect";
 import OnlinePayment from "./components/OnlinePayment";
 import AddressFields, { formatAddress, mapsUrl } from "@/components/AddressFields";
@@ -119,7 +120,7 @@ const SECTION_SEARCH = {
 };
 
 // só para quem tem a landing (LANDING_ROLES), igual ao campo "No Descobrir, abrir primeiro"
-const LANDING_SEARCH = " abrir primeiro landing page página inicial site cardápio";
+const LANDING_SEARCH = " abrir primeiro landing page página inicial site cardápio links linktree";
 
 const normalizeSearch = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
@@ -641,7 +642,7 @@ const ConfigMenu = (props) => {
   const searchWords = normalizeSearch(search).split(/\s+/).filter(Boolean);
   const matchingSections = Object.keys(SECTION_SEARCH).filter((key) =>
     searchWords.every((w) =>
-      normalizeSearch(SECTION_SEARCH[key] + (key === "basico" && LANDING_ROLES.includes(userRole) ? LANDING_SEARCH : "")).includes(w),
+      normalizeSearch(SECTION_SEARCH[key] + (key === "basico" && (LANDING_ROLES.includes(userRole) || LINKTREE_ROLES.includes(userRole)) ? LANDING_SEARCH : "")).includes(w),
     ),
   );
   const isHidden = (key) => searchWords.length > 0 && !matchingSections.includes(key);
@@ -1257,12 +1258,16 @@ const ConfigMenu = (props) => {
               </label>
             )}
 
-            {usingExternal && LANDING_ROLES.includes(userRole) && (
+            {usingExternal && (LANDING_ROLES.includes(userRole) || LINKTREE_ROLES.includes(userRole)) && (
               <Field label="No Descobrir, abrir primeiro">
                 <DiscoverOpenSelect
                   landing={externalState.discoverLanding}
+                  links={externalState.discoverLinks}
                   hasLanding={!!menu?.landing_html}
-                  onChange={(discoverLanding) => externalSetState((p) => ({ ...p, discoverLanding }))}
+                  hasLinks={hasVisibleLinks(menu?.linktree)}
+                  showLanding={LANDING_ROLES.includes(userRole)}
+                  showLinks={LINKTREE_ROLES.includes(userRole)}
+                  onChange={(patch) => externalSetState((p) => ({ ...p, ...patch }))}
                 />
               </Field>
             )}

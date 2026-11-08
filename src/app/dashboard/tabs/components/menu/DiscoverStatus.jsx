@@ -9,6 +9,7 @@ import GenericModal from "@/components/GenericModal";
 import AddressFields from "@/components/AddressFields";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import { LANDING_ROLES } from "@/lib/landing";
+import { LINKTREE_ROLES, hasVisibleLinks } from "@/lib/linktree";
 import DiscoverOpenSelect from "./DiscoverOpenSelect";
 
 const INPUT_CLASS =
@@ -184,14 +185,18 @@ export default function DiscoverStatus({ setSelectedTab, menuState, saveAll, uns
             </span>
           </label>
 
-          {LANDING_ROLES.includes(profile?.role) && (
+          {(LANDING_ROLES.includes(profile?.role) || LINKTREE_ROLES.includes(profile?.role)) && (
             <div className="mb-4 text-sm">
               <span className="mb-1.5 block font-medium">No Descobrir, abrir primeiro</span>
               <DiscoverOpenSelect
                 landing={state.discoverLanding}
+                links={state.discoverLinks}
                 hasLanding={!!menu.landing_html}
+                hasLinks={hasVisibleLinks(menu.linktree)}
+                showLanding={LANDING_ROLES.includes(profile?.role)}
+                showLinks={LINKTREE_ROLES.includes(profile?.role)}
                 disabled={savingToggle}
-                onChange={(discoverLanding) => saveField({ discoverLanding })}
+                onChange={saveField}
               />
             </div>
           )}

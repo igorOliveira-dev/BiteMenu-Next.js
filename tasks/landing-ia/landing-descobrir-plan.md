@@ -43,3 +43,5 @@ Descobrir") e no **modal do status do Descobrir** (banner da aba Cardápio).
 | Cliente cai na landing e não acha o cardápio | Baixo | Botões da landing já levam para `/menu/[slug]` (prompt da IA) |
 
 Tarefas em `tasks/landing-ia/landing-descobrir-todo.md`.
+
+**Depois (2026-11-08):** o seletor ganhou a opção "Links" (`menus.discover_links`), da linktree. Ver `tasks/linktree/`.
