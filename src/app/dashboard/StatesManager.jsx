@@ -217,6 +217,8 @@ export default function StatesManager({
     "deliveryRadius",
     "minimumOrderValue",
     "deliveryTime",
+    "scheduleMode",
+    "scheduleMinMinutes",
     "pixKey",
     "hours",
     "currency",
@@ -293,6 +295,8 @@ export default function StatesManager({
           ? String(menuFromServer.minimum_order_value)
           : "",
       deliveryTime: menuFromServer.delivery_time ?? "",
+      scheduleMode: menuFromServer.schedule_mode ?? "off",
+      scheduleMinMinutes: menuFromServer.schedule_min_minutes ?? 0,
       pixKey: menuFromServer.pix_key ?? null,
       hours: menuFromServer.hours ?? null,
       currency: menuFromServer.currency ?? "BRL",
@@ -494,6 +498,8 @@ export default function StatesManager({
 
         // só envia quando mexido: não quebra o salvamento se a coluna ainda não existir
         ...(changed.includes("deliveryTime") && { delivery_time: state.deliveryTime.trim() || null }),
+        ...(changed.includes("scheduleMode") && { schedule_mode: state.scheduleMode }),
+        ...(changed.includes("scheduleMinMinutes") && { schedule_min_minutes: Math.max(0, Math.floor(Number(state.scheduleMinMinutes) || 0)) }),
 
         pix_key: state.pixKey || null,
         hours: state.hours,
@@ -606,6 +612,8 @@ export default function StatesManager({
               ? String(data.minimum_order_value)
               : "",
           deliveryTime: data.delivery_time ?? "",
+          scheduleMode: data.schedule_mode ?? "off",
+          scheduleMinMinutes: data.schedule_min_minutes ?? 0,
           pixKey: data.pix_key ?? null,
           hours: data.hours ?? null,
           currency: data.currency ?? "BRL",
@@ -647,6 +655,8 @@ export default function StatesManager({
           selectedPayments: data.payments ?? [],
           deliveryFee: data.delivery_fee ?? 0,
           deliveryTime: data.delivery_time ?? "",
+          scheduleMode: data.schedule_mode ?? "off",
+          scheduleMinMinutes: data.schedule_min_minutes ?? 0,
           pixKey: data.pix_key ?? null,
           hours: data.hours ?? null,
           currency: data.currency ?? "BRL",
@@ -788,6 +798,8 @@ export default function StatesManager({
                     deliveryFeeMode: "Modo do frete",
                     deliveryRadius: "Taxa por raio",
                     deliveryTime: "Tempo de entrega",
+                    scheduleMode: "Agendamento",
+                    scheduleMinMinutes: "Antecedência do agendamento",
                     pixKey: "Chave PIX",
                     hours: "Horário",
                     currency: "Moeda",

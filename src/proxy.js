@@ -24,7 +24,7 @@ const BLOCKED_BOTS = /AhrefsBot|SemrushBot|MJ12bot|DotBot|BLEXBot|DataForSeoBot|
 const hits = new Map();
 
 function getBucket(pathname) {
-  if (pathname.startsWith("/api/attendant")) return "ai";
+  if (pathname.startsWith("/api/attendant") || pathname.startsWith("/api/assistant/insights")) return "ai";
   if (pathname.startsWith("/api/")) return "api";
   if (pathname.startsWith("/_next/image")) return "image";
   if (pathname.startsWith("/menu/") || pathname.startsWith("/site/") || pathname.startsWith("/links/")) return "menu";

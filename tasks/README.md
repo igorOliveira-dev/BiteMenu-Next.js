@@ -18,6 +18,7 @@ Planos, tarefas e SQL manual do Supabase, separados por funcionalidade. O SQL da
 | `atendente-ia/` | Atendente IA no cardápio (pedido por conversa, Enterprise; só admin por enquanto): plano, custos, testes e SQL (`atendente-ia.sql`) |
 | `layout-personalizado/` | Layout do cardápio montado por blocos, com HTML/CSS por IA e painel (Enterprise; só admin por enquanto): plano, tarefas e SQL (`layout-personalizado.sql`) |
 | `linktree/` | Linktree do estabelecimento (`/links/[slug]`, aba Links, opção no Descobrir; só admin por enquanto): plano, tarefas, resumo e SQL (`linktree.sql`, rodar antes do deploy) |
+| `insights-ia/` | Insights com IA no Dashboard de vendas completo (sugestões para vender mais; Enterprise e admin): plano e tarefas (sem SQL) |
 | `acompanhar-pedido/` | Cliente acompanha o pedido em `/conta` e link `/pedido/<id>` na mensagem do WhatsApp: SQL (`acompanhar-pedido.sql`) |
 | `seguranca/` | Auditoria, funções e policies de segurança (`security-0` a `security-2`, nessa ordem) |
 | `sql/` | SQL avulso de funcionalidades sem plano aqui: exclusão de conta, lembrete de boleto, NFS-e, resumo de pedidos, remarketing, tempo de entrega |

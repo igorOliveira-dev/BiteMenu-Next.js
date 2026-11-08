@@ -31,6 +31,8 @@ import { supabase } from "@/lib/supabaseClient";
 import { updateMenuById } from "@/lib/queries/menus";
 import { LANDING_ROLES } from "@/lib/landing";
 import { LINKTREE_ROLES, hasVisibleLinks } from "@/lib/linktree";
+import Select from "@/components/Select";
+import { SCHEDULE_ROLES } from "@/lib/schedule";
 import DiscoverOpenSelect from "./components/menu/DiscoverOpenSelect";
 import OnlinePayment from "./components/OnlinePayment";
 import AddressFields, { formatAddress, mapsUrl } from "@/components/AddressFields";
@@ -113,7 +115,7 @@ const paymentOptions = [
 // O que cada seção tem, pra busca achar pelo nome do campo e por palavras que o dono usaria
 const SECTION_SEARCH = {
   basico: "informações básicas nome do estabelecimento descrição endereço cep localização mapa link do cardápio url endereço do site moeda aparecer em descobrir busca de restaurantes no descobrir",
-  servicos: `serviços entrega delivery frete taxa fixa bairro raio km distância valor mínimo de pedido ${serviceOptions.map((o) => o.label).join(" ")}`,
+  servicos: `serviços agendamento agendar agenda antecedência entrega delivery frete taxa fixa bairro raio km distância valor mínimo de pedido ${serviceOptions.map((o) => o.label).join(" ")}`,
   pagamentos: `pagamentos formas de pagamento chave pix cartão ${paymentOptions.map((o) => o.label).join(" ")}`,
   aparencia: "aparência cores cor do fundo cor do título cor dos detalhes paleta estilo do menu layout padrão lista grade visual",
   horarios: "horários horário de funcionamento abertura fechamento abrir fechar dias da semana fuso horário",
@@ -252,6 +254,45 @@ function Notice({ children }) {
 
 function TextInput({ className = "", ...props }) {
   return <input {...props} className={cx(INPUT_CLASS, className)} />;
+}
+
+// Antecedência do agendamento: guardada em minutos, editada na unidade que o dono pensa (min, h, dias)
+const LEAD_UNITS = [
+  { value: "1440", label: "dias" },
+  { value: "60", label: "horas" },
+  { value: "1", label: "minutos" },
+];
+function ScheduleLeadInput({ minutes, onChange }) {
+  const total = Math.max(0, Number(minutes) || 0);
+  const [unit, setUnit] = useState(() => LEAD_UNITS.find((u) => total && total % Number(u.value) === 0)?.value ?? "60");
+  const [amount, setAmount] = useState(() => (total ? String(total / Number(unit)) : ""));
+  // valor mudou por fora (ex.: desfazer alteração): volta o campo para o valor salvo
+  useEffect(() => {
+    if (Math.round((Number(String(amount).replace(",", ".")) || 0) * Number(unit)) === total) return;
+    const u = LEAD_UNITS.find((x) => total && total % Number(x.value) === 0)?.value ?? "60";
+    setUnit(u);
+    setAmount(total ? String(total / Number(u)) : "");
+  }, [total]);
+  const update = (a, u) => {
+    setAmount(a);
+    setUnit(u);
+    onChange(Math.round((Number(String(a).replace(",", ".")) || 0) * Number(u)));
+  };
+  const first = new Date(Date.now() + total * 60000);
+  const sameDay = first.toDateString() === new Date().toDateString();
+  const when = first.toLocaleString("pt-BR", sameDay ? { hour: "2-digit", minute: "2-digit" } : { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex max-w-xs gap-2">
+        <TextInput type="number" min="0" step="1" inputMode="numeric" value={amount} placeholder="0" onChange={(e) => update(e.target.value, unit)} className="w-24" />
+        <Select value={unit} onChange={(u) => update(amount, u)} options={LEAD_UNITS} className="flex-1" aria-label="Unidade da antecedência" />
+      </div>
+      <p className="text-xs opacity-60">
+        {total ? `Se o cliente pedir agora, o primeiro horário disponível é ${sameDay ? "hoje às " : ""}${when}.` : "Sem antecedência: o cliente pode agendar para qualquer horário a partir de agora."}
+      </p>
+    </div>
+  );
 }
 
 // endereço antigo (texto livre) continua valendo até o dono preencher o formato estruturado
@@ -1102,6 +1143,9 @@ const ConfigMenu = (props) => {
         deliveryFeeMode === "zones" ? "frete por bairro" : deliveryFeeMode === "radius" ? "frete por raio" : "frete fixo",
       );
     }
+    const scheduleMode = usingExternal && SCHEDULE_ROLES.includes(userRole) ? externalState?.scheduleMode : null;
+    if (scheduleMode === "optional") parts.push("agendamento opcional");
+    if (scheduleMode === "required") parts.push("só agendamento");
     return parts.join(" · ");
   })();
 
@@ -1421,6 +1465,57 @@ const ConfigMenu = (props) => {
                 />
               </Field>
             )}
+
+            {usingExternal && (() => {
+              const planOk = SCHEDULE_ROLES.includes(userRole);
+              const mode = externalState?.scheduleMode || "off";
+              const setMode = (scheduleMode) => {
+                if (!planOk) return customAlert("O agendamento de pedidos está disponível no plano Business.");
+                externalSetState((p) => ({ ...p, scheduleMode }));
+              };
+              return (
+                <Field
+                  label="Agendamento de pedidos"
+                  hint={
+                    planOk
+                      ? "O cliente escolhe dia e horário da entrega ou retirada. Os pedidos agendados aparecem na aba Agenda."
+                      : "Disponível no plano Business."
+                  }
+                >
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    <OptionCard locked={!planOk} selected={mode === "off"} title="Desativado" description="Pedidos só para agora." onClick={() => setMode("off")} />
+                    <OptionCard locked={!planOk} selected={mode === "optional"} title="Opcional" description="Pede para agora ou agenda, o cliente escolhe." onClick={() => setMode("optional")} />
+                    <OptionCard locked={!planOk} selected={mode === "required"} title="Só agendamento" description="Todo pedido precisa de dia e horário." onClick={() => setMode("required")} />
+                  </div>
+
+                  {!planOk && (
+                    <a href="/dashboard/pricing?plan=business" className="inline-block text-xs font-semibold underline">
+                      Ver plano Business
+                    </a>
+                  )}
+
+                  {planOk && mode !== "off" && (
+                    <div className="space-y-2 pt-2">
+                      <div>
+                        <div className="text-sm font-semibold">Antecedência mínima</div>
+                        <p className="mt-0.5 text-xs opacity-60">Tempo que você precisa para preparar um pedido agendado.</p>
+                      </div>
+                      <ScheduleLeadInput
+                        minutes={externalState?.scheduleMinMinutes ?? 0}
+                        onChange={(scheduleMinMinutes) => externalSetState((p) => ({ ...p, scheduleMinMinutes }))}
+                      />
+                    </div>
+                  )}
+
+                  {planOk && mode !== "off" && selectedPayments?.includes("pix_online") && !selectedPayments?.includes("pix") && !pixKey && (
+                    <Notice>
+                      Pedidos agendados são pagos com <strong>PIX com chave</strong>, não com o Pix online (a cobrança expira antes do
+                      horário). Cadastre a sua chave em <strong>Pagamentos</strong> para o cliente ver para onde enviar o PIX.
+                    </Notice>
+                  )}
+                </Field>
+              );
+            })()}
 
             <Field label={`Valor mínimo de pedido (${getCurrencySymbol(currency)})`}>
               <TextInput

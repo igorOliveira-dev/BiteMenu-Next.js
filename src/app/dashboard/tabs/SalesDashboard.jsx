@@ -12,6 +12,8 @@ import { supabase } from "@/lib/supabaseClient";
 import Loading from "@/components/Loading";
 import { useAlert } from "@/providers/AlertProvider";
 import SalesCharts from "./components/sales/SalesCharts";
+import SalesInsights from "./components/sales/SalesInsights";
+import { INSIGHTS_ROLES } from "@/lib/salesInsights";
 
 ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, Filler);
 
@@ -687,6 +689,10 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
           <p className="text-xs color-gray mt-3">Limite de intervalo: até {MAX_RANGE_YEARS} anos.</p>
         </div>
+
+        {INSIGHTS_ROLES.includes(ownerRole) && (
+          <SalesInsights key={`${startDate}:${endDate}`} startDate={startDate} endDate={endDate} />
+        )}
 
         {/* KPIs (grid) */}
         <div className="grid gap-4 sm:grid-cols-3 mb-4">
