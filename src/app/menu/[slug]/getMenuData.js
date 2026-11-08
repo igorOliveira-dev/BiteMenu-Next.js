@@ -126,3 +126,15 @@ export async function getAttendantEnabled(menuId) {
   }
   return data?.attendant_enabled !== false;
 }
+
+// Layout personalizado (Enterprise, tasks/layout-personalizado/). Fora do getMenuBySlug pelo mesmo motivo do
+// atendente: só roda com layout "custom" e, se a coluna faltar ou o banco falhar, o cardápio cai no layout padrão.
+// Devolve o JSON cru: quem chama passa por cleanLayout (src/lib/customLayout.js).
+export async function getCustomLayout(menuId) {
+  const { data, error } = await supabase.from("menus").select("custom_layout").eq("id", menuId).maybeSingle();
+  if (error) {
+    console.error("[custom-layout] erro ao ler custom_layout:", error.message);
+    return null;
+  }
+  return data?.custom_layout ?? null;
+}

@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getUserFromRequest } from "@/lib/validapay";
 import { addUsage, getUsage, usageInfo } from "@/lib/aiUsage";
 import { costMicroUsd, reserveBudget, settleBudget } from "@/lib/aiBudget";
+import { aiLimitFactor } from "@/lib/assistant";
 import { LANDING_MAX_LENGTH, LANDING_ROLES, applyLandingEdits, cleanLandingHtml } from "@/lib/landing";
 
 // IA da landing page: devolve o HTML do rascunho; quem publica é a aba Landing (client do dono + RLS).
@@ -164,8 +165,9 @@ export async function POST(req) {
     console.error("[landing] erro ao ler ai_usage:", err);
     return fail("O assistente está indisponível agora. Tente novamente.", 503);
   }
-  if (usage.tokens >= LANDING_TOKEN_LIMIT) {
-    return Response.json({ error: "Você usou 100% do limite desta sessão.", usage: usageInfo(usage, LANDING_TOKEN_LIMIT) }, { status: 429 });
+  const tokenLimit = LANDING_TOKEN_LIMIT * aiLimitFactor(profile.role); // admin: dobro
+  if (usage.tokens >= tokenLimit) {
+    return Response.json({ error: "Você usou 100% do limite desta sessão.", usage: usageInfo(usage, tokenLimit) }, { status: 429 });
   }
 
   const history = messages
@@ -189,7 +191,7 @@ export async function POST(req) {
   const promptTokens = Math.ceil(JSON.stringify([SYSTEM, TOOLS, history]).length / 2);
   const long = promptTokens > 100_000;
   const reserved = Math.ceil(promptTokens * (long ? 0.5 : 0.1) + 16000 * (long ? 2.5 : 0.5));
-  if (!ownMenu || !(await reserveBudget(ownMenu.id, reserved, false))) {
+  if (!ownMenu || !(await reserveBudget(ownMenu.id, reserved, false, profile.role))) {
     return fail("O limite mensal de IA do seu plano foi atingido. Ele renova no início do próximo mês.", 429);
   }
 
@@ -214,7 +216,7 @@ export async function POST(req) {
   const u = response.usage ?? {};
   const used =
     (u.input_tokens ?? 0) + (u.output_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0);
-  const usageNow = usageInfo(await addUsage(user.id, usage, used), LANDING_TOKEN_LIMIT);
+  const usageNow = usageInfo(await addUsage(user.id, usage, used), tokenLimit);
   const respond = (body) => Response.json({ ...body, usage: usageNow });
 
   if (response.stop_reason === "refusal") {

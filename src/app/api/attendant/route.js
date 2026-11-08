@@ -356,7 +356,7 @@ export async function POST(req) {
     return "ERRO: ferramenta desconhecida.";
   }
 
-  if (!(await reserveBudget(menu.id, RESERVE_MICRO_USD, true))) return fail(UNAVAILABLE, 429);
+  if (!(await reserveBudget(menu.id, RESERVE_MICRO_USD, true, ownerRole))) return fail(UNAVAILABLE, 429);
 
   const convo = [...history];
   const texts = [];

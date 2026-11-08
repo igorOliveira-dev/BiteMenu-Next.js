@@ -14,6 +14,7 @@ Planos, tarefas e SQL manual do Supabase, separados por funcionalidade. O SQL da
 | `fidelidade/` | Programa de fidelidade (item grátis ou desconto após N compras; faixa no cardápio, aba Fidelidades em `/conta`) e quantidade no carrinho: plano, tarefas e SQL (`fidelidade.sql`) |
 | `landing-ia/` | Landing page do estabelecimento gerada pela IA (`/site/[slug]`, aba Landing page; só admin por enquanto): plano, tarefas e SQL (`landing-ia.sql`) |
 | `atendente-ia/` | Atendente IA no cardápio (pedido por conversa, Enterprise; só admin por enquanto): plano, custos, testes e SQL (`atendente-ia.sql`) |
+| `layout-personalizado/` | Layout do cardápio montado por blocos, com HTML/CSS por IA e painel (Enterprise; só admin por enquanto): plano, tarefas e SQL (`layout-personalizado.sql`) |
 | `acompanhar-pedido/` | Cliente acompanha o pedido em `/conta` e link `/pedido/<id>` na mensagem do WhatsApp: SQL (`acompanhar-pedido.sql`) |
 | `seguranca/` | Auditoria, funções e policies de segurança (`security-0` a `security-2`, nessa ordem) |
 | `sql/` | SQL avulso de funcionalidades sem plano aqui: exclusão de conta, lembrete de boleto, NFS-e, resumo de pedidos, remarketing, tempo de entrega |
