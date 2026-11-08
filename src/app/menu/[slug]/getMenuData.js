@@ -115,3 +115,14 @@ export async function getOptionStock(menuId) {
   const { data } = await supabase.from("option_stock").select("name_key, stock").eq("menu_id", menuId);
   return data || [];
 }
+
+// Atendente IA ligado? Fora do getMenuBySlug de propósito: só roda para o plano do atendente e, se a coluna faltar
+// (SQL tasks/atendente-ia/atendente-ia.sql não rodado) ou o banco falhar, só esconde o botão em vez de derrubar o cardápio
+export async function getAttendantEnabled(menuId) {
+  const { data, error } = await supabase.from("menus").select("attendant_enabled").eq("id", menuId).maybeSingle();
+  if (error) {
+    console.error("[attendant] erro ao ler attendant_enabled:", error.message);
+    return false;
+  }
+  return data?.attendant_enabled !== false;
+}

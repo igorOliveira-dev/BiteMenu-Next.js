@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getUserFromRequest } from "@/lib/validapay";
 import { addUsage, getUsage, usageInfo } from "@/lib/aiUsage";
+import { costMicroUsd, reserveBudget, settleBudget } from "@/lib/aiBudget";
 import { LANDING_MAX_LENGTH, LANDING_ROLES, applyLandingEdits, cleanLandingHtml } from "@/lib/landing";
 
 // IA da landing page: devolve o HTML do rascunho; quem publica é a aba Landing (client do dono + RLS).
@@ -182,6 +183,16 @@ export async function POST(req) {
     currentHtml ? `\n${currentHtml}` : "nenhum"
   }\n\nPedido do dono:\n${last.content}`;
 
+  // Orçamento mensal das IAs do Enterprise (src/lib/aiBudget.js): reserva o pior custo desta chamada (prompt estimado
+  // por cima, 1 token a cada 2 caracteres, + saída máxima), devolve a sobra depois. Não conta no teto diário do atendente.
+  const { data: ownMenu } = await supabaseAdmin.from("menus").select("id").eq("owner_id", user.id).maybeSingle();
+  const promptTokens = Math.ceil(JSON.stringify([SYSTEM, TOOLS, history]).length / 2);
+  const long = promptTokens > 100_000;
+  const reserved = Math.ceil(promptTokens * (long ? 0.5 : 0.1) + 16000 * (long ? 2.5 : 0.5));
+  if (!ownMenu || !(await reserveBudget(ownMenu.id, reserved, false))) {
+    return fail("O limite mensal de IA do seu plano foi atingido. Ele renova no início do próximo mês.", 429);
+  }
+
   let response;
   try {
     response = await anthropic.messages.create({
@@ -195,8 +206,10 @@ export async function POST(req) {
     });
   } catch (err) {
     console.error("[landing] erro na API da Anthropic:", err);
+    await settleBudget(ownMenu.id, reserved, 0, false, false);
     return fail("O assistente está indisponível agora. Tente novamente.", 503);
   }
+  await settleBudget(ownMenu.id, reserved, costMicroUsd(response.usage ?? {}), false, false);
 
   const u = response.usage ?? {};
   const used =

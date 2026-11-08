@@ -19,6 +19,8 @@ import PlanDetails from "./tabs/PlanDetails";
 import Team from "./tabs/Team";
 import Landing from "./tabs/Landing";
 import { LANDING_ROLES } from "@/lib/landing";
+import Attendant from "./tabs/Attendant";
+import { ATTENDANT_ROLES } from "@/lib/attendant";
 import Kitchen from "@/app/equipe/Kitchen";
 import Delivery from "@/app/equipe/Delivery";
 import UpsellBanner from "./components/UpsellBanner";
@@ -26,7 +28,7 @@ import AddressUpdateModal from "./components/AddressUpdateModal";
 import PixOnlineModal from "./components/PixOnlineModal";
 import QrCodeModal from "./tabs/components/menu/QrCodeModal";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
-import { FaChartLine, FaLifeRing, FaShieldAlt, FaChair, FaGlobe } from "react-icons/fa";
+import { FaChartLine, FaLifeRing, FaShieldAlt, FaChair, FaGlobe, FaMagic } from "react-icons/fa";
 import { supabase } from "@/lib/supabaseClient";
 import { countVisibleOrders, listRecentVisibleOrders } from "@/lib/queries/orders";
 import useUser from "@/hooks/useUser";
@@ -248,6 +250,7 @@ const Dashboard = ({
     { tab: "sales", label: "Vendas", Icon: FaChartLine },
     { tab: "tables", label: "Mesas", Icon: FaChair },
     ...(LANDING_ROLES.includes(profile?.role) ? [{ tab: "landing", label: "Landing page", Icon: FaGlobe, desktopOnly: true }] : []),
+    ...(ATTENDANT_ROLES.includes(profile?.role) ? [{ tab: "attendant", label: "Atendente IA", Icon: FaMagic, desktopOnly: true }] : []),
   ];
 
   const navClass = (active) =>
@@ -330,7 +333,7 @@ const Dashboard = ({
               onClick={() => setIsOpen(true)}
               aria-label="Mais opções"
               aria-expanded={isOpen}
-              className={`${navClass(["landing", "account"].includes(selectedTab))} lg:hidden`}
+              className={`${navClass(["landing", "attendant", "account"].includes(selectedTab))} lg:hidden`}
             >
               <FaBars className="text-lg shrink-0" />
             </button>
@@ -477,6 +480,11 @@ const Dashboard = ({
             <Landing />
           </div>
         )}
+        {selectedTab === "attendant" && ATTENDANT_ROLES.includes(profile?.role) && (
+          <div className="block mx-auto w-full max-w-[812px]">
+            <Attendant />
+          </div>
+        )}
         {selectedTab === "planDetails" && (
           <div className="block mx-auto w-full max-w-[1040px]">
             <PlanDetails setSelectedTab={setSelectedTab} />
@@ -569,6 +577,12 @@ const Dashboard = ({
             <button onClick={() => handleMenuSelect("landing")} className={drawerItemClass(selectedTab === "landing")}>
               <FaGlobe className="text-lg shrink-0" />
               Landing page
+            </button>
+          )}
+          {ATTENDANT_ROLES.includes(profile?.role) && (
+            <button onClick={() => handleMenuSelect("attendant")} className={drawerItemClass(selectedTab === "attendant")}>
+              <FaMagic className="text-lg shrink-0" />
+              Atendente IA
             </button>
           )}
         </div>
