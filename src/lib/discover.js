@@ -5,7 +5,6 @@ import { distanceKm } from "./deliveryRadius.js";
 // média bayesiana: nota "neutra" C e peso M (avaliações até a média da loja começar a valer)
 const RATING_C = 3.5;
 const RATING_M = 5;
-const MAX_RESULTS = 50;
 
 // sem acento e sem maiúscula: "Hambúrguer" acha "hamburguer"
 export const norm = (s) =>
@@ -53,5 +52,6 @@ export function searchMenus(menus, opts = {}) {
       String(x.m.title).localeCompare(String(y.m.title), "pt-BR"),
   );
 
-  return rows.slice(0, MAX_RESULTS).map(({ m, distance }) => ({ ...m, distance }));
+  // todos os resultados: a rota pagina
+  return rows.map(({ m, distance }) => ({ ...m, distance }));
 }

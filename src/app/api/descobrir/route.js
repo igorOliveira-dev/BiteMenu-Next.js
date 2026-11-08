@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { norm, searchMenus } from "@/lib/discover";
+import { LANDING_ROLES } from "@/lib/landing";
 
 // em dev sem cache: logo/banner/endereço trocados no painel aparecem na hora
 const CACHE_MS = process.env.NODE_ENV === "production" ? 10 * 60 * 1000 : 0;
+// regras de quem entra espelhadas em dashboard/tabs/components/menu/DiscoverStatus.jsx: se mudar aqui, mudar lá
 // shortcut: cache em memória vale porque a produção roda numa instância só (igual ao proxy.js); com mais de uma,
 // cada uma tem o seu. Com milhares de cardápios, trocar por RPC/PostGIS no banco.
 let cache = { at: 0, menus: null };
@@ -14,19 +16,22 @@ async function loadMenus() {
   // quando houver avaliação, incluir rating_avg e rating_count aqui (tasks/descobrir/descobrir-avaliacoes.md)
   const { data, error } = await supabaseAdmin
     .from("menus")
-    .select("id, owner_id, slug, title, logo_url, banner_url, address_details, lat, lng, categories(menu_items(name, description, visible))")
+    .select("id, owner_id, slug, title, logo_url, banner_url, address_details, lat, lng, discover_landing, categories(menu_items(name, description, visible))")
     .eq("discoverable", true)
     .not("address_details", "is", null);
   if (error) throw error;
 
   const ownerIds = [...new Set(data.map((m) => m.owner_id).filter(Boolean))];
   const { data: owners, error: ownersError } = ownerIds.length
-    ? await supabaseAdmin.from("profiles").select("id, account_type, deletion_requested_at").in("id", ownerIds)
+    ? await supabaseAdmin.from("profiles").select("id, role, account_type, deletion_requested_at").in("id", ownerIds)
     : { data: [] };
   if (ownersError) throw ownersError;
   const blocked = new Set(
     owners.filter((p) => p.deletion_requested_at || p.account_type === "customer").map((p) => p.id),
   );
+
+  // opção "abrir a landing" só vale para quem tem a landing no plano
+  const withLanding = new Set(owners.filter((p) => LANDING_ROLES.includes(p.role)).map((p) => p.id));
 
   const menus = [];
   for (const m of data) {
@@ -41,6 +46,7 @@ async function loadMenus() {
       address_details: m.address_details,
       lat: m.lat,
       lng: m.lng,
+      landing: m.discover_landing === true && withLanding.has(m.owner_id),
       searchText: norm(items.map((i) => `${i.name} ${i.description || ""}`).join(" ")),
     });
   }
@@ -50,6 +56,7 @@ async function loadMenus() {
 }
 
 const FALLBACK_KM = 100;
+const PAGE_SIZE = 50;
 const num = (v) => (v == null || v === "" ? NaN : Number(v));
 
 export async function GET(request) {
@@ -83,10 +90,16 @@ export async function GET(request) {
     if (!results.length) results = searchMenus(menus, { ...opts, km: NaN });
   }
 
+  const pages = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
+  const page = Math.min(Math.max(1, Math.floor(num(p.get("page"))) || 1), pages);
+
   // só o que o cardápio público já mostra: sem owner_id, telefone, plano ou pix
   return NextResponse.json({
     expanded,
-    results: results.map((m) => ({
+    total: results.length,
+    page,
+    pages,
+    results: results.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((m) => ({
       slug: m.slug,
       title: m.title,
       logo_url: m.logo_url,
@@ -95,6 +108,8 @@ export async function GET(request) {
       city: m.address_details?.city || "",
       state: m.address_details?.state || "",
       distance: m.distance == null ? null : Math.round(m.distance * 10) / 10,
+      // /site sem landing publicada já redireciona para o cardápio
+      landing: m.landing,
     })),
   });
 }

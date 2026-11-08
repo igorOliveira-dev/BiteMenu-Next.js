@@ -222,6 +222,7 @@ export default function StatesManager({
     "currency",
     "timezone",
     "discoverable",
+    "discoverLanding",
   ],
   onSave,
   defaultFolderPrefix,
@@ -296,6 +297,7 @@ export default function StatesManager({
       currency: menuFromServer.currency ?? "BRL",
       timezone: menuFromServer.timezone ?? "America/Sao_Paulo",
       discoverable: menuFromServer.discoverable ?? true,
+      discoverLanding: menuFromServer.discover_landing ?? false,
     };
     setServerState(normalized);
     setLocalState(normalized);
@@ -498,6 +500,7 @@ export default function StatesManager({
 
         // só envia quando mexido: não quebra o salvamento se a coluna ainda não existir
         ...(changed.includes("discoverable") && { discoverable: state.discoverable }),
+        ...(changed.includes("discoverLanding") && { discover_landing: state.discoverLanding }),
       };
 
       // coordenadas da loja para /descobrir: só geocodifica quando o endereço muda (Nominatim ~1 req/s)
@@ -605,6 +608,7 @@ export default function StatesManager({
           currency: data.currency ?? "BRL",
           timezone: data.timezone ?? "America/Sao_Paulo",
           discoverable: data.discoverable ?? true,
+          discoverLanding: data.discover_landing ?? false,
         };
 
         setServerState(normalized);
@@ -644,6 +648,7 @@ export default function StatesManager({
           currency: data.currency ?? "BRL",
           timezone: data.timezone ?? "America/Sao_Paulo",
           discoverable: data.discoverable ?? true,
+          discoverLanding: data.discover_landing ?? false,
           minimumOrderValue:
             data.minimum_order_value !== undefined && data.minimum_order_value !== null
               ? String(data.minimum_order_value)
@@ -783,6 +788,7 @@ export default function StatesManager({
                     currency: "Moeda",
                     timezone: "Fuso horário",
                     discoverable: "Aparecer em Descobrir",
+                    discoverLanding: "Descobrir abre",
                   };
 
                   const displayName = displayNameMap[key] || key;

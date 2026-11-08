@@ -75,7 +75,7 @@ nomes e descrições de `menu_items` visíveis) e `profiles` dos donos para desc
 Cache em memória de 10 min. Recebe `lat, lng, cidade, uf, q, local, km`; filtra (sem acento/caixa) e ordena com
 `sortMenus`: região (mesma cidade → mesmo estado → resto, só com `cidade/uf`) → nota (`score` bayesiano de
 `rating_avg`/`rating_count`, hoje sempre vazio) → distância, ou nome sem coordenada. Regras da nota em
-`tasks/descobrir/descobrir-avaliacoes.md`. Devolve até 50 itens sem dados privados.
+`tasks/descobrir/descobrir-avaliacoes.md`. Devolve 50 itens por página (`page`), sem dados privados.
 
 **Critérios de aceite:**
 - [ ] `q=pizza` acha loja pelo nome **e** loja com produto "Pizza ..."

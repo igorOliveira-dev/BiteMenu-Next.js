@@ -5,6 +5,7 @@ import { useReactToPrint } from "react-to-print";
 import { FaPrint } from "react-icons/fa";
 import GenericModal from "@/components/GenericModal";
 import { formatCurrency } from "@/lib/formatCurrency";
+import Select from "@/components/Select";
 
 export const paymentLabels = {
   pix: "Pix",
@@ -319,21 +320,13 @@ export default function PrintDocumentButton({
               <label className="mb-2 block text-sm font-medium">
                 Tipo da impressão
               </label>
-              <select
+              <Select
+                aria-label="Tipo da impressão"
                 value={printMode}
-                onChange={(e) => setPrintMode(e.target.value)}
+                onChange={setPrintMode}
                 className="input w-full rounded-xl bg-translucid p-2"
-              >
-                <option className="text-black" value="full">
-                  {modeDescriptions.full.label}
-                </option>
-                <option className="text-black" value="kitchen">
-                  {modeDescriptions.kitchen.label}
-                </option>
-                <option className="text-black" value="counter">
-                  {modeDescriptions.counter.label}
-                </option>
-              </select>
+                options={["full", "kitchen", "counter"].map((m) => ({ value: m, label: modeDescriptions[m].label }))}
+              />
             </div>
 
             <div className="rounded-xl border border-translucid bg-translucid p-3 text-sm">
@@ -347,26 +340,22 @@ export default function PrintDocumentButton({
               <label className="mb-2 block text-sm font-medium">
                 Formato do papel
               </label>
-              <select
+              <Select
+                aria-label="Formato do papel"
                 value={paperSize}
-                onChange={(e) => {
-                  setPaperSize(e.target.value);
+                onChange={(v) => {
+                  setPaperSize(v);
                   try {
-                    window.localStorage.setItem(PAPER_SIZE_KEY, e.target.value);
+                    window.localStorage.setItem(PAPER_SIZE_KEY, v);
                   } catch {}
                 }}
                 className="input w-full rounded-xl bg-translucid p-2"
-              >
-                <option className="text-black" value="paper-80mm">
-                  Bobina 80mm
-                </option>
-                <option className="text-black" value="paper-58mm">
-                  Bobina 58mm
-                </option>
-                <option className="text-black" value="paper-a4">
-                  Folha A4
-                </option>
-              </select>
+                options={[
+                  { value: "paper-80mm", label: "Bobina 80mm" },
+                  { value: "paper-58mm", label: "Bobina 58mm" },
+                  { value: "paper-a4", label: "Folha A4" },
+                ]}
+              />
             </div>
 
             <div>

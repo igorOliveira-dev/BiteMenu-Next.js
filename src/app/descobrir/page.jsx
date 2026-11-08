@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   FaMapMarkerAlt,
@@ -23,6 +23,7 @@ import AddressFields, {
   formatAddress,
 } from "@/components/AddressFields";
 import { currentPosition, geocodeAddress } from "@/lib/deliveryRadius";
+import Select from "@/components/Select";
 
 const INFO_KEY = "customerInfo"; // mesmo endereço do carrinho e de /conta > Dados pessoais
 // coordenadas em chave própria: o carrinho regrava customerInfo inteiro e apagaria um campo extra
@@ -81,6 +82,17 @@ export default function DescobrirPage() {
   const [results, setResults] = useState(null);
   const [expanded, setExpanded] = useState(null); // raio ampliado pela API quando o escolhido veio vazio
   const [error, setError] = useState(false);
+  const [page, setPage] = useState(1);
+  const listRef = useRef(null);
+  const [pages, setPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  // filtro mudou: volta para a página 1 (ajuste de estado no render, sem efeito extra)
+  const filterKey = JSON.stringify([coords, address?.city, address?.state, q.trim(), local.trim(), km]);
+  const [lastFilterKey, setLastFilterKey] = useState(filterKey);
+  if (lastFilterKey !== filterKey) {
+    setLastFilterKey(filterKey);
+    setPage(1);
+  }
   const [notFound, setNotFound] = useState(false);
 
   // endereço: aparelho → conta → CEP do cadastro (completa pelo ViaCEP), igual ao PersonalInfo
@@ -155,6 +167,7 @@ export default function DescobrirPage() {
     if (address?.state) params.set("uf", address.state);
     if (q.trim()) params.set("q", q.trim());
     if (local.trim()) params.set("local", local.trim());
+    if (page > 1) params.set("page", page);
 
     const ctrl = new AbortController();
     const t = setTimeout(() => {
@@ -164,6 +177,8 @@ export default function DescobrirPage() {
           setError(false);
           setResults(data.results);
           setExpanded(data.expanded ?? null);
+          setPages(data.pages ?? 1);
+          setTotal(data.total ?? data.results.length);
         })
         .catch((e) => e?.name !== "AbortError" && setError(true));
     }, 300);
@@ -171,7 +186,12 @@ export default function DescobrirPage() {
       clearTimeout(t);
       ctrl.abort();
     };
-  }, [ready, coords, address, q, local, km]);
+  }, [ready, coords, address, q, local, km, page]);
+
+  const goToPage = (n) => {
+    setPage(n);
+    listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const saveAddress = (parts) => {
     saveToDevice(parts);
@@ -284,22 +304,17 @@ export default function DescobrirPage() {
             className={inputClass}
           />
           {coords && (
-            <select
+            <Select
               value={km}
-              onChange={(e) => setKm(e.target.value)}
+              onChange={setKm}
               aria-label="Distância máxima"
-              className={`${inputClass} cursor-pointer`}
-            >
-              {DISTANCES.map((d) => (
-                <option key={d.value} value={d.value}>
-                  {d.label}
-                </option>
-              ))}
-            </select>
+              className={inputClass}
+              options={DISTANCES}
+            />
           )}
         </div>
 
-        <section className="mt-6" aria-live="polite">
+        <section ref={listRef} className="mt-6 scroll-mt-20" aria-live="polite">
           {error ? (
             <p className="text-sm text-brand-red">
               Não foi possível carregar os estabelecimentos. Tente de novo.
@@ -333,9 +348,10 @@ export default function DescobrirPage() {
             <ul className="grid gap-3 sm:grid-cols-2">
               {results.map((m) => (
                 <li key={m.slug}>
-                  <Link
-                    href={`/menu/${m.slug}`}
-                    prefetch={false}
+                  {/* landing é route handler (HTML cru), não página: <a> em vez de Link */}
+                  <CardLink
+                    href={m.landing ? `/site/${m.slug}` : `/menu/${m.slug}`}
+                    landing={m.landing}
                     className="block overflow-hidden rounded-2xl border border-brand-line bg-brand-surface transition hover:border-brand-red"
                   >
                     {/* metade de cima: faixa do banner (sem banner, faixa neutra do mesmo tamanho) */}
@@ -381,10 +397,31 @@ export default function DescobrirPage() {
                         </span>
                       </span>
                     </span>
-                  </Link>
+                  </CardLink>
                 </li>
               ))}
             </ul>
+            {pages > 1 && (
+              <nav className="mt-6 flex items-center justify-between gap-3 text-sm" aria-label="Páginas">
+                <button
+                  onClick={() => goToPage(page - 1)}
+                  disabled={page <= 1}
+                  className="cursor-pointer rounded-full border border-brand-line px-4 py-2 font-medium transition hover:border-brand-red disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Anterior
+                </button>
+                <span className="text-center opacity-70">
+                  Página {page} de {pages} · {total} estabelecimentos
+                </span>
+                <button
+                  onClick={() => goToPage(page + 1)}
+                  disabled={page >= pages}
+                  className="cursor-pointer rounded-full border border-brand-line px-4 py-2 font-medium transition hover:border-brand-red disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Próxima
+                </button>
+              </nav>
+            )}
             </>
           )}
         </section>
@@ -450,4 +487,8 @@ function AddressModal({ initial, onSave, onGps, onClose }) {
       )}
     </GenericModal>
   );
+}
+
+function CardLink({ landing, ...props }) {
+  return landing ? <a {...props} /> : <Link prefetch={false} {...props} />;
 }
