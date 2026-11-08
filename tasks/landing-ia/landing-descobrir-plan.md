@@ -29,8 +29,8 @@ Descobrir") e no **modal do status do Descobrir** (banner da aba Cardápio).
 - **Seletor "No Descobrir, abrir primeiro: Cardápio | Landing page"**, só para `LANDING_ROLES`. Sem landing publicada
   a opção "Landing page" fica desabilitada e o seletor mostra "Cardápio".
 - **Remover a landing não mexe na coluna:** o `/site` já cai no cardápio; se republicar, a escolha do dono volta.
-- **Dropdown próprio (`DiscoverOpenSelect`)** no visual do painel, com descrição em cada opção. A lista abre no
-  fluxo (empurra o conteúdo) para não ser cortada pelo `overflow` do modal.
+- **Dropdown `DiscoverOpenSelect`**, com descrição em cada opção. Depois passou a usar o `Select` comum
+  (`src/components/Select.jsx`, lista em portal: não é cortada pelo `overflow` do modal). Ver `tasks/dropdown/`.
 - **Busca de Configurações:** "descobrir" entra nos termos de Informações básicas (achava nada antes); os termos da
   landing (`LANDING_SEARCH`) só entram para `LANDING_ROLES`.
 - Nada muda em `/site`, na aba Landing, nas regras de quem aparece no Descobrir, nem em RLS/auth.

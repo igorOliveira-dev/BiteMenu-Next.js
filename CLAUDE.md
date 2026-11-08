@@ -110,6 +110,8 @@ Alias:
 
 - `@/*` → `src/*`
 
+Dropdown: usar `@/components/Select` (visual do Bite Menu), não `<select>` nativo (`tasks/dropdown/dropdown-resumo.md`).
+
 ---
 
 ## Commands

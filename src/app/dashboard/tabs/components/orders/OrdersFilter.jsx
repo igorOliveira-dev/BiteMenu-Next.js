@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { FaFilter, FaTimes, FaSearch, FaChair, FaChevronDown } from "react-icons/fa";
 import useMenu from "@/hooks/useMenu";
 import { supabase } from "@/lib/supabaseClient";
+import Select from "@/components/Select";
 
 function FilterChip({ label, onRemove }) {
   return (
@@ -180,60 +181,53 @@ export default function OrdersFilter({ onChange, initial = {}, statusOptions = n
 
               <div>
                 <label className="block text-xs color-gray mb-1">Serviço</label>
-                <select value={deliveryType} onChange={(e) => setDeliveryType(e.target.value)} className={fieldClass}>
-                  <option className="text-black" value="all">
-                    Todos os serviços
-                  </option>
-                  {allowedServices.map((service) => (
-                    <option className="text-black" key={service} value={service}>
-                      {serviceLabels[service] ?? service}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  value={deliveryType}
+                  onChange={setDeliveryType}
+                  className={fieldClass}
+                  options={[
+                    { value: "all", label: "Todos os serviços" },
+                    ...allowedServices.map((s) => ({ value: s, label: serviceLabels[s] ?? s })),
+                  ]}
+                />
               </div>
 
               <div>
                 <label className="block text-xs color-gray mb-1">Pagamento</label>
-                <select value={payment} onChange={(e) => setPayment(e.target.value)} className={fieldClass}>
-                  <option className="text-black" value="all">
-                    Todos os pagamentos
-                  </option>
-                  {allowedPayments.map((method) => (
-                    <option className="text-black" key={method} value={method}>
-                      {paymentLabels[method] ?? method}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  value={payment}
+                  onChange={setPayment}
+                  className={fieldClass}
+                  options={[
+                    { value: "all", label: "Todos os pagamentos" },
+                    ...allowedPayments.map((m) => ({ value: m, label: paymentLabels[m] ?? m })),
+                  ]}
+                />
               </div>
 
               <div>
                 <label className="block text-xs color-gray mb-1">Pago</label>
-                <select value={isPaid} onChange={(e) => setIsPaid(e.target.value)} className={fieldClass}>
-                  <option className="text-black" value="all">
-                    Pagos e não pagos
-                  </option>
-                  <option className="text-black" value="true">
-                    Somente pagos
-                  </option>
-                  <option className="text-black" value="false">
-                    Somente não pagos
-                  </option>
-                </select>
+                <Select
+                  value={isPaid}
+                  onChange={setIsPaid}
+                  className={fieldClass}
+                  options={[
+                    { value: "all", label: "Pagos e não pagos" },
+                    { value: "true", label: "Somente pagos" },
+                    { value: "false", label: "Somente não pagos" },
+                  ]}
+                />
               </div>
 
               {statusOptions && (
                 <div>
                   <label className="block text-xs color-gray mb-1">Status do pedido</label>
-                  <select value={status} onChange={(e) => setStatus(e.target.value)} className={fieldClass}>
-                    <option className="text-black" value="all">
-                      Todos os status
-                    </option>
-                    {statusOptions.map(([value, label]) => (
-                      <option className="text-black" key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
+                  <Select
+                    value={status}
+                    onChange={setStatus}
+                    className={fieldClass}
+                    options={[{ value: "all", label: "Todos os status" }, ...statusOptions.map(([value, label]) => ({ value, label }))]}
+                  />
                 </div>
               )}
             </div>

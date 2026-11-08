@@ -20,7 +20,7 @@ consulta de `/api/descobrir` falha e o Descobrir sai do ar para todos).
 - [x] Modal do status do Descobrir (banner da aba Cardápio): mesmo seletor, salvo na hora pelo `saveAll`
   (fake-supabase: cardápio → landing, `discover_landing: true` gravado)
 - [x] Só aparece para `LANDING_ROLES`; "Landing page" desabilitada sem landing publicada
-- [x] Dropdown no visual do Bite Menu (`DiscoverOpenSelect`), com descrição em cada opção
+- [x] Dropdown no visual do Bite Menu (`DiscoverOpenSelect` → `Select` comum, `tasks/dropdown/`), com descrição em cada opção
 
 **Arquivos:** `src/app/dashboard/StatesManager.jsx`, `src/app/dashboard/tabs/ConfigMenu.jsx`,
 `src/app/dashboard/tabs/components/menu/DiscoverStatus.jsx`, `src/app/dashboard/tabs/components/menu/DiscoverOpenSelect.jsx`,

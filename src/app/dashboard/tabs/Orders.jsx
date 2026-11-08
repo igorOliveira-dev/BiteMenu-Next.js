@@ -44,6 +44,7 @@ import PrintOrderModal from "./components/print/PrintOrderModal";
 import { ORDER_STATUS, ORDER_STATUS_STYLE, STAFF_PLAN_ROLES, paidPillClass } from "@/lib/staff";
 import { staffApi } from "./Team";
 import { IconPessoa, IconPrato } from "@/components/BrandIcons";
+import Select from "@/components/Select";
 
 const PAGE_SIZE = 10;
 
@@ -1165,24 +1166,19 @@ const Orders = ({
                             <label className="flex items-center gap-2 text-sm">
                               <FaMotorcycle className="shrink-0 opacity-70" />
                               <span className="color-gray">Entregador</span>
-                              <select
+                              <Select
                                 value={order.assigned_to ?? ""}
-                                onChange={(e) =>
-                                  assignCourier(order.id, e.target.value)
-                                }
-                                className={`min-w-0 flex-1 cursor-pointer rounded-xl border bg-translucid p-1.5 ${
+                                onChange={(v) => assignCourier(order.id, v)}
+                                className={`min-w-0 flex-1 rounded-xl border bg-translucid p-1.5 ${
                                   order.assigned_to
                                     ? "border-[var(--translucid)]"
                                     : "border-st-wait/50"
                                 }`}
-                              >
-                                <option value="">Sem entregador</option>
-                                {couriers.map((c) => (
-                                  <option key={c.user_id} value={c.user_id}>
-                                    {c.name}
-                                  </option>
-                                ))}
-                              </select>
+                                options={[
+                                  { value: "", label: "Sem entregador" },
+                                  ...couriers.map((c) => ({ value: c.user_id, label: c.name })),
+                                ]}
+                              />
                             </label>
                           )}
                         </div>
@@ -1548,29 +1544,18 @@ const Orders = ({
                     <label className="mb-1 block text-sm font-medium">
                       Serviço
                     </label>
-                    <select
+                    <Select
+                      aria-label="Serviço"
                       className="input w-full rounded-xl bg-translucid p-3"
                       value={selectedOrder.service || ""}
-                      onChange={(e) =>
-                        setSelectedOrder({
-                          ...selectedOrder,
-                          service: e.target.value,
-                        })
-                      }
-                    >
-                      <option className="text-black" value="delivery">
-                        Entrega
-                      </option>
-                      <option className="text-black" value="pickup">
-                        Retirada
-                      </option>
-                      <option className="text-black" value="dinein">
-                        No local
-                      </option>
-                      <option className="text-black" value="faceToFace">
-                        Atendimento presencial
-                      </option>
-                    </select>
+                      onChange={(v) => setSelectedOrder({ ...selectedOrder, service: v })}
+                      options={[
+                        { value: "delivery", label: "Entrega" },
+                        { value: "pickup", label: "Retirada" },
+                        { value: "dinein", label: "No local" },
+                        { value: "faceToFace", label: "Atendimento presencial" },
+                      ]}
+                    />
                   </div>
 
                   {selectedOrder.table_label ? (
@@ -1588,32 +1573,19 @@ const Orders = ({
                     <label className="mb-1 block text-sm font-medium">
                       Método de pagamento
                     </label>
-                    <select
+                    <Select
+                      aria-label="Método de pagamento"
                       className="input w-full rounded-xl bg-translucid p-3"
                       value={selectedOrder.payment_method || ""}
-                      onChange={(e) =>
-                        setSelectedOrder({
-                          ...selectedOrder,
-                          payment_method: e.target.value,
-                        })
-                      }
-                    >
-                      <option className="text-black" value="pix">
-                        Pix
-                      </option>
-                      <option className="text-black" value="debit">
-                        Débito
-                      </option>
-                      <option className="text-black" value="credit">
-                        Crédito
-                      </option>
-                      <option className="text-black" value="cash">
-                        Dinheiro
-                      </option>
-                      <option className="text-black" value="stripe">
-                        Stripe
-                      </option>
-                    </select>
+                      onChange={(v) => setSelectedOrder({ ...selectedOrder, payment_method: v })}
+                      options={[
+                        { value: "pix", label: "Pix" },
+                        { value: "debit", label: "Débito" },
+                        { value: "credit", label: "Crédito" },
+                        { value: "cash", label: "Dinheiro" },
+                        { value: "stripe", label: "Stripe" },
+                      ]}
+                    />
                   </div>
                 </div>
               </SectionCard>

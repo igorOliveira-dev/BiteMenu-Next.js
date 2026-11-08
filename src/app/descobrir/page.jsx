@@ -23,6 +23,7 @@ import AddressFields, {
   formatAddress,
 } from "@/components/AddressFields";
 import { currentPosition, geocodeAddress } from "@/lib/deliveryRadius";
+import Select from "@/components/Select";
 
 const INFO_KEY = "customerInfo"; // mesmo endereço do carrinho e de /conta > Dados pessoais
 // coordenadas em chave própria: o carrinho regrava customerInfo inteiro e apagaria um campo extra
@@ -303,18 +304,13 @@ export default function DescobrirPage() {
             className={inputClass}
           />
           {coords && (
-            <select
+            <Select
               value={km}
-              onChange={(e) => setKm(e.target.value)}
+              onChange={setKm}
               aria-label="Distância máxima"
-              className={`${inputClass} cursor-pointer`}
-            >
-              {DISTANCES.map((d) => (
-                <option key={d.value} value={d.value}>
-                  {d.label}
-                </option>
-              ))}
-            </select>
+              className={inputClass}
+              options={DISTANCES}
+            />
           )}
         </div>
 

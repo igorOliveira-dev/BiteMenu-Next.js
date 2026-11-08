@@ -25,6 +25,7 @@ import UpdatePlanModal from "./components/UpdatePlanModal";
 import PrintDocumentButton, {
   normalizeSaleForPrint,
 } from "./components/print/PrintDocumentButton";
+import Select from "@/components/Select";
 
 const SectionCard = ({
   title,
@@ -941,60 +942,36 @@ const Sales = ({ setSelectedTab }) => {
                     <label className="mb-1 block text-sm font-medium">
                       Serviço
                     </label>
-                    <select
+                    <Select
+                      aria-label="Serviço"
                       className="input w-full rounded-xl bg-translucid p-3"
                       value={selectedSale.service || ""}
-                      onChange={(e) =>
-                        setSelectedSale({
-                          ...selectedSale,
-                          service: e.target.value,
-                        })
-                      }
-                    >
-                      <option className="text-black" value="delivery">
-                        Entrega
-                      </option>
-                      <option className="text-black" value="pickup">
-                        Retirada
-                      </option>
-                      <option className="text-black" value="dinein">
-                        No local
-                      </option>
-                      <option className="text-black" value="faceToFace">
-                        Atendimento presencial
-                      </option>
-                    </select>
+                      onChange={(v) => setSelectedSale({ ...selectedSale, service: v })}
+                      options={[
+                        { value: "delivery", label: "Entrega" },
+                        { value: "pickup", label: "Retirada" },
+                        { value: "dinein", label: "No local" },
+                        { value: "faceToFace", label: "Atendimento presencial" },
+                      ]}
+                    />
                   </div>
                   <div>
                     <label className="mb-1 block text-sm font-medium">
                       Método de pagamento
                     </label>
-                    <select
+                    <Select
+                      aria-label="Método de pagamento"
                       className="input w-full rounded-xl bg-translucid p-3"
                       value={selectedSale.payment_method || ""}
-                      onChange={(e) =>
-                        setSelectedSale({
-                          ...selectedSale,
-                          payment_method: e.target.value,
-                        })
-                      }
-                    >
-                      <option className="text-black" value="pix">
-                        Pix
-                      </option>
-                      <option className="text-black" value="debit">
-                        Débito
-                      </option>
-                      <option className="text-black" value="credit">
-                        Crédito
-                      </option>
-                      <option className="text-black" value="cash">
-                        Dinheiro
-                      </option>
-                      <option className="text-black" value="stripe">
-                        Stripe
-                      </option>
-                    </select>
+                      onChange={(v) => setSelectedSale({ ...selectedSale, payment_method: v })}
+                      options={[
+                        { value: "pix", label: "Pix" },
+                        { value: "debit", label: "Débito" },
+                        { value: "credit", label: "Crédito" },
+                        { value: "cash", label: "Dinheiro" },
+                        { value: "stripe", label: "Stripe" },
+                      ]}
+                    />
                   </div>
                 </div>
               </SectionCard>

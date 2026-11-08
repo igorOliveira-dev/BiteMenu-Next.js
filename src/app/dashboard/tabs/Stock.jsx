@@ -10,6 +10,7 @@ import UpdatePlanModal from "./components/UpdatePlanModal";
 import Loading from "@/components/Loading";
 import { STOCK_ROLES, optionKey } from "@/lib/stock";
 import { FaBoxes, FaChevronLeft, FaSearch, FaSyncAlt } from "react-icons/fa";
+import Select from "@/components/Select";
 
 // Campo de estoque: vazio = sem controle. Só edita o rascunho; grava no "Confirmar estoque".
 function StockInput({ stock, value, onChange }) {
@@ -285,23 +286,23 @@ const Stock = ({ setSelectedTab }) => {
           </label>
 
           {view === "items" && categories.length > 1 && (
-            <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className={fieldClass}>
-              <option value="all">Todas as categorias</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+            <Select
+              value={categoryId}
+              onChange={setCategoryId}
+              className={fieldClass}
+              options={[{ value: "all", label: "Todas as categorias" }, ...categories.map((c) => ({ value: c.id, label: c.name }))]}
+            />
           )}
 
-          <select value={status} onChange={(e) => setStatus(e.target.value)} className={fieldClass}>
-            {Object.entries(STATUS).map(([id, s]) => (
-              <option key={id} value={id}>
-                {id === "soldOut" ? `${s.label} (${soldOutCount})` : s.label}
-              </option>
-            ))}
-          </select>
+          <Select
+            value={status}
+            onChange={setStatus}
+            className={fieldClass}
+            options={Object.entries(STATUS).map(([id, s]) => ({
+              value: id,
+              label: id === "soldOut" ? `${s.label} (${soldOutCount})` : s.label,
+            }))}
+          />
         </div>
 
         {view === "options" && (

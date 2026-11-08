@@ -11,6 +11,7 @@ import { useConfirm } from "@/providers/ConfirmProvider";
 import { STAFF_PLAN_ROLES, STAFF_ROLES } from "@/lib/staff";
 import UpdatePlanModal from "./components/UpdatePlanModal";
 import Loading from "@/components/Loading";
+import Select from "@/components/Select";
 
 export async function staffApi(method, body) {
   const {
@@ -182,17 +183,12 @@ const Team = ({ setSelectedTab }) => {
         </label>
         <label className="text-sm">
           Função
-          <select
+          <Select
             className={fieldClass}
             value={form.role}
-            onChange={(e) => setForm({ ...form, role: e.target.value })}
-          >
-            {Object.entries(STAFF_ROLES).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
+            onChange={(role) => setForm({ ...form, role })}
+            options={Object.entries(STAFF_ROLES).map(([value, label]) => ({ value, label }))}
+          />
         </label>
         <label className="text-sm">
           Senha
