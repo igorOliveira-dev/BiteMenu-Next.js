@@ -5,7 +5,7 @@ Planos, tarefas e SQL manual do Supabase, separados por funcionalidade. O SQL da
 
 | Pasta | O que tem |
 |---|---|
-| `descobrir/` | Tela Descobrir, endereço e histórico do cliente no banco: plano, tarefas, avaliações, registro de mudanças e SQL (`descobrir.sql`, `profile-address.sql`, `orders-customer.sql`) |
+| `descobrir/` | Tela Descobrir, endereço e histórico do cliente no banco: plano, tarefas, avaliações, registro de mudanças, status de Descobrir no banner do painel (`descobrir-status-*`) e SQL (`descobrir.sql`, `profile-address.sql`, `orders-customer.sql`) |
 | `login-usuario/` | Conta de cliente separada da de dono: plano, tarefas e SQL (`account-type.sql`, `account-type-menu-guard.sql`, `profile-cep.sql`) |
 | `identidade-visual/` | Nova identidade visual (em andamento): `plan.md`, `todo.md` e o resumo |
 | `landing-login/` | Botão "Entrar" no navbar da landing e fechamento da identidade visual: plano e tarefas |

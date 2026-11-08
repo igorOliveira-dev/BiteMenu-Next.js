@@ -656,14 +656,24 @@ const ConfigMenu = (props) => {
     });
   };
 
-  // aberto a partir do indicador de status no banner (aba Menu)
+  // aberto a partir do indicador de status no banner (aba Menu); configMenuField = id do campo a destacar
   useEffect(() => {
     let section = null;
+    let field = null;
     try {
       section = sessionStorage.getItem("configMenuSection");
+      field = sessionStorage.getItem("configMenuField");
       sessionStorage.removeItem("configMenuSection");
+      sessionStorage.removeItem("configMenuField");
     } catch {}
     if (section) toggleSection(section);
+    // espera a seção terminar de abrir (anima) antes de rolar até o campo
+    if (field)
+      setTimeout(() => {
+        const el = document.getElementById(field);
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        el?.focus({ preventScroll: true });
+      }, 500);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -1244,6 +1254,7 @@ const ConfigMenu = (props) => {
                   bitemenu.com.br/menu/
                 </span>
                 <input
+                  id="config-slug"
                   type="text"
                   value={slug || ""}
                   onChange={(e) => setSlug(slugify(e.target.value.slice(0, 20)))}

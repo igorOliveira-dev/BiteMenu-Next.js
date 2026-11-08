@@ -22,6 +22,7 @@ import { COLOR_PALETTES } from "@/consts/colorPallets";
 import MenuItems from "./components/menu/MenuItems";
 import QrCodeModal from "./components/menu/QrCodeModal";
 import StoreStatus from "./components/menu/StoreStatus";
+import DiscoverStatus from "./components/menu/DiscoverStatus";
 import BannerCropper, { BANNER_CROPS } from "./components/menu/BannerCropper";
 import BannerImage, { BANNER_ASPECT_CLASS } from "@/components/BannerImage";
 import { uploadItemImage } from "@/lib/uploadImage";
@@ -501,6 +502,12 @@ const Menu = (props) => {
                 setSelectedTab={setSelectedTab}
                 hours={usingExternal ? externalState.hours : menu.hours}
                 timezone={usingExternal ? externalState.timezone : menu.timezone}
+              />
+              <DiscoverStatus
+                setSelectedTab={setSelectedTab}
+                menuState={usingExternal ? menuState : null}
+                saveAll={props.saveAll}
+                unsaved={(changedFields || []).some((k) => ["discoverable", "addressDetails", "address", "slug"].includes(k))}
               />
             </div>
 

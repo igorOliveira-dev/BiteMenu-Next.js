@@ -4,6 +4,7 @@ import { norm, searchMenus } from "@/lib/discover";
 
 // em dev sem cache: logo/banner/endereço trocados no painel aparecem na hora
 const CACHE_MS = process.env.NODE_ENV === "production" ? 10 * 60 * 1000 : 0;
+// regras de quem entra espelhadas em dashboard/tabs/components/menu/DiscoverStatus.jsx: se mudar aqui, mudar lá
 // shortcut: cache em memória vale porque a produção roda numa instância só (igual ao proxy.js); com mais de uma,
 // cada uma tem o seu. Com milhares de cardápios, trocar por RPC/PostGIS no banco.
 let cache = { at: 0, menus: null };

@@ -84,6 +84,12 @@ SQL dos buckets foi passado na conversa e não é arquivo do projeto, porque a p
   - É instantâneo para quem pediu ao sistema menos movimento.
 - **Painel**: toggle "Aparecer em Descobrir" em Configurações > Informações básicas, abaixo do Endereço
   (`ConfigMenu.jsx`). Ligado por padrão e listado em "alterações não salvas".
+- **Status de Descobrir no painel**: botão no banner da aba Cardápio (canto superior direito, ao lado do de abertura da
+  loja), em `DiscoverStatus.jsx`. Plano em `tasks/descobrir/descobrir-status-plan.md`.
+  - Diz se a loja aparece ou não no Descobrir e, quando não aparece, o motivo principal.
+  - O modal tem o switch "Aparecer em Descobrir" (salva na hora) e a lista "O que falta", cada motivo com o seu
+    atalho: endereço sem cidade abre um modal de endereço; sem link leva direto ao campo do link em Configurações.
+  - Mesmas regras da rota `api/descobrir` (comentário nos dois arquivos). Some para dono com exclusão de conta pedida.
 - **Navbar**:
   - Link "Descobrir" (bússola) no header da landing para visitante e cliente. No celular aparece só o ícone.
   - Item "Descobrir estabelecimentos" no menu da conta (`CustomerMenu.jsx`), que também aparece nos cardápios
@@ -116,6 +122,7 @@ SQL dos buckets foi passado na conversa e não é arquivo do projeto, porque a p
 - `tasks/descobrir/descobrir-plan.md`: plano, decisões, riscos e o SQL pendente.
 - `tasks/descobrir/descobrir-todo.md`: tarefas 1 a 9 com critérios de aceite.
 - `tasks/descobrir/descobrir-avaliacoes.md`: como a nota entra na ordem e o que fazer quando existir avaliação.
+- `tasks/descobrir/descobrir-status-plan.md` e `descobrir-status-todo.md`: status de Descobrir no banner do painel.
 - `tasks/descobrir/descobrir-mudancas.md`: este arquivo.
 - `tasks/` reorganizado em pastas por funcionalidade (`descobrir/`, `login-usuario/`, `identidade-visual/`,
   `seguranca/`, `sql/`, `archive/`), com índice em `tasks/README.md`. Só `.md` e `.sql` foram movidos; o resto
