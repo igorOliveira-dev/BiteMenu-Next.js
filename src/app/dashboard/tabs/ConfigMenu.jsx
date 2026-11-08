@@ -1375,6 +1375,18 @@ const ConfigMenu = (props) => {
               </Field>
             )}
 
+            {selectedServices?.includes("delivery") && usingExternal && (
+              <Field label="Tempo médio de entrega">
+                <TextInput
+                  value={externalState?.deliveryTime || ""}
+                  onChange={(e) => externalSetState((p) => ({ ...p, deliveryTime: e.target.value }))}
+                  placeholder="Ex.: 30 a 45 min"
+                  maxLength={40}
+                  className="max-w-xs"
+                />
+              </Field>
+            )}
+
             <Field label={`Valor mínimo de pedido (${getCurrencySymbol(currency)})`}>
               <TextInput
                 type="number"

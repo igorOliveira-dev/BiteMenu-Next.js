@@ -596,6 +596,18 @@ function CartDrawerContent({
     deliveryRadius,
   ]);
 
+  // tempo médio de entrega: lazy-loaded fora da query principal, se a coluna faltar só não aparece
+  const [deliveryTime, setDeliveryTime] = useState(null);
+  useEffect(() => {
+    if (!open || selectedService !== "delivery" || deliveryTime !== null) return;
+    supabase
+      .from("menus")
+      .select("delivery_time")
+      .eq("id", menu.id)
+      .maybeSingle()
+      .then(({ data }) => setDeliveryTime(data?.delivery_time || ""));
+  }, [open, selectedService, menu?.id, deliveryTime]);
+
   // endereço mudou: a distância calculada não vale mais
   useEffect(() => {
     setCustomerCoords(null);
@@ -2084,6 +2096,13 @@ function CartDrawerContent({
                           </p>
                         )}
                       </div>
+                    )}
+
+                    {deliveryTime && (
+                      <p className="text-sm mb-2" style={{ color: grayToUse }}>
+                        Tempo médio de entrega:{" "}
+                        <strong style={{ color: foregroundToUse }}>{deliveryTime}</strong>
+                      </p>
                     )}
 
                     <div>

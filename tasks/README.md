@@ -16,7 +16,7 @@ Planos, tarefas e SQL manual do Supabase, separados por funcionalidade. O SQL da
 | `atendente-ia/` | Atendente IA no cardápio (pedido por conversa, Enterprise; só admin por enquanto): plano, custos, testes e SQL (`atendente-ia.sql`) |
 | `acompanhar-pedido/` | Cliente acompanha o pedido em `/conta` e link `/pedido/<id>` na mensagem do WhatsApp: SQL (`acompanhar-pedido.sql`) |
 | `seguranca/` | Auditoria, funções e policies de segurança (`security-0` a `security-2`, nessa ordem) |
-| `sql/` | SQL avulso de funcionalidades sem plano aqui: exclusão de conta, lembrete de boleto, NFS-e, resumo de pedidos, remarketing |
+| `sql/` | SQL avulso de funcionalidades sem plano aqui: exclusão de conta, lembrete de boleto, NFS-e, resumo de pedidos, remarketing, tempo de entrega |
 | `archive/` | Planos concluídos |
 | `brand-bite-menu/` | Imagens da marca (logo e banners); fica na raiz por não ser `.md` nem `.sql` |
 
