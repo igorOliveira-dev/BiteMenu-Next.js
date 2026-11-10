@@ -19,10 +19,19 @@ export function feeForDistance(tiers, km) {
 }
 
 // ponytail: Nominatim (OpenStreetMap) grátis, sem chave, limite ~1 req/s; trocar por Google/Mapbox se a precisão ou o volume apertarem
-async function nominatim(params) {
-  const qs = new URLSearchParams({ format: "json", limit: "1", countrycodes: "br", ...params });
+async function nominatim(params, neighborhood) {
+  const qs = new URLSearchParams({ format: "json", limit: "10", countrycodes: "br", addressdetails: "1", ...params });
   const res = await fetch(`https://nominatim.openstreetmap.org/search?${qs}`);
-  const [hit] = await res.json();
+  const hits = await res.json();
+  // nomes como "Rua M" se repetem em vários bairros da mesma cidade: escolhe o do bairro informado
+  const norm = (s) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+  const bairro = norm(neighborhood);
+  const sameBairro = (h) =>
+    [h.address?.suburb, h.address?.neighbourhood, h.address?.quarter, h.address?.city_district]
+      .map(norm)
+      .some((n) => n && (bairro.includes(n) || n.includes(bairro)));
+  const hit = hits.length === 1 ? hits[0] : bairro ? hits.find(sameBairro) : hits[0];
+  // várias ruas com o mesmo nome e nenhuma no bairro: melhor não chutar (cai no CEP ou pede a localização)
   return hit ? { lat: Number(hit.lat), lng: Number(hit.lon) } : null;
 }
 
@@ -36,7 +45,7 @@ export async function geocodeAddress(a) {
         street: `${number} ${t(a.street)}`.trim(),
         city: t(a.city),
         state: t(a.state),
-      });
+      }, a.neighborhood);
       if (hit) return hit;
     }
     // rua não achada: centro do CEP é uma boa aproximação

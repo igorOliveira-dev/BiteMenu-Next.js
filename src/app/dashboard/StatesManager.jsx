@@ -515,10 +515,20 @@ export default function StatesManager({
       // coordenadas da loja para /descobrir: só geocodifica quando o endereço muda (Nominatim ~1 req/s)
       if (changed.includes("addressDetails") && state.addressDetails) {
         const r = state.deliveryRadius;
-        const pos =
-          (await geocodeAddress(state.addressDetails)) ?? (r?.lat != null && r?.lng != null ? r : null);
+        const geo = await geocodeAddress(state.addressDetails);
+        const pos = geo ?? (r?.lat != null && r?.lng != null ? r : null);
         payload.lat = pos?.lat ?? null;
         payload.lng = pos?.lng ?? null;
+        // loja mudou de endereço: o ponto de partida da taxa por raio vai junto
+        if (geo && r?.lat != null && r?.lng != null) {
+          payload.delivery_radius = {
+            lat: geo.lat,
+            lng: geo.lng,
+            tiers: (r.tiers || [])
+              .filter((t) => Number(t.km) > 0)
+              .map((t) => ({ id: t.id, km: Number(t.km), fee: Number(t.fee || 0) })),
+          };
+        }
       }
 
       // folderPrefix: use prop defaultFolderPrefix se fornecida, senão userId/menuId
