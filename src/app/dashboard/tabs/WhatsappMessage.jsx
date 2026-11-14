@@ -22,6 +22,7 @@ const sampleValues = (menuTitle) => ({
   subtotal: "R$ 42,00",
   desconto: "",
   cupom: "",
+  fidelidade: "",
   frete: "R$ 5,00",
   total: "R$ 47,00",
   nome: "Maria",
@@ -31,17 +32,19 @@ const sampleValues = (menuTitle) => ({
   pagamento: "Pix",
   troco: "",
   servico: "Entrega",
+  agendamento: "",
   link: "https://bitemenu.com.br/pedido/…",
 });
 
 const TAG_GROUPS = [
-  { title: "Pedido", tags: ["{estabelecimento}", "{itens}", "{servico}", "{link}"] },
+  { title: "Pedido", tags: ["{estabelecimento}", "{itens}", "{servico}", "{agendamento}", "{link}"] },
   {
     title: "Valores",
     tags: [
       "{subtotal}",
       "{desconto}",
       "{cupom}",
+      "{fidelidade}",
       "{frete}",
       "{total}",
       "{pagamento}",

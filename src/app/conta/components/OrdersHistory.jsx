@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { getAllReceipts } from "@/lib/orderReceipts";
 import useUser from "@/hooks/useUser";
 import { formatCurrency } from "@/lib/formatCurrency";
+import { formatScheduled } from "@/lib/schedule";
 import {
   paymentLabels,
   serviceLabels,
@@ -20,7 +21,7 @@ const ACTIVE_MS = 24 * 60 * 60 * 1000;
 
 // só o que a tela mostra: nome, telefone e endereço já estão com o cliente
 const ORDER_COLUMNS =
-  "id, menu_id, created_at, status, payment_method, service, table_label, items_list, total, is_paid";
+  "id, menu_id, created_at, status, payment_method, service, table_label, items_list, total, is_paid, scheduled_for";
 // venda = pedido finalizado (o painel apaga o pedido e grava a venda; order_id em tasks/acompanhar-pedido)
 const SALE_COLUMNS =
   "id, order_id, menu_id, created_at, payment_method, service, items_list, total";
@@ -37,6 +38,7 @@ const fromOrder = (o) => ({
   itemsList: o.items_list,
   total: o.total,
   isPaid: o.is_paid,
+  scheduledFor: o.scheduled_for,
 });
 
 const fromSale = (s) => ({
@@ -52,18 +54,20 @@ const fromSale = (s) => ({
   isPaid: true,
 });
 
+// agendado conta a partir da data marcada (pode ser dias depois do pedido)
 const isActive = (o) =>
   o.status !== "delivered" &&
-  Date.now() - new Date(o.createdAt).getTime() < ACTIVE_MS;
+  Date.now() - new Date(o.scheduledFor || o.createdAt).getTime() < ACTIVE_MS;
 
 // badge e aba inicial de /conta (mesma regra de isActive)
 export const countActiveOrders = async (userId) => {
+  const since = new Date(Date.now() - ACTIVE_MS).toISOString();
   const { count } = await supabase
     .from("orders")
     .select("id", { count: "exact", head: true })
     .eq("customer_id", userId)
     .or("status.is.null,status.neq.delivered")
-    .gte("created_at", new Date(Date.now() - ACTIVE_MS).toISOString());
+    .or(`created_at.gte.${since},scheduled_for.gte.${since}`);
   return count || 0;
 };
 
@@ -93,6 +97,7 @@ const headline = (o) => {
     if (o.service === "dinein") return ["Pronto!", "Já vai chegar na sua mesa."];
     return ["Pronto para retirada!", "Pode buscar seu pedido."];
   }
+  if (o.scheduledFor) return ["Pedido agendado", `Para ${formatScheduled(o.scheduledFor)}.`];
   return ["Pedido recebido", "O estabelecimento recebeu seu pedido."];
 };
 
@@ -398,6 +403,11 @@ function OrderDetails({ order: r, children }) {
     <>
       <div className="mb-2 flex flex-wrap gap-2 text-xs color-gray">
         {children}
+        {r.scheduledFor && (
+          <span className="rounded-full bg-brand-red px-2 py-0.5 text-white">
+            📅 Agendado para {formatScheduled(r.scheduledFor)}
+          </span>
+        )}
         {r.tableLabel && (
           <span className="rounded-full border border-brand-line px-2 py-0.5">
             {r.tableLabel}

@@ -8,6 +8,7 @@ export const WHATSAPP_TAGS = [
   { tag: "{subtotal}", label: "Subtotal", line: "Subtotal: {subtotal}" },
   { tag: "{desconto}", label: "Desconto (se houver)", line: "Desconto: -{desconto}" },
   { tag: "{cupom}", label: "Cupom (se houver)", line: "Cupom: {cupom}" },
+  { tag: "{fidelidade}", label: "Prêmio da fidelidade (se usado)", line: "Fidelidade: {fidelidade}" },
   { tag: "{frete}", label: "Frete (só entrega)", line: "Frete: {frete}" },
   { tag: "{total}", label: "Total", line: "Total: {total}" },
   { tag: "{nome}", label: "Nome do cliente", line: "Nome: {nome}" },
@@ -17,6 +18,7 @@ export const WHATSAPP_TAGS = [
   { tag: "{pagamento}", label: "Forma de pagamento", line: "Pagamento: {pagamento}" },
   { tag: "{troco}", label: "Troco (se pedido)", line: "Troco para: {troco}" },
   { tag: "{servico}", label: "Tipo de serviço", line: "Serviço: {servico}" },
+  { tag: "{agendamento}", label: "Data agendada (se houver)", line: "Agendado para: {agendamento}" },
   // vazio no cardápio "só WhatsApp" (o pedido não fica salvo): a linha some
   { tag: "{link}", label: "Link para acompanhar o pedido", line: "Acompanhe o pedido: {link}" },
   { tag: "{estabelecimento}", label: "Nome do estabelecimento", optional: true },
@@ -30,6 +32,7 @@ export const DEFAULT_WHATSAPP_TEMPLATE = `Pedido de {estabelecimento}
 Subtotal: {subtotal}
 Desconto: -{desconto}
 Cupom: {cupom}
+Fidelidade: {fidelidade}
 Frete: {frete}
 Total: {total}
 
@@ -40,6 +43,7 @@ Endereço: {endereco}
 Pagamento: {pagamento}
 Troco para: {troco}
 Serviço: {servico}
+Agendado para: {agendamento}
 
 Acompanhe o pedido: {link}`;
 

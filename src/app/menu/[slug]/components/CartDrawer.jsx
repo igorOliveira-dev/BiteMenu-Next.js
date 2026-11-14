@@ -1039,6 +1039,10 @@ function CartDrawerContent({
       subtotal: formatCurrency(subtotal, menu?.currency),
       desconto: discount > 0 ? formatCurrency(discount, menu?.currency) : "",
       cupom: appliedCouponCode || "",
+      fidelidade:
+        loyaltyDiscountValue > 0
+          ? `${loyalty.type === "item" ? loyalty.reward : loyaltyDiscountLabel} (-${formatCurrency(loyaltyDiscountValue, menu?.currency)})`
+          : "",
       frete: isDelivery ? formatCurrency(deliveryFee, menu?.currency) : "",
       total: formatCurrency(total, menu?.currency),
       nome: costumerName,
@@ -1055,17 +1059,17 @@ function CartDrawerContent({
           : "",
       servico:
         serviceOptions.find((s) => s.id === selectedService)?.label || "-",
+      agendamento: scheduledIso ? formatScheduled(scheduledIso) : "",
       // só com o pedido salvo no sistema: cliente acompanha em /conta, dono abre no painel
       link: orderId ? `${window.location.origin}/pedido/${orderId}` : "",
     });
 
-    const when = scheduledIso ? `\n\nAgendado para: ${formatScheduled(scheduledIso)}` : "";
     const rawPhone =
       establishmentPhone || menu?.owner_phone || menu?.phone || null;
     if (!rawPhone) return null;
 
     const normalized = String(rawPhone).replace(/\D/g, "");
-    return `https://wa.me/${normalized}?text=${encodeURIComponent(message + when)}`;
+    return `https://wa.me/${normalized}?text=${encodeURIComponent(message)}`;
   }
   // ────────────────────────────────────────────────────────────────────────
 

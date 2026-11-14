@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { updateMenuById } from "@/lib/queries/menus";
 import { getOrdersSummary } from "@/lib/queries/orders";
 import Loading from "@/components/Loading";
+import { formatScheduled } from "@/lib/schedule";
 import {
   FaCheck,
   FaTrash,
@@ -1035,6 +1036,11 @@ const Orders = ({
                           <p className="text-xs color-gray">
                             {formatOrderTime(order.updated_at)}
                           </p>
+                          {order.scheduled_for && (
+                            <span className="mt-1 inline-flex rounded-full bg-brand-red/12 px-2.5 py-1 text-xs font-semibold text-brand-red">
+                              📅 Agendado para {formatScheduled(order.scheduled_for)}
+                            </span>
+                          )}
                           {loyalty && loyaltyDates[order.customer_id] && (() => {
                             // ponytail: dois pedidos abertos do mesmo cliente com prêmio liberado mostram o aviso nos dois
                             const st = loyaltyState(loyaltyDates[order.customer_id], loyalty);
