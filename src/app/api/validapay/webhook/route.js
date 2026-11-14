@@ -5,6 +5,8 @@ import {
   isValidSignature,
   userIdFromSubscription,
   DAYS_TO_PAY_AFTER_DUE,
+  OPEN_INVOICE,
+  payUntil,
 } from "@/lib/validapay";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { sendSubscriptionEmail } from "@/lib/emails/subscriptionEmails";
@@ -142,6 +144,13 @@ export async function POST(req) {
         ];
       }
     } else if (evt.event === "payment.failed" && isCurrent) {
+      // Prazo final = cobrança em aberto mais antiga + DAYS_TO_PAY_AFTER_DUE. Falha na consulta só tira a data do e-mail.
+      const sub = await validapay(`/v1/subscriptions/${evt.subscriptionId}`).catch(() => null);
+      const oldestDue = (sub?.billingCycles ?? [])
+        .flatMap((c) => c.invoices ?? [])
+        .filter((i) => OPEN_INVOICE.includes(i.status) && i.dueDate)
+        .map((i) => i.dueDate)
+        .sort()[0];
       email = [
         "paymentFailed",
         {
@@ -149,6 +158,7 @@ export async function POST(req) {
           amount: evt.amount,
           reason: evt.retry?.failureReason,
           nextRetryAt: evt.retry?.nextRetryAt,
+          payUntil: payUntil(evt.dueDate ?? oldestDue),
         },
       ];
     }

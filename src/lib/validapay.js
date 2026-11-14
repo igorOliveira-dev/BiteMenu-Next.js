@@ -141,8 +141,12 @@ export async function findLiveSubscription(email) {
   return null;
 }
 
-const OPEN_INVOICE = ["PENDING", "AWAITING_PAYMENT", "OVERDUE"];
+export const OPEN_INVOICE = ["PENDING", "AWAITING_PAYMENT", "OVERDUE"];
 const DAY = 86400000;
+
+// Último momento pra pagar uma cobrança vencida em dueDate; depois disso a assinatura expira (→ Free)
+export const payUntil = (dueDate) =>
+  dueDate ? new Date(new Date(dueDate).getTime() + DAYS_TO_PAY_AFTER_DUE * DAY).toISOString() : null;
 
 // Boleto emitido, não pago e ainda dentro do prazo de pagamento. Enquanto existir, não geramos
 // outra cobrança: boleto leva dias pra compensar e o cliente acabava gerando e pagando outro.

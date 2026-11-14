@@ -79,14 +79,53 @@ const TEMPLATES = {
     ),
   }),
 
-  paymentFailed: ({ plan, amount, reason, nextRetryAt }) => ({
-    subject: "Não conseguimos processar o pagamento da sua assinatura",
+  boletoOverdue: ({ plan, amount, dueDate, payUntil, boletoUrl, last }) => ({
+    subject: last
+      ? `Último aviso: sua assinatura será encerrada em ${date(payUntil)}`
+      : "Seu boleto do Bite Menu venceu",
+    html: shell(
+      last ? "Sua assinatura está prestes a ser encerrada" : "Seu boleto venceu",
+      `<p>O boleto da sua assinatura do plano <strong>${planName(plan)}</strong> venceu em <strong>${date(dueDate)}</strong> e ainda não identificamos o pagamento.</p>
+       <p>Valor: <strong>${brl(amount)}</strong><br/>Pague até: <strong>${date(payUntil)}</strong></p>
+       <p>Depois dessa data, a assinatura é encerrada e sua conta volta para o plano Free.</p>
+       ${button(boletoUrl, "Pagar boleto")}
+       <p style="color:#555;">Pague pelo QR Code Pix do boleto: a confirmação é na hora. Pelo código de barras, a compensação leva até 3 dias úteis. Se já pagou, pode ignorar este e-mail.</p>`,
+    ),
+  }),
+
+  renewalReminder: ({ plan, amount, chargeDate, paymentType, cardLastFour }) => ({
+    subject: `Sua assinatura anual do Bite Menu renova em ${date(chargeDate)}`,
+    html: shell(
+      "Sua assinatura anual vai renovar",
+      `<p>Em <strong>${date(chargeDate)}</strong>, sua assinatura do plano <strong>${planName(plan)}</strong> será renovada automaticamente por mais um ano.</p>
+       <p>Valor: <strong>${brl(amount)}</strong>, cobrado ${
+         paymentType === "CREDIT_CARD"
+           ? `no cartão${cardLastFour ? ` final ${esc(cardLastFour)}` : ""}`
+           : "pelo Pix Automático"
+       }.</p>
+       <p>Você não precisa fazer nada. Se quiser trocar a forma de pagamento ou o plano, é só acessar sua assinatura.</p>
+       ${button(PLAN_DETAILS_URL, "Ver minha assinatura")}`,
+    ),
+  }),
+
+  paymentFailed: ({ plan, amount, reason, nextRetryAt, payUntil }) => ({
+    subject: nextRetryAt
+      ? "Não conseguimos processar o pagamento da sua assinatura"
+      : "Ação necessária: atualize o pagamento da sua assinatura",
     html: shell(
       "Pagamento não aprovado",
       `<p>Tentamos cobrar <strong>${brl(amount)}</strong> da sua assinatura do plano <strong>${planName(plan)}</strong>, mas o pagamento não foi aprovado${reason ? ` (${esc(reason)})` : ""}.</p>
-       ${nextRetryAt ? `<p>Vamos tentar de novo em <strong>${date(nextRetryAt)}</strong>. Confira se há saldo ou limite disponível até lá.</p>` : "<p>Confira se há saldo ou limite disponível.</p>"}
-       <p>Enquanto isso, seu plano continua funcionando normalmente.</p>
-       ${button(PLAN_DETAILS_URL, "Ver minha assinatura")}`,
+       ${
+         nextRetryAt
+           ? `<p>Vamos tentar de novo em <strong>${date(nextRetryAt)}</strong>. Confira se há saldo ou limite disponível, ou troque a forma de pagamento.</p>`
+           : "<p>Não vamos tentar cobrar de novo automaticamente. Troque a forma de pagamento para manter seu plano.</p>"
+       }
+       ${
+         payUntil
+           ? `<p>Se o pagamento não for confirmado até <strong>${date(payUntil)}</strong>, a assinatura é encerrada e sua conta volta para o plano Free. Até lá, seu plano continua ativo.</p>`
+           : "<p>Se o pagamento não for confirmado, a assinatura é encerrada e sua conta volta para o plano Free.</p>"
+       }
+       ${button(PLAN_DETAILS_URL, "Atualizar forma de pagamento")}`,
     ),
   }),
 
