@@ -6,8 +6,9 @@ import { sendSubscriptionEmail } from "@/lib/emails/subscriptionEmails";
 
 // Lembretes diários da assinatura, chamado pelo pg_cron uma vez por dia (tasks/sql/boleto-reminder.sql):
 // - boletoReminder: boleto que vence amanhã;
-// - boletoOverdue: boleto vencido, no 1º dia depois do vencimento e 3 dias antes de a assinatura expirar
-//   (3 dias = tempo de compensação do boleto pelo código de barras);
+// - overdue: cobrança vencida (boleto, cartão ou Pix Automático), no 1º dia depois do vencimento e 3 dias
+//   antes de a assinatura expirar (3 dias = tempo de compensação do boleto pelo código de barras). Cobre também
+//   cartão/Pix Automático, porque a ValidaPay nem sempre manda payment.failed;
 // - renewalReminder: plano anual no cartão/Pix Automático, 7 dias antes da renovação.
 // POST { mode: "dry-run" | "send" }  ·  Authorization: Bearer CRON_SECRET
 // Só assinatura atual do profile (mesma regra do e-mail "boleto" no webhook). Cada lembrete sai num dia
@@ -77,21 +78,24 @@ async function remindersToday() {
     }
 
     for (const invoice of (sub.billingCycles ?? []).flatMap((c) => c.invoices ?? [])) {
-      if ((invoice.paymentType ?? sub.paymentType) !== "BOLETO" || !invoice.charge?.chargeId) continue;
+      const paymentType = invoice.paymentType ?? sub.paymentType;
+      const isBoleto = paymentType === "BOLETO";
+      if (isBoleto && !invoice.charge?.chargeId) continue;
       const due = brYmd(invoice.dueDate);
       const data = {
         plan,
         amount: invoice.summary?.total,
         dueDate: invoice.dueDate,
-        boletoUrl: `${process.env.VALIDAPAY_API_URL}/v1/charges/${invoice.charge.chargeId}/boleto.pdf`, // rota pública
+        paymentType,
+        boletoUrl: isBoleto ? `${process.env.VALIDAPAY_API_URL}/v1/charges/${invoice.charge.chargeId}/boleto.pdf` : null, // rota pública
       };
 
-      if (invoice.status === "PENDING" && due === tomorrow) {
+      if (isBoleto && invoice.status === "PENDING" && due === tomorrow) {
         list.push({ kind: "boletoReminder", to, key: invoice.invoiceId, data });
       } else if (OPEN_INVOICE.includes(invoice.status) && (due === firstOverdueDay || due === lastOverdueDay)) {
         const last = due === lastOverdueDay;
         list.push({
-          kind: "boletoOverdue",
+          kind: "overdue",
           to,
           key: `${invoice.invoiceId}-${last ? "last" : "first"}`,
           data: { ...data, payUntil: payUntil(invoice.dueDate), last },

@@ -79,19 +79,34 @@ const TEMPLATES = {
     ),
   }),
 
-  boletoOverdue: ({ plan, amount, dueDate, payUntil, boletoUrl, last }) => ({
-    subject: last
-      ? `Último aviso: sua assinatura será encerrada em ${date(payUntil)}`
-      : "Seu boleto do Bite Menu venceu",
-    html: shell(
-      last ? "Sua assinatura está prestes a ser encerrada" : "Seu boleto venceu",
-      `<p>O boleto da sua assinatura do plano <strong>${planName(plan)}</strong> venceu em <strong>${date(dueDate)}</strong> e ainda não identificamos o pagamento.</p>
-       <p>Valor: <strong>${brl(amount)}</strong><br/>Pague até: <strong>${date(payUntil)}</strong></p>
-       <p>Depois dessa data, a assinatura é encerrada e sua conta volta para o plano Free.</p>
-       ${button(boletoUrl, "Pagar boleto")}
-       <p style="color:#555;">Pague pelo QR Code Pix do boleto: a confirmação é na hora. Pelo código de barras, a compensação leva até 3 dias úteis. Se já pagou, pode ignorar este e-mail.</p>`,
-    ),
-  }),
+  // Boleto: link pro boleto. Cartão/Pix Automático: trocar a forma de pagamento (a ValidaPay nem sempre manda payment.failed)
+  overdue: ({ plan, amount, dueDate, payUntil, paymentType, boletoUrl, last }) => {
+    const isBoleto = paymentType === "BOLETO";
+    return {
+      subject: last
+        ? `Último aviso: sua assinatura será encerrada em ${date(payUntil)}`
+        : isBoleto
+          ? "Seu boleto do Bite Menu venceu"
+          : "Não conseguimos cobrar sua assinatura do Bite Menu",
+      html: shell(
+        last ? "Sua assinatura está prestes a ser encerrada" : isBoleto ? "Seu boleto venceu" : "Pagamento em atraso",
+        `<p>${
+          isBoleto
+            ? "O boleto da sua assinatura"
+            : `A cobrança ${paymentType === "CREDIT_CARD" ? "no cartão" : "pelo Pix Automático"} da sua assinatura`
+        } do plano <strong>${planName(plan)}</strong> venceu em <strong>${date(dueDate)}</strong> e ainda não identificamos o pagamento.</p>
+         <p>Valor: <strong>${brl(amount)}</strong><br/>Pague até: <strong>${date(payUntil)}</strong></p>
+         <p>Depois dessa data, a assinatura é encerrada e sua conta volta para o plano Free.</p>
+         ${
+           isBoleto
+             ? `${button(boletoUrl, "Pagar boleto")}
+                <p style="color:#555;">Pague pelo QR Code Pix do boleto: a confirmação é na hora. Pelo código de barras, a compensação leva até 3 dias úteis. Se já pagou, pode ignorar este e-mail.</p>`
+             : `<p>Confira se há saldo ou limite disponível, ou troque a forma de pagamento na sua assinatura.</p>
+                ${button(PLAN_DETAILS_URL, "Atualizar forma de pagamento")}`
+         }`,
+      ),
+    };
+  },
 
   renewalReminder: ({ plan, amount, chargeDate, paymentType, cardLastFour }) => ({
     subject: `Sua assinatura anual do Bite Menu renova em ${date(chargeDate)}`,
