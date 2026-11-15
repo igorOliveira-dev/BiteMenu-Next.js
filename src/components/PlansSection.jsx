@@ -190,6 +190,7 @@ const ChangePlanModal = ({ plan, cycle, currentPlanName, onClose }) => {
 };
 
 const freePlan = plans.find((plan) => plan.id === "free");
+const enterprisePlan = plans.find((plan) => plan.id === "enterprise");
 
 const PlansSection = ({ showFree = false }) => {
   const [loadingPlan, setLoadingPlan] = useState(null);
@@ -261,6 +262,22 @@ const PlansSection = ({ showFree = false }) => {
     }
   };
 
+  const selectDisabled = (plan) => plan.comingSoon || maintenance || !!loadingPlan || isCurrent(plan);
+  const selectLabel = (plan) =>
+    plan.comingSoon
+      ? "Em breve"
+      : maintenance
+        ? "Indisponível"
+        : isCurrent(plan)
+          ? "Plano atual"
+          : isCurrentCard(plan)
+            ? "Manter este plano"
+            : loadingPlan === plan.id
+              ? "Processando..."
+              : subscriptionId
+                ? "Trocar para este"
+                : "Selecionar";
+
   return (
     <section className="py-3 px-6 flex flex-col items-center justify-center min-h-[calc(100dvh-100px)]">
       <h2 className="font-bold scale-130 xxs:scale-150 mt-4 lg:mt-0 mb-8 text-center">Planos disponíveis:</h2>
@@ -329,7 +346,7 @@ const PlansSection = ({ showFree = false }) => {
           </div>
         )}
         {/* Free fica fora da lista: só aparece no card acima, com showFree */}
-        {plans.filter((plan) => plan.id !== "free").map((plan) => (
+        {plans.filter((plan) => !["free", "enterprise"].includes(plan.id)).map((plan) => (
           <div
             key={plan.name}
             className={`relative p-4 px-6 bg-degraded-t-speckled border rounded-xl w-64 flex flex-col gap-6 justify-between transition ${
@@ -385,28 +402,58 @@ const PlansSection = ({ showFree = false }) => {
               <div className="w-full flex flex-col gap-2">
                 <button
                   className="cta-button disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={plan.comingSoon || maintenance || !!loadingPlan || isCurrent(plan)}
+                  disabled={selectDisabled(plan)}
                   onClick={() => handleSelect(plan)}
                 >
-                  {plan.comingSoon
-                    ? "Em breve"
-                    : maintenance
-                    ? "Indisponível"
-                    : isCurrent(plan)
-                    ? "Plano atual"
-                    : isCurrentCard(plan)
-                      ? "Manter este plano"
-                      : loadingPlan === plan.id
-                        ? "Processando..."
-                        : subscriptionId
-                          ? "Trocar para este"
-                          : "Selecionar"}
+                  {selectLabel(plan)}
                 </button>
               </div>
             )}
           </div>
         ))}
       </div>
+
+      {/* Enterprise: faixa discreta abaixo da grade, pra quem procura esse nível (não compete com os 3 planos) */}
+      {enterprisePlan && (
+        <div
+          className={`w-full max-w-[1248px] mt-10 p-5 px-6 bg-translucid border rounded-xl flex flex-col lg:flex-row lg:items-center gap-6 ${
+            highlight === "enterprise" ? "border-brand-select" : "border-[var(--translucid)]"
+          }`}
+        >
+          <div className="lg:w-72 shrink-0">
+            <p className="text-xs font-semibold uppercase tracking-wide text-brand-eyebrow">
+              Para quem quer mais profissionalismo
+            </p>
+            <h3 className="text-xl font-bold mt-1">{enterprisePlan.name}</h3>
+            <p className="text-sm color-gray mt-1">{enterprisePlan.tagline}</p>
+          </div>
+
+          <ul className="flex-1 grid sm:grid-cols-2 gap-x-6 gap-y-1.5 text-sm">
+            {enterprisePlan.features.map((feature) => (
+              <li key={feature} className="flex items-center gap-2">
+                <FaCheck className="shrink-0 text-st-done" />
+                {feature}
+              </li>
+            ))}
+          </ul>
+
+          <div className="lg:w-52 shrink-0 flex flex-col items-center gap-3">
+            <p className="text-2xl font-bold">
+              <span className="text-sm color-gray mr-1">R$</span>
+              {cycle === "yearly" ? enterprisePlan.yearlyPrice : enterprisePlan.price}
+              <span className="text-sm color-gray">{cycle === "yearly" ? "/ano" : "/mês"}</span>
+            </p>
+            <button
+              type="button"
+              className="w-full cursor-pointer px-4 py-2 rounded-full border border-[var(--translucid)] font-semibold transition hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={selectDisabled(enterprisePlan)}
+              onClick={() => handleSelect(enterprisePlan)}
+            >
+              {selectLabel(enterprisePlan)}
+            </button>
+          </div>
+        </div>
+      )}
 
       {changeTarget && (
         <ChangePlanModal

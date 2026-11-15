@@ -1,5 +1,8 @@
 import Link from "next/link";
 import React from "react";
+import { plans } from "@/consts/Plans";
+
+const enterprise = plans.find((p) => p.id === "enterprise");
 
 export const metadata = {
   title: "Planos - Bite Menu",
@@ -124,7 +127,7 @@ const page = () => {
       <section className="mt-4 scroll-mt-[90px]" id="business">
         <h2 className="docs-title">Plano Business</h2>
         <p className="docs-paragraph">
-          O <strong>Plano Business</strong> é o plano mais completo, voltado para estabelecimentos com operação maior.
+          O <strong>Plano Business</strong> é voltado para estabelecimentos com operação maior.
           Ele inclui todos os recursos do Pro, além de:
         </p>
         <ul className="docs-paragraph list-disc pl-6">
@@ -172,6 +175,47 @@ const page = () => {
           </a>{" "}
           com o usuário e a senha definidos pelo dono; para trocar a senha, o dono gera uma nova na aba Equipe.
         </p>
+      </section>
+
+      <section className="mt-4 scroll-mt-[90px]" id="enterprise">
+        <h2 className="docs-title">Plano Enterprise</h2>
+        <p className="docs-paragraph">
+          O <strong>Plano Enterprise</strong> é para estabelecimentos que querem uma presença mais profissional, com
+          atendimento, página e cardápio com a própria cara. Não é o plano para a maioria: o Business já cobre toda a
+          operação do dia a dia. O Enterprise faz sentido quando a apresentação da sua marca passa a ser tão importante
+          quanto o cardápio em si. Ele inclui todos os recursos do Business, além de:
+        </p>
+        <ul className="docs-paragraph list-disc pl-6">
+          <li>
+            Atendente IA: o cliente faz o pedido conversando no cardápio. A IA mostra as opções, tira dúvidas sobre a
+            loja e monta o carrinho; a finalização do pedido continua a mesma de sempre. Ative na aba Atendente IA
+          </li>
+          <li>
+            Landing page criada com IA: uma página de apresentação do seu estabelecimento, criada e ajustada por
+            conversa, sem precisar de designer ou programador
+          </li>
+          <li>
+            Layout personalizado: monte o cardápio bloco por bloco (banner, cabeçalho, destaques, produtos e outros),
+            escolhendo ordem, cores e disposição, com a IA ajudando a criar ou ajustar
+          </li>
+          <li>
+            Página de links: uma página com os botões do seu estabelecimento (cardápio, WhatsApp, redes sociais e o
+            que mais quiser) para usar na bio das redes
+          </li>
+          <li>
+            Insights de vendas com IA: no dashboard de vendas, a IA analisa o período escolhido e devolve sugestões
+            práticas para vender mais
+          </li>
+        </ul>
+        <p className="docs-paragraph">
+          Os recursos de IA do Enterprise têm um limite mensal de uso, que acompanha no próprio painel.
+        </p>
+        {enterprise?.comingSoon && (
+          <p className="docs-paragraph">
+            <strong>O Plano Enterprise ainda não está disponível para contratação.</strong> Ele será liberado em breve na
+            página de planos.
+          </p>
+        )}
       </section>
 
 

@@ -58,6 +58,23 @@ export const plans = [
     yearlyAnchor: "838,80",
     id: "business",
   },
+  // Fora da grade de planos: aparece numa faixa própria no PlansSection.
+  {
+    name: "Enterprise",
+    tagline: "Para estabelecimentos que querem uma presença mais profissional: atendimento, página e cardápio com a sua cara.",
+    features: [
+      "Inclui tudo do Business",
+      "Atendente IA no cardápio",
+      "Landing page criada com IA",
+      "Layout personalizado do cardápio",
+      "Página de links",
+      "Insights de vendas com IA",
+    ],
+    price: "149,90",
+    yearlyPrice: "1499,00",
+    yearlyAnchor: "1798,80",
+    id: "enterprise",
+  },
 ];
 
 // Contratação em manutenção para todos, exceto estes e-mails (teste da assinatura real em produção).

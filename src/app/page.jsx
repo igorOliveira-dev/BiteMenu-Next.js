@@ -34,7 +34,7 @@ const jsonLd = {
       description:
         "Cardápio digital para restaurantes, lanchonetes e deliveries. Crie o cardápio grátis em minutos e receba pedidos pelo WhatsApp e por um painel de pedidos, sem taxa por venda.",
       publisher: { "@id": `${BASE_URL}/#organization` },
-      offers: plans.map((plan) => ({
+      offers: plans.filter((plan) => !plan.comingSoon).map((plan) => ({
         "@type": "Offer",
         name: `Plano ${plan.name}`,
         price: plan.price.replace(",", "."),

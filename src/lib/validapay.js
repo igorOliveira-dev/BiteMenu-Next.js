@@ -91,6 +91,10 @@ export const PRICE_IDS = {
     monthly: process.env.VALIDAPAY_PRICE_BUSINESS_MONTHLY,
     yearly: process.env.VALIDAPAY_PRICE_BUSINESS_YEARLY,
   },
+  enterprise: {
+    monthly: process.env.VALIDAPAY_PRICE_ENTERPRISE_MONTHLY,
+    yearly: process.env.VALIDAPAY_PRICE_ENTERPRISE_YEARLY,
+  },
 };
 
 // Pagamento online dos pedidos: % do total que vai pra conta master (split no Pix da subconta)
@@ -98,9 +102,9 @@ export const PLATFORM_FEE_PERCENT = 5;
 // Planos que podem ativar o Pix online (mesma lista em OnlinePayment.jsx, ConfigMenu.jsx e CartDrawer.jsx)
 export const ONLINE_PAYMENT_ROLES = ["pro", "business", "enterprise", "admin"];
 
-export const TIER = { plus: 1, pro: 2, business: 3 };
+export const TIER = { plus: 1, pro: 2, business: 3, enterprise: 4 };
 
-// { plan: "plus" | "pro" | "business", cycle: "monthly" | "yearly" } de um priceId nosso
+// { plan: "plus" | "pro" | "business" | "enterprise", cycle: "monthly" | "yearly" } de um priceId nosso
 export function priceInfo(priceId) {
   for (const plan of Object.keys(PRICE_IDS)) {
     for (const cycle of Object.keys(PRICE_IDS[plan])) {

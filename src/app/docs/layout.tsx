@@ -30,6 +30,7 @@ const docsNavigation = [
       { label: "Plano Plus", href: "/docs/planos#plus" },
       { label: "Plano Pro", href: "/docs/planos#pro" },
       { label: "Plano Business", href: "/docs/planos#business" },
+      { label: "Plano Enterprise", href: "/docs/planos#enterprise" },
       { label: "Troca de plano", href: "/docs/planos#troca-de-plano" },
       { label: "Cancelamento", href: "/docs/planos#cancelamento" },
       { label: "Segurança", href: "/docs/planos#seguranca" },
