@@ -612,7 +612,7 @@ const Dashboard = ({
           currency={menu?.currency}
           menuName={menu?.title}
           canPrint
-          canCustomizeOrder={["business", "admin", "designer"].includes(profile?.role)}
+          canCustomizeOrder={["business", "enterprise", "admin", "designer"].includes(profile?.role)}
           fileNamePrefix="pedido"
           receiptTitle="PEDIDO"
         />

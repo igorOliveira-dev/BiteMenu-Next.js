@@ -73,7 +73,7 @@ export default function DashboardLayoutClient({ children }) {
       } else {
         setShowPlanButton(false);
       }
-      if (ownerPlan === "pro" || ownerPlan === "business") {
+      if (["pro", "business", "enterprise"].includes(ownerPlan)) {
         setShowDownloadButton(true);
       } else {
         setShowDownloadButton(false);

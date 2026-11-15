@@ -761,7 +761,7 @@ export default function MenuItems({
   const [reloadKey, setReloadKey] = useState(0);
 
   const hasPlusPermissions =
-    ["plus", "pro", "business", "admin", "designer"].includes(ownerRole);
+    ["plus", "pro", "business", "enterprise", "admin", "designer"].includes(ownerRole);
 
   const [showCatIndicator, setShowCatIndicator] = useState(false);
 
@@ -2843,7 +2843,7 @@ export default function MenuItems({
     if (role === "free") return 20;
     if (role === "plus") return 50;
     if (role === "pro") return 200;
-    if (role === "business") return 500;
+    if (role === "business" || role === "enterprise") return 500;
     if (role === "admin" || role === "designer") return Infinity;
     return 20;
   };
@@ -2857,7 +2857,7 @@ export default function MenuItems({
     if (role === "free") return 4;
     if (role === "plus") return 10;
     if (role === "pro") return 20;
-    if (role === "business") return 100;
+    if (role === "business" || role === "enterprise") return 100;
     if (role === "admin" || role === "designer") return Infinity;
     return 4;
   };
@@ -2950,7 +2950,7 @@ export default function MenuItems({
                   label: "Cupons",
                   Icon: FaTicketAlt,
                   onClick: () => setCouponsModalOpen(true),
-                  locked: !["pro", "business", "admin", "designer"].includes(ownerRole),
+                  locked: !["pro", "business", "enterprise", "admin", "designer"].includes(ownerRole),
                 },
                 { label: "Fidelidade", Icon: FaGift, onClick: () => setLoyaltyModalOpen(true), locked: !LOYALTY_ROLES.includes(ownerRole) },
                 { label: "Estoque", Icon: FaBoxes, onClick: onOpenStock, locked: !STOCK_ROLES.includes(ownerRole) },
@@ -4826,7 +4826,7 @@ export default function MenuItems({
         <CouponsModal
           menuId={menu?.id}
           currency={menu?.currency}
-          canCreate={["pro", "business", "admin", "designer"].includes(ownerRole)}
+          canCreate={["pro", "business", "enterprise", "admin", "designer"].includes(ownerRole)}
           showUpgrade={ownerRole === "free"}
           onClose={() => setCouponsModalOpen(false)}
         />
@@ -5054,7 +5054,7 @@ export default function MenuItems({
                     : ""
           }
           text={
-            planModalFeature.endsWith("_limit") && ownerRole === "business"
+            planModalFeature.endsWith("_limit") && ["business", "enterprise"].includes(ownerRole)
               ? BUSINESS_LIMIT_TEXT
               : planModalFeature === "combos"
               ? "Assine o plano Plus para salvar seus combos. Monte combos com desconto automático e aumente o ticket médio."
@@ -5080,7 +5080,7 @@ export default function MenuItems({
                 : null
           }
           plan={planModalFeature.endsWith("_limit") ? undefined : "plus"}
-          ctaText={planModalFeature.endsWith("_limit") && ownerRole === "business" ? "Falar com o suporte" : undefined}
+          ctaText={planModalFeature.endsWith("_limit") && ["business", "enterprise"].includes(ownerRole) ? "Falar com o suporte" : undefined}
           onCta={() => {
             // promo/destaque resolvem no Plus; limite leva pro plano seguinte (Business: suporte)
             if (!planModalFeature.endsWith("_limit")) return goToPlan("plus");

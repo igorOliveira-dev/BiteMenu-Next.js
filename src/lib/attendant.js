@@ -5,7 +5,7 @@
 export const ATTENDANT_ROLES = ["admin", "enterprise"];
 
 // mesma regra do canShowPromoPrice dos 3 layouts (ClientMenu*.jsx)
-export const PROMO_ROLES = ["plus", "pro", "business", "admin", "designer"];
+export const PROMO_ROLES = ["plus", "pro", "business", "enterprise", "admin", "designer"];
 
 // Tetos de gasto por cardápio, em micro-dólares (1_000_000 = US$ 1). Garantidos pela reserva atômica no banco
 // (src/lib/aiBudget.js, ai_attendant_reserve): nem no pior caso, com ataque simultâneo, o gasto passa deles.

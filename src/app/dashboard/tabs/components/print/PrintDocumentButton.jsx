@@ -136,7 +136,7 @@ const paperSizes = ["paper-80mm", "paper-58mm", "paper-a4"];
 const PRINT_ORDER_KEY = "bitemenu-print-order";
 // impressão automática de pedidos novos: opção por aparelho (só o PC da impressora)
 export const AUTO_PRINT_KEY = "bitemenu-auto-print-orders";
-export const PRINT_PLAN_ROLES = ["pro", "business", "admin", "designer"];
+export const PRINT_PLAN_ROLES = ["pro", "business", "enterprise", "admin", "designer"];
 
 // blocos reordenáveis da impressão (estilo com cabeçalho). Cabeçalho e
 // destaque continuam sempre no topo.

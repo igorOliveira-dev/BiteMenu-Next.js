@@ -13,7 +13,7 @@ const INPUT =
   "h-11 w-full rounded-xl border border-[var(--translucid)] bg-translucid px-3 text-[15px] outline-none transition focus:border-brand-select/70";
 const BUTTON =
   "inline-flex h-11 cursor-pointer items-center justify-center rounded-full bg-bite px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50";
-const ALLOWED = ["pro", "business", "admin"]; // ONLINE_PAYMENT_ROLES em src/lib/validapay.js
+const ALLOWED = ["pro", "business", "enterprise", "admin"]; // ONLINE_PAYMENT_ROLES em src/lib/validapay.js
 
 const INCOME = [
   "Até R$ 5.000",

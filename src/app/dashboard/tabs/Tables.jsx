@@ -65,7 +65,7 @@ const Tables = () => {
     if (role === "free") return 5;
     if (role === "plus") return 15;
     if (role === "pro") return 100;
-    if (role === "business") return 1000;
+    if (role === "business" || role === "enterprise") return 1000;
     if (role === "admin" || role === "designer") return Infinity;
     return 5;
   };
@@ -380,11 +380,11 @@ const Tables = () => {
               ? "Seu plano gratuito permite até 5 mesas. Faça upgrade para o Plus (15 mesas) ou Pro (100 mesas) para criar mais."
               : ownerRole === "plus"
                 ? "Seu plano Plus permite até 15 mesas. Faça upgrade para o Pro (100 mesas) para criar mais."
-                : ownerRole === "business"
+                : ["business", "enterprise"].includes(ownerRole)
                   ? BUSINESS_LIMIT_TEXT
                   : "Seu plano atual atingiu o limite de mesas."
           }
-          ctaText={ownerRole === "business" ? "Falar com o suporte" : undefined}
+          ctaText={["business", "enterprise"].includes(ownerRole) ? "Falar com o suporte" : undefined}
           onCta={() => {
             const next = nextPlan(ownerRole);
             if (next) goToPlan(next);

@@ -160,7 +160,7 @@ const Orders = ({
   const [printUpsell, setPrintUpsell] = useState(false);
   // plano do estabelecimento: o caixa não tem profile, mas só entra com o Business do dono ativo
   const planRole = staff ? "business" : profile?.role;
-  const canCustomize = ["business", "admin", "designer"].includes(planRole);
+  const canCustomize = ["business", "enterprise", "admin", "designer"].includes(planRole);
   // etapas da equipe: Business + tela ligada na aba Equipe
   const teamPlan = STAFF_PLAN_ROLES.includes(planRole);
   const kitchenOn = teamPlan && menu?.kitchen_enabled === true;
@@ -1260,7 +1260,7 @@ const Orders = ({
                             currency={menu?.currency}
                             menuName={menu?.title}
                             canPrint={PRINT_PLAN_ROLES.includes(planRole)}
-                            canCustomizeOrder={["business", "admin", "designer"].includes(planRole)}
+                            canCustomizeOrder={["business", "enterprise", "admin", "designer"].includes(planRole)}
                             onDenied={() => setPrintUpsell(true)}
                             fileNamePrefix="pedido"
                             receiptTitle="PEDIDO"

@@ -12,7 +12,7 @@ import { sendRemarketingEmail } from "@/lib/emails/remarketingEmails";
 // - Grupo de controle: entra no histórico (is_control) mas nunca recebe e-mail.
 
 const DAY = 864e5;
-const PAID = ["plus", "pro", "business"];
+const PAID = ["plus", "pro", "business", "enterprise"];
 const TRACK_ORDER = ["A", "B", "C"];
 
 const brDay = (iso) => new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });

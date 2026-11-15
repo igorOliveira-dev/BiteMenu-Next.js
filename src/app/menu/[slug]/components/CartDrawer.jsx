@@ -237,6 +237,7 @@ function CartDrawerContent({
     "plus",
     "pro",
     "business",
+    "enterprise",
     "admin",
     "designer",
   ].includes(ownerRole ?? "free");
@@ -288,7 +289,7 @@ function CartDrawerContent({
   // do pedido usam os mesmos valores sem mudanças.
   // ponytail: valida só no navegador (o total do pedido já é calculado aqui);
   // se precisar de blindagem, recalcular o total no servidor.
-  const canUseCoupon = ["pro", "business", "admin", "designer"].includes(
+  const canUseCoupon = ["pro", "business", "enterprise", "admin", "designer"].includes(
     ownerRole ?? "free",
   );
   const [couponInput, setCouponInput] = useState("");
@@ -506,7 +507,7 @@ function CartDrawerContent({
   // Só delivery e retirada; em mesa e balcão não é oferecido.
   const pixOnlineAvailable =
     (menu?.payments || []).includes("pix_online") &&
-    ["pro", "business", "admin"].includes(ownerRole) && // ONLINE_PAYMENT_ROLES
+    ["pro", "business", "enterprise", "admin"].includes(ownerRole) && // ONLINE_PAYMENT_ROLES
     !tableInfo &&
     !counterMode;
 
@@ -1030,7 +1031,7 @@ function CartDrawerContent({
     const isDelivery = selectedService === "delivery";
 
     // valor vazio = a linha da tag some da mensagem
-    const customTemplate = ["business", "admin", "designer"].includes(ownerRole)
+    const customTemplate = ["business", "enterprise", "admin", "designer"].includes(ownerRole)
       ? menu?.whatsapp_template
       : null;
     const message = renderWhatsappMessage(customTemplate, {

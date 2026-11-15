@@ -1555,7 +1555,7 @@ const ConfigMenu = (props) => {
               {/* Pix online: visível para todos; só Pro/Business/admin com subconta aprovada conseguem marcar */}
               {(() => {
                 const selected = selectedPayments?.includes("pix_online");
-                const planOk = ["pro", "business", "admin"].includes(userRole); // ONLINE_PAYMENT_ROLES
+                const planOk = ["pro", "business", "enterprise", "admin"].includes(userRole); // ONLINE_PAYMENT_ROLES
                 const ready = planOk && !!menu?.online_payment_account;
                 return (
                   <OptionCard
@@ -1587,7 +1587,7 @@ const ConfigMenu = (props) => {
             {/* Pix online marcado num plano que não inclui o recurso (ex.: depois de um rebaixamento) */}
             {selectedPayments?.includes("pix_online") &&
               userRole &&
-              !["pro", "business", "admin"].includes(userRole) && (
+              !["pro", "business", "enterprise", "admin"].includes(userRole) && (
                 <Notice>
                   O <strong>Pix online</strong> está marcado, mas o seu plano atual não inclui esse recurso, então ele não
                   aparece para os seus clientes. Ele volta a funcionar se você voltar ao plano Pro ou superior. Enquanto

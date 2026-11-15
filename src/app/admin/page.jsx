@@ -214,7 +214,7 @@ const Admin = () => {
   }
 
   if (showOnlyPlusPro) {
-    visibleMenus = visibleMenus.filter((m) => ["plus", "pro", "business"].includes(m.owner_role));
+    visibleMenus = visibleMenus.filter((m) => ["plus", "pro", "business", "enterprise"].includes(m.owner_role));
   }
 
   if (utmSource) {

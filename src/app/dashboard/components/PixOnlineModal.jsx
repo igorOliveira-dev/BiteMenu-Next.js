@@ -10,7 +10,7 @@ const STORAGE_KEY = "bite_menu_pix_online_notice";
 // não marcaram a opção. Fechar no X volta a mostrar na próxima visita; "Não mostrar mais" desliga.
 export default function PixOnlineModal({ menu, role, onActivate }) {
   const eligible =
-    !!menu && ["pro", "business"].includes(role) && !menu.payments?.includes("pix_online");
+    !!menu && ["pro", "business", "enterprise"].includes(role) && !menu.payments?.includes("pix_online");
   const [show, setShow] = useState(false);
 
   useEffect(() => {
