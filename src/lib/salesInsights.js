@@ -15,7 +15,7 @@ export function brParts(iso) {
 }
 
 const money = (n) => Math.round(n * 100) / 100;
-const lineValue = (it) =>
+export const lineValue = (it) =>
   ((Number(it.price) || 0) + (it.additionals || []).reduce((s, a) => s + (Number(a.price) || 0), 0)) * (Number(it.qty) || 0);
 
 function totals(sales) {

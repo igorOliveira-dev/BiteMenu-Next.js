@@ -14,6 +14,7 @@ import { useAlert } from "@/providers/AlertProvider";
 import SalesCharts from "./components/sales/SalesCharts";
 import SalesInsights from "./components/sales/SalesInsights";
 import { INSIGHTS_ROLES } from "@/lib/salesInsights";
+import { fetchAllRows } from "@/lib/fetchAllRows";
 
 ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, Filler);
 
@@ -122,6 +123,33 @@ function formatLabelDate(dateStr) {
   return `${d}/${m}`;
 }
 
+// Atalhos de período: [início, fim] em "YYYY-MM-DD" no fuso do navegador (toISOString seria UTC)
+const dayStr = (d) => keyFor(d, "day");
+const daysAgo = (n) => {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d;
+};
+const PRESETS = [
+  { label: "Hoje", range: () => [dayStr(new Date()), dayStr(new Date())] },
+  { label: "7 dias", range: () => [dayStr(daysAgo(6)), dayStr(new Date())] },
+  { label: "30 dias", range: () => [dayStr(daysAgo(29)), dayStr(new Date())] },
+  {
+    label: "Este mês",
+    range: () => {
+      const n = new Date();
+      return [dayStr(new Date(n.getFullYear(), n.getMonth(), 1)), dayStr(n)];
+    },
+  },
+  {
+    label: "Mês passado",
+    range: () => {
+      const n = new Date();
+      return [dayStr(new Date(n.getFullYear(), n.getMonth() - 1, 1)), dayStr(new Date(n.getFullYear(), n.getMonth(), 0))];
+    },
+  },
+];
+
 /** -------------------------
  * Helpers (exportação CSV)
  * ------------------------ */
@@ -199,26 +227,35 @@ function fetchSalesPeriodData(menuId, start, end, prevStart, prevEnd, force) {
   }
 
   const promise = (async () => {
-    const { data, error } = await supabase
-      .from("sales")
-      .select(
-        "created_at, total, net_total, payment_method, service, items_list, delivery_fee, costumer_name, costumer_phone",
-      )
-      .eq("menu_id", menuId)
-      .gte("created_at", start.toISOString())
-      .lte("created_at", end.toISOString())
-      .order("created_at", { ascending: true });
+    const data = await fetchAllRows(() =>
+      supabase
+        .from("sales")
+        .select(
+          "created_at, total, net_total, payment_method, service, items_list, delivery_fee, costumer_name, costumer_phone",
+        )
+        .eq("menu_id", menuId)
+        .gte("created_at", start.toISOString())
+        .lte("created_at", end.toISOString())
+        .order("created_at", { ascending: true })
+        .order("id", { ascending: true }),
+    );
 
-    if (error) throw error;
+    // Se a comparação falhar, prevData fica null e a tela avisa (em vez de fingir que não havia vendas)
+    const prevData = await fetchAllRows(() =>
+      supabase
+        .from("sales")
+        .select("created_at, total, net_total")
+        .eq("menu_id", menuId)
+        .gte("created_at", prevStart.toISOString())
+        .lte("created_at", prevEnd.toISOString())
+        .order("created_at", { ascending: true })
+        .order("id", { ascending: true }),
+    ).catch((err) => {
+      console.error(err);
+      return null;
+    });
 
-    const { data: prevData } = await supabase
-      .from("sales")
-      .select("created_at, total, net_total")
-      .eq("menu_id", menuId)
-      .gte("created_at", prevStart.toISOString())
-      .lte("created_at", prevEnd.toISOString());
-
-    const result = { key, data, prevData: prevData || [], fetchedAt: Date.now() };
+    const result = { key, data, prevData, fetchedAt: Date.now() };
     salesPeriodCache = result;
     return result;
   })().finally(() => {
@@ -240,19 +277,16 @@ const SalesDashboard = ({ setSelectedTab }) => {
   const ownerRole = useOwnerRole(menu?.owner_id);
 
   const [rawSales, setRawSales] = useState([]);
-  const [prevRawSales, setPrevRawSales] = useState([]);
+  const [prevRawSales, setPrevRawSales] = useState([]); // null = comparação falhou ao carregar
   const [salesData, setSalesData] = useState([]);
   const [granularity, setGranularity] = useState("day");
   const [loadingSales, setLoadingSales] = useState(false);
+  const [loadedOnce, setLoadedOnce] = useState(false); // depois da 1ª carga, recarregar só esmaece a tela
   const [valueMode, setValueMode] = useState("gross"); // "gross" | "net"
 
   // Datas oficiais (disparam fetch)
-  const [startDate, setStartDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 30);
-    return d.toISOString().split("T")[0];
-  });
-  const [endDate, setEndDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [startDate, setStartDate] = useState(() => dayStr(daysAgo(29)));
+  const [endDate, setEndDate] = useState(() => dayStr(new Date()));
 
   // Datas pending (inputs)
   const [pendingStartDate, setPendingStartDate] = useState(startDate);
@@ -306,12 +340,14 @@ const SalesDashboard = ({ setSelectedTab }) => {
     if (end < start) {
       customAlert("A data final não pode ser menor que a inicial.", "error");
       setLoadingSales(false);
+      setLoadedOnce(true);
       return;
     }
 
     if (isRangeTooLarge(start, end)) {
       customAlert(`Intervalo muito grande. Selecione no máximo ${MAX_RANGE_YEARS} anos.`, "error");
       setLoadingSales(false);
+      setLoadedOnce(true);
       return;
     }
 
@@ -329,6 +365,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
       console.error(error);
       customAlert("Erro ao carregar vendas.", "error");
       setLoadingSales(false);
+      setLoadedOnce(true);
       return;
     }
 
@@ -350,6 +387,16 @@ const SalesDashboard = ({ setSelectedTab }) => {
       map[key].count += 1;
     });
 
+    // Período anterior nos mesmos baldes: desloca cada venda N dias pra frente (N = tamanho do período)
+    const periodDays = diffDaysInclusive(start, end);
+    const prevMap = {};
+    (prevData || []).forEach((s) => {
+      const d = new Date(s.created_at);
+      d.setDate(d.getDate() + periodDays);
+      const key = keyFor(d, chosenGranularity);
+      prevMap[key] = (prevMap[key] || 0) + getSaleValue(s);
+    });
+
     // Série contínua
     const entries = [];
 
@@ -360,6 +407,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
           label: labelForKey(k, chosenGranularity),
           total: map[k]?.total || 0,
           count: map[k]?.count || 0,
+          prevTotal: prevMap[k] || 0,
         });
       }
     } else {
@@ -375,6 +423,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
           label: labelForKey(k, chosenGranularity),
           total: map[k]?.total || 0,
           count: map[k]?.count || 0,
+          prevTotal: prevMap[k] || 0,
         });
 
         if (k === endKey) break;
@@ -384,8 +433,9 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
     setSalesData(entries);
     setRawSales(data);
-    setPrevRawSales(prevData || []);
+    setPrevRawSales(prevData);
     setLoadingSales(false);
+    setLoadedOnce(true);
   }, [menu?.id, startDate, endDate, singleDate, customAlert, isRangeTooLarge, getSaleValue]);
 
   useEffect(() => {
@@ -445,11 +495,11 @@ const SalesDashboard = ({ setSelectedTab }) => {
   const averageTicket = useMemo(() => (totalSalesCount ? totalPeriod / totalSalesCount : 0), [totalPeriod, totalSalesCount]);
 
   const prevTotalPeriod = useMemo(
-    () => prevRawSales.reduce((sum, s) => sum + getSaleValue(s), 0),
+    () => (prevRawSales || []).reduce((sum, s) => sum + getSaleValue(s), 0),
     [prevRawSales, getSaleValue],
   );
 
-  const prevTotalSalesCount = useMemo(() => prevRawSales.length, [prevRawSales]);
+  const prevTotalSalesCount = prevRawSales?.length ?? 0;
   const prevAverageTicket = useMemo(
     () => (prevTotalSalesCount ? prevTotalPeriod / prevTotalSalesCount : 0),
     [prevTotalPeriod, prevTotalSalesCount],
@@ -466,11 +516,44 @@ const SalesDashboard = ({ setSelectedTab }) => {
     return { hour: Number(peak[0]), count: peak[1] };
   }, [rawSales]);
 
+  // Recorrência dentro do período, pelo telefone (mesma regra de summarizeSales em lib/salesInsights)
+  const recurring = useMemo(() => {
+    const byPhone = {};
+    rawSales.forEach((s) => {
+      const phone = String(s.costumer_phone ?? "").replace(/\D/g, "");
+      if (phone) byPhone[phone] = (byPhone[phone] || 0) + 1;
+    });
+    const counts = Object.values(byPhone);
+    const repeat = counts.filter((n) => n > 1);
+    const repeatSales = repeat.reduce((a, b) => a + b, 0);
+    return {
+      identified: counts.length,
+      repeat: repeat.length,
+      pct: rawSales.length ? Math.round((repeatSales / rawSales.length) * 100) : 0,
+    };
+  }, [rawSales]);
+
+  const deliveryFees = useMemo(
+    () =>
+      rawSales.reduce(
+        (acc, s) => {
+          const fee = Number(s.delivery_fee) || 0;
+          if (fee > 0) {
+            acc.total += fee;
+            acc.count += 1;
+          }
+          return acc;
+        },
+        { total: 0, count: 0 },
+      ),
+    [rawSales],
+  );
+
   const hasNetValues = useMemo(() => {
     return rawSales.some((sale) => sale.net_total !== null);
   }, [rawSales]);
 
-  if (loading || ownerRole === null || loadingSales) return <Loading />;
+  if (loading || ownerRole === null || (loadingSales && !loadedOnce)) return <Loading />;
 
   if (ownerRole === "free" || ownerRole === "plus") {
     return (
@@ -504,6 +587,22 @@ const SalesDashboard = ({ setSelectedTab }) => {
         pointHoverBorderWidth: 2,
         borderWidth: 2,
       },
+      // Sem comparação carregada (prevRawSales null), a linha tracejada não aparece
+      ...(prevRawSales
+        ? [
+            {
+              label: "Período anterior",
+              data: salesData.map((d) => d.prevTotal),
+              borderColor: colors?.ink,
+              borderDash: [6, 4],
+              borderWidth: 1.5,
+              tension: 0,
+              pointRadius: 0,
+              pointHoverRadius: 0,
+              fill: false,
+            },
+          ]
+        : []),
     ],
   };
 
@@ -516,8 +615,10 @@ const SalesDashboard = ({ setSelectedTab }) => {
       tooltip: {
         displayColors: false,
         callbacks: {
-          label: (context) => formatCurrency(context.parsed.y || 0, menu?.currency),
+          label: (context) =>
+            `${context.datasetIndex === 1 ? "Período anterior: " : ""}${formatCurrency(context.parsed.y || 0, menu?.currency)}`,
           afterLabel: (context) => {
+            if (context.datasetIndex === 1) return "";
             const count = salesData[context.dataIndex]?.count ?? 0;
             return `${count} ${count === 1 ? "venda" : "vendas"}`;
           },
@@ -527,7 +628,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
     scales: {
       y: {
         beginAtZero: true,
-        ticks: { callback: (v) => `${currencySymbol} ${v}`, color: colors?.ink },
+        ticks: { callback: (v) => `${currencySymbol} ${Number(v).toLocaleString("pt-BR")}`, color: colors?.ink },
         grid: { color: colors?.grid },
         border: { display: false },
       },
@@ -560,6 +661,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
   };
 
   const renderVariation = (pct) => {
+    if (!prevRawSales) return <span className="text-xs color-gray mt-1">Comparação indisponível</span>;
     if (pct === null) return <span className="text-xs color-gray mt-1">— vs período anterior</span>;
     const isPositive = pct > 0;
     const isZero = pct === 0;
@@ -648,6 +750,31 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
         {/* Filtros (card) */}
         <div className="bg-translucid border border-translucid rounded-xl p-4 mb-4">
+          <div className="flex flex-wrap gap-2 mb-4">
+            {PRESETS.map((p) => {
+              const [s, e] = p.range();
+              const active = s === startDate && e === endDate;
+              return (
+                <button
+                  key={p.label}
+                  type="button"
+                  onClick={() => {
+                    setSingleDate("");
+                    setPendingStartDate(s);
+                    setPendingEndDate(e);
+                    setStartDate(s);
+                    setEndDate(e);
+                  }}
+                  className={`cursor-pointer rounded-full px-3 py-1.5 text-sm transition ${
+                    active ? "bg-verde text-white" : "bg-translucid hover:bg-[var(--translucid)]"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
+
           <div className="grid gap-3 sm:grid-cols-3 sm:items-end">
             <div className="flex flex-col gap-1">
               <label className="text-sm font-semibold">Início</label>
@@ -658,7 +785,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
                   setPendingStartDate(e.target.value);
                   setSingleDate("");
                 }}
-                className="input bg-translucid p-2 rounded-xl w-full"
+                className="h-11 w-full rounded-xl border border-[var(--high-translucid)] bg-[var(--low-translucid)] px-3 text-[15px] outline-none transition focus:border-brand-select/70"
               />
             </div>
 
@@ -671,7 +798,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
                   setPendingEndDate(e.target.value);
                   setSingleDate("");
                 }}
-                className="input bg-translucid p-2 rounded-xl w-full"
+                className="h-11 w-full rounded-xl border border-[var(--high-translucid)] bg-[var(--low-translucid)] px-3 text-[15px] outline-none transition focus:border-brand-select/70"
               />
             </div>
 
@@ -690,6 +817,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
           <p className="text-xs color-gray mt-3">Limite de intervalo: até {MAX_RANGE_YEARS} anos.</p>
         </div>
 
+        <div className={`transition-opacity ${loadingSales ? "opacity-50 pointer-events-none" : ""}`} aria-busy={loadingSales}>
         {INSIGHTS_ROLES.includes(ownerRole) && (
           <SalesInsights key={`${startDate}:${endDate}`} startDate={startDate} endDate={endDate} />
         )}
@@ -715,6 +843,25 @@ const SalesDashboard = ({ setSelectedTab }) => {
           </div>
         </div>
 
+        {/* Recorrência e taxas de entrega */}
+        <div className="grid gap-4 sm:grid-cols-2 mb-4">
+          <div className="bg-translucid border border-translucid rounded-xl p-4 flex flex-col">
+            <p className="text-sm color-gray">Vendas de clientes recorrentes</p>
+            <p className="text-2xl font-bold mt-1">{recurring.pct}%</p>
+            <span className="text-xs color-gray mt-1">
+              {recurring.repeat} de {recurring.identified} clientes identificados compraram mais de uma vez no período
+            </span>
+          </div>
+
+          <div className="bg-translucid border border-translucid rounded-xl p-4 flex flex-col">
+            <p className="text-sm color-gray">Taxas de entrega</p>
+            <p className="text-2xl font-bold mt-1">{formatCurrency(deliveryFees.total, menu?.currency)}</p>
+            <span className="text-xs color-gray mt-1">
+              {deliveryFees.count} {deliveryFees.count === 1 ? "venda com taxa" : "vendas com taxa"} no período
+            </span>
+          </div>
+        </div>
+
         {/* Horário de pico */}
         {peakHour && (
           <div className="bg-translucid border border-translucid rounded-xl p-4 mb-4 flex items-center gap-3">
@@ -724,7 +871,7 @@ const SalesDashboard = ({ setSelectedTab }) => {
             <div>
               <p className="text-sm color-gray">Horário de pico no período</p>
               <p className="font-semibold">
-                Entre {pad2(peakHour.hour)}h e {pad2(peakHour.hour + 1)}h —{" "}
+                Entre {pad2(peakHour.hour)}h e {pad2((peakHour.hour + 1) % 24)}h —{" "}
                 {peakHour.count} pedidos nesse horário
               </p>
             </div>
@@ -733,7 +880,19 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
         {/* Gráfico */}
         <div className="bg-translucid border border-translucid rounded-xl p-4 overflow-x-auto">
-          <h3 className="text-base font-semibold mb-3">Faturamento {granularityLabel}</h3>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+            <h3 className="text-base font-semibold">Faturamento {granularityLabel}</h3>
+            {prevRawSales && (
+              <div className="flex items-center gap-4 text-xs color-gray">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-4 border-t-2" style={{ borderColor: lineColor }} /> Período atual
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-4 border-t-2 border-dashed" style={{ borderColor: colors?.ink }} /> Período anterior
+                </span>
+              </div>
+            )}
+          </div>
           {salesData.length === 0 ? (
             <p className="text-center color-gray">Nenhuma venda nesse período.</p>
           ) : (
@@ -745,7 +904,8 @@ const SalesDashboard = ({ setSelectedTab }) => {
 
         {/* Donuts */}
         <div className="mt-6">
-          <SalesCharts sales={rawSales} />
+          <SalesCharts sales={rawSales} getSaleValue={getSaleValue} currency={menu?.currency} />
+        </div>
         </div>
       </div>
     </div>

@@ -453,7 +453,8 @@ body:has(.public-menu) .bg-translucid,
   --time-icon-invert: 1;
 }
 
-input[type="time"]::-webkit-calendar-picker-indicator {
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(var(--time-icon-invert));
 }
 
