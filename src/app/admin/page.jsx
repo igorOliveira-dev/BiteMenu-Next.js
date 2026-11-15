@@ -38,6 +38,7 @@ const Admin = () => {
   const [sortByLastAccess, setSortByLastAccess] = useState(false);
   const [onlyLast7Days, setOnlyLast7Days] = useState(false);
   const [showOnlyPlusPro, setShowOnlyPlusPro] = useState(false);
+  const [onlyEnterprise, setOnlyEnterprise] = useState(false);
   const [utmSource, setUtmSource] = useState("");
 
   const [subStatuses, setSubStatuses] = useState({});
@@ -188,7 +189,7 @@ const Admin = () => {
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [search, sortByLastAccess, onlyLast7Days, showOnlyPlusPro, utmSource]);
+  }, [search, sortByLastAccess, onlyLast7Days, showOnlyPlusPro, onlyEnterprise, utmSource]);
 
   if (loading || menusLoading) return <Loading />;
 
@@ -215,6 +216,10 @@ const Admin = () => {
 
   if (showOnlyPlusPro) {
     visibleMenus = visibleMenus.filter((m) => ["plus", "pro", "business", "enterprise"].includes(m.owner_role));
+  }
+
+  if (onlyEnterprise) {
+    visibleMenus = visibleMenus.filter((m) => m.owner_role === "enterprise");
   }
 
   if (utmSource) {
@@ -430,11 +435,21 @@ const Admin = () => {
 
         <div className="flex gap-4 flex-wrap justify-center">
           <label className="flex items-center gap-2 text-sm text-gray-300">
-            Apenas Plus/Pro/Business
+            Apenas pagantes
             <input
               type="checkbox"
               checked={showOnlyPlusPro}
               onChange={(e) => setShowOnlyPlusPro(e.target.checked)}
+              className="toggle toggle-primary"
+            />
+          </label>
+
+          <label className="flex items-center gap-2 text-sm text-gray-300">
+            Apenas Enterprise
+            <input
+              type="checkbox"
+              checked={onlyEnterprise}
+              onChange={(e) => setOnlyEnterprise(e.target.checked)}
               className="toggle toggle-primary"
             />
           </label>
@@ -485,7 +500,9 @@ const Admin = () => {
                       ? "border-4 border-azul"
                       : menu.owner_role === "business"
                         ? "border-6 border-brasa"
-                        : "border-translucid"
+                        : menu.owner_role === "enterprise"
+                          ? "border-6 border-mostarda"
+                          : "border-translucid"
               } rounded-lg flex flex-col gap-2`}
             >
               <div className="flex items-center gap-2">
