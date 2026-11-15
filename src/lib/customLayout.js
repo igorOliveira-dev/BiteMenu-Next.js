@@ -284,7 +284,11 @@ function cleanAttrs(tag, raw) {
     const name = n.toLowerCase();
     let v = (v1 ?? v2 ?? v3 ?? "").trim();
     if (seen.has(name)) continue;
-    if (name === "style") v = cleanCss(v).replace(/[{}]/g, "");
+    // {{status_color}} é o único campo liberado no style (valor fixo do sistema, não é texto do dono); as outras chaves saem
+    if (name === "style")
+      v = cleanCss(v.replace(/\{\{status_color\}\}/g, "\0"))
+        .replace(/[{}]/g, "")
+        .replace(/\0/g, "{{status_color}}");
     else if (name === "src" || name === "href") {
       if ((name === "src") !== (tag === "img") || (name === "href" && tag !== "a") || !SAFE_URL.test(v)) continue;
     } else if (name === "target") {

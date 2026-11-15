@@ -42,6 +42,9 @@ assert.equal(
 );
 assert.equal(cleanHtml(`<img src="{{image}}" alt="{{name}}">`), `<img src="{{image}}" alt="{{name}}">`);
 assert.equal(cleanHtml(`<button data-action="hours">H</button>`), `<button data-action="hours">H</button>`);
+// no style só {{status_color}} sobrevive; qualquer outro campo (texto do dono) perde as chaves
+assert.equal(cleanHtml(`<p style="color:{{status_color}}">x</p>`), `<p style="color:{{status_color}}">x</p>`);
+assert.equal(cleanHtml(`<p style="color:{{description}}">x</p>`), `<p style="color:description">x</p>`);
 
 // valores do dono sempre escapados, inclusive em atributo
 const tpl = cleanHtml(`<p title="{{name}}">{{name}}</p>`);
