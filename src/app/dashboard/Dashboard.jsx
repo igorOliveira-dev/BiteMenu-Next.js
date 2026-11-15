@@ -32,6 +32,7 @@ import Delivery from "@/app/equipe/Delivery";
 import UpsellBanner from "./components/UpsellBanner";
 import AddressUpdateModal from "./components/AddressUpdateModal";
 import PixOnlineModal from "./components/PixOnlineModal";
+import TestimonialConsentModal from "./components/TestimonialConsentModal";
 import QrCodeModal from "./tabs/components/menu/QrCodeModal";
 import useModalBackHandler from "@/hooks/useModalBackHandler";
 import { FaChartLine, FaLifeRing, FaShieldAlt, FaChair, FaGlobe, FaMagic, FaPalette, FaLink, FaCalendarAlt } from "react-icons/fa";
@@ -599,6 +600,13 @@ const Dashboard = ({
           }}
         />
       )}
+
+      {/* só aparece pra quem tem pedido de depoimento pendente em testimonial_consents */}
+      <TestimonialConsentModal
+        userId={profile?.id}
+        defaultName={profile?.display_name}
+        defaultEstablishment={menu?.title}
+      />
 
       {/* impressão automática: um pedido por vez, o próximo entra ao terminar */}
       {printQueue[0] && (
