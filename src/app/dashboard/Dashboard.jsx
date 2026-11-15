@@ -228,6 +228,12 @@ const Dashboard = ({
     setDragX(0);
   };
 
+  // Agenda -> Pedidos: abre a aba Pedidos com os detalhes do pedido. Limpa ao chegar lá, pra não reabrir na próxima visita
+  const [openOrderId, setOpenOrderId] = useState("");
+  useEffect(() => {
+    if (selectedTab === "orders") setOpenOrderId("");
+  }, [selectedTab]);
+
   const handleMenuSelect = (tab) => {
     setSelectedTab(tab);
     setIsOpen(false);
@@ -462,7 +468,7 @@ const Dashboard = ({
         </div>
         {selectedTab === "orders" && (
           <div className="block">
-            <Orders setSelectedTab={setSelectedTab} reloadTrigger={reloadOrderTrigger} setOrderQuantityChangeTrigger={setOrderQuantityChangeTrigger} />
+            <Orders openOrderId={openOrderId} setSelectedTab={setSelectedTab} reloadTrigger={reloadOrderTrigger} setOrderQuantityChangeTrigger={setOrderQuantityChangeTrigger} />
           </div>
         )}
         {selectedTab === "sales" && (
@@ -540,7 +546,12 @@ const Dashboard = ({
         )}
         {selectedTab === "schedule" && showSchedule && (
           <div className="block mx-auto w-full max-w-[1024px]">
-            <Schedule />
+            <Schedule
+              onOpenOrder={(id) => {
+                setOpenOrderId(id);
+                setSelectedTab("orders");
+              }}
+            />
           </div>
         )}
         {selectedTab === "links" && LINKTREE_ROLES.includes(profile?.role) && (

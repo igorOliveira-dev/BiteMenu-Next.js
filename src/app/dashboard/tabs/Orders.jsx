@@ -152,6 +152,7 @@ const Orders = ({
   reloadTrigger,
   setOrderQuantityChangeTrigger,
   staff = false, // login da equipe (caixa): só os pedidos, sem as configurações do cardápio
+  openOrderId = "", // id do pedido vindo da Agenda: a aba já abre com os detalhes dele
 }) => {
   const { menu, loading } = useMenu();
   const { profile, loadingProfile } = useUser();
@@ -641,11 +642,11 @@ const Orders = ({
     setOpenItemIndexes(new Set());
   };
 
-  // link do pedido no WhatsApp (/pedido/<id>) chega como ?pedido=<id>: abre o pedido direto
+  // link do pedido no WhatsApp (/pedido/<id>) chega como ?pedido=<id>, e a Agenda manda openOrderId: abre o pedido direto
   useEffect(() => {
     if (!menu?.id) return;
     const url = new URL(window.location.href);
-    const id = url.searchParams.get("pedido");
+    const id = url.searchParams.get("pedido") || openOrderId;
     if (!id) return;
     url.searchParams.delete("pedido");
     window.history.replaceState(null, "", url);
@@ -1403,7 +1404,7 @@ const Orders = ({
 
       {orderModalOpen && selectedOrder ? (
         <GenericModal
-          title="Detalhes do pedido"
+          title={`Pedido Nº ${selectedOrder.order_number ?? "—"}`}
           onClose={() => setOrderModalOpen(false)}
           size="xl"
         >
@@ -1444,6 +1445,65 @@ const Orders = ({
                 resetAndFetch();
               }}
             >
+              {/* resumo só de leitura: o essencial sem precisar abrir as seções de edição abaixo */}
+              <div className="rounded-2xl border border-translucid bg-[var(--low-translucid)] p-4 space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-2xl font-bold leading-none">Nº {selectedOrder.order_number ?? "—"}</span>
+                  <span className="text-xs color-gray" title={selectedOrder.id}>
+                    ID #{selectedOrder.id?.slice(0, 6)}
+                  </span>
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                      (ORDER_STATUS_STYLE[selectedOrder.status] ?? ORDER_STATUS_STYLE.received).pill
+                    }`}
+                  >
+                    {ORDER_STATUS[selectedOrder.status] ?? ORDER_STATUS.received}
+                  </span>
+                  <span className={paidPillClass(selectedOrder.is_paid)}>
+                    {selectedOrder.is_paid ? "Pago" : "Pagamento pendente"}
+                  </span>
+                </div>
+
+                {selectedOrder.scheduled_for && (
+                  <span className="inline-flex rounded-full bg-brand-red/12 px-2.5 py-1 text-xs font-semibold text-brand-red">
+                    📅 Agendado para {formatScheduled(selectedOrder.scheduled_for)}
+                  </span>
+                )}
+
+                <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+                  {[
+                    ["Cliente", selectedOrder.costumer_name || "Não informado"],
+                    ["Telefone", selectedOrder.costumer_phone || "Não informado"],
+                    ["Tipo de pedido", serviceLabels[selectedOrder.service] || "Não informado"],
+                    ["Pagamento", paymentLabels[selectedOrder.payment_method] || "Não informado"],
+                    ["Recebido em", formatOrderTime(selectedOrder.created_at)],
+                    ...(selectedOrder.service === "delivery"
+                      ? [["Endereço", [selectedOrder.address, selectedOrder.neighborhood].filter(Boolean).join(" · ") || "Não informado"]]
+                      : []),
+                  ].map(([label, value]) => (
+                    <div key={label} className="min-w-0">
+                      <dt className="text-xs uppercase tracking-wide color-gray">{label}</dt>
+                      <dd className="break-words font-medium">{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+
+                <div>
+                  <p className="text-xs uppercase tracking-wide color-gray">Itens</p>
+                  <ul className="mt-1 space-y-1 text-sm">
+                    {(selectedOrder.items_list || []).map((it, i) => (
+                      <li key={i}>
+                        <span className="font-semibold">{Number(it.qty) || 0}x</span> {it.name || "Item sem nome"}
+                        {(it.additionals || []).length > 0 && (
+                          <span className="color-gray"> · {it.additionals.map((a) => `+ ${a.name}`).join(", ")}</span>
+                        )}
+                        {it.note ? <span className="block text-xs color-gray">Obs.: {it.note}</span> : null}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
               <SectionCard
                 title="Cliente"
                 subtitle="Dados básicos do pedido"
@@ -1964,7 +2024,7 @@ const Orders = ({
                 </button>
               </SectionCard>
 
-              <div className="sticky bottom-0 rounded-2xl border border-translucid bg-low-gray/95 p-4 backdrop-blur-xl">
+              <div className="sticky bottom-0 z-10 rounded-2xl border border-translucid bg-brand-surface p-4 shadow-[0_-8px_16px_-8px_var(--shadow)]">
                 <div className="mb-3 flex items-center justify-between gap-4">
                   <div>
                     <p className="text-xs uppercase tracking-wide color-gray">

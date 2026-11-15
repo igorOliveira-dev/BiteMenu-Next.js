@@ -1330,7 +1330,7 @@ const Sales = ({ setSelectedTab }) => {
                 </button>
               </SectionCard>
 
-              <div className="sticky bottom-0 rounded-2xl border border-translucid bg-low-gray/95 p-4 backdrop-blur-xl">
+              <div className="sticky bottom-0 rounded-2xl border border-translucid z-10 bg-brand-surface p-4 shadow-[0_-8px_16px_-8px_var(--shadow)]">
                 <div className="mb-3 flex items-center justify-between gap-4">
                   <div>
                     <p className="text-xs uppercase tracking-wide color-gray">
