@@ -25,7 +25,7 @@ import { useAlert } from "@/providers/AlertProvider";
 import { useSearchParams, useRouter } from "next/navigation";
 import { calculateComboDiscount } from "@/lib/comboDiscount";
 import { applyCoupon } from "@/lib/couponDiscount";
-import { STOCK_ROLES, stockPayload } from "@/lib/stock";
+import { STOCK_ROLES, stockPayload, addonName } from "@/lib/stock";
 import { saveReceipt } from "@/lib/orderReceipts";
 import useUser from "@/hooks/useUser";
 import useLoyaltyCount from "@/hooks/useLoyaltyCount";
@@ -1021,7 +1021,7 @@ function CartDrawerContent({
       .map((it) => {
         const addons =
           it.additionals?.length > 0
-            ? `\n   + ${it.additionals.map((a) => a.name).join(", ")}`
+            ? `\n   + ${it.additionals.map(addonName).join(", ")}`
             : "";
         const note = it.note ? `\n   Obs: ${it.note}` : "";
         return `• ${it.qty}x ${it.name}${addons}${note}`;
@@ -1693,7 +1693,7 @@ function CartDrawerContent({
                         className="text-sm line-clamp-2"
                         style={{ color: grayToUse }}
                       >
-                        + {it.additionals.map((a) => a.name).join(", ")}
+                        + {it.additionals.map(addonName).join(", ")}
                       </div>
                     )}
                     {it.note && (

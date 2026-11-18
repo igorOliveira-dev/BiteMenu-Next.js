@@ -6,6 +6,7 @@ import { FaPrint } from "react-icons/fa";
 import GenericModal from "@/components/GenericModal";
 import { formatCurrency } from "@/lib/formatCurrency";
 import Select from "@/components/Select";
+import { addonName } from "@/lib/stock";
 
 export const paymentLabels = {
   pix: "Pix",
@@ -449,7 +450,7 @@ export default function PrintDocumentButton({
                     {item.qty}x {item.name}
                   </strong>
                   {(item.additionals || []).map((add, i) => (
-                    <div key={i}>+ {add.name}</div>
+                    <div key={i}>+ {addonName(add)}</div>
                   ))}
                   {item.note && <div>Obs: {item.note}</div>}
                 </div>
@@ -513,7 +514,7 @@ export default function PrintDocumentButton({
                     {item.qty}x {item.name}
                   </h3>
                   {(item.additionals || []).map((add, i) => (
-                    <div key={i}>+ {add.name}</div>
+                    <div key={i}>+ {addonName(add)}</div>
                   ))}
                   {item.note && (
                     <div style={{ fontWeight: "bold" }}>
@@ -548,7 +549,7 @@ export default function PrintDocumentButton({
                     {item.qty}x {item.name}
                   </strong>
                   {(item.additionals || []).map((add, i) => (
-                    <div key={i}>+ {add.name}</div>
+                    <div key={i}>+ {addonName(add)}</div>
                   ))}
                   {item.note && <div>Obs: {item.note}</div>}
                 </div>
@@ -611,7 +612,7 @@ export default function PrintDocumentButton({
                       />
                       {adds.map((add, i) => (
                         <div key={i} className="print-sub">
-                          + {add.name}
+                          + {addonName(add)}
                         </div>
                       ))}
                       {item.note && (
@@ -686,7 +687,7 @@ export default function PrintDocumentButton({
                         </strong>
                         {(item.additionals || []).map((add, i) => (
                           <div key={i} className="print-sub">
-                            + {add.name}
+                            + {addonName(add)}
                           </div>
                         ))}
                         {item.note && (
@@ -726,7 +727,7 @@ export default function PrintDocumentButton({
                     </strong>
                     {(item.additionals || []).map((add, i) => (
                       <div key={i} className="print-sub">
-                        + {add.name}
+                        + {addonName(add)}
                       </div>
                     ))}
                     {item.note && (

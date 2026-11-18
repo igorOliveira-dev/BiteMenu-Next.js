@@ -6,6 +6,7 @@ import { formatCurrency } from "@/lib/formatCurrency";
 import { getReceipts } from "@/lib/orderReceipts";
 import { FaReceipt } from "react-icons/fa";
 import { getContrastTextColor } from "@/utils/color";
+import { addonName } from "@/lib/stock";
 
 export const paymentLabels = {
   pix: "Pix",
@@ -112,7 +113,7 @@ export default function MyOrdersModal({
                       </span>
                       {(item.additionals || []).length > 0 && (
                         <p className="text-xs opacity-70 pl-4">
-                          + {item.additionals.map((a) => a.name).join(", ")}
+                          + {item.additionals.map(addonName).join(", ")}
                         </p>
                       )}
                       {item.note && (

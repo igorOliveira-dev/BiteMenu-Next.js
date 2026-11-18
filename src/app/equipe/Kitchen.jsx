@@ -18,6 +18,7 @@ import { useAlert } from "@/providers/AlertProvider";
 import { ORDER_STATUS, ORDER_STATUS_STYLE } from "@/lib/staff";
 import { serviceLabels } from "@/app/dashboard/tabs/components/print/PrintDocumentButton";
 import Loading from "@/components/Loading";
+import { addonName } from "@/lib/stock";
 
 // Próxima etapa de cada status; "ready" sai da fila da cozinha
 const NEXT = {
@@ -92,7 +93,7 @@ function OrderCard({ order, onAdvance, dragging = false }) {
               <p className="text-sm color-gray">
                 +{" "}
                 {item.additionals
-                  .map((a) => a.name)
+                  .map(addonName)
                   .filter(Boolean)
                   .join(", ")}
               </p>

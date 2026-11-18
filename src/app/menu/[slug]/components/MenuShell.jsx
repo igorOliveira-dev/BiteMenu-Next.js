@@ -96,6 +96,7 @@ export default function MenuShell({ m, ownerPhone, ownerRole }) {
     setQuantity,
     selectedOptions,
     toggleOptionChoice,
+    changeOptionQty,
     selectedVariation,
     setSelectedVariation,
     note,
@@ -356,9 +357,65 @@ export default function MenuShell({ m, ownerPhone, ownerRole }) {
                             <span className="text-xs font-normal" style={{ color: grayToUse }}>
                               {min > 0 ? `mín. ${min}` : null}
                               {max > 0 ? ` · máx. ${max}` : null}
+                              {g.allow_qty ? ` · ${selectedIds.length} escolhido${selectedIds.length === 1 ? "" : "s"}` : null}
                             </span>
                           </div>
 
+                          {g.allow_qty ? (
+                            <div className="space-y-2">
+                              {(g.option_choices || [])
+                                .filter((c) => !c.hidden)
+                                .map((c) => {
+                                  const n = selectedIds.filter((id) => id === c.id).length;
+                                  const full = max > 0 && selectedIds.length >= max;
+                                  return (
+                                    <div
+                                      key={c.id}
+                                      className="flex items-center justify-between gap-3 rounded-2xl pl-4 pr-2 py-2"
+                                      style={{
+                                        backgroundColor: n > 0 ? "#16a34a44" : translucidToUse,
+                                        color: foregroundToUse,
+                                        border: n > 0 ? "1px solid #16a34a88" : "1px solid transparent",
+                                      }}
+                                    >
+                                      <div className="min-w-0">
+                                        <div className="font-medium break-words">{c.name}</div>
+                                        {Number(c.price) !== 0 && (
+                                          <div className="text-sm" style={{ color: grayToUse }}>
+                                            +{formatCurrency(c.price, menu?.currency)}
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center gap-1 flex-shrink-0">
+                                        {n > 0 && (
+                                          <>
+                                            <button
+                                              type="button"
+                                              aria-label={`Remover um ${c.name}`}
+                                              onClick={() => changeOptionQty(g, c, -1)}
+                                              className="cursor-pointer w-10 h-10 flex items-center justify-center rounded-full border transition hover:opacity-70"
+                                              style={{ borderColor: grayToUse }}
+                                            >
+                                              <FaMinus size={12} />
+                                            </button>
+                                            <span className="w-6 text-center font-semibold tabular-nums">{n}</span>
+                                          </>
+                                        )}
+                                        <button
+                                          type="button"
+                                          aria-label={`Adicionar um ${c.name}`}
+                                          onClick={() => changeOptionQty(g, c, 1)}
+                                          className="cursor-pointer w-10 h-10 flex items-center justify-center rounded-full border transition hover:opacity-70"
+                                          style={{ borderColor: grayToUse, opacity: full ? 0.4 : 1 }}
+                                        >
+                                          <FaPlus size={12} />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          ) : (
                           <div className="flex flex-wrap gap-3">
                             {(g.option_choices || [])
                               .filter((c) => !c.hidden)
@@ -390,6 +447,7 @@ export default function MenuShell({ m, ownerPhone, ownerRole }) {
                                 );
                               })}
                           </div>
+                          )}
                         </div>
                       );
                     })}

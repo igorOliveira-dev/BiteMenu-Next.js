@@ -15,6 +15,7 @@ import SalesCharts from "./components/sales/SalesCharts";
 import SalesInsights from "./components/sales/SalesInsights";
 import { INSIGHTS_ROLES } from "@/lib/salesInsights";
 import { fetchAllRows } from "@/lib/fetchAllRows";
+import { addonName } from "@/lib/stock";
 
 ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, Filler);
 
@@ -189,7 +190,7 @@ function formatItemsList(items) {
     .map((it) => {
       const qty = Number(it.qty) || 0;
       const base = `${qty}x ${it.name || ""}`.trim();
-      const adds = (it.additionals || []).map((a) => `+ ${a.name || ""}`).join(", ");
+      const adds = (it.additionals || []).map((a) => `+ ${addonName(a)}`).join(", ");
       return adds ? `${base} (${adds})` : base;
     })
     .join("; ");

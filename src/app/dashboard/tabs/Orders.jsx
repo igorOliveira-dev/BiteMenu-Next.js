@@ -46,6 +46,7 @@ import { ORDER_STATUS, ORDER_STATUS_STYLE, STAFF_PLAN_ROLES, paidPillClass } fro
 import { staffApi } from "./Team";
 import { IconPessoa, IconPrato } from "@/components/BrandIcons";
 import Select from "@/components/Select";
+import { addonName } from "@/lib/stock";
 
 const PAGE_SIZE = 10;
 
@@ -1495,7 +1496,7 @@ const Orders = ({
                       <li key={i}>
                         <span className="font-semibold">{Number(it.qty) || 0}x</span> {it.name || "Item sem nome"}
                         {(it.additionals || []).length > 0 && (
-                          <span className="color-gray"> · {it.additionals.map((a) => `+ ${a.name}`).join(", ")}</span>
+                          <span className="color-gray"> · {it.additionals.map((a) => `+ ${addonName(a)}`).join(", ")}</span>
                         )}
                         {it.note ? <span className="block text-xs color-gray">Obs.: {it.note}</span> : null}
                       </li>
@@ -1666,7 +1667,7 @@ const Orders = ({
                   {(selectedOrder.items_list || []).map((item, i) => {
                     const isItemOpen = openItemIndexes.has(i);
                     const additionalsNames = (item.additionals || [])
-                      .map((a) => a.name)
+                      .map(addonName)
                       .filter(Boolean)
                       .join(", ");
                     const itemSubtotal =
@@ -1897,9 +1898,41 @@ const Orders = ({
                                         key={ai}
                                         className="grid grid-cols-[minmax(0,1fr)_52px_36px] xxs:grid-cols-[minmax(0,1fr)_64px_36px] items-center gap-1.5 sm:grid-cols-[minmax(0,1fr)_110px_44px] sm:gap-2"
                                       >
+                                        <div className="flex min-w-0 items-center gap-1.5">
+                                        {add.qty != null && (
+                                          <label
+                                            className="flex flex-shrink-0 items-center gap-0.5 text-sm font-semibold color-gray"
+                                            title="Quantidade da opção (o preço ao lado é o total e acompanha a quantidade)"
+                                          >
+                                            <input
+                                              type="text"
+                                              inputMode="numeric"
+                                              className="input w-11 rounded-xl bg-translucid px-1 py-3 text-center text-sm"
+                                              // não controlado: dá pra apagar o número e digitar outro;
+                                              // só aplica quando é um número ≥ 1, e volta ao valor salvo se sair vazio
+                                              key={`${selectedOrder.id}-${i}-${ai}`}
+                                              defaultValue={add.qty}
+                                              onBlur={(e) => {
+                                                if (!(parseInt(e.target.value, 10) >= 1)) e.target.value = add.qty;
+                                              }}
+                                              onChange={(e) => {
+                                                e.target.value = e.target.value.replace(/\D/g, "");
+                                                const n = parseInt(e.target.value, 10);
+                                                if (!(n >= 1)) return;
+                                                const unit = (Number(add.price) || 0) / (Number(add.qty) || 1);
+                                                const updated = [...selectedOrder.items_list];
+                                                const ad = [...(updated[i].additionals || [])];
+                                                ad[ai] = { ...ad[ai], qty: n, price: Math.round(unit * n * 100) / 100 };
+                                                updated[i] = { ...updated[i], additionals: ad };
+                                                setSelectedOrder({ ...selectedOrder, items_list: updated });
+                                              }}
+                                            />
+                                            x
+                                          </label>
+                                        )}
                                         <input
                                           type="text"
-                                          className="input rounded-xl bg-translucid p-3 text-sm"
+                                          className="input min-w-0 flex-1 rounded-xl bg-translucid p-3 text-sm"
                                           value={add.name}
                                           onChange={(e) => {
                                             const updated = [
@@ -1923,6 +1956,7 @@ const Orders = ({
                                           }}
                                           placeholder="Nome da opção"
                                         />
+                                        </div>
 
                                         <input
                                           type="number"

@@ -58,6 +58,7 @@ export const getMenuBySlug = cache(async (slug) => {
             name,
             min_choices,
             max_choices,
+            allow_qty,
             position,
             option_choices (
               id,

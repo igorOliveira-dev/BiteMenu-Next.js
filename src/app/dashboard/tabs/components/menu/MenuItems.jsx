@@ -1613,7 +1613,7 @@ export default function MenuItems({
       const { data: groups, error } = await supabase
         .from("option_groups")
         .select(
-          `id, name, min_choices, max_choices, position,
+          `id, name, min_choices, max_choices, allow_qty, position,
                option_choices ( id, name, price, hidden, position )`,
         )
         .eq("item_id", item.id)
@@ -1627,6 +1627,7 @@ export default function MenuItems({
           name: g.name,
           min_choices: g.min_choices,
           max_choices: g.max_choices,
+          allow_qty: !!g.allow_qty,
           option_choices: (g.option_choices || []).map((c) => ({
             id: `tmp-${uid()}`,
             name: c.name,
@@ -1904,7 +1905,7 @@ export default function MenuItems({
     const { data: groups, error } = await supabase
       .from("option_groups")
       .select(
-        `id, name, min_choices, max_choices, position,
+        `id, name, min_choices, max_choices, allow_qty, position,
              option_choices ( id, name, price, hidden, position )`,
       )
       .eq("item_id", itemId)
@@ -2538,6 +2539,7 @@ export default function MenuItems({
             name: g.name,
             min_choices: g.min_choices ?? 0,
             max_choices: g.max_choices ?? 0,
+            allow_qty: !!g.allow_qty,
             position: gi,
           })
           .select("id")
@@ -2555,6 +2557,7 @@ export default function MenuItems({
             name: g.name,
             min_choices: g.min_choices ?? 0,
             max_choices: g.max_choices ?? 0,
+            allow_qty: !!g.allow_qty,
             position: gi,
           })
           .eq("id", g.id);
@@ -2804,7 +2807,7 @@ export default function MenuItems({
     const { data } = await supabase
       .from("option_groups")
       .select(
-        `id, name, min_choices, max_choices, position, item_id,
+        `id, name, min_choices, max_choices, allow_qty, position, item_id,
        option_choices ( id, name, price, hidden, position )`,
       )
       .in("item_id", allItemIds)
@@ -4057,6 +4060,7 @@ export default function MenuItems({
                                   setAdditionalsCfgDraft({
                                     min_choices: String(group.min_choices ?? 0),
                                     max_choices: String(group.max_choices ?? 0),
+                                    allow_qty: !!group.allow_qty,
                                   });
                                   setCfgGroupIdx(gi);
                                   setAdditionalsCfgOpen(true);
@@ -4110,6 +4114,7 @@ export default function MenuItems({
                           {group.max_choices > 0
                             ? ` · máx. ${group.max_choices}`
                             : " · sem limite"}
+                          {group.allow_qty ? " · com quantidade" : ""}
                         </div>
 
                         {/* Choices */}
@@ -4561,6 +4566,23 @@ export default function MenuItems({
                 <div className="text-xs mt-1 color-gray">0 = sem limite</div>
               </label>
 
+              <label className="flex items-start gap-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={!!additionalsCfgDraft?.allow_qty}
+                  onChange={(e) =>
+                    setAdditionalsCfgDraft((d) => ({ ...d, allow_qty: e.target.checked }))
+                  }
+                  className="mt-1 w-5 h-5 flex-shrink-0 cursor-pointer"
+                />
+                <div>
+                  <div className="text-sm">Cliente escolhe a quantidade de cada opção</div>
+                  <div className="text-xs mt-1 color-gray">
+                    Ex.: 2x Bacon, 1x Cheddar. O mínimo e o máximo passam a contar as quantidades.
+                  </div>
+                </div>
+              </label>
+
               <div className="flex justify-end gap-2 mt-4">
                 <button
                   type="button"
@@ -4588,6 +4610,7 @@ export default function MenuItems({
                       ...groups[cfgGroupIdx],
                       min_choices: minC,
                       max_choices: maxC,
+                      allow_qty: !!additionalsCfgDraft?.allow_qty,
                     };
                     setModalPayload((p) => ({
                       ...p,

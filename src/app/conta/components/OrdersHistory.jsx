@@ -8,6 +8,7 @@ import { getAllReceipts } from "@/lib/orderReceipts";
 import useUser from "@/hooks/useUser";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { formatScheduled } from "@/lib/schedule";
+import { addonName } from "@/lib/stock";
 import {
   paymentLabels,
   serviceLabels,
@@ -433,7 +434,7 @@ function OrderDetails({ order: r, children }) {
             </span>
             {(item.additionals || []).length > 0 && (
               <p className="pl-4 text-xs color-gray">
-                + {item.additionals.map((a) => a.name).join(", ")}
+                + {item.additionals.map(addonName).join(", ")}
               </p>
             )}
           </li>

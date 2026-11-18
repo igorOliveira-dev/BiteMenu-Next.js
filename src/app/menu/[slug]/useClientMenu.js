@@ -255,6 +255,23 @@ export default function useClientMenu(rawMenu, ownerRole, demoTheme) {
     });
   };
 
+  // grupos com allow_qty: o array guarda o id repetido (2x Bacon = [bacon, bacon]),
+  // então length = total escolhido e o mín/máx já conta as quantidades
+  const changeOptionQty = (group, choice, delta) => {
+    const max = Number(group.max_choices ?? 0);
+    const current = selectedOptions[group.id] || [];
+    if (delta > 0 && max > 0 && current.length >= max) {
+      alert?.(`Você pode escolher no máximo ${max} opç${max === 1 ? "ão" : "ões"} em "${group.name}".`, "error", alertColors);
+      return;
+    }
+    setSelectedOptions((prev) => {
+      const cur = prev[group.id] || [];
+      if (delta > 0) return { ...prev, [group.id]: [...cur, choice.id] };
+      const i = cur.lastIndexOf(choice.id);
+      return i < 0 ? prev : { ...prev, [group.id]: cur.filter((_, j) => j !== i) };
+    });
+  };
+
   // fade da descrição rolável no modal do produto
   const [showFade, setShowFade] = useState(false);
   const descRef = useRef(null);
@@ -282,7 +299,7 @@ export default function useClientMenu(rawMenu, ownerRole, demoTheme) {
     const optionsTotal = groups.reduce((acc, g) => {
       const selectedIds = selectedOptions[g.id] || [];
       const groupSum = (g.option_choices || []).reduce((s, c) => {
-        return selectedIds.includes(c.id) ? s + Number(c.price || 0) : s;
+        return s + Number(c.price || 0) * selectedIds.filter((id) => id === c.id).length;
       }, 0);
       return acc + groupSum;
     }, 0);
@@ -337,10 +354,22 @@ export default function useClientMenu(rawMenu, ownerRole, demoTheme) {
       const selectedIds = selectedOptions[g.id] || [];
       return (g.option_choices || [])
         .filter((c) => selectedIds.includes(c.id))
-        .map((c) => ({ id: c.id, group: g.name, name: c.name, price: Number(c.price) }));
+        .map((c) => {
+          const n = selectedIds.filter((id) => id === c.id).length;
+          // price = total da opção (unit × n), assim todas as somas de additionals continuam certas
+          return n > 1
+            ? { id: c.id, group: g.name, name: c.name, price: Number(c.price) * n, qty: n }
+            : { id: c.id, group: g.name, name: c.name, price: Number(c.price) };
+        });
     });
 
-    const outOfStock = stockError(ownerRole, cart.getItems(menu.id), selectedItem, Number(quantity || 1), selected.map((s) => s.id));
+    const outOfStock = stockError(
+      ownerRole,
+      cart.getItems(menu.id),
+      selectedItem,
+      Number(quantity || 1),
+      selected.flatMap((s) => Array(s.qty || 1).fill(s.id)),
+    );
     if (outOfStock) {
       alert?.(outOfStock, "error", alertColors);
       return;
@@ -513,6 +542,7 @@ export default function useClientMenu(rawMenu, ownerRole, demoTheme) {
     quantity,
     setQuantity,
     selectedOptions,
+    changeOptionQty,
     toggleOptionChoice,
     selectedVariation,
     setSelectedVariation,

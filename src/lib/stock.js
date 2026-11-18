@@ -6,6 +6,9 @@ export const STOCK_ROLES = ["business", "enterprise", "admin", "designer"];
 
 export const optionKey = (name) => (name || "").trim().toLowerCase();
 
+// Nome do adicional pra exibir: "2x Bacon" quando o grupo permite quantidade
+export const addonName = (a) => (a.qty > 1 ? `${a.qty}x ${a.name || ""}` : a.name || "");
+
 const soldOut = (x) => x.stock != null && x.stock <= 0;
 
 // Põe o estoque nas opções e esconde itens/opções esgotados reaproveitando visible/hidden,
@@ -52,18 +55,23 @@ export function hideHiddenGroups(menu) {
 }
 
 // Carrinho + o que vai entrar passa do estoque? Retorna a mensagem de erro ou null.
-// choiceIds: ids das opções escolhidas no item.
+// choiceIds: ids das opções escolhidas no item (repetido = quantidade, ex.: 2x Bacon).
 export function stockError(ownerRole, cartItems, item, qty, choiceIds) {
   if (!STOCK_ROLES.includes(ownerRole)) return null;
   const choices = (item.option_groups || []).flatMap((g) => g.option_choices || []).filter((c) => choiceIds.includes(c.id));
   const checks = [
     { x: item, inLine: (it) => it.id === item.id },
-    ...choices.map((c) => ({ x: c, inLine: (it) => (it.additionals || []).some((a) => optionKey(a.name) === optionKey(c.name)) })),
+    ...choices.map((c) => ({
+      x: c,
+      per: choiceIds.filter((id) => id === c.id).length,
+      inLine: (it) =>
+        (it.additionals || []).reduce((n, a) => n + (optionKey(a.name) === optionKey(c.name) ? a.qty || 1 : 0), 0),
+    })),
   ];
-  for (const { x, inLine } of checks) {
+  for (const { x, inLine, per = 1 } of checks) {
     if (x.stock == null) continue;
-    const inCart = (cartItems || []).reduce((s, it) => s + (inLine(it) ? it.qty : 0), 0);
-    if (inCart + qty > x.stock) {
+    const inCart = (cartItems || []).reduce((s, it) => s + it.qty * Number(inLine(it)), 0);
+    if (inCart + qty * per > x.stock) {
       const left = Math.max(0, x.stock - inCart);
       return left > 0 ? `Só restam ${left} unidade(s) de "${x.name}".` : `"${x.name}" esgotou.`;
     }
@@ -76,5 +84,6 @@ export const stockPayload = (cartItems) =>
   (cartItems || []).map((it) => ({
     item_id: it.id,
     qty: it.qty,
-    choice_keys: (it.additionals || []).map((a) => optionKey(a.name)).filter(Boolean),
+    // chave repetida por quantidade da opção (2x Bacon = 2 chaves)
+    choice_keys: (it.additionals || []).flatMap((a) => Array(a.qty || 1).fill(optionKey(a.name))).filter(Boolean),
   }));

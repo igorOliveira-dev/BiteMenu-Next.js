@@ -8,7 +8,7 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import { FaMagic, FaPaperPlane, FaShoppingCart } from "react-icons/fa";
 import { useCartContext } from "@/contexts/CartContext";
-import { stockError } from "@/lib/stock";
+import { stockError, addonName } from "@/lib/stock";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { supabaseImg } from "@/lib/imageUtils";
 import { getContrastTextColor } from "@/utils/color";
@@ -390,7 +390,7 @@ function CheckoutCard({ items, total, menu, accent, onAccent, gray, translucid, 
               {it.qty}x {it.name}
               {it.additionals?.length > 0 && (
                 <span className="block text-xs" style={{ color: gray }}>
-                  {it.additionals.map((a) => a.name).join(", ")}
+                  {it.additionals.map(addonName).join(", ")}
                 </span>
               )}
             </span>
