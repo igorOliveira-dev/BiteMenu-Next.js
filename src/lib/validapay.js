@@ -222,6 +222,12 @@ export async function applyPaidUpgrade(userId) {
     });
   }
 
+  // NFS-e: o Pix avulso não entra nas faturas da assinatura; o cron /api/cron/nfse emite a nota por esta linha
+  const { error: nfseError } = await supabaseAdmin
+    .from("nfse")
+    .insert({ invoice_id: pending.chargeId, subscription_id: sub.subscriptionId, status: "upgrade_pago", payload: { priceId } });
+  if (nfseError && nfseError.code !== "23505") console.error("[ValidaPay] Falha ao registrar NFS-e do upgrade:", nfseError);
+
   const patch = { pending_upgrade: null, ...(profile.role !== "admin" && { role: pending.plan }) };
   const { error: updateError } = await supabaseAdmin.from("profiles").update(patch).eq("id", userId);
   if (updateError) throw updateError;

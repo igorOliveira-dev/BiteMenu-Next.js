@@ -7,6 +7,7 @@ import { sendSubscriptionEmail } from "@/lib/emails/subscriptionEmails";
 // NFS-e das faturas pagas na ValidaPay, chamado pelo pg_cron uma vez por dia (tasks/sql/nfse.sql).
 // POST { mode: "dry-run" | "send" }  ·  Authorization: Bearer CRON_SECRET
 // Não depende do webhook: lê as faturas direto da ValidaPay e a tabela nfse impede nota repetida.
+// Pix avulso de upgrade não aparece nas faturas: applyPaidUpgrade grava a linha (status upgrade_pago) e daqui sai a nota.
 // A Focus autoriza de forma assíncrona, então cada rodada primeiro atualiza as notas da anterior.
 // Nota com status rejeitada/erro_autorizacao: corrigir o motivo e apagar a linha em nfse
 // faz a próxima rodada emitir de novo (com outro número de DPS).
@@ -119,11 +120,40 @@ export async function POST(req) {
     const emailOf = new Map(profiles.map((p) => [p.validapay_subscription_id, p.email]));
     const payloadOf = (sub, invoice, numero) => nfsePayload(sub, invoice, numero, emailOf.get(sub.subscriptionId));
 
+    // Pix avulso de upgrade (applyPaidUpgrade grava a linha): vira uma "fatura" de PRORATA_UPGRADE pro describeInvoice
+    const { data: upgradeRows, error: upgradeError } = await supabaseAdmin
+      .from("nfse")
+      .select("numero_dps, invoice_id, subscription_id, payload")
+      .eq("status", "upgrade_pago");
+    if (upgradeError) throw upgradeError;
+    const upgrades = [];
+    for (const row of upgradeRows) {
+      const charge = await validapay(`/v1/charges/${row.invoice_id}`);
+      const sub = await validapay(`/v1/subscriptions/${row.subscription_id}`);
+      const invoice = {
+        invoiceId: row.invoice_id,
+        invoiceNumber: row.invoice_id,
+        paidAt: charge.paidAt,
+        summary: { total: charge.amount },
+        lineItems: [{ type: "PRORATA_UPGRADE", priceId: row.payload?.priceId }],
+      };
+      upgrades.push({ row, sub, invoice });
+    }
+
     if (mode === "dry-run") {
-      return json({ count: fresh.length, notas: fresh.map(({ sub, invoice }) => payloadOf(sub, invoice, null)) });
+      const all = [...fresh, ...upgrades];
+      return json({ count: all.length, notas: all.map(({ sub, invoice }) => payloadOf(sub, invoice, null)) });
     }
 
     const results = [];
+    // A linha já existe (numero_dps reservado); rejeitada: apagar e reinserir com status upgrade_pago e payload { priceId }
+    for (const { row, sub, invoice } of upgrades) {
+      const payload = payloadOf(sub, invoice, row.numero_dps);
+      const result = await send(row.numero_dps, payload);
+      await save(row.numero_dps, { payload, ...result });
+      results.push({ invoice: invoice.invoiceId, numero_dps: row.numero_dps, ...result });
+    }
+
     for (const { sub, invoice } of fresh) {
       const { data: row, error } = await supabaseAdmin
         .from("nfse")

@@ -1,7 +1,7 @@
 -- NFS-e automática (Focus NFe) — rodar uma vez no SQL Editor do Supabase.
 -- Uma linha por fatura paga na ValidaPay. numero_dps é o número da DPS (série 1, faixa da API).
 -- RLS ligado e sem policies: só o service role (rota /api/cron/nfse) lê e escreve.
--- status: pendente | processando_autorizacao | autorizado | erro_autorizacao | rejeitada | cancelado
+-- status: upgrade_pago (Pix avulso de upgrade esperando o cron; invoice_id = chargeId) | pendente | processando_autorizacao | autorizado | erro_autorizacao | rejeitada | cancelado
 
 create table if not exists nfse (
   numero_dps bigint generated always as identity primary key,
