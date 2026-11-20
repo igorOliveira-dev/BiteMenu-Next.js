@@ -7,6 +7,7 @@ import {
   DAYS_TO_PAY_AFTER_DUE,
   OPEN_INVOICE,
   payUntil,
+  applyPaidUpgrade,
 } from "@/lib/validapay";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { sendSubscriptionEmail } from "@/lib/emails/subscriptionEmails";
@@ -56,6 +57,23 @@ export async function POST(req) {
   const isEnded = ENDED_EVENTS.includes(evt.event);
   const isCancelScheduled = evt.event === "subscription.cancel_scheduled";
   const isNotifyOnly = NOTIFY_ONLY_EVENTS.includes(evt.event);
+
+  // Pix avulso da diferença de um upgrade no Pix Automático (change-plan → profiles.pending_upgrade)
+  if (evt.event === "payment.success" && !evt.subscriptionId && evt.chargeId) {
+    try {
+      const { data: profile, error } = await supabaseAdmin
+        .from("profiles")
+        .select("id")
+        .eq("pending_upgrade->>chargeId", evt.chargeId)
+        .maybeSingle();
+      if (error) throw error;
+      if (profile) await applyPaidUpgrade(profile.id);
+      return new Response("ok");
+    } catch (err) {
+      console.error("[ValidaPay Webhook] Erro no upgrade por Pix avulso:", err);
+      return new Response("error", { status: 500 });
+    }
+  }
 
   // Responder 200 pro que não interessa (inclui pagamento avulso e falha na criação, sem subscriptionId).
   if (!evt.subscriptionId || !(isPaid || isEnded || isCancelScheduled || isNotifyOnly)) return new Response("ok");

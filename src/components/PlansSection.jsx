@@ -50,6 +50,20 @@ const ChangePlanModal = ({ plan, cycle, currentPlanName, onClose }) => {
       .catch((err) => setError(err.message));
   }, [plan.id, cycle]);
 
+  // Pix da diferença (upgrade no Pix Automático): quando for pago, o plano já vale
+  const awaitingPix = !!result?.pix;
+  useEffect(() => {
+    if (!awaitingPix) return;
+    const id = setInterval(() => {
+      authFetch("/api/validapay/change-plan")
+        .then(({ status }) => {
+          if (status === "PAID") window.location.href = "/dashboard?tab=planDetails";
+        })
+        .catch(() => {});
+    }, 4000);
+    return () => clearInterval(id);
+  }, [awaitingPix]);
+
   const confirmChange = async () => {
     setConfirming(true);
     setError(null);
@@ -129,7 +143,9 @@ const ChangePlanModal = ({ plan, cycle, currentPlanName, onClose }) => {
               <p className="mt-2">
                 {preview.paymentType === "CREDIT_CARD"
                   ? "O valor é cobrado no seu cartão e o plano novo vale na hora."
-                  : "Vamos gerar a cobrança da diferença; o plano novo vale assim que ela for paga."}
+                  : preview.paymentType === "PIX_AUTOMATICO"
+                    ? "Vamos gerar um Pix com a diferença; o plano novo vale assim que ele for pago. Depois, o Pix Automático continua debitando normalmente."
+                    : "Vamos gerar a cobrança da diferença; o plano novo vale assim que ela for paga."}
               </p>
               <p className="mt-2 color-gray">
                 Depois, {formatBRL(preview.nextChargeAmount)} {PER_CYCLE[cycle]} a partir de{" "}

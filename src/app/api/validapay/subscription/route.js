@@ -5,6 +5,8 @@ import {
   activePriceId,
   findPendingBoletoSubscription,
   DAYS_TO_PAY_AFTER_DUE,
+  TIER,
+  applyPaidUpgrade,
 } from "@/lib/validapay";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -65,6 +67,9 @@ export async function GET(req) {
     const user = await getUserFromRequest(req);
     if (!user) return Response.json({ error: "Não autenticado" }, { status: 401 });
 
+    // Pix avulso do upgrade pago com o modal já fechado (o webhook também faz isso)
+    await applyPaidUpgrade(user.id).catch((err) => console.error("[ValidaPay Subscription] Upgrade pendente:", err));
+
     const { data: profile, error } = await supabaseAdmin
       .from("profiles")
       .select("role, validapay_subscription_id")
@@ -84,10 +89,11 @@ export async function GET(req) {
 
     const sub = await validapay(`/v1/subscriptions/${profile.validapay_subscription_id}`);
 
-    // Downgrade agendado: a ValidaPay já ativa o item novo, mas o plano só muda no próximo ciclo
+    // Downgrade agendado: a ValidaPay já ativa o item novo, mas o plano só muda no próximo ciclo.
+    // Item maior que o plano = upgrade esperando o pagamento da diferença, não é agendamento.
     const scheduled = priceInfo(activePriceId(sub.items));
     const scheduledChange =
-      scheduled && scheduled.plan !== profile.role
+      scheduled && scheduled.plan !== profile.role && !(TIER[scheduled.plan] > TIER[profile.role])
         ? { plan: scheduled.plan, effectiveAt: sub.nextCycleChargeDate }
         : null;
 

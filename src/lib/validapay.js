@@ -188,6 +188,47 @@ export async function userIdFromSubscription(subscriptionId) {
   return session.metadata?.userId ?? null;
 }
 
+// Upgrade no Pix Automático: a ValidaPay jogaria a diferença no próximo débito (plano só mudaria lá).
+// Em vez disso, change-plan cobra a diferença num Pix avulso e guarda em profiles.pending_upgrade
+// { chargeId, plan, cycle }. Quando esse Pix é pago (polling do modal, Detalhes do Plano ou webhook),
+// troca o item sem pró-rata (valor novo só na próxima cobrança) e libera o plano na hora.
+// Retorna o status da cobrança, ou null sem upgrade pendente.
+// ponytail: sem lock; duas chamadas simultâneas podem repetir o PUT (a segunda costuma ver o item já trocado e pular)
+export async function applyPaidUpgrade(userId) {
+  const { data: profile, error } = await supabaseAdmin
+    .from("profiles")
+    .select("role, validapay_subscription_id, pending_upgrade")
+    .eq("id", userId)
+    .single();
+  if (error) throw error;
+  const pending = profile.pending_upgrade;
+  if (!pending?.chargeId) return null;
+
+  const { status } = await validapay(`/v1/charges/${pending.chargeId}/status`);
+  if (status !== "PAID") {
+    // Pix vencido/cancelado: some o pendente para o cliente poder gerar outro
+    if (["EXPIRED", "CANCELED", "FAILED"].includes(status)) {
+      await supabaseAdmin.from("profiles").update({ pending_upgrade: null }).eq("id", userId);
+    }
+    return status;
+  }
+
+  const priceId = PRICE_IDS[pending.plan]?.[pending.cycle];
+  const sub = await validapay(`/v1/subscriptions/${profile.validapay_subscription_id}`);
+  if (priceId && activePriceId(sub.items) !== priceId) {
+    await validapay(`/v1/subscriptions/${sub.subscriptionId}/items/${sub.primaryItemId}`, {
+      method: "PUT",
+      body: { priceId, prorata: { enabled: false } },
+    });
+  }
+
+  const patch = { pending_upgrade: null, ...(profile.role !== "admin" && { role: pending.plan }) };
+  const { error: updateError } = await supabaseAdmin.from("profiles").update(patch).eq("id", userId);
+  if (updateError) throw updateError;
+  console.log(`[ValidaPay] Upgrade pago por Pix avulso: profile ${userId} → ${pending.plan}`);
+  return status;
+}
+
 // Usuário autenticado a partir do header "Authorization: Bearer <access_token>" do Supabase.
 export async function getUserFromRequest(req) {
   const token = req.headers.get("authorization")?.replace("Bearer ", "");
