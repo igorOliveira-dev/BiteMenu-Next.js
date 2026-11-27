@@ -23,10 +23,16 @@ async function loadMenus() {
   if (error) throw error;
 
   const ownerIds = [...new Set(data.map((m) => m.owner_id).filter(Boolean))];
-  const { data: owners, error: ownersError } = ownerIds.length
-    ? await supabaseAdmin.from("profiles").select("id, role, account_type, deletion_requested_at").in("id", ownerIds)
-    : { data: [] };
-  if (ownersError) throw ownersError;
+  // em lotes: .in() com centenas de UUIDs estoura o tamanho da URL ("fetch failed")
+  const owners = [];
+  for (let i = 0; i < ownerIds.length; i += 150) {
+    const { data: chunk, error: ownersError } = await supabaseAdmin
+      .from("profiles")
+      .select("id, role, account_type, deletion_requested_at")
+      .in("id", ownerIds.slice(i, i + 150));
+    if (ownersError) throw ownersError;
+    owners.push(...chunk);
+  }
   const blocked = new Set(
     owners.filter((p) => p.deletion_requested_at || p.account_type === "customer").map((p) => p.id),
   );
